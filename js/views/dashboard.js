@@ -47,6 +47,10 @@ const DashboardView = {
       if (f.type === 'company')  return list.filter(u => u.companyId === f.value);
       if (f.type === 'status')   return list.filter(u => u.onboardingStatus === f.value);
       if (f.type === 'role')     return list.filter(u => u.role === f.value);
+      if (f.type === 'program') {
+        const coIds = State.getCompanies().filter(c => c.programs.includes(f.value)).map(c => c.id);
+        return list.filter(u => coIds.includes(u.companyId));
+      }
       return list;
     }, users);
   },
@@ -57,23 +61,27 @@ const DashboardView = {
       if (f.type === 'company') label = `Org: ${companies.find(c=>c.id===f.value)?.name || f.value}`;
       if (f.type === 'status')  label = `Status: ${Display.onboardingStatusLabel(f.value)}`;
       if (f.type === 'role')    label = `Role: ${Display.roleName(f.value)}`;
+      if (f.type === 'program') label = `Program: ${f.value}`;
       return `<span class="filter-chip">${label}<button class="filter-chip-remove" onclick="DashboardView.removeFilter(${i})">×</button></span>`;
     }).join('');
 
-    const companyOpts = companies.map(c => `<option value="${c.id}">${c.name}</option>`).join('');
     return `
       <div class="filter-chip-bar">
         ${chips}
         <div style="position:relative;display:inline-block">
           <button class="btn-add-filter" onclick="DashboardView.toggleFilterDropdown(event)">+ Add Filter</button>
-          <div class="filter-dropdown" id="dash-filter-dd" style="display:none">
-            <div class="filter-dropdown-section">By Organization</div>
+          <div class="filter-dropdown" id="dash-filter-dd" style="display:none;top:100%;right:0;left:auto">
+            <div class="filter-dropdown-section" style="font-size:10px;font-weight:700;color:var(--color-text-muted);padding:6px 12px 2px;text-transform:uppercase;letter-spacing:0.06em">Organization</div>
             ${companies.map(c => `<div class="filter-dropdown-item" onclick="DashboardView.addFilter('company','${c.id}')">${c.name}</div>`).join('')}
-            <div class="filter-dropdown-section">By Status</div>
+            <div class="filter-dropdown-section" style="font-size:10px;font-weight:700;color:var(--color-text-muted);padding:6px 12px 2px;text-transform:uppercase;letter-spacing:0.06em">Program</div>
+            ${['DC Dream Fund','Kentucky Dream Fund'].map(p =>
+              `<div class="filter-dropdown-item" onclick="DashboardView.addFilter('program','${p}')">${p}</div>`
+            ).join('')}
+            <div class="filter-dropdown-section" style="font-size:10px;font-weight:700;color:var(--color-text-muted);padding:6px 12px 2px;text-transform:uppercase;letter-spacing:0.06em">Status</div>
             ${['invited','email_verified','2fa_complete','verification_pending'].map(s =>
               `<div class="filter-dropdown-item" onclick="DashboardView.addFilter('status','${s}')">${Display.onboardingStatusLabel(s)}</div>`
             ).join('')}
-            <div class="filter-dropdown-section">By Role</div>
+            <div class="filter-dropdown-section" style="font-size:10px;font-weight:700;color:var(--color-text-muted);padding:6px 12px 2px;text-transform:uppercase;letter-spacing:0.06em">Role</div>
             ${['lo','lp','prog_admin'].map(r =>
               `<div class="filter-dropdown-item" onclick="DashboardView.addFilter('role','${r}')">${Display.roleName(r)}</div>`
             ).join('')}
@@ -107,26 +115,18 @@ const DashboardView = {
 
     const filteredPending = this._applyFilters(pending);
 
-    const svgOrg       = `<svg width="18" height="18" viewBox="0 0 18 18" fill="none" stroke="currentColor" stroke-width="1.5"><rect x="2" y="4" width="14" height="13" rx="1"/><path d="M5 17V11h8v6"/><path d="M5.5 7h1M11.5 7h1M5.5 10h1M11.5 10h1"/></svg>`;
-    const svgBranch    = `<svg width="18" height="18" viewBox="0 0 18 18" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M9 2C6.24 2 4 4.24 4 7c0 4 5 9 5 9s5-5 5-9c0-2.76-2.24-5-5-5z"/><circle cx="9" cy="7" r="1.5"/></svg>`;
-    const svgUsers     = `<svg width="18" height="18" viewBox="0 0 18 18" fill="none" stroke="currentColor" stroke-width="1.5"><circle cx="7" cy="6" r="3"/><path d="M1 16c0-3.31 2.69-6 6-6s6 2.69 6 6"/><circle cx="14" cy="6" r="2.5"/><path d="M17 15c0-2.21-1.57-4.07-3.68-4.79"/></svg>`;
-    const svgDoc       = `<svg width="18" height="18" viewBox="0 0 18 18" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M4 2h8l4 4v10a1 1 0 0 1-1 1H4a1 1 0 0 1-1-1V3a1 1 0 0 1 1-1z"/><path d="M12 2v4h4"/><path d="M6 9h6M6 12h4"/></svg>`;
-
     const stats = [
-      { label: 'Organizations', value: companies.length,                                     icon: svgOrg,    bg: '#DBEAFE', change: '+1 this month' },
-      { label: 'Branches',      value: branches.length,                                      icon: svgBranch, bg: '#DCFCE7', change: '+2 this month' },
-      { label: 'Total Users',   value: users.filter(u => u.companyId).length,                icon: svgUsers,  bg: '#FEF3C7', change: `${pending.length} pending` },
-      { label: 'Active Loans',  value: loans.filter(l => !['prequalification_expired','prequalification_in_progress'].includes(l.status)).length, icon: svgDoc, bg: '#EDE9FE', change: `${loans.filter(l=>l.status==='completed').length} completed` },
+      { label: 'Active Loans',  value: loans.filter(l => !['prequalification_expired','prequalification_in_progress'].includes(l.status)).length, change: `${loans.filter(l=>l.status==='completed').length} completed` },
+      { label: 'Total Users',   value: users.filter(u => u.companyId).length,                change: `${pending.length} pending` },
+      { label: 'Branches',      value: branches.length,                                      change: '' },
+      { label: 'Organizations', value: companies.length,                                     change: '' },
     ];
 
     const statCards = stats.map(s => `
       <div class="stat-card">
-        <div class="stat-card-header">
-          <div class="stat-label">${s.label}</div>
-          <div class="stat-icon" style="background:${s.bg};color:var(--color-primary)">${s.icon}</div>
-        </div>
+        <div class="stat-label">${s.label}</div>
         <div class="stat-value">${s.value}</div>
-        <div class="stat-change neutral">${s.change}</div>
+        ${s.change ? `<div class="stat-change neutral">${s.change}</div>` : ''}
       </div>`).join('');
 
     /* Pending onboarding table */
@@ -185,11 +185,40 @@ const DashboardView = {
 
           <!-- Pending onboarding -->
           <div class="table-container">
-            <div class="table-toolbar">
+            <div class="table-toolbar" style="position:relative">
               <div class="table-toolbar-title">Pending Onboarding</div>
-              <button class="btn btn-ghost btn-sm" onclick="Router.navigate('/onboarding')">View all</button>
+              <div style="display:flex;align-items:center;gap:8px;margin-left:auto">
+                ${this._filters.map((f, i) => {
+                  let label = '';
+                  if (f.type === 'company') label = `Org: ${companies.find(c=>c.id===f.value)?.name || f.value}`;
+                  if (f.type === 'status')  label = `Status: ${Display.onboardingStatusLabel(f.value)}`;
+                  if (f.type === 'role')    label = `Role: ${Display.roleName(f.value)}`;
+                  if (f.type === 'program') label = `Program: ${f.value}`;
+                  return `<span class="filter-chip">${label}<button class="filter-chip-remove" onclick="DashboardView.removeFilter(${i})">×</button></span>`;
+                }).join('')}
+                <div style="position:relative">
+                  <button class="btn btn-secondary btn-sm" onclick="DashboardView.toggleFilterDropdown(event)">Filter</button>
+                  <div class="filter-dropdown" id="dash-filter-dd" style="display:none;top:100%;right:0;margin-top:4px">
+                    <div style="font-size:10px;font-weight:700;color:var(--color-text-muted);padding:6px 12px 2px;text-transform:uppercase;letter-spacing:0.06em">Organization</div>
+                    ${companies.map(c => `<div class="filter-dropdown-item" onclick="DashboardView.addFilter('company','${c.id}')">${c.name}</div>`).join('')}
+                    <div style="font-size:10px;font-weight:700;color:var(--color-text-muted);padding:6px 12px 2px;text-transform:uppercase;letter-spacing:0.06em">Program</div>
+                    ${['DC Dream Fund','Kentucky Dream Fund'].map(p =>
+                      `<div class="filter-dropdown-item" onclick="DashboardView.addFilter('program','${p}')">${p}</div>`
+                    ).join('')}
+                    <div style="font-size:10px;font-weight:700;color:var(--color-text-muted);padding:6px 12px 2px;text-transform:uppercase;letter-spacing:0.06em">Status</div>
+                    ${['invited','email_verified','2fa_complete','verification_pending'].map(s =>
+                      `<div class="filter-dropdown-item" onclick="DashboardView.addFilter('status','${s}')">${Display.onboardingStatusLabel(s)}</div>`
+                    ).join('')}
+                    <div style="font-size:10px;font-weight:700;color:var(--color-text-muted);padding:6px 12px 2px;text-transform:uppercase;letter-spacing:0.06em">Role</div>
+                    ${['lo','lp','prog_admin'].map(r =>
+                      `<div class="filter-dropdown-item" onclick="DashboardView.addFilter('role','${r}')">${Display.roleName(r)}</div>`
+                    ).join('')}
+                  </div>
+                </div>
+                ${this._filters.length ? `<button class="btn btn-ghost btn-sm" onclick="DashboardView.clearFilters()">Clear</button>` : ''}
+                <button class="btn btn-ghost btn-sm" onclick="Router.navigate('/onboarding')">View all</button>
+              </div>
             </div>
-            ${this._renderFilterBar(companies)}
             ${filteredPending.length ? `
             <table>
               <thead><tr>

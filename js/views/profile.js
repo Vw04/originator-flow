@@ -79,7 +79,7 @@ const ProfileView = {
           <div class="section-title">Assigned Policies</div>
           <div style="display:flex;flex-wrap:wrap;gap:6px;margin-bottom:20px">
             ${policies.length
-              ? policies.map(p => `<span class="tag">${p.name}</span>`).join('')
+              ? policies.map(p => `<a class="tag" style="cursor:pointer;text-decoration:none" onclick="ProfileView.close();PermissionsView._expandedPolicy='${p.id}';PermissionsView._roleTab='${p.roleTarget}';App.renderView('/permissions')">${p.name}</a>`).join('')
               : '<span style="font-size:12px;color:var(--color-text-muted)">No policies assigned</span>'}
           </div>
 
@@ -258,32 +258,31 @@ const ProfileView = {
     const allSteps = [
       { key: 'invited',              label: 'Invited' },
       { key: 'email_verified',       label: 'Email Verified' },
-      { key: '2fa_complete',         label: '2FA' },
-      ...(isLO ? [{ key: 'verification_pending', label: 'KYC' }] : []),
+      { key: '2fa_complete',         label: '2FA Setup' },
+      ...(isLO ? [{ key: 'verification_pending', label: 'KYC Verification' }] : []),
       { key: 'active',               label: 'Active' },
     ];
 
-    const nodes = allSteps.map((s, i) => {
+    const items = allSteps.map((s, i) => {
       const stepIdx = ORDER.indexOf(s.key);
       let state;
-      if (status === 'active')           state = 'fc-complete';
-      else if (isFailed && s.key === 'verification_pending') state = 'fc-failed';
-      else if (stepIdx < currentIdx)     state = 'fc-complete';
-      else if (stepIdx === currentIdx)   state = 'fc-active';
-      else                               state = '';
+      if (status === 'active')                                       state = 'vf-complete';
+      else if (isFailed && s.key === 'verification_pending')         state = 'vf-failed';
+      else if (stepIdx < currentIdx)                                 state = 'vf-complete';
+      else if (stepIdx === currentIdx)                               state = 'vf-active';
+      else                                                           state = '';
 
-      const node = `
-        <div class="flowchart-node">
-          <div class="flowchart-circle ${state}">
-            ${state === 'fc-complete' ? `<svg width="10" height="10" viewBox="0 0 10 10" fill="none" stroke="white" stroke-width="2"><path d="M2 5l2.5 2.5 4-4"/></svg>` : `<span style="font-size:9px;font-weight:700">${i+1}</span>`}
+      const isLast = i === allSteps.length - 1;
+      return `
+        <div class="vflow-item">
+          <div class="vflow-line">
+            <div class="vflow-dot ${state}"></div>
+            ${!isLast ? `<div class="vflow-connector ${state === 'vf-complete' ? 'vf-done' : ''}"></div>` : ''}
           </div>
-          <div class="flowchart-label ${state}">${s.label}</div>
+          <div class="vflow-label ${state}">${s.label}</div>
         </div>`;
-
-      const arrow = i < allSteps.length - 1 ? `<div class="flowchart-arrow ${state === 'fc-complete' ? 'fc-done' : ''}"></div>` : '';
-      return node + arrow;
     }).join('');
 
-    return `<div class="flowchart">${nodes}</div>`;
+    return `<div class="vflow">${items}</div>`;
   },
 };

@@ -70,7 +70,7 @@ const BranchesView = {
           <td>${mgr ? Display.fullName(mgr) : '<span class="text-muted">N/A</span>'}</td>
           <td>${users.length}</td>
           <td>${programs}</td>
-          <td><span class="status-pill ${b.status === 'active' ? 'badge-active' : 'badge-pending'}"><span class="status-dot"></span>${b.status === 'active' ? 'Active' : 'Pending'}</span></td>
+          <td><span class="status-pill ${b.status === 'active' ? 'badge-active' : 'badge-pending'}"><span class="status-dot"></span>${b.status === 'active' ? 'Active' : 'Setup incomplete'}</span></td>
         </tr>`;
     }).join('');
 
@@ -103,8 +103,6 @@ const BranchesView = {
               <option value="">All States</option>
               <option value="DC" ${f.state==='DC'?'selected':''}>DC</option>
               <option value="KY" ${f.state==='KY'?'selected':''}>KY</option>
-              <option value="MD" ${f.state==='MD'?'selected':''}>MD</option>
-              <option value="VA" ${f.state==='VA'?'selected':''}>VA</option>
             </select>
             <select class="filter-select" onchange="BranchesView.setFilter('program', this.value)">
               <option value="">All Programs</option>${programOptions}
@@ -167,7 +165,7 @@ const BranchesView = {
     const canEdit = State.can('editAny') || State.can('manageCompany');
 
     const userRows = users.map(u => `
-      <div style="display:flex;align-items:center;gap:8px;padding:6px 0;border-bottom:1px solid var(--color-border)">
+      <div style="display:flex;align-items:center;gap:8px;padding:6px 0;border-bottom:1px solid var(--color-border);cursor:pointer" onclick="ProfileView.open('${u.id}')">
         <div class="avatar avatar-sm" style="background:${avatarColor(u.role)};flex-shrink:0">${Display.initials(u)}</div>
         <div style="flex:1;min-width:0">
           <div style="font-size:13px;font-weight:500;color:var(--color-text)">${Display.fullName(u)}</div>
@@ -198,7 +196,7 @@ const BranchesView = {
               <div class="panel-section-label">Branch Details</div>
               <div class="panel-field"><span class="panel-field-label">Address</span><span>${b.address}</span></div>
               <div class="panel-field"><span class="panel-field-label">State</span><span>${b.state}</span></div>
-              <div class="panel-field"><span class="panel-field-label">Status</span><span class="status-pill ${b.status==='active'?'badge-active':'badge-pending'}"><span class="status-dot"></span>${b.status==='active'?'Active':'Pending'}</span></div>
+              <div class="panel-field"><span class="panel-field-label">Status</span><span class="status-pill ${b.status==='active'?'badge-active':'badge-pending'}"><span class="status-dot"></span>${b.status==='active'?'Active':'Setup incomplete'}</span></div>
               <div class="panel-field"><span class="panel-field-label">Managing LO</span><span>${mgr ? Display.fullName(mgr) : '<span class="text-muted">N/A</span>'}</span></div>
               <div class="panel-field"><span class="panel-field-label">Programs</span><span>${b.programs.length ? b.programs.map(p=>`<span class="tag">${p}</span>`).join(' ') : '<span class="text-muted">None</span>'}</span></div>
               ${b.parentBranchId ? `<div class="panel-field"><span class="panel-field-label">Parent Branch</span><span>${State.getBranch(b.parentBranchId)?.name || b.parentBranchId}</span></div>` : ''}
@@ -338,9 +336,27 @@ const BranchesView = {
     const b = State.getBranch(branchId);
     if (!b) return;
 
+    const companyUsers = b.companyId ? State.getUsersByCompany(b.companyId).filter(u => u.role === 'lo') : State.getUsers().filter(u => u.role === 'lo');
+    const subBranches  = State.getBranches().filter(x => x.parentBranchId === b.id);
+
+    const loRows = companyUsers.map(u => `
+      <div class="perm-user-row" id="lo-row-${u.id}">
+        <div class="avatar avatar-sm" style="background:${avatarColor(u.role)}">${Display.initials(u)}</div>
+        <div style="flex:1">${Display.fullName(u)}</div>
+        <label class="checkbox-group">
+          <input type="radio" name="edit-br-lo" value="${u.id}" ${b.managingLO === u.id ? 'checked' : ''} />
+        </label>
+      </div>`).join('') || '<p style="font-size:12px;color:var(--color-text-muted)">No LOs in this company.</p>';
+
+    const subRows = subBranches.map(s => `
+      <div style="display:flex;align-items:center;justify-content:space-between;padding:5px 0;border-bottom:1px solid var(--color-border-light);font-size:12px">
+        <span>${s.name}</span>
+        <button class="btn btn-ghost btn-xs" onclick="BranchesView._removeSubBranch('${s.id}')">Remove</button>
+      </div>`).join('') || '';
+
     document.getElementById('branch-modal-container').innerHTML = `
       <div class="modal-overlay" onclick="if(event.target===this)BranchesView.closeModal()">
-        <div class="modal">
+        <div class="modal modal-lg">
           <div class="modal-header">
             <div>
               <div class="modal-title">Edit Branch</div>
@@ -361,13 +377,16 @@ const BranchesView = {
               </div>
               <div class="form-group">
                 <label>State</label>
-                <input class="input" id="edit-br-state" value="${b.state}" maxlength="2" />
+                <select class="select-input" id="edit-br-state">
+                  <option value="DC" ${b.state==='DC'?'selected':''}>DC</option>
+                  <option value="KY" ${b.state==='KY'?'selected':''}>KY</option>
+                </select>
               </div>
               <div class="form-group">
                 <label>Status</label>
                 <select class="select-input" id="edit-br-status">
                   <option value="active" ${b.status==='active'?'selected':''}>Active</option>
-                  <option value="pending" ${b.status==='pending'?'selected':''}>Pending</option>
+                  <option value="pending" ${b.status==='pending'?'selected':''}>Setup incomplete</option>
                 </select>
               </div>
               <div class="form-group form-full">
@@ -377,6 +396,25 @@ const BranchesView = {
                   <label class="checkbox-group"><input type="checkbox" id="edit-br-prog-ky" ${b.programs.includes('Kentucky Dream Fund')?'checked':''} /> Kentucky Dream Fund</label>
                 </div>
               </div>
+              <div class="form-group form-full">
+                <label>Managing Loan Officer</label>
+                <input class="input input-sm" id="edit-br-lo-search" placeholder="Search LOs…" oninput="BranchesView._filterLOList(this.value)" style="margin-bottom:8px" />
+                <div id="edit-br-lo-list" style="max-height:160px;overflow-y:auto;border:1px solid var(--color-border);border-radius:var(--radius);padding:4px">
+                  ${loRows}
+                  <div style="padding:5px 0;font-size:12px">
+                    <label class="checkbox-group">
+                      <input type="radio" name="edit-br-lo" value="" ${!b.managingLO ? 'checked' : ''} />
+                      <span style="color:var(--color-text-muted)">None (N/A)</span>
+                    </label>
+                  </div>
+                </div>
+              </div>
+              ${subBranches.length || true ? `
+              <div class="form-group form-full">
+                <label>Sub-Branches</label>
+                <div id="edit-br-sub-list" style="margin-bottom:8px">${subRows}</div>
+                <button class="btn btn-secondary btn-sm" onclick="BranchesView._addSubBranchInline('${b.id}')">+ Add Sub-branch</button>
+              </div>` : ''}
             </div>
           </div>
 
@@ -386,20 +424,48 @@ const BranchesView = {
           </div>
         </div>
       </div>`;
+
+    // Store LO rows for search filtering
+    this._loSearchData = companyUsers;
+  },
+
+  _filterLOList(query) {
+    const q = query.toLowerCase();
+    const rows = document.querySelectorAll('#edit-br-lo-list .perm-user-row');
+    rows.forEach(row => {
+      const name = row.querySelector('div:nth-child(2)')?.textContent.toLowerCase() || '';
+      row.style.display = name.includes(q) ? '' : 'none';
+    });
+  },
+
+  _removeSubBranch(subId) {
+    State.updateBranch(subId, { parentBranchId: null });
+    const row = document.querySelector(`#edit-br-sub-list [onclick*="${subId}"]`)?.closest('div');
+    if (row) row.remove();
+  },
+
+  _addSubBranchInline(parentId) {
+    const name = prompt('Sub-branch name:');
+    if (!name || !name.trim()) return;
+    const parent = State.getBranch(parentId);
+    State.addBranch({ name: name.trim(), companyId: parent.companyId, address: '', state: parent.state, managingLO: null, programs: [], parentBranchId: parentId });
+    UsersView.showSuccess(`Sub-branch "${name.trim()}" added`);
+    this.openEditModal(parentId);
   },
 
   submitEdit(branchId) {
     const name    = document.getElementById('edit-br-name')?.value.trim();
     const address = document.getElementById('edit-br-address')?.value.trim();
-    const state   = document.getElementById('edit-br-state')?.value.trim();
+    const state   = document.getElementById('edit-br-state')?.value;
     const status  = document.getElementById('edit-br-status')?.value;
     const programs = [];
     if (document.getElementById('edit-br-prog-dc')?.checked) programs.push('DC Dream Fund');
     if (document.getElementById('edit-br-prog-ky')?.checked) programs.push('Kentucky Dream Fund');
+    const loRadio = document.querySelector('input[name="edit-br-lo"]:checked');
+    const managingLO = loRadio?.value || null;
 
-    State.updateBranch(branchId, { name, address, state, status, programs });
+    State.updateBranch(branchId, { name, address, state, status, programs, managingLO });
     this.closeModal();
-    // Refresh panel if open
     if (this._detailId === branchId) this.openDetail(branchId);
     UsersView.showSuccess('Branch updated');
     App.renderView('/branches');

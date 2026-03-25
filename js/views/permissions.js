@@ -4,8 +4,10 @@
    ============================================================ */
 
 const PermissionsView = {
-  _selectedPolicy: null,
   _roleTab: 'sys_admin',
+  _expandedPolicy: null,
+  _matrixEditing: false,
+  _matrixPending: {},  // {role-scope-action: bool}
 
   render() {
     const canEdit  = State.can('managePolicy');
@@ -21,31 +23,74 @@ const PermissionsView = {
       investor:   'Investor',
     };
 
-    /* ---- Role tab headers ---- */
-    const roleTabs = Object.entries(roleLabels).map(([key, label]) => `
-      <div class="tab-item ${this._roleTab === key ? 'active' : ''}"
+    /* ---- Vertical role sidebar ---- */
+    const roleSidebar = Object.entries(roleLabels).map(([key, label]) => `
+      <div class="perm-role-item ${this._roleTab === key ? 'active' : ''}"
            onclick="PermissionsView.setRoleTab('${key}')">${label}</div>
     `).join('');
+
+    /* ---- Policy cards for selected role ---- */
+    const rolePolcies = policies.filter(p => p.roleTarget === this._roleTab);
+    const rolePolicyCards = rolePolcies.map(p => {
+      const eligibleUsers = State.getUsers().filter(u => u.role === p.roleTarget && u.companyId);
+      const assignedCount = eligibleUsers.filter(u => u.policies.includes(p.id)).length;
+      const isExpanded    = this._expandedPolicy === p.id;
+
+      const userRows = eligibleUsers.map(u => {
+        const hasPolicy = u.policies.includes(p.id);
+        const co = State.getCompany(u.companyId);
+        return `
+          <div class="perm-user-row">
+            <div class="avatar avatar-sm" style="background:${avatarColor(u.role)}">${Display.initials(u)}</div>
+            <div style="flex:1;min-width:0">
+              <div style="font-weight:500">${Display.fullName(u)}</div>
+              <div style="font-size:11px;color:var(--color-text-muted)">${co ? co.name : ''}</div>
+            </div>
+            <label class="checkbox-group">
+              <input type="checkbox" ${hasPolicy ? 'checked' : ''} ${!canEdit ? 'disabled' : ''}
+                onchange="PermissionsView.toggleUserPolicy('${u.id}','${p.id}',this.checked)" />
+            </label>
+          </div>`;
+      }).join('') || `<p style="font-size:12px;color:var(--color-text-muted)">No ${roleLabels[p.roleTarget]} users found.</p>`;
+
+      return `
+        <div class="perm-policy-card ${isExpanded ? 'expanded' : ''}">
+          <div class="perm-policy-card-header" onclick="PermissionsView.togglePolicyCard('${p.id}')">
+            <div style="flex:1;min-width:0">
+              <div class="perm-policy-name">${p.name}</div>
+              ${p.description ? `<div class="perm-policy-desc">${p.description}</div>` : ''}
+              <div class="perm-policy-meta">${assignedCount} of ${eligibleUsers.length} users assigned</div>
+            </div>
+            <span class="perm-policy-chevron">&#9660;</span>
+          </div>
+          <div class="perm-policy-body">
+            <input class="perm-user-search" placeholder="Search users…" oninput="PermissionsView._filterPolicyUsers(this,'${p.id}')" />
+            <div id="policy-users-${p.id}">${userRows}</div>
+          </div>
+        </div>`;
+    }).join('') || `<div style="padding:20px;font-size:13px;color:var(--color-text-muted)">No policies for this role. ${canEdit ? `<button class="btn btn-ghost btn-sm" onclick="PermissionsView.openCreatePolicyModal()">Create one</button>` : ''}</div>`;
 
     /* ---- Permission matrix for selected role ---- */
     const role  = this._roleTab;
     const perms = matrix.matrix[role] || {};
+    const isEditingMatrix = this._matrixEditing;
 
     const actionHeaders = matrix.actions.map(a => `<th>${a}</th>`).join('');
     const matrixRows = matrix.scopes.map(scope => {
       const cells = matrix.actions.map(action => {
-        const key   = `${scope}-${action}`;
-        const val   = !!perms[key];
-        const isNA  = (scope === 'Platform' && ['lo','lp','investor'].includes(role)) ||
-                      (scope === 'Company'  && ['lo','lp','investor'].includes(role)) ||
-                      (scope === 'Own Loans' && action === 'Manage Policies');
+        const key        = `${scope}-${action}`;
+        const pendingKey = `${role}-${key}`;
+        const val        = pendingKey in this._matrixPending ? this._matrixPending[pendingKey] : !!perms[key];
+        const isNA       = (scope === 'Platform'  && ['lo','lp','investor'].includes(role)) ||
+                           (scope === 'Company'   && ['lo','lp','investor'].includes(role)) ||
+                           (scope === 'Own Loans' && action === 'Manage Policies');
 
         if (isNA) return `<td><span class="perm-na">—</span></td>`;
 
         return `<td>
           <input type="checkbox" class="perm-check" ${val ? 'checked' : ''}
-            ${!canEdit ? 'disabled' : ''}
-            onchange="PermissionsView.togglePerm('${role}', '${scope}', '${action}', this.checked)"
+            ${!isEditingMatrix || !canEdit ? 'disabled' : ''}
+            onchange="PermissionsView.stagePerm('${role}','${scope}','${action}',this.checked)"
             title="${scope} · ${action}" />
         </td>`;
       }).join('');
@@ -53,68 +98,12 @@ const PermissionsView = {
       return `<tr><td>${scope}</td>${cells}</tr>`;
     }).join('');
 
-    /* ---- Policy list ---- */
-    const policyItems = policies.map(p => `
-      <div class="policy-item ${this._selectedPolicy === p.id ? 'selected' : ''}"
-           style="padding:12px 16px;border-bottom:1px solid var(--color-border);cursor:pointer;transition:background 0.1s;background:${this._selectedPolicy === p.id ? '#EEF2FF' : 'transparent'}"
-           onclick="PermissionsView.selectPolicy('${p.id}')">
-        <div style="font-size:13px;font-weight:600;color:var(--color-text)">${p.name}</div>
-        <div style="font-size:12px;color:var(--color-text-secondary);margin-top:2px">${p.description}</div>
-        <div style="margin-top:4px"><span class="tag" style="font-size:10px">${roleLabels[p.roleTarget] || p.roleTarget}</span></div>
-      </div>`).join('');
-
-    /* ---- Selected policy detail / assignment ---- */
-    const selPolicy = this._selectedPolicy ? policies.find(p => p.id === this._selectedPolicy) : null;
-    let policyDetail = '';
-
-    if (selPolicy) {
-      const eligibleUsers = State.getUsers().filter(u => u.role === selPolicy.roleTarget && u.companyId);
-      const policyDetail_rows = eligibleUsers.map(u => {
-        const hasPolicy = u.policies.includes(selPolicy.id);
-        const co = State.getCompany(u.companyId);
-        return `
-          <tr>
-            <td>
-              <div style="display:flex;align-items:center;gap:8px">
-                <div class="avatar avatar-sm" style="background:${avatarColor(u.role)}">${Display.initials(u)}</div>
-                <div>
-                  <div class="cell-primary">${Display.fullName(u)}</div>
-                  <div class="cell-secondary">${co ? co.name : ''}</div>
-                </div>
-              </div>
-            </td>
-            <td><span class="badge ${Display.onboardingStatusClass(u.onboardingStatus)}">${Display.onboardingStatusLabel(u.onboardingStatus)}</span></td>
-            <td>
-              <label class="checkbox-group">
-                <input type="checkbox" ${hasPolicy ? 'checked' : ''} ${!canEdit ? 'disabled' : ''}
-                  onchange="PermissionsView.toggleUserPolicy('${u.id}', '${selPolicy.id}', this.checked)" />
-                <span style="font-size:12px">${hasPolicy ? 'Assigned' : 'Not assigned'}</span>
-              </label>
-            </td>
-          </tr>`;
-      }).join('');
-
-      policyDetail = `
-        <div style="padding:16px;background:var(--color-surface);border-bottom:1px solid var(--color-border)">
-          <div style="font-size:14px;font-weight:700;color:var(--color-text)">${selPolicy.name}</div>
-          <div style="font-size:12px;color:var(--color-text-secondary);margin-top:4px">${selPolicy.description}</div>
-        </div>
-        <div style="padding:12px 16px;border-bottom:1px solid var(--color-border)">
-          <div class="section-title">Assign to Users</div>
-          ${eligibleUsers.length ? `
-            <table style="margin-top:8px;width:100%">
-              <thead><tr><th>User</th><th>Status</th><th>Assigned</th></tr></thead>
-              <tbody>${policyDetail_rows}</tbody>
-            </table>` : `<div style="font-size:12px;color:var(--color-text-muted);padding:12px 0">No ${roleLabels[selPolicy.roleTarget]} users found.</div>`}
-        </div>`;
-    }
-
     return `
       <div class="page-header">
         <div class="page-header-left">
           <div>
             <div class="page-title">Permissions & Policies</div>
-            <div class="page-subtitle">Manage role-based access and assign policies to users</div>
+            <div class="page-subtitle">Role-based access control and policy assignment</div>
           </div>
         </div>
       </div>
@@ -126,57 +115,45 @@ const PermissionsView = {
             <span>You have <strong>read-only</strong> access to permissions. Contact a System Admin to make changes.</span>
           </div>` : ''}
 
-        <div style="display:grid;grid-template-columns:300px 1fr;gap:20px;align-items:start">
+        <div class="perm-layout">
 
-          <!-- Policy list sidebar -->
-          <div>
-            <div class="card" style="padding:0;overflow:hidden">
-              <div style="padding:12px 16px;background:var(--color-surface);border-bottom:1px solid var(--color-border);display:flex;align-items:center;justify-content:space-between">
-                <div style="font-size:12px;font-weight:700;color:var(--color-text-secondary);text-transform:uppercase;letter-spacing:0.05em">Policies</div>
-                ${canEdit ? `<button class="btn btn-ghost btn-xs" onclick="PermissionsView.openCreatePolicyModal()">+ Create Policy</button>` : ''}
-              </div>
-              ${policyItems}
-            </div>
+          <!-- Role sidebar -->
+          <div class="perm-role-sidebar">
+            <div style="padding:10px 16px 6px;font-size:10px;font-weight:700;color:var(--color-text-muted);text-transform:uppercase;letter-spacing:0.07em">Roles</div>
+            ${roleSidebar}
           </div>
 
-          <!-- Matrix + Policy detail -->
-          <div>
-            <!-- Permission Matrix -->
-            <div class="card" style="padding:0;overflow:hidden;margin-bottom:20px">
-              <div style="padding:14px 20px;border-bottom:1px solid var(--color-border)">
-                <div style="font-weight:700;font-size:14px">Permission Matrix</div>
-                <div style="font-size:12px;color:var(--color-text-secondary);margin-top:2px">Base permissions by role and scope</div>
-              </div>
+          <!-- Content -->
+          <div class="perm-content">
 
-              <div class="tabs" style="padding:0 20px;margin-bottom:0;border-bottom:1px solid var(--color-border)">
-                ${roleTabs}
-              </div>
+            <!-- Policy cards section -->
+            <div style="padding:14px 20px;border-bottom:1px solid var(--color-border);display:flex;align-items:center;justify-content:space-between">
+              <div style="font-weight:700;font-size:14px">Policies — ${roleLabels[this._roleTab]}</div>
+              ${canEdit ? `<button class="btn btn-ghost btn-xs" onclick="PermissionsView.openCreatePolicyModal()">+ Create Policy</button>` : ''}
+            </div>
+            <div class="perm-policy-grid">${rolePolicyCards}</div>
 
+            <!-- Permission matrix section -->
+            <div style="border-top:1px solid var(--color-border)">
+              <div class="perm-matrix-toolbar">
+                <div class="perm-matrix-toolbar-title">Permission Matrix</div>
+                ${canEdit ? (isEditingMatrix
+                  ? `<div style="display:flex;gap:8px">
+                      <button class="btn btn-secondary btn-sm" onclick="PermissionsView.cancelMatrixEdit()">Cancel</button>
+                      <button class="btn btn-primary btn-sm" onclick="PermissionsView.confirmMatrixSave()">Save Changes</button>
+                    </div>`
+                  : `<button class="btn btn-secondary btn-sm" onclick="PermissionsView.startMatrixEdit()">Edit Permissions</button>`
+                ) : ''}
+              </div>
               <div style="padding:16px 20px;overflow-x:auto">
                 <table class="permission-matrix">
-                  <thead>
-                    <tr>
-                      <th>Scope</th>${actionHeaders}
-                    </tr>
-                  </thead>
+                  <thead><tr><th>Scope</th>${actionHeaders}</tr></thead>
                   <tbody>${matrixRows}</tbody>
                 </table>
-                ${canEdit ? `<div style="margin-top:10px;font-size:11px;color:var(--color-text-muted)">Changes take effect immediately for this session. Refresh to reset to defaults.</div>` : ''}
+                ${isEditingMatrix ? `<div style="margin-top:8px;font-size:11px;color:var(--color-warning)">Unsaved changes — click "Save Changes" to apply.</div>` : ''}
               </div>
             </div>
 
-            <!-- Selected Policy Detail -->
-            ${selPolicy ? `
-              <div class="card" style="padding:0;overflow:hidden">
-                <div style="padding:12px 20px;border-bottom:1px solid var(--color-border)">
-                  <div style="font-weight:700;font-size:14px">Policy Assignment: ${selPolicy.name}</div>
-                </div>
-                ${policyDetail}
-              </div>` : `
-              <div class="card" style="padding:40px;text-align:center;color:var(--color-text-muted)">
-                <div style="margin-bottom:12px;opacity:0.4"><svg width="36" height="36" viewBox="0 0 36 36" fill="none" stroke="currentColor" stroke-width="1.5"><rect x="6" y="16" width="24" height="18" rx="2"/><path d="M11 16v-5a7 7 0 0 1 14 0v5"/><circle cx="18" cy="25" r="2"/></svg></div>
-                <div style="font-size:13px">Select a policy from the list to manage user assignments</div>
-              </div>`}
           </div>
         </div>
       </div>
@@ -185,17 +162,85 @@ const PermissionsView = {
 
   setRoleTab(role) {
     this._roleTab = role;
+    this._expandedPolicy = null;
+    this._matrixEditing  = false;
+    this._matrixPending  = {};
     App.renderView('/permissions');
   },
 
-  selectPolicy(policyId) {
-    if (this._selectedPolicy === policyId) {
-      this._selectedPolicy = null;
-    } else {
-      this._selectedPolicy = policyId;
-      const policy = State.getPolicies().find(p => p.id === policyId);
-      if (policy) this._roleTab = policy.roleTarget;
-    }
+  togglePolicyCard(policyId) {
+    this._expandedPolicy = this._expandedPolicy === policyId ? null : policyId;
+    App.renderView('/permissions');
+  },
+
+  _filterPolicyUsers(input, policyId) {
+    const q = input.value.toLowerCase();
+    const container = document.getElementById(`policy-users-${policyId}`);
+    if (!container) return;
+    container.querySelectorAll('.perm-user-row').forEach(row => {
+      const name = row.querySelector('[style*="font-weight"]')?.textContent.toLowerCase() || '';
+      row.style.display = name.includes(q) ? '' : 'none';
+    });
+  },
+
+  startMatrixEdit() {
+    this._matrixEditing = true;
+    this._matrixPending = {};
+    App.renderView('/permissions');
+  },
+
+  cancelMatrixEdit() {
+    this._matrixEditing = false;
+    this._matrixPending = {};
+    App.renderView('/permissions');
+  },
+
+  stagePerm(role, scope, action, value) {
+    this._matrixPending[`${role}-${scope}-${action}`] = value;
+  },
+
+  confirmMatrixSave() {
+    const roleLabels = { sys_admin: 'System Admin', operator: 'Platform Operator', prog_admin: 'Program Admin', lo: 'Loan Officer', lp: 'Loan Processor', investor: 'Investor' };
+    const role    = this._roleTab;
+    const pending = this._matrixPending;
+    const count   = Object.keys(pending).length;
+
+    if (count === 0) { this.cancelMatrixEdit(); return; }
+
+    const mc = document.getElementById('permissions-modal-container');
+    if (!mc) return;
+    mc.innerHTML = `
+      <div class="modal-overlay">
+        <div class="modal" style="max-width:420px">
+          <div class="modal-header">
+            <div class="modal-title">Apply Permission Changes?</div>
+          </div>
+          <div class="modal-body">
+            <p style="font-size:13px;color:var(--color-text-secondary)">
+              This will update <strong>${count} permission${count !== 1 ? 's' : ''}</strong> for the
+              <strong>${roleLabels[role]}</strong> role. Changes take effect immediately for this session.
+            </p>
+          </div>
+          <div class="modal-footer">
+            <button class="btn btn-secondary" onclick="PermissionsView.closeModal()">Cancel</button>
+            <button class="btn btn-primary" onclick="PermissionsView._applyMatrixSave()">Confirm</button>
+          </div>
+        </div>
+      </div>`;
+  },
+
+  _applyMatrixSave() {
+    Object.entries(this._matrixPending).forEach(([key, value]) => {
+      const parts  = key.split('-');
+      const role   = parts[0];
+      const scope  = parts[1];
+      const action = parts.slice(2).join('-');
+      State.setPermission(role, scope, action, value);
+    });
+    this._matrixEditing = false;
+    this._matrixPending = {};
+    this.closeModal();
+    UsersView.showSuccess('Permission matrix updated');
     App.renderView('/permissions');
   },
 
@@ -208,7 +253,7 @@ const PermissionsView = {
     if (!mc) return;
     mc.innerHTML = `
       <div class="modal-overlay" onclick="if(event.target===this)PermissionsView.closeModal()">
-        <div class="modal modal-lg">
+        <div class="modal">
           <div class="modal-header">
             <div>
               <div class="modal-title">Create Custom Policy</div>
@@ -230,7 +275,7 @@ const PermissionsView = {
                 <label>Role Target *</label>
                 <select class="select-input" id="cp-role">
                   <option value="">Select role…</option>
-                  ${Object.entries(roleLabels).map(([k,v]) => `<option value="${k}">${v}</option>`).join('')}
+                  ${Object.entries(roleLabels).map(([k,v]) => `<option value="${k}" ${k===this._roleTab?'selected':''}>${v}</option>`).join('')}
                 </select>
               </div>
             </div>
@@ -244,12 +289,12 @@ const PermissionsView = {
   },
 
   submitCreatePolicy() {
-    const name       = document.getElementById('cp-name')?.value.trim();
+    const name        = document.getElementById('cp-name')?.value.trim();
     const description = document.getElementById('cp-desc')?.value.trim() || '';
-    const roleTarget = document.getElementById('cp-role')?.value;
+    const roleTarget  = document.getElementById('cp-role')?.value;
     if (!name || !roleTarget) { alert('Name and Role Target are required.'); return; }
     const policy = State.addPolicy({ name, description, roleTarget });
-    this._selectedPolicy = policy.id;
+    this._expandedPolicy = policy.id;
     this._roleTab = roleTarget;
     this.closeModal();
     UsersView.showSuccess(`Policy "${name}" created`);
@@ -259,12 +304,6 @@ const PermissionsView = {
   closeModal() {
     const mc = document.getElementById('permissions-modal-container');
     if (mc) mc.innerHTML = '';
-  },
-
-  togglePerm(role, scope, action, value) {
-    State.setPermission(role, scope, action, value);
-    // Don't re-render to avoid losing checkbox state mid-edit
-    UsersView.showSuccess(`Permission updated: ${scope} · ${action} = ${value ? 'on' : 'off'}`);
   },
 
   toggleUserPolicy(userId, policyId, assign) {

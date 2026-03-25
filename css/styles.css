@@ -2,7 +2,7 @@
    HOMIUM ORIGINATOR FLOW — Design System
    ============================================================ */
 
-@import url('https://fonts.googleapis.com/css2?family=Taviraj:wght@300;400;500;600;700&family=Ubuntu:wght@300;400;500;700&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=IvyPresto+Display:ital,wght@0,300;0,400;0,700;1,300&family=Ubuntu:wght@300;400;700&display=swap');
 
 /* ---- Variables ---- */
 :root {
@@ -13,9 +13,10 @@
   --color-accent-dark:   #2D5C3D;
   --color-accent-light:  #5A9470;
 
+  --color-bg:         #FFFFFF;
   --color-surface:    #F7F6F1;
   --color-card:       #FFFFFF;
-  --color-border:     #E2E8E0;
+  --color-border:     #E5E5E0;
   --color-border-light: #EDEEE9;
 
   --color-text:       #1A1E1A;
@@ -50,7 +51,7 @@
   --header-height: 56px;
 
   --font:         'Ubuntu', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
-  --font-heading: 'Taviraj', Georgia, 'Times New Roman', serif;
+  --font-heading: 'IvyPresto Display', Georgia, 'Times New Roman', serif;
   --font-mono:    'SF Mono', 'Fira Code', monospace;
 }
 
@@ -60,9 +61,10 @@ html { font-size: 14px; }
 body {
   font-family: var(--font);
   font-size: 14px;
+  font-weight: 300;
   line-height: 1.5;
   color: var(--color-text);
-  background: var(--color-surface);
+  background: var(--color-bg);
   -webkit-font-smoothing: antialiased;
 }
 a { color: inherit; text-decoration: none; }
@@ -451,13 +453,13 @@ img { max-width: 100%; display: block; }
 .stat-icon {
   width: 32px;
   height: 32px;
-  border-radius: var(--radius);
   display: flex;
   align-items: center;
   justify-content: center;
+  color: var(--color-text-muted);
 }
 
-.stat-icon svg { width: 16px; height: 16px; }
+.stat-icon svg { width: 18px; height: 18px; }
 
 .stat-value {
   font-family: var(--font-heading);
@@ -514,7 +516,7 @@ thead th {
   padding: 10px 16px;
   text-align: left;
   font-size: 11px;
-  font-weight: 600;
+  font-weight: 700;
   color: var(--color-text-secondary);
   text-transform: uppercase;
   letter-spacing: 0.05em;
@@ -535,6 +537,7 @@ tbody tr.row-selected { background: color-mix(in srgb, var(--color-primary) 6%, 
 tbody td {
   padding: 12px 16px;
   font-size: 13px;
+  font-weight: 300;
   color: var(--color-text);
   vertical-align: middle;
 }
@@ -659,7 +662,7 @@ tbody td {
 
 .form-group { display: flex; flex-direction: column; gap: 6px; }
 
-label { font-size: 12px; font-weight: 600; color: var(--color-text); }
+label { font-size: 12px; font-weight: 700; color: var(--color-text); }
 
 .input, .select-input, textarea {
   width: 100%;
@@ -1273,86 +1276,76 @@ label { font-size: 12px; font-weight: 600; color: var(--color-text); }
 .role-select-body {
   flex: 1;
   padding: 48px 40px;
-  max-width: 1000px;
+  max-width: 1100px;
   margin: 0 auto;
   width: 100%;
 }
 
 .role-select-title {
   font-family: var(--font-heading);
-  font-size: 26px;
-  font-weight: 600;
+  font-size: 28px;
+  font-weight: 400;
   color: var(--color-text);
   margin-bottom: 6px;
-  letter-spacing: -0.02em;
+  letter-spacing: -0.01em;
+  text-align: center;
 }
 
-.role-select-subtitle { font-size: 14px; color: var(--color-text-secondary); margin-bottom: 32px; }
+.role-select-subtitle { font-size: 14px; color: var(--color-text-secondary); margin-bottom: 32px; text-align: center; }
 
-.role-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap: 16px; }
+.role-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(260px, 1fr)); gap: 12px; }
 
 .role-card {
   background: var(--color-card);
   border: 1.5px solid var(--color-border);
   border-radius: var(--radius-xl);
-  padding: 24px;
+  padding: 20px 24px;
   cursor: pointer;
   transition: all 0.2s;
   display: flex;
   flex-direction: column;
-  gap: 12px;
+  gap: 8px;
   position: relative;
-  overflow: hidden;
-}
-
-.role-card::before {
-  content: '';
-  position: absolute;
-  top: 0;
-  left: 0;
-  right: 0;
-  height: 3px;
-  background: var(--role-color, var(--color-primary));
-  opacity: 0;
-  transition: opacity 0.2s;
 }
 
 .role-card:hover {
-  border-color: var(--role-color, var(--color-primary));
+  border-color: var(--color-primary);
   box-shadow: 0 4px 20px rgba(0,0,0,0.09);
-  transform: translateY(-2px);
+  transform: translateY(-1px);
 }
-
-.role-card:hover::before { opacity: 1; }
-
-.role-card-icon {
-  width: 44px;
-  height: 44px;
-  border-radius: var(--radius-lg);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  background: var(--role-bg, var(--color-surface));
-}
-
-.role-card-icon svg { width: 22px; height: 22px; }
 
 .role-card-title {
   font-family: var(--font-heading);
   font-size: 15px;
   font-weight: 600;
   color: var(--color-text);
+  margin-top: 2px;
 }
 
-.role-card-desc { font-size: 12px; color: var(--color-text-secondary); line-height: 1.5; }
+.role-card-desc { font-size: 13px; color: var(--color-text-secondary); line-height: 1.6; }
 
+.role-scope-tag {
+  display: inline-block;
+  font-size: 10px;
+  font-weight: 700;
+  color: var(--color-text-muted);
+  text-transform: uppercase;
+  letter-spacing: 0.07em;
+  background: var(--color-surface);
+  border: 1px solid var(--color-border);
+  border-radius: 3px;
+  padding: 1px 6px;
+  align-self: flex-start;
+}
+
+/* Legacy role-card-scope kept for compat */
 .role-card-scope {
   display: flex;
   align-items: center;
   gap: 6px;
   font-size: 11px;
   font-weight: 600;
-  color: var(--role-color, var(--color-primary));
+  color: var(--color-primary);
   text-transform: uppercase;
   letter-spacing: 0.05em;
 }
@@ -1419,6 +1412,249 @@ label { font-size: 12px; font-weight: 600; color: var(--color-text); }
 .alert-warning { background: var(--color-warning-bg); color: #92400E; border: 1px solid #FDE68A; }
 .alert-success { background: var(--color-success-bg); color: #14532D; border: 1px solid #BBF7D0; }
 .alert-danger  { background: var(--color-danger-bg);  color: #7F1D1D; border: 1px solid #FECACA; }
+
+/* ============================================================
+   ROLE SELECTOR — two-column layout
+   ============================================================ */
+
+.role-select-layout {
+  display: grid;
+  grid-template-columns: 1fr 280px;
+  gap: 32px;
+  align-items: start;
+}
+
+.role-demo-box {
+  background: var(--color-surface);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-xl);
+  padding: 24px;
+  position: sticky;
+  top: 24px;
+}
+
+.role-demo-box-title {
+  font-size: 12px;
+  font-weight: 700;
+  color: var(--color-text-muted);
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  margin-bottom: 8px;
+}
+
+.role-demo-box p {
+  font-size: 13px;
+  color: var(--color-text-secondary);
+  line-height: 1.6;
+}
+
+.role-grid-2col { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+
+/* ============================================================
+   VERTICAL FLOWCHART (profile onboarding progress)
+   ============================================================ */
+
+.vflow {
+  display: flex;
+  flex-direction: column;
+  gap: 0;
+  padding: 4px 0;
+}
+
+.vflow-item {
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
+  position: relative;
+}
+
+.vflow-line {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  flex-shrink: 0;
+  width: 20px;
+}
+
+.vflow-dot {
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  border: 2px solid var(--color-border);
+  background: var(--color-card);
+  flex-shrink: 0;
+  margin-top: 4px;
+  z-index: 1;
+  position: relative;
+}
+
+.vflow-dot.vf-complete { background: var(--color-success); border-color: var(--color-success); }
+.vflow-dot.vf-active   { background: var(--color-primary); border-color: var(--color-primary); box-shadow: 0 0 0 3px rgba(29,61,42,0.15); }
+.vflow-dot.vf-failed   { background: var(--color-danger);  border-color: var(--color-danger); }
+
+.vflow-connector {
+  width: 2px;
+  flex: 1;
+  min-height: 20px;
+  background: var(--color-border);
+  margin: 2px 0;
+}
+
+.vflow-connector.vf-done { background: var(--color-success); }
+
+.vflow-label {
+  font-size: 13px;
+  font-weight: 400;
+  color: var(--color-text-muted);
+  padding: 0 0 20px;
+  line-height: 1.4;
+}
+
+.vflow-label.vf-complete { color: var(--color-success); font-weight: 500; }
+.vflow-label.vf-active   { color: var(--color-primary); font-weight: 700; }
+.vflow-label.vf-failed   { color: var(--color-danger);  font-weight: 500; }
+
+/* Last item — no bottom padding */
+.vflow-item:last-child .vflow-label { padding-bottom: 4px; }
+
+/* ============================================================
+   PERMISSIONS — policy cards
+   ============================================================ */
+
+.perm-layout {
+  display: grid;
+  grid-template-columns: 200px 1fr;
+  gap: 0;
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-lg);
+  overflow: hidden;
+  background: var(--color-card);
+}
+
+.perm-role-sidebar {
+  border-right: 1px solid var(--color-border);
+  background: var(--color-surface);
+}
+
+.perm-role-item {
+  padding: 10px 16px;
+  font-size: 13px;
+  font-weight: 500;
+  color: var(--color-text-secondary);
+  cursor: pointer;
+  border-bottom: 1px solid var(--color-border-light);
+  transition: all 0.12s;
+}
+
+.perm-role-item:hover { background: var(--color-card); color: var(--color-text); }
+.perm-role-item.active { background: var(--color-card); color: var(--color-primary); font-weight: 700; border-left: 3px solid var(--color-primary); padding-left: 13px; }
+
+.perm-content { overflow: hidden; }
+
+.perm-policy-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
+  gap: 12px;
+  padding: 16px 20px;
+}
+
+.perm-policy-card {
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-lg);
+  overflow: hidden;
+  transition: border-color 0.15s;
+}
+
+.perm-policy-card.expanded { border-color: var(--color-primary); }
+
+.perm-policy-card-header {
+  padding: 12px 14px;
+  cursor: pointer;
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 8px;
+  background: var(--color-card);
+  transition: background 0.1s;
+}
+
+.perm-policy-card-header:hover { background: var(--color-surface); }
+
+.perm-policy-name {
+  font-size: 13px;
+  font-weight: 700;
+  color: var(--color-text);
+}
+
+.perm-policy-desc {
+  font-size: 11px;
+  color: var(--color-text-secondary);
+  margin-top: 2px;
+  line-height: 1.4;
+}
+
+.perm-policy-meta {
+  font-size: 11px;
+  color: var(--color-text-muted);
+  margin-top: 4px;
+}
+
+.perm-policy-chevron {
+  font-size: 11px;
+  color: var(--color-text-muted);
+  flex-shrink: 0;
+  transition: transform 0.15s;
+}
+
+.perm-policy-card.expanded .perm-policy-chevron { transform: rotate(180deg); }
+
+.perm-policy-body {
+  display: none;
+  padding: 12px 14px;
+  border-top: 1px solid var(--color-border);
+  background: var(--color-surface);
+}
+
+.perm-policy-card.expanded .perm-policy-body { display: block; }
+
+.perm-user-search {
+  width: 100%;
+  padding: 5px 10px;
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius);
+  font-size: 12px;
+  outline: none;
+  margin-bottom: 8px;
+  background: var(--color-card);
+}
+
+.perm-user-search:focus { border-color: var(--color-accent); }
+
+.perm-user-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 5px 0;
+  font-size: 12px;
+  border-bottom: 1px solid var(--color-border-light);
+}
+
+.perm-user-row:last-child { border-bottom: none; }
+
+/* Matrix save+confirm */
+.perm-matrix-toolbar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 10px 20px;
+  border-bottom: 1px solid var(--color-border);
+}
+
+.perm-matrix-toolbar-title {
+  font-weight: 700;
+  font-size: 13px;
+  color: var(--color-text);
+}
 
 /* ============================================================
    BRANCHES — sub-branch indentation
