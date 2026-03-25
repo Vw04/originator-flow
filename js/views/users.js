@@ -52,17 +52,11 @@ const UsersView = {
               </div>
             </div>
           </td>
-          <td><span class="role-badge ${Display.roleClass(u.role)}">${Display.roleName(u.role)}</span></td>
+          <td><span class="role-chip ${Display.roleClass(u.role)}">${Display.roleName(u.role)}</span></td>
           ${role !== 'prog_admin' ? `<td class="text-secondary">${co ? co.name : '—'}</td>` : ''}
           <td class="text-secondary">${br ? br.name : '—'}</td>
-          <td><span class="badge ${Display.onboardingStatusClass(u.onboardingStatus)}">${Display.onboardingStatusLabel(u.onboardingStatus)}</span></td>
+          <td><span class="status-pill ${Display.onboardingStatusClass(u.onboardingStatus)}"><span class="status-dot"></span>${Display.onboardingStatusLabel(u.onboardingStatus)}</span></td>
           <td class="text-secondary">${u.lastLogin ? Display.date(u.lastLogin) : '<span class="text-muted">Never</span>'}</td>
-          <td>
-            <div style="display:flex;gap:4px">
-              <button class="btn btn-ghost btn-xs" onclick="event.stopPropagation();ProfileView.open('${u.id}')" title="View profile">👤</button>
-              ${canEdit ? `<button class="btn btn-ghost btn-xs" onclick="event.stopPropagation();UsersView.advanceStatus('${u.id}')" title="Advance onboarding">→</button>` : ''}
-            </div>
-          </td>
         </tr>`;
     }).join('');
 
@@ -123,7 +117,6 @@ const UsersView = {
                 <th>Branch</th>
                 <th>Status</th>
                 <th>Last Login</th>
-                <th></th>
               </tr></thead>
               <tbody>${rows}</tbody>
             </table>
@@ -131,7 +124,7 @@ const UsersView = {
               <span class="table-count">${users.length} user${users.length !== 1 ? 's' : ''}</span>
             </div>` : `
             <div class="table-empty">
-              <div class="table-empty-icon">👥</div>
+              <div class="table-empty-icon"><svg width="40" height="40" viewBox="0 0 40 40" fill="none" stroke="currentColor" stroke-width="1.5" opacity="0.4"><circle cx="15" cy="12" r="6"/><path d="M2 35c0-7.18 5.82-13 13-13s13 5.82 13 13"/><circle cx="30" cy="12" r="5"/><path d="M38 34c0-5.52-3.58-10.23-8.5-11.85"/></svg></div>
               <p>No users match your filters.</p>
               ${Object.values(f).some(v=>v) ? `<button class="btn btn-secondary btn-sm" onclick="UsersView.clearFilters()">Clear filters</button>` : ''}
             </div>`}
@@ -186,7 +179,7 @@ const UsersView = {
 
           <div class="modal-body">
             <div class="system-note">
-              <span class="system-note-icon">✉️</span>
+              <span class="system-note-icon"><svg width="14" height="14" viewBox="0 0 14 14" fill="none" stroke="currentColor" stroke-width="1.5"><rect x="1" y="3" width="12" height="9" rx="1"/><path d="M1 3l6 5 6-5"/></svg></span>
               <span>After submitting, the system will send a welcome email with a magic link. The user will follow the link to complete email verification and set up their account.</span>
             </div>
 

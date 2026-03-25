@@ -176,6 +176,13 @@ const State = (() => {
       }
     },
 
+    addPolicy(data) {
+      const policy = { id: `policy-${Date.now()}`, ...data };
+      _policies.push(policy);
+      notify();
+      return policy;
+    },
+
     /* ---- Activity ---- */
     getActivity: () => [..._activity].slice(0, 20),
 

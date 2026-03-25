@@ -16,22 +16,7 @@ const ProfileView = {
     const policies = u.policies.map(pid => State.getPolicies().find(p => p.id === pid)).filter(Boolean);
     const loans = State.getLoansByLO(u.id);
 
-    const isLO = u.role === 'lo';
-    const steps = [
-      { key: 'invited',              label: 'Invite Sent',    complete: true },
-      { key: 'email_verified',       label: 'Email Verified', complete: ['email_verified','2fa_complete','verification_pending','active'].includes(u.onboardingStatus) },
-      { key: '2fa_complete',         label: '2FA Setup',      complete: ['2fa_complete','verification_pending','active'].includes(u.onboardingStatus) },
-      ...(isLO ? [{ key: 'verification_pending', label: 'KYC Verified', complete: u.onboardingStatus === 'active' }] : []),
-      { key: 'active',               label: 'Active',         complete: u.onboardingStatus === 'active' },
-    ];
-
-    const stepBars = steps.map(s => `
-      <div style="display:flex;align-items:center;gap:6px">
-        <div style="width:16px;height:16px;border-radius:50%;background:${s.complete ? 'var(--color-success)' : 'var(--color-border)'};display:flex;align-items:center;justify-content:center;flex-shrink:0">
-          ${s.complete ? '<span style="color:#fff;font-size:9px;font-weight:700">✓</span>' : ''}
-        </div>
-        <span style="font-size:12px;color:${s.complete ? 'var(--color-text)' : 'var(--color-text-muted)'};font-weight:${s.complete ? '500' : '400'}">${s.label}</span>
-      </div>`).join('');
+    const stepBars = this._renderFlowchart(u, 'compact');
 
     const loanRows = loans.slice(0, 3).map(l => `
       <div style="display:flex;align-items:center;justify-content:space-between;padding:8px 0;border-bottom:1px solid var(--color-border-light)">
@@ -62,8 +47,8 @@ const ProfileView = {
             <div>
               <div class="modal-title">${Display.fullName(u)}</div>
               <div style="margin-top:2px;display:flex;gap:6px;flex-wrap:wrap">
-                <span class="role-badge ${Display.roleClass(u.role)}">${Display.roleName(u.role)}</span>
-                <span class="badge ${Display.onboardingStatusClass(u.onboardingStatus)}">${Display.onboardingStatusLabel(u.onboardingStatus)}</span>
+                <span class="role-chip ${Display.roleClass(u.role)}">${Display.roleName(u.role)}</span>
+                <span class="status-pill ${Display.onboardingStatusClass(u.onboardingStatus)}"><span class="status-dot"></span>${Display.onboardingStatusLabel(u.onboardingStatus)}</span>
               </div>
             </div>
           </div>
@@ -86,7 +71,7 @@ const ProfileView = {
 
           <!-- Onboarding progress -->
           <div class="section-title">Onboarding Progress</div>
-          <div style="display:flex;flex-direction:column;gap:8px;margin-bottom:20px">
+          <div style="margin-bottom:20px">
             ${stepBars}
           </div>
 
@@ -237,8 +222,8 @@ const ProfileView = {
             <div>
               <div style="font-size:18px;font-weight:700;letter-spacing:-0.01em">${Display.fullName(u)}</div>
               <div style="margin-top:4px;display:flex;gap:8px">
-                <span class="role-badge ${Display.roleClass(u.role)}">${Display.roleName(u.role)}</span>
-                <span class="badge ${Display.onboardingStatusClass(u.onboardingStatus)}">${Display.onboardingStatusLabel(u.onboardingStatus)}</span>
+                <span class="role-chip ${Display.roleClass(u.role)}">${Display.roleName(u.role)}</span>
+                <span class="status-pill ${Display.onboardingStatusClass(u.onboardingStatus)}"><span class="status-dot"></span>${Display.onboardingStatusLabel(u.onboardingStatus)}</span>
               </div>
             </div>
           </div>
@@ -256,28 +241,49 @@ const ProfileView = {
         </div>
 
         <div class="card">
-          <div class="card-title" style="margin-bottom:12px">Account Onboarding</div>
-          ${this._renderProgressChecklist(u)}
+          <div class="card-title" style="margin-bottom:16px">Account Onboarding</div>
+          ${this._renderFlowchart(u)}
         </div>
       </div>`;
   },
 
-  _renderProgressChecklist(u) {
-    const isLO = u.role === 'lo';
-    const steps = [
-      { label: 'Email Verified',   complete: u.onboardingStatus !== 'invited' },
-      { label: '2FA Setup',        complete: ['2fa_complete','verification_pending','active'].includes(u.onboardingStatus) },
-      ...(isLO ? [{ label: 'SecuritizeID KYC', complete: u.onboardingStatus === 'active' }] : []),
-      { label: 'Account Active',   complete: u.onboardingStatus === 'active' },
+  _renderFlowchart(u, variant) {
+    const isLO   = u.role === 'lo';
+    const status = u.onboardingStatus;
+    const isFailed = status === 'verification_failed';
+
+    const ORDER = ['invited', 'email_verified', '2fa_complete', 'verification_pending', 'active'];
+    const currentIdx = ORDER.indexOf(status);
+
+    const allSteps = [
+      { key: 'invited',              label: 'Invited' },
+      { key: 'email_verified',       label: 'Email Verified' },
+      { key: '2fa_complete',         label: '2FA' },
+      ...(isLO ? [{ key: 'verification_pending', label: 'KYC' }] : []),
+      { key: 'active',               label: 'Active' },
     ];
 
-    return steps.map(s => `
-      <div style="display:flex;align-items:center;gap:10px;padding:8px 0;border-bottom:1px solid var(--color-border-light)">
-        <div style="width:20px;height:20px;border-radius:50%;background:${s.complete ? 'var(--color-success)' : '#E2E8F0'};display:flex;align-items:center;justify-content:center;flex-shrink:0">
-          <span style="color:${s.complete ? '#fff' : '#94A3B8'};font-size:11px;font-weight:700">${s.complete ? '✓' : ''}</span>
-        </div>
-        <span style="font-size:13px;color:${s.complete ? 'var(--color-text)' : 'var(--color-text-muted)'};font-weight:${s.complete ? '500' : '400'}">${s.label}</span>
-        ${s.complete ? '' : '<span style="margin-left:auto;font-size:11px;color:var(--color-warning);font-weight:600">Pending</span>'}
-      </div>`).join('');
+    const nodes = allSteps.map((s, i) => {
+      const stepIdx = ORDER.indexOf(s.key);
+      let state;
+      if (status === 'active')           state = 'fc-complete';
+      else if (isFailed && s.key === 'verification_pending') state = 'fc-failed';
+      else if (stepIdx < currentIdx)     state = 'fc-complete';
+      else if (stepIdx === currentIdx)   state = 'fc-active';
+      else                               state = '';
+
+      const node = `
+        <div class="flowchart-node">
+          <div class="flowchart-circle ${state}">
+            ${state === 'fc-complete' ? `<svg width="10" height="10" viewBox="0 0 10 10" fill="none" stroke="white" stroke-width="2"><path d="M2 5l2.5 2.5 4-4"/></svg>` : `<span style="font-size:9px;font-weight:700">${i+1}</span>`}
+          </div>
+          <div class="flowchart-label ${state}">${s.label}</div>
+        </div>`;
+
+      const arrow = i < allSteps.length - 1 ? `<div class="flowchart-arrow ${state === 'fc-complete' ? 'fc-done' : ''}"></div>` : '';
+      return node + arrow;
+    }).join('');
+
+    return `<div class="flowchart">${nodes}</div>`;
   },
 };

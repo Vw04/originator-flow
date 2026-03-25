@@ -122,7 +122,7 @@ const PermissionsView = {
       <div class="page-body">
         ${!canEdit ? `
           <div class="alert alert-info">
-            <span class="alert-icon">ℹ️</span>
+            <span class="alert-icon"><svg width="14" height="14" viewBox="0 0 14 14" fill="none" stroke="currentColor" stroke-width="1.5"><circle cx="7" cy="7" r="6"/><path d="M7 6v4M7 4.5v.5"/></svg></span>
             <span>You have <strong>read-only</strong> access to permissions. Contact a System Admin to make changes.</span>
           </div>` : ''}
 
@@ -131,8 +131,9 @@ const PermissionsView = {
           <!-- Policy list sidebar -->
           <div>
             <div class="card" style="padding:0;overflow:hidden">
-              <div style="padding:12px 16px;background:var(--color-surface);border-bottom:1px solid var(--color-border)">
+              <div style="padding:12px 16px;background:var(--color-surface);border-bottom:1px solid var(--color-border);display:flex;align-items:center;justify-content:space-between">
                 <div style="font-size:12px;font-weight:700;color:var(--color-text-secondary);text-transform:uppercase;letter-spacing:0.05em">Policies</div>
+                ${canEdit ? `<button class="btn btn-ghost btn-xs" onclick="PermissionsView.openCreatePolicyModal()">+ Create Policy</button>` : ''}
               </div>
               ${policyItems}
             </div>
@@ -173,12 +174,13 @@ const PermissionsView = {
                 ${policyDetail}
               </div>` : `
               <div class="card" style="padding:40px;text-align:center;color:var(--color-text-muted)">
-                <div style="font-size:28px;margin-bottom:8px">🔐</div>
+                <div style="margin-bottom:12px;opacity:0.4"><svg width="36" height="36" viewBox="0 0 36 36" fill="none" stroke="currentColor" stroke-width="1.5"><rect x="6" y="16" width="24" height="18" rx="2"/><path d="M11 16v-5a7 7 0 0 1 14 0v5"/><circle cx="18" cy="25" r="2"/></svg></div>
                 <div style="font-size:13px">Select a policy from the list to manage user assignments</div>
               </div>`}
           </div>
         </div>
-      </div>`;
+      </div>
+      <div id="permissions-modal-container"></div>`;
   },
 
   setRoleTab(role) {
@@ -187,8 +189,76 @@ const PermissionsView = {
   },
 
   selectPolicy(policyId) {
-    this._selectedPolicy = this._selectedPolicy === policyId ? null : policyId;
+    if (this._selectedPolicy === policyId) {
+      this._selectedPolicy = null;
+    } else {
+      this._selectedPolicy = policyId;
+      const policy = State.getPolicies().find(p => p.id === policyId);
+      if (policy) this._roleTab = policy.roleTarget;
+    }
     App.renderView('/permissions');
+  },
+
+  openCreatePolicyModal() {
+    const roleLabels = {
+      sys_admin: 'System Admin', operator: 'Platform Operator', prog_admin: 'Program Admin',
+      lo: 'Loan Officer', lp: 'Loan Processor', investor: 'Investor',
+    };
+    const mc = document.getElementById('permissions-modal-container');
+    if (!mc) return;
+    mc.innerHTML = `
+      <div class="modal-overlay" onclick="if(event.target===this)PermissionsView.closeModal()">
+        <div class="modal modal-lg">
+          <div class="modal-header">
+            <div>
+              <div class="modal-title">Create Custom Policy</div>
+              <div class="modal-subtitle">Define a new permission policy and assign it to users</div>
+            </div>
+            <button class="modal-close" onclick="PermissionsView.closeModal()">×</button>
+          </div>
+          <div class="modal-body">
+            <div class="form-grid">
+              <div class="form-group form-full">
+                <label>Policy Name *</label>
+                <input class="input" id="cp-name" placeholder="e.g. LO Read-Only" />
+              </div>
+              <div class="form-group form-full">
+                <label>Description</label>
+                <input class="input" id="cp-desc" placeholder="Brief description of this policy" />
+              </div>
+              <div class="form-group form-full">
+                <label>Role Target *</label>
+                <select class="select-input" id="cp-role">
+                  <option value="">Select role…</option>
+                  ${Object.entries(roleLabels).map(([k,v]) => `<option value="${k}">${v}</option>`).join('')}
+                </select>
+              </div>
+            </div>
+          </div>
+          <div class="modal-footer">
+            <button class="btn btn-secondary" onclick="PermissionsView.closeModal()">Cancel</button>
+            <button class="btn btn-primary" onclick="PermissionsView.submitCreatePolicy()">Create Policy</button>
+          </div>
+        </div>
+      </div>`;
+  },
+
+  submitCreatePolicy() {
+    const name       = document.getElementById('cp-name')?.value.trim();
+    const description = document.getElementById('cp-desc')?.value.trim() || '';
+    const roleTarget = document.getElementById('cp-role')?.value;
+    if (!name || !roleTarget) { alert('Name and Role Target are required.'); return; }
+    const policy = State.addPolicy({ name, description, roleTarget });
+    this._selectedPolicy = policy.id;
+    this._roleTab = roleTarget;
+    this.closeModal();
+    UsersView.showSuccess(`Policy "${name}" created`);
+    App.renderView('/permissions');
+  },
+
+  closeModal() {
+    const mc = document.getElementById('permissions-modal-container');
+    if (mc) mc.innerHTML = '';
   },
 
   togglePerm(role, scope, action, value) {

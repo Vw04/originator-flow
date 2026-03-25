@@ -85,7 +85,7 @@ const CompaniesView = {
               <span class="table-count">${companies.length} organization${companies.length !== 1 ? 's' : ''}</span>
             </div>` : `
             <div class="table-empty">
-              <div class="table-empty-icon">🏢</div>
+              <div class="table-empty-icon"><svg width="40" height="40" viewBox="0 0 40 40" fill="none" stroke="currentColor" stroke-width="1.5" opacity="0.4"><rect x="4" y="8" width="32" height="28" rx="2"/><path d="M12 8V5a2 2 0 0 1 2-2h12a2 2 0 0 1 2 2v3"/><path d="M12 20h16M12 28h10"/></svg></div>
               <p>No organizations match your search.</p>
             </div>`}
         </div>
@@ -128,7 +128,7 @@ const CompaniesView = {
             <div class="cell-primary">${Display.fullName(u)}</div>
           </div>
         </td>
-        <td><span class="role-badge ${Display.roleClass(u.role)}">${Display.roleName(u.role)}</span></td>
+        <td><span class="role-chip ${Display.roleClass(u.role)}">${Display.roleName(u.role)}</span></td>
         <td><span class="badge ${Display.onboardingStatusClass(u.onboardingStatus)}">${Display.onboardingStatusLabel(u.onboardingStatus)}</span></td>
       </tr>`).join('');
 
