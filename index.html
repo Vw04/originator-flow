@@ -61,7 +61,7 @@
       document.addEventListener('DOMContentLoaded', function() {
         var gate = document.getElementById('auth-gate');
         if (gate) gate.classList.add('hidden');
-        document.getElementById('app').style.display = '';
+        document.getElementById('app').style.display = 'block';
       });
     }
     function homiumUnlock() {
@@ -71,7 +71,7 @@
       if (pw === 'Homium2026!') {
         sessionStorage.setItem('homium_auth', 'ok');
         document.getElementById('auth-gate').classList.add('hidden');
-        document.getElementById('app').style.display = '';
+        document.getElementById('app').style.display = 'block';
       } else {
         input.classList.add('error');
         err.textContent = 'Incorrect password. Please try again.';
