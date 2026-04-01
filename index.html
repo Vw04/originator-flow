@@ -70,8 +70,7 @@
       var err = document.getElementById('auth-err');
       if (pw === 'Homium2026!') {
         sessionStorage.setItem('homium_auth', 'ok');
-        document.getElementById('auth-gate').classList.add('hidden');
-        document.getElementById('app').style.display = 'block';
+        location.reload();
       } else {
         input.classList.add('error');
         err.textContent = 'Incorrect password. Please try again.';
