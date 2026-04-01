@@ -6,8 +6,103 @@
   <title>Homium Originator Platform</title>
   <link rel="stylesheet" href="css/styles.css" />
   <link rel="icon" type="image/png" href="assets/branding/HomiumLogo_0721_Icon (Blue).png" />
+  <style>
+    #app { display: none; }
+    #auth-gate {
+      position: fixed; inset: 0; z-index: 9999;
+      background: #F2F1EC;
+      display: flex; flex-direction: column;
+      align-items: center; justify-content: center;
+      padding: 24px;
+      font-family: 'Ubuntu', 'Inter', system-ui, sans-serif;
+    }
+    #auth-gate.hidden { display: none; }
+    .ag-card {
+      background: #fff; border: 1px solid #D8D6CD;
+      border-radius: 12px; padding: 40px 36px;
+      width: 100%; max-width: 380px;
+      box-shadow: 0 2px 12px rgba(0,0,0,0.07);
+      text-align: center;
+    }
+    .ag-logo { margin-bottom: 28px; }
+    .ag-label {
+      font-size: 11px; font-weight: 700; letter-spacing: 0.08em;
+      text-transform: uppercase; color: #7B7A73; margin-bottom: 6px;
+    }
+    .ag-title { font-size: 18px; font-weight: 700; color: #1D3D2A; margin-bottom: 4px; }
+    .ag-subtitle { font-size: 13px; color: #7B7A73; margin-bottom: 28px; line-height: 1.4; }
+    .ag-input {
+      width: 100%; box-sizing: border-box;
+      padding: 11px 14px; font-size: 15px;
+      border: 1.5px solid #D8D6CD; border-radius: 8px;
+      background: #FAFAF8; color: #1A1A18;
+      outline: none; margin-bottom: 12px;
+      transition: border-color 0.15s;
+      font-family: inherit;
+    }
+    .ag-input:focus { border-color: #1D3D2A; }
+    .ag-input.error { border-color: #DC2626; }
+    .ag-btn {
+      width: 100%; padding: 12px;
+      background: #1D3D2A; color: #fff;
+      border: none; border-radius: 8px;
+      font-size: 14px; font-weight: 600;
+      cursor: pointer; font-family: inherit;
+      transition: opacity 0.15s;
+    }
+    .ag-btn:hover { opacity: 0.88; }
+    .ag-error {
+      font-size: 12px; color: #DC2626;
+      margin-top: 10px; min-height: 16px;
+    }
+  </style>
+  <script>
+    if (sessionStorage.getItem('homium_auth') === 'ok') {
+      document.addEventListener('DOMContentLoaded', function() {
+        var gate = document.getElementById('auth-gate');
+        if (gate) gate.classList.add('hidden');
+        document.getElementById('app').style.display = '';
+      });
+    }
+    function homiumUnlock() {
+      var pw = document.getElementById('auth-pw').value;
+      var input = document.getElementById('auth-pw');
+      var err = document.getElementById('auth-err');
+      if (pw === 'Homium2026!') {
+        sessionStorage.setItem('homium_auth', 'ok');
+        document.getElementById('auth-gate').classList.add('hidden');
+        document.getElementById('app').style.display = '';
+      } else {
+        input.classList.add('error');
+        err.textContent = 'Incorrect password. Please try again.';
+        input.value = '';
+        input.focus();
+      }
+    }
+    function homiumKeydown(e) {
+      document.getElementById('auth-pw').classList.remove('error');
+      document.getElementById('auth-err').textContent = '';
+      if (e.key === 'Enter') homiumUnlock();
+    }
+  </script>
 </head>
 <body>
+
+<div id="auth-gate">
+  <div class="ag-card">
+    <div class="ag-logo">
+      <img src="assets/branding/HomiumLogo_0721_Wordmark (Blue).png" alt="Homium" style="height:26px"
+           onerror="this.style.display='none'" />
+    </div>
+    <div class="ag-label">Restricted Access</div>
+    <div class="ag-title">Originator Platform</div>
+    <div class="ag-subtitle">This prototype is for internal use only.<br>Enter the access password to continue.</div>
+    <input id="auth-pw" class="ag-input" type="password" placeholder="Enter password"
+           onkeydown="homiumKeydown(event)" autofocus />
+    <button class="ag-btn" onclick="homiumUnlock()">Unlock →</button>
+    <div id="auth-err" class="ag-error"></div>
+  </div>
+</div>
 
 <div id="app"></div>
 
