@@ -64,7 +64,7 @@ const ProfileView = {
             <div class="info-row"><div class="info-label">Phone</div><div class="info-value">${u.phone || '—'}</div></div>
             <div class="info-row"><div class="info-label">Title</div><div class="info-value">${u.title || '—'}</div></div>
             <div class="info-row"><div class="info-label">NMLS ID</div><div class="info-value">${u.nmlsId || '—'}</div></div>
-            <div class="info-row"><div class="info-label">Organization</div><div class="info-value">${co ? co.name : '—'}</div></div>
+            <div class="info-row"><div class="info-label">Company</div><div class="info-value">${co ? co.name : '—'}</div></div>
             <div class="info-row"><div class="info-label">Branch</div><div class="info-value">${br ? br.name : '—'}</div></div>
             <div class="info-row"><div class="info-label">Last Login</div><div class="info-value">${u.lastLogin ? Display.date(u.lastLogin) : 'Never'}</div></div>
           </div>
@@ -94,6 +94,9 @@ const ProfileView = {
           ${canEdit ? `
             <button class="btn btn-secondary" onclick="ProfileView.close()">Close</button>
             <button class="btn btn-ghost btn-sm btn-danger-ghost" onclick="ProfileView.suspend('${u.id}')" ${u.onboardingStatus === 'suspended' ? 'disabled' : ''}>Suspend</button>
+            ${State.can('impersonate') && u.id !== State.getCurrentUser()?.id && u.onboardingStatus === 'active'
+              ? `<button class="btn btn-impersonate btn-sm" onclick="App.startImpersonation('${u.id}')">Impersonate</button>`
+              : ''}
             <button class="btn btn-primary" onclick="ProfileView.openEditModal('${u.id}')">Edit</button>
           ` : `<button class="btn btn-secondary" onclick="ProfileView.close()">Close</button>`}
         </div>
@@ -212,7 +215,12 @@ const ProfileView = {
 
     return `
       <div class="page-header">
-        <div class="page-header-left"><div class="page-title">My Profile</div></div>
+        <div class="page-header-inner">
+          <div class="page-header-left"><div class="page-title">My Profile</div></div>
+          <div class="page-header-actions">
+            <button class="btn btn-primary btn-sm" onclick="ProfileView.openEditModal('${u.id}')">Edit Profile</button>
+          </div>
+        </div>
       </div>
 
       <div class="page-body" style="max-width:680px">
@@ -235,7 +243,7 @@ const ProfileView = {
             <div class="info-row"><div class="info-label">Phone</div><div class="info-value">${u.phone || '—'}</div></div>
             <div class="info-row"><div class="info-label">Title</div><div class="info-value">${u.title || '—'}</div></div>
             <div class="info-row"><div class="info-label">NMLS ID</div><div class="info-value">${u.nmlsId || '—'}</div></div>
-            <div class="info-row"><div class="info-label">Organization</div><div class="info-value">${co ? co.name : '—'}</div></div>
+            <div class="info-row"><div class="info-label">Company</div><div class="info-value">${co ? co.name : '—'}</div></div>
             <div class="info-row"><div class="info-label">Branch</div><div class="info-value">${br ? br.name : '—'}</div></div>
           </div>
         </div>

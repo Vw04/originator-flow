@@ -1,82 +1,86 @@
 /* ============================================================
-   HOMIUM ORIGINATOR FLOW — Sidebar Nav
-   Role-aware navigation component
+   HOMIUM ORIGINATOR FLOW — Top Nav
+   Role-aware horizontal navigation component
    ============================================================ */
 
 const Nav = (() => {
 
-  /* SVG icon strings (16×16, currentColor stroke) */
-  const ICONS = {
-    dashboard:    `<svg width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><rect x="1" y="1" width="6" height="6" rx="1"/><rect x="9" y="1" width="6" height="6" rx="1"/><rect x="1" y="9" width="6" height="6" rx="1"/><rect x="9" y="9" width="6" height="6" rx="1"/></svg>`,
-    building:     `<svg width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><rect x="2" y="3" width="12" height="12" rx="1"/><path d="M5 15V10h6v5"/><path d="M5 6h1M10 6h1M5 9h1M10 9h1"/></svg>`,
-    mapPin:       `<svg width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M8 1C5.24 1 3 3.24 3 6c0 4 5 9 5 9s5-5 5-9c0-2.76-2.24-5-5-5z"/><circle cx="8" cy="6" r="1.5"/></svg>`,
-    users:        `<svg width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><circle cx="6" cy="5" r="2.5"/><path d="M1 14c0-2.76 2.24-5 5-5s5 2.24 5 5"/><circle cx="12" cy="5" r="2"/><path d="M15 13.5c0-2-1.34-3.7-3.2-4.3"/></svg>`,
-    lock:         `<svg width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><rect x="3" y="7" width="10" height="8" rx="1"/><path d="M5 7V5a3 3 0 0 1 6 0v2"/><circle cx="8" cy="11" r="1"/></svg>`,
-    arrowCircle:  `<svg width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><circle cx="8" cy="8" r="7"/><path d="M5.5 8h5M8 5.5 10.5 8 8 10.5"/></svg>`,
-    userCircle:   `<svg width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><circle cx="8" cy="8" r="7"/><circle cx="8" cy="6.5" r="2.5"/><path d="M3 13c0-2.76 2.24-5 5-5s5 2.24 5 5"/></svg>`,
-    document:     `<svg width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M3 2h7l3 3v9a1 1 0 0 1-1 1H3a1 1 0 0 1-1-1V3a1 1 0 0 1 1-1z"/><path d="M10 2v3h3"/><path d="M5 8h6M5 11h4"/></svg>`,
-    checkCircle:  `<svg width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><circle cx="8" cy="8" r="7"/><path d="M5 8l2.5 2.5 4-4"/></svg>`,
-  };
-
-  /* Nav config per role */
+  /* Nav config per role split by mode */
   const NAV_CONFIG = {
-    sys_admin: [
-      { section: 'Platform' },
-      { path: '/dashboard',   label: 'Dashboard',      icon: ICONS.dashboard },
-      { path: '/companies',   label: 'Organizations',  icon: ICONS.building },
-      { path: '/branches',    label: 'Branches',       icon: ICONS.mapPin },
-      { path: '/users',       label: 'Users',          icon: ICONS.users },
-      { section: 'Configuration' },
-      { path: '/permissions', label: 'Permissions',    icon: ICONS.lock },
-      { path: '/onboarding',  label: 'Onboarding',     icon: ICONS.arrowCircle, badge: () => State.getUsers().filter(u => ['invited','email_verified','2fa_complete','verification_pending'].includes(u.onboardingStatus)).length || null },
-    ],
-    operator: [
-      { section: 'Platform' },
-      { path: '/dashboard',   label: 'Dashboard',      icon: ICONS.dashboard },
-      { path: '/companies',   label: 'Organizations',  icon: ICONS.building },
-      { path: '/branches',    label: 'Branches',       icon: ICONS.mapPin },
-      { path: '/users',       label: 'Users',          icon: ICONS.users },
-      { section: 'Tools' },
-      { path: '/onboarding',  label: 'Onboarding',     icon: ICONS.arrowCircle, badge: () => State.getUsers().filter(u => ['invited','email_verified','2fa_complete','verification_pending'].includes(u.onboardingStatus)).length || null },
-    ],
-    prog_admin: [
-      { section: 'My Company' },
-      { path: '/dashboard',   label: 'Dashboard',      icon: ICONS.dashboard },
-      { path: '/branches',    label: 'Branches',       icon: ICONS.mapPin },
-      { path: '/users',       label: 'Users',          icon: ICONS.users, badge: () => { const u = State.getCurrentUser(); if (!u) return null; const pending = State.getUsersByCompany(u.companyId).filter(x => ['invited','email_verified','2fa_complete','verification_pending'].includes(x.onboardingStatus)).length; return pending || null; } },
-      { section: 'Account' },
-      { path: '/profile',     label: 'My Profile',     icon: ICONS.userCircle },
-    ],
-    lo: [
-      { section: 'My Work' },
-      { path: '/dashboard',   label: 'Dashboard',      icon: ICONS.dashboard },
-      { path: '/originations',label: 'My Originations',icon: ICONS.document },
-      { section: 'Account' },
-      { path: '/profile',     label: 'My Profile',     icon: ICONS.userCircle },
-    ],
-    lp: [
-      { section: 'My Work' },
-      { path: '/dashboard',   label: 'Dashboard',      icon: ICONS.dashboard },
-      { path: '/originations',label: 'Applications',   icon: ICONS.document },
-      { section: 'Account' },
-      { path: '/profile',     label: 'My Profile',     icon: ICONS.userCircle },
-    ],
-    investor: [
-      { section: 'Portfolio' },
-      { path: '/dashboard',   label: 'Dashboard',      icon: ICONS.dashboard },
-      { path: '/profile',     label: 'My Profile',     icon: ICONS.userCircle },
-      { section: 'Onboarding' },
-      { path: '/onboarding',  label: 'KYC Status',     icon: ICONS.checkCircle },
-    ],
+    sys_admin: {
+      admin: [
+        { path: '/dashboard',               label: 'Dashboard' },
+        { path: '/origination-companies',    label: 'Origination Companies' },
+        { path: '/investors',                label: 'Investors & Funds' },
+        { path: '/platform',                 label: 'Platform Operations' },
+        { path: '/system-config',            label: 'System Configuration' },
+      ],
+      data: [
+        { path: '/data/analytics',    label: 'Analytics' },
+        { path: '/data/applications', label: 'Applications' },
+        { path: '/data/originations', label: 'Originations' },
+        { path: '/data/batches',      label: 'Batches' },
+        { path: '/data/activations',  label: 'Activations' },
+      ],
+    },
+    operator: {
+      admin: [
+        { path: '/dashboard',               label: 'Dashboard' },
+        { path: '/origination-companies',    label: 'Origination Companies' },
+        { path: '/investors',                label: 'Investors & Funds' },
+        { path: '/platform',                 label: 'Platform Operations' },
+        { path: '/system-config',            label: 'System Configuration' },
+      ],
+      data: [
+        { path: '/data/analytics',    label: 'Analytics' },
+        { path: '/data/applications', label: 'Applications' },
+        { path: '/data/originations', label: 'Originations' },
+        { path: '/data/batches',      label: 'Batches' },
+        { path: '/data/activations',  label: 'Activations' },
+      ],
+    },
+    prog_admin: {
+      admin: [
+        { path: '/dashboard',               label: 'Dashboard' },
+        { path: '/origination-companies',    label: 'My Company' },
+      ],
+      data: [
+        { path: '/data/analytics',    label: 'Analytics' },
+        { path: '/data/applications', label: 'Applications' },
+        { path: '/data/originations', label: 'Originations' },
+      ],
+    },
+    lo: {
+      admin: [],
+      data: [
+        { path: '/data/applications', label: 'Applications' },
+        { path: '/originations',      label: 'My Originations' },
+        { path: '/profile',           label: 'My Profile' },
+      ],
+    },
+    lp: {
+      admin: [],
+      data: [
+        { path: '/data/applications', label: 'Applications' },
+        { path: '/profile',           label: 'My Profile' },
+      ],
+    },
+    investor: {
+      admin: [],
+      data: [
+        { path: '/data/analytics', label: 'Analytics' },
+        { path: '/profile',        label: 'My Profile' },
+      ],
+    },
   };
 
   const ROLE_META = {
-    sys_admin:  { label: 'Homium System Admin',     color: '#3730A3' },
-    operator:   { label: 'Platform Operator',       color: '#BE123C' },
-    prog_admin: { label: 'Program Administrator',   color: '#15803D' },
-    lo:         { label: 'Loan Officer',            color: '#1D4ED8' },
-    lp:         { label: 'Loan Processor',          color: '#854D0E' },
-    investor:   { label: 'Investor',                color: '#7C3AED' },
+    sys_admin:  { label: 'System Admin' },
+    operator:   { label: 'Platform Operator' },
+    prog_admin: { label: 'Program Admin' },
+    lo:         { label: 'Loan Officer' },
+    lp:         { label: 'Loan Processor' },
+    investor:   { label: 'Investor' },
   };
 
   function render() {
@@ -84,68 +88,121 @@ const Nav = (() => {
     const user = State.getCurrentUser();
     if (!role) return '';
 
-    const items = NAV_CONFIG[role] || [];
-    const meta  = ROLE_META[role] || {};
+    const mode    = State.getMode();
+    const config  = NAV_CONFIG[role] || { admin: [], data: [] };
+    const items   = config[mode] || [];
+    const meta    = ROLE_META[role] || {};
+    const hasBoth = config.admin.length > 0;
 
-    const navItems = items.map(item => {
-      if (item.section) {
-        return `<div class="nav-section-label">${item.section}</div>`;
-      }
-      const badgeCount = item.badge ? item.badge() : null;
-      const badge = badgeCount ? `<span class="nav-badge">${badgeCount}</span>` : '';
-      return `
-        <div class="nav-item" data-path="${item.path}" onclick="Router.navigate('${item.path}')">
-          <span class="nav-icon">${item.icon}</span>
-          <span>${item.label}</span>
-          ${badge}
-        </div>`;
-    }).join('');
+    const navLinks = items.map(item =>
+      `<span class="topnav-link" data-path="${item.path}" onclick="Router.navigate('${item.path}')">${item.label}</span>`
+    ).join('');
+
+    const modeToggle = hasBoth ? `
+      <div class="topnav-mode-dropdown" id="topnav-mode-dropdown">
+        <button class="mode-dropdown-trigger" onclick="Nav.toggleModeDropdown(event)">
+          ${mode === 'admin' ? 'Administration' : 'Loan Origination Platform'}
+          <span class="mode-dropdown-caret">▼</span>
+        </button>
+        <div class="mode-dropdown-menu" id="mode-dropdown-menu">
+          <div class="mode-dropdown-item ${mode==='admin'?'active':''}" onclick="Nav.setMode('admin')">Administration</div>
+          <div class="mode-dropdown-item ${mode==='data'?'active':''}" onclick="Nav.setMode('data')">Loan Origination Platform</div>
+        </div>
+      </div>` : '';
 
     const initials = user ? Display.initials(user) : 'HM';
     const userName  = user ? Display.fullName(user) : 'Demo User';
-    const userEmail = user ? user.email : '';
 
     return `
-      <aside class="sidebar">
-        <div class="sidebar-logo">
-          <img src="assets/branding/HomiumLogo_0721_Wordmark (Blue).png" alt="Homium" onerror="this.style.display='none';this.nextElementSibling.style.display='block'" />
-          <span class="sidebar-logo-text" style="display:none">Homium</span>
+      <nav class="topnav">
+        <div class="topnav-left">
+          <div class="topnav-logo">
+            <img src="assets/branding/HomiumLogo_0721_Wordmark (Blue).png" alt="Homium"
+                 onerror="this.style.display='none';this.nextElementSibling.style.display='block'" />
+            <span class="topnav-logo-text" style="display:none">Homium</span>
+          </div>
+          ${modeToggle}
         </div>
-        <div class="sidebar-role-badge">
-          <div class="role-label">Logged in as</div>
-          <div class="role-name">${meta.label || role}</div>
-        </div>
-        <nav class="sidebar-nav">${navItems}</nav>
-        <div class="sidebar-footer">
-          <div class="sidebar-user">
-            <div class="sidebar-avatar">${initials}</div>
-            <div class="sidebar-user-info">
-              <div class="user-name">${userName}</div>
-              <div class="user-email">${userEmail}</div>
+        <div class="topnav-links">${navLinks}</div>
+        <div class="topnav-right">
+          <div class="topnav-user-info">
+            <div class="topnav-user-name">${userName}</div>
+            <div class="topnav-role-label">${meta.label || role}</div>
+          </div>
+          <div class="topnav-profile" id="topnav-profile" onclick="Nav.toggleProfileMenu(event)">
+            <div class="topnav-avatar" style="background:${avatarColor(role)}">${initials}</div>
+            <div class="profile-dropdown" id="profile-dropdown">
+              <div class="profile-dropdown-header">
+                <div class="topnav-avatar" style="background:${avatarColor(role)};width:36px;height:36px;font-size:13px">${initials}</div>
+                <div>
+                  <div style="font-weight:600;font-size:13px;color:var(--color-text)">${userName}</div>
+                  <div style="font-size:11px;color:var(--color-text-muted);margin-top:1px">${meta.label || role}</div>
+                </div>
+              </div>
+              <div class="profile-dropdown-divider"></div>
+              <div class="profile-dropdown-item" onclick="event.stopPropagation();Router.navigate('/profile')">My Profile</div>
+              <div class="profile-dropdown-item" onclick="event.stopPropagation();App.switchRole()">Switch Role</div>
+              <div class="profile-dropdown-divider"></div>
+              <div class="profile-dropdown-item" onclick="event.stopPropagation()">Contact Support</div>
+              <div class="profile-dropdown-item profile-dropdown-item-danger" onclick="event.stopPropagation();App.switchRole()">Log Out</div>
             </div>
           </div>
-          <button class="btn-switch-role" onclick="App.switchRole()">Switch Role</button>
         </div>
-      </aside>`;
+      </nav>`;
   }
 
   return {
     render,
 
     setActive(path) {
-      document.querySelectorAll('.nav-item').forEach(el => {
+      document.querySelectorAll('.topnav-link').forEach(el => {
         const elPath = el.dataset.path;
-        el.classList.toggle('active', path.startsWith(elPath) && elPath !== '/');
+        // Exact match, or prefix match for section drill-downs (e.g. /origination-companies/co-001)
+        const isActive = path === elPath || (elPath !== '/' && elPath !== '/dashboard' && path.startsWith(elPath));
+        el.classList.toggle('active', isActive);
       });
     },
 
     refresh() {
-      const sidebar = document.querySelector('.sidebar');
-      if (sidebar) {
-        sidebar.outerHTML = render();
-        // Re-attach active state
+      const nav = document.querySelector('.topnav');
+      if (nav) {
+        nav.outerHTML = render();
         Nav.setActive(Router.getCurrentPath() || '/dashboard');
       }
+    },
+
+    toggleModeDropdown(e) {
+      if (e) e.stopPropagation();
+      const menu = document.getElementById('mode-dropdown-menu');
+      if (menu) menu.classList.toggle('open');
+      const close = (ev) => {
+        if (!document.getElementById('topnav-mode-dropdown')?.contains(ev.target)) {
+          document.getElementById('mode-dropdown-menu')?.classList.remove('open');
+          document.removeEventListener('click', close);
+        }
+      };
+      document.addEventListener('click', close);
+    },
+
+    toggleProfileMenu(e) {
+      if (e) e.stopPropagation();
+      const dropdown = document.getElementById('profile-dropdown');
+      if (dropdown) dropdown.classList.toggle('open');
+      const close = (ev) => {
+        if (!document.getElementById('topnav-profile')?.contains(ev.target)) {
+          document.getElementById('profile-dropdown')?.classList.remove('open');
+          document.removeEventListener('click', close);
+        }
+      };
+      document.addEventListener('click', close);
+    },
+
+    setMode(mode) {
+      State.setMode(mode);
+      const defaultPath = mode === 'admin' ? '/dashboard' : '/data/analytics';
+      const nav = document.querySelector('.topnav');
+      if (nav) nav.outerHTML = render();
+      Router.navigate(defaultPath);
     },
   };
 })();

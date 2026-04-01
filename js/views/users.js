@@ -4,16 +4,104 @@
 
 const UsersView = {
   _filter: { search: '', role: '', status: '', branchId: '', companyId: '' },
+  _sort: { col: null, dir: 'asc' },
 
-  render() {
+  _roleOrder:   { sys_admin: 0, operator: 1, prog_admin: 2, lo: 3, lp: 4, investor: 5 },
+  _statusOrder: { invited: 0, email_verified: 1, '2fa_complete': 2, verification_pending: 3, active: 4, verification_failed: 5, suspended: 6 },
+
+  setSort(col) {
+    if (this._sort.col === col) {
+      this._sort.dir = this._sort.dir === 'asc' ? 'desc' : 'asc';
+    } else {
+      this._sort.col = col;
+      this._sort.dir = 'asc';
+    }
+    this._rerender();
+  },
+
+  _sortUsers(users) {
+    const { col, dir } = this._sort;
+    if (!col) return users;
+    const mul = dir === 'asc' ? 1 : -1;
+    return [...users].sort((a, b) => {
+      if (col === 'name')   return mul * Display.fullName(a).localeCompare(Display.fullName(b));
+      if (col === 'role')   return mul * ((this._roleOrder[a.role] ?? 99) - (this._roleOrder[b.role] ?? 99));
+      if (col === 'status') return mul * ((this._statusOrder[a.onboardingStatus] ?? 99) - (this._statusOrder[b.onboardingStatus] ?? 99));
+      if (col === 'login')  return mul * ((a.lastLogin || '').localeCompare(b.lastLogin || ''));
+      return 0;
+    });
+  },
+
+  _renderOnboardingBanner() {
+    if (!State.can('viewOnboarding')) return '';
+    if (this._scope) return ''; // hide banner in scoped/section views
+    const allUsers = State.getUsers().filter(u => u.companyId);
+    const counts = {
+      invited:              allUsers.filter(u => u.onboardingStatus === 'invited').length,
+      email_verified:       allUsers.filter(u => u.onboardingStatus === 'email_verified').length,
+      twofa_complete:       allUsers.filter(u => u.onboardingStatus === '2fa_complete').length,
+      verification_pending: allUsers.filter(u => u.onboardingStatus === 'verification_pending').length,
+      active:               allUsers.filter(u => u.onboardingStatus === 'active').length,
+    };
+    const pending = counts.invited + counts.email_verified + counts.twofa_complete + counts.verification_pending;
+    return `
+      <div class="onboarding-banner">
+        <div class="onboarding-banner-stats">
+          <div class="onboarding-stat">
+            <div class="onboarding-stat-label">Active</div>
+            <div class="onboarding-stat-value onboarding-stat-active">${counts.active}</div>
+          </div>
+          <div class="onboarding-stat-divider"></div>
+          <div class="onboarding-stat">
+            <div class="onboarding-stat-label">Invite Sent</div>
+            <div class="onboarding-stat-value">${counts.invited}</div>
+          </div>
+          <div class="onboarding-stat-divider"></div>
+          <div class="onboarding-stat">
+            <div class="onboarding-stat-label">Email Verified</div>
+            <div class="onboarding-stat-value">${counts.email_verified}</div>
+          </div>
+          <div class="onboarding-stat-divider"></div>
+          <div class="onboarding-stat">
+            <div class="onboarding-stat-label">2FA Complete</div>
+            <div class="onboarding-stat-value">${counts.twofa_complete}</div>
+          </div>
+          <div class="onboarding-stat-divider"></div>
+          <div class="onboarding-stat">
+            <div class="onboarding-stat-label">KYC Pending</div>
+            <div class="onboarding-stat-value">${counts.verification_pending}</div>
+          </div>
+        </div>
+        <div class="onboarding-banner-actions">
+          ${pending > 0 ? `<span style="font-size:12px;color:var(--color-warning);font-weight:600">${pending} pending</span>` : ''}
+          <a class="btn btn-ghost btn-sm" onclick="Router.navigate('/onboarding')">View Full Report →</a>
+        </div>
+      </div>`;
+  },
+
+  /* scope: optional { companyId, roles, platformOnly } for section-scoped rendering */
+  _scope: null,
+
+  render(scope) {
+    this._scope = scope || null;
     const role      = State.getRole();
     const currentUser = State.getCurrentUser();
     const canEdit   = State.can('manageUsers') || State.can('editAny');
     const canInvite = canEdit || role === 'prog_admin';
 
-    // Scope users to company for prog_admin
-    let users = State.getUsers().filter(u => u.companyId); // exclude Homium staff from list
-    if (role === 'prog_admin' && currentUser?.companyId) {
+    // Base user set — apply scope if provided
+    let users;
+    if (scope?.platformOnly) {
+      users = State.getPlatformUsers();
+    } else if (scope?.companyId) {
+      users = State.getUsersByCompany(scope.companyId);
+    } else {
+      users = State.getUsers().filter(u => u.companyId); // exclude Homium staff from list
+    }
+    if (scope?.roles) users = users.filter(u => scope.roles.includes(u.role));
+
+    // Legacy prog_admin scoping (when no explicit scope)
+    if (!scope && role === 'prog_admin' && currentUser?.companyId) {
       users = users.filter(u => u.companyId === currentUser.companyId);
     }
 
@@ -38,6 +126,9 @@ const UsersView = {
     }
     const companies = State.getCompanies();
 
+    users = this._sortUsers(users);
+    const hideOrgCol = role === 'prog_admin' || scope?.companyId;
+
     const rows = users.map(u => {
       const co = State.getCompany(u.companyId);
       const br = State.getBranch(u.branchId);
@@ -53,30 +144,39 @@ const UsersView = {
             </div>
           </td>
           <td><span class="role-chip ${Display.roleClass(u.role)}">${Display.roleName(u.role)}</span></td>
-          ${role !== 'prog_admin' ? `<td class="text-secondary">${co ? co.name : '—'}</td>` : ''}
+          <td>${u.policies.length ? u.policies.map(pid => { const pol = State.getPolicies().find(p => p.id === pid); return pol ? `<span class="policy-tag">${pol.name}</span>` : ''; }).join(' ') : '<span class="text-muted">—</span>'}</td>
+          ${!hideOrgCol ? `<td class="text-secondary">${co ? co.name : '—'}</td>` : ''}
           <td class="text-secondary">${br ? br.name : '—'}</td>
           <td><span class="status-pill ${Display.onboardingStatusClass(u.onboardingStatus)}"><span class="status-dot"></span>${Display.onboardingStatusLabel(u.onboardingStatus)}</span></td>
           <td class="text-secondary">${u.lastLogin ? Display.date(u.lastLogin) : '<span class="text-muted">Never</span>'}</td>
         </tr>`;
     }).join('');
 
+    const s = this._sort;
+    const thClass = (col) => `sortable${s.col === col ? ' sort-' + s.dir : ''}`;
+
     const branchOptions = branches.map(b => `<option value="${b.id}">${b.name}</option>`).join('');
     const companyOptions = companies.map(c => `<option value="${c.id}">${c.name}</option>`).join('');
 
-    return `
+    // When scoped (embedded in a section), skip page-header wrapper
+    const header = scope ? '' : `
       <div class="page-header">
-        <div class="page-header-left">
-          <div>
+        <div class="page-header-inner">
+          <div class="page-header-left">
             <div class="page-title">Users</div>
             <div class="page-subtitle">${users.length} user${users.length !== 1 ? 's' : ''} shown</div>
           </div>
+          <div class="page-header-actions">
+            ${canInvite ? `<button class="btn btn-primary btn-sm" onclick="UsersView.openInviteModal()">+ Invite User</button>` : ''}
+          </div>
         </div>
-        <div class="page-header-actions">
-          ${canInvite ? `<button class="btn btn-primary btn-sm" onclick="UsersView.openInviteModal()">+ Invite User</button>` : ''}
-        </div>
-      </div>
+      </div>`;
 
-      <div class="page-body">
+    const bodyOpen = scope ? '' : `<div class="page-body">${this._renderOnboardingBanner()}`;
+
+    return `
+      ${header}
+      ${bodyOpen}
         <div class="table-container">
           <div class="table-toolbar">
             <input type="text" class="input input-sm input-search" style="width:220px" placeholder="Search users…"
@@ -98,25 +198,27 @@ const UsersView = {
               <option value="verification_failed" ${f.status==='verification_failed'?'selected':''}>KYC Failed</option>
               <option value="suspended" ${f.status==='suspended'?'selected':''}>Suspended</option>
             </select>
-            ${role !== 'prog_admin' ? `
+            ${!hideOrgCol ? `
               <select class="filter-select" onchange="UsersView.setFilter('companyId', this.value)">
-                <option value="">All Orgs</option>${companyOptions}
+                <option value="">All Companies</option>${companyOptions}
               </select>` : ''}
             <select class="filter-select" onchange="UsersView.setFilter('branchId', this.value)">
               <option value="">All Branches</option>${branchOptions}
             </select>
             ${Object.values(f).some(v=>v) ? `<button class="btn btn-ghost btn-sm" onclick="UsersView.clearFilters()">Clear</button>` : ''}
+            ${scope && canInvite ? `<div style="margin-left:auto"><button class="btn btn-primary btn-sm" onclick="UsersView.openInviteModal()">+ Invite User</button></div>` : ''}
           </div>
 
           ${users.length ? `
             <table>
               <thead><tr>
-                <th>User</th>
-                <th>Role</th>
-                ${role !== 'prog_admin' ? '<th>Organization</th>' : ''}
+                <th class="${thClass('name')}" onclick="UsersView.setSort('name')">User</th>
+                <th class="${thClass('role')}" onclick="UsersView.setSort('role')">Role</th>
+                <th>Policy</th>
+                ${!hideOrgCol ? '<th>Company</th>' : ''}
                 <th>Branch</th>
-                <th>Status</th>
-                <th>Last Login</th>
+                <th class="${thClass('status')}" onclick="UsersView.setSort('status')">Status</th>
+                <th class="${thClass('login')}" onclick="UsersView.setSort('login')">Last Login</th>
               </tr></thead>
               <tbody>${rows}</tbody>
             </table>
@@ -129,25 +231,33 @@ const UsersView = {
               ${Object.values(f).some(v=>v) ? `<button class="btn btn-secondary btn-sm" onclick="UsersView.clearFilters()">Clear filters</button>` : ''}
             </div>`}
         </div>
-      </div>
+      ${scope ? '' : '</div>'}
 
       <div id="modal-container"></div>
       <div id="panel-container"></div>`;
   },
 
+  _rerender() {
+    if (this._scope) {
+      App.renderView(Router.getCurrentPath());
+    } else {
+      App.renderView('/users');
+    }
+  },
+
   setFilter(key, value) {
     this._filter[key] = value;
-    App.renderView('/users');
+    this._rerender();
   },
 
   clearFilters() {
     this._filter = { search: '', role: '', status: '', branchId: '', companyId: '' };
-    App.renderView('/users');
+    this._rerender();
   },
 
   advanceStatus(userId) {
     State.advanceOnboarding(userId);
-    App.renderView('/users');
+    this._rerender();
   },
 
   openInviteModal() {
@@ -156,15 +266,31 @@ const UsersView = {
     const companies = State.getCompanies();
     const branches  = State.getBranches();
 
+    // Determine scoped company: from section scope, prog_admin's own company, or preset
+    const scopedCompanyId = this._scope?.companyId || (role === 'prog_admin' ? currentUser?.companyId : null) || this._presetCompany || null;
+    this._presetCompany = null; // clear one-shot preset
+
+    const isPlatformScope = this._scope?.platformOnly;
     const companyOptions = companies.map(c => `<option value="${c.id}">${c.name}</option>`).join('');
-
-    // For prog_admin, pre-select company and only show their branches
-    const isProgAdmin = role === 'prog_admin';
-    const filteredBranches = isProgAdmin && currentUser?.companyId
-      ? branches.filter(b => b.companyId === currentUser.companyId)
+    const filteredBranches = scopedCompanyId
+      ? branches.filter(b => b.companyId === scopedCompanyId)
       : branches;
-
     const branchOptions = filteredBranches.map(b => `<option value="${b.id}">${b.name}</option>`).join('');
+
+    // Role options based on scope
+    const scopedRoles = this._scope?.roles;
+    const allRoles = [
+      { value: 'sys_admin',  label: 'System Admin' },
+      { value: 'operator',   label: 'Platform Operator' },
+      { value: 'prog_admin', label: 'Program Administrator' },
+      { value: 'lo',         label: 'Loan Officer' },
+      { value: 'lp',         label: 'Loan Processor' },
+      { value: 'investor',   label: 'Investor' },
+    ];
+    const roleOptions = (scopedRoles ? allRoles.filter(r => scopedRoles.includes(r.value)) : allRoles)
+      .map(r => `<option value="${r.value}">${r.label}</option>`).join('');
+
+    const companyName = scopedCompanyId ? (State.getCompany(scopedCompanyId)?.name || '') : '';
 
     document.getElementById('modal-container').innerHTML = `
       <div class="modal-overlay" onclick="if(event.target===this)UsersView.closeModal()">
@@ -172,7 +298,7 @@ const UsersView = {
           <div class="modal-header">
             <div>
               <div class="modal-title">Invite User</div>
-              <div class="modal-subtitle">An email with a magic link will be sent to the user</div>
+              <div class="modal-subtitle">${scopedCompanyId ? companyName : isPlatformScope ? 'Platform Operations' : 'An email with a magic link will be sent to the user'}</div>
             </div>
             <button class="modal-close" onclick="UsersView.closeModal()">×</button>
           </div>
@@ -195,34 +321,33 @@ const UsersView = {
               <div class="form-group form-full">
                 <label>Email Address *</label>
                 <input class="input" id="invite-email" placeholder="jane.smith@company.com" type="email" />
-                <div class="form-hint">Must match the company's registered email domain</div>
+                ${!isPlatformScope ? `<div class="form-hint">Must match the company's registered email domain</div>` : ''}
               </div>
               <div class="form-group">
                 <label>Role *</label>
                 <select class="select-input" id="invite-role">
                   <option value="">Select role…</option>
-                  <option value="prog_admin">Program Administrator</option>
-                  <option value="lo">Loan Officer</option>
-                  <option value="lp">Loan Processor</option>
+                  ${roleOptions}
                 </select>
               </div>
               <div class="form-group">
                 <label>Title</label>
                 <input class="input" id="invite-title" placeholder="e.g. Senior Loan Officer" />
               </div>
-              ${!isProgAdmin ? `
+              ${!scopedCompanyId && !isPlatformScope ? `
               <div class="form-group">
-                <label>Organization *</label>
+                <label>Origination Company *</label>
                 <select class="select-input" id="invite-company" onchange="UsersView.updateBranchOptions(this.value)">
-                  <option value="">Select org…</option>${companyOptions}
+                  <option value="">Select company…</option>${companyOptions}
                 </select>
-              </div>` : `<input type="hidden" id="invite-company" value="${currentUser?.companyId || ''}" />`}
+              </div>` : scopedCompanyId ? `<input type="hidden" id="invite-company" value="${scopedCompanyId}" />` : ''}
+              ${!isPlatformScope ? `
               <div class="form-group">
                 <label>Branch *</label>
                 <select class="select-input" id="invite-branch">
                   <option value="">Select branch…</option>${branchOptions}
                 </select>
-              </div>
+              </div>` : ''}
               <div class="form-group">
                 <label>NMLS ID</label>
                 <input class="input" id="invite-nmls" placeholder="e.g. 1234567" />
@@ -286,7 +411,7 @@ const UsersView = {
   },
 };
 
-/* Color per role for avatars */
+/* Color per section for avatars — Platform Ops = gold, Origination = blue, Investors = green */
 function avatarColor(role) {
-  return { sys_admin:'#3730A3', operator:'#BE123C', prog_admin:'#15803D', lo:'#1D4ED8', lp:'#854D0E', investor:'#7C3AED' }[role] || '#1B3564';
+  return { sys_admin:'#C6952B', operator:'#C6952B', prog_admin:'#1D4ED8', lo:'#1D4ED8', lp:'#1D4ED8', investor:'#1D3D2A' }[role] || '#1B3564';
 }

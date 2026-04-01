@@ -12,9 +12,13 @@ const State = (() => {
   let _policies  = JSON.parse(JSON.stringify(DEMO_DATA.policies));
   let _matrix    = JSON.parse(JSON.stringify(DEMO_DATA.permissionMatrix));
   let _activity  = JSON.parse(JSON.stringify(DEMO_DATA.activityLog));
+  let _investorEntities = JSON.parse(JSON.stringify(DEMO_DATA.investorEntities));
+  let _funds     = JSON.parse(JSON.stringify(DEMO_DATA.funds));
 
   let _currentRole = null;  // role key: 'sys_admin' | 'operator' | 'prog_admin' | 'lo' | 'lp' | 'investor'
   let _currentUser = null;  // user object (simulated logged-in user per role)
+  let _mode = 'admin';      // 'admin' | 'data'
+  let _impersonating = null; // { savedRole, savedUserId } | null
 
   const _subscribers = [];
 
@@ -38,18 +42,48 @@ const State = (() => {
       _currentRole = role;
       const uid = DEMO_USERS_BY_ROLE[role];
       _currentUser = _users.find(u => u.id === uid) || null;
+      // Default mode: admin roles start in admin, data-only roles start in data
+      _mode = ['lo', 'lp', 'investor'].includes(role) ? 'data' : 'admin';
+      _impersonating = null;
       notify();
     },
     getRole: () => _currentRole,
     getCurrentUser: () => _currentUser,
 
+    /* ---- Mode ---- */
+    getMode: () => _mode,
+    setMode(m) { _mode = m; },
+
+    /* ---- Impersonation ---- */
+    startImpersonation(targetUserId) {
+      const target = _users.find(u => u.id === targetUserId);
+      if (!target) return;
+      _impersonating = { savedRole: _currentRole, savedUserId: _currentUser?.id };
+      _currentRole = target.role;
+      _currentUser = target;
+      _mode = ['lo', 'lp', 'investor'].includes(target.role) ? 'data' : 'admin';
+      notify();
+    },
+    stopImpersonation() {
+      if (!_impersonating) return;
+      _currentRole = _impersonating.savedRole;
+      _currentUser = _users.find(u => u.id === _impersonating.savedUserId) || null;
+      _mode = 'admin';
+      _impersonating = null;
+      notify();
+    },
+    isImpersonating: () => !!_impersonating,
+    getImpersonationTarget() {
+      return _impersonating ? _currentUser : null;
+    },
+
     /* ---- Permission helpers ---- */
     can(action) {
       const role = _currentRole;
       const perms = {
-        sys_admin:  { viewAny: true,  editAny: true,  deleteAny: true,  managePolicy: true,  manageCompany: true, manageUsers: true  },
-        operator:   { viewAny: true,  editAny: true,  deleteAny: false, managePolicy: false, manageCompany: true, manageUsers: true  },
-        prog_admin: { viewAny: false, editAny: false, deleteAny: false, managePolicy: false, manageCompany: false, manageUsers: false, viewCompany: true, inviteUsers: true },
+        sys_admin:  { viewAny: true,  editAny: true,  deleteAny: true,  managePolicy: true,  manageCompany: true, manageUsers: true,  viewOnboarding: true,  impersonate: true,  viewOriginationCompanies: true,  viewInvestors: true,  viewPlatformOps: true,  viewSystemConfig: true  },
+        operator:   { viewAny: true,  editAny: true,  deleteAny: false, managePolicy: false, manageCompany: true, manageUsers: true,  viewOnboarding: true,  impersonate: true,  viewOriginationCompanies: true,  viewInvestors: true,  viewPlatformOps: true,  viewSystemConfig: true  },
+        prog_admin: { viewAny: false, editAny: false, deleteAny: false, managePolicy: false, manageCompany: false, manageUsers: false, viewCompany: true, inviteUsers: true, viewOriginationCompanies: true },
         lo:         { viewAny: false, editAny: false, deleteAny: false, managePolicy: false, manageCompany: false, manageUsers: false, manageLoans: true  },
         lp:         { viewAny: false, editAny: false, deleteAny: false, managePolicy: false, manageCompany: false, manageUsers: false, processLoans: true },
         investor:   { viewAny: false, editAny: false, deleteAny: false, managePolicy: false, manageCompany: false, manageUsers: false, viewPortfolio: true },
@@ -182,6 +216,23 @@ const State = (() => {
       notify();
       return policy;
     },
+    updatePolicy(id, data) {
+      const p = _policies.find(p => p.id === id);
+      if (p) { Object.assign(p, data); notify(); }
+    },
+
+    deletePolicy(id) {
+      _policies = _policies.filter(p => p.id !== id);
+      // Remove policy from all users
+      _users.forEach(u => { u.policies = u.policies.filter(pid => pid !== id); });
+      notify();
+    },
+
+    /* ---- Investors & Funds ---- */
+    getInvestorEntities: () => [..._investorEntities],
+    getFunds:            () => [..._funds],
+    getPlatformUsers:    () => _users.filter(u => !u.companyId && u.role !== 'investor'),
+    getInvestorUsers:    () => _users.filter(u => u.role === 'investor'),
 
     /* ---- Activity ---- */
     getActivity: () => [..._activity].slice(0, 20),

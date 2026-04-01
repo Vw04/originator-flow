@@ -4,18 +4,43 @@
 
 const BranchesView = {
   _filter: { search: '', companyId: '', state: '', program: '', status: '' },
+  _sort: { col: null, dir: 'asc' },
   _detailId: null,
 
-  render() {
+  _scope: null,
+
+  setSort(col) {
+    if (this._sort.col === col) {
+      this._sort.dir = this._sort.dir === 'asc' ? 'desc' : 'asc';
+    } else {
+      this._sort.col = col;
+      this._sort.dir = 'asc';
+    }
+    this._rerender();
+  },
+
+  _rerender() {
+    if (this._scope) {
+      App.renderView(Router.getCurrentPath());
+    } else {
+      App.renderView('/branches');
+    }
+  },
+
+  /* scope: optional { companyId } for section-scoped rendering */
+  render(scope) {
+    this._scope = scope || null;
     const role        = State.getRole();
     const currentUser = State.getCurrentUser();
     const canEdit     = State.can('editAny') || State.can('manageCompany');
 
-    let allBranches = State.getBranches();
+    let allBranches = scope?.companyId
+      ? State.getBranchesByCompany(scope.companyId)
+      : State.getBranches();
     let companies   = State.getCompanies();
 
-    // Scope for prog_admin
-    if (role === 'prog_admin' && currentUser?.companyId) {
+    // Legacy scope for prog_admin (when no explicit scope)
+    if (!scope && role === 'prog_admin' && currentUser?.companyId) {
       allBranches = allBranches.filter(b => b.companyId === currentUser.companyId);
       companies   = companies.filter(c => c.id === currentUser.companyId);
     }
@@ -48,6 +73,17 @@ const BranchesView = {
     const allPrograms = [...new Set(allBranches.flatMap(b => b.programs))];
     const programOptions = allPrograms.map(p => `<option value="${p}" ${f.program===p?'selected':''}>${p}</option>`).join('');
 
+    const s = this._sort;
+    if (s.col) {
+      const mul = s.dir === 'asc' ? 1 : -1;
+      ordered.sort((a, b) => {
+        if (s.col === 'name')   return mul * a.branch.name.localeCompare(b.branch.name);
+        if (s.col === 'status') return mul * a.branch.status.localeCompare(b.branch.status);
+        return 0;
+      });
+    }
+    const thClass = (col) => `sortable${s.col === col ? ' sort-' + s.dir : ''}`;
+
     const rows = ordered.map(({ branch: b, isChild }) => {
       const co     = State.getCompany(b.companyId);
       const mgr    = b.managingLO ? State.getUser(b.managingLO) : null;
@@ -65,7 +101,7 @@ const BranchesView = {
               </div>
             </div>
           </td>
-          ${role !== 'prog_admin' ? `<td class="text-secondary">${co ? co.name : '—'}</td>` : ''}
+          ${(role !== 'prog_admin' && !scope?.companyId) ? `<td class="text-secondary">${co ? co.name : '—'}</td>` : ''}
           <td>${b.state}</td>
           <td>${mgr ? Display.fullName(mgr) : '<span class="text-muted">N/A</span>'}</td>
           <td>${users.length}</td>
@@ -76,28 +112,30 @@ const BranchesView = {
 
     const hasFilters = Object.values(f).some(v => v);
 
-    return `
+    const header = scope ? '' : `
       <div class="page-header">
-        <div class="page-header-left">
-          <div>
+        <div class="page-header-inner">
+          <div class="page-header-left">
             <div class="page-title">Branches</div>
             <div class="page-subtitle">${filtered.length} branch${filtered.length !== 1 ? 'es' : ''}</div>
           </div>
+          ${canEdit ? `
+            <div class="page-header-actions">
+              <button class="btn btn-primary btn-sm" onclick="BranchesView.openAddModal()">+ Add Branch</button>
+            </div>` : ''}
         </div>
-        ${canEdit ? `
-          <div class="page-header-actions">
-            <button class="btn btn-primary btn-sm" onclick="BranchesView.openAddModal()">+ Add Branch</button>
-          </div>` : ''}
-      </div>
+      </div>`;
 
-      <div class="page-body">
+    return `
+      ${header}
+      ${scope ? '' : '<div class="page-body">'}
         <div class="table-container">
           <div class="table-toolbar">
             <input type="text" class="input input-sm input-search" style="width:200px" placeholder="Search branches…"
               value="${f.search}" oninput="BranchesView.setFilter('search', this.value)" />
-            ${role !== 'prog_admin' ? `
+            ${(role !== 'prog_admin' && !scope?.companyId) ? `
               <select class="filter-select" onchange="BranchesView.setFilter('companyId', this.value)">
-                <option value="">All Organizations</option>${companyOptions}
+                <option value="">All Companies</option>${companyOptions}
               </select>` : ''}
             <select class="filter-select" onchange="BranchesView.setFilter('state', this.value)">
               <option value="">All States</option>
@@ -113,18 +151,19 @@ const BranchesView = {
               <option value="pending" ${f.status==='pending'?'selected':''}>Pending</option>
             </select>
             ${hasFilters ? `<button class="btn btn-ghost btn-sm" onclick="BranchesView.clearFilters()">Clear</button>` : ''}
+            ${scope && canEdit ? `<div style="margin-left:auto"><button class="btn btn-primary btn-sm" onclick="BranchesView.openAddModal()">+ Add Branch</button></div>` : ''}
           </div>
 
           ${ordered.length ? `
             <table>
               <thead><tr>
-                <th>Branch</th>
-                ${role !== 'prog_admin' ? '<th>Organization</th>' : ''}
+                <th class="${thClass('name')}" onclick="BranchesView.setSort('name')">Branch</th>
+                ${(role !== 'prog_admin' && !scope?.companyId) ? '<th>Company</th>' : ''}
                 <th>State</th>
                 <th>Managing LO</th>
                 <th>Users</th>
                 <th>Programs</th>
-                <th>Status</th>
+                <th class="${thClass('status')}" onclick="BranchesView.setSort('status')">Status</th>
               </tr></thead>
               <tbody>${rows}</tbody>
             </table>
@@ -137,7 +176,7 @@ const BranchesView = {
               ${hasFilters ? `<button class="btn btn-secondary btn-sm" onclick="BranchesView.clearFilters()">Clear filters</button>` : ''}
             </div>`}
         </div>
-      </div>
+      ${scope ? '' : '</div>'}
 
       <div id="branch-panel-container"></div>
       <div id="branch-modal-container"></div>`;
@@ -145,12 +184,12 @@ const BranchesView = {
 
   setFilter(key, value) {
     this._filter[key] = value;
-    App.renderView('/branches');
+    BranchesView._rerender();
   },
 
   clearFilters() {
     this._filter = { search: '', companyId: '', state: '', program: '', status: '' };
-    App.renderView('/branches');
+    BranchesView._rerender();
   },
 
   openDetail(branchId) {
@@ -197,6 +236,7 @@ const BranchesView = {
               <div class="panel-field"><span class="panel-field-label">Address</span><span>${b.address}</span></div>
               <div class="panel-field"><span class="panel-field-label">State</span><span>${b.state}</span></div>
               <div class="panel-field"><span class="panel-field-label">Status</span><span class="status-pill ${b.status==='active'?'badge-active':'badge-pending'}"><span class="status-dot"></span>${b.status==='active'?'Active':'Setup incomplete'}</span></div>
+              <div class="panel-field"><span class="panel-field-label">NMLS</span><span>${b.nmlsId || '—'}</span></div>
               <div class="panel-field"><span class="panel-field-label">Managing LO</span><span>${mgr ? Display.fullName(mgr) : '<span class="text-muted">N/A</span>'}</span></div>
               <div class="panel-field"><span class="panel-field-label">Programs</span><span>${b.programs.length ? b.programs.map(p=>`<span class="tag">${p}</span>`).join(' ') : '<span class="text-muted">None</span>'}</span></div>
               ${b.parentBranchId ? `<div class="panel-field"><span class="panel-field-label">Parent Branch</span><span>${State.getBranch(b.parentBranchId)?.name || b.parentBranchId}</span></div>` : ''}
@@ -236,13 +276,12 @@ const BranchesView = {
     const companies = State.getCompanies();
     const role = State.getRole();
     const currentUser = State.getCurrentUser();
+    const scopedCompanyId = this._scope?.companyId || (role === 'prog_admin' ? currentUser?.companyId : null);
     const companyOptions = companies.map(c => `<option value="${c.id}">${c.name}</option>`).join('');
 
-    const loUsers = State.getUsers().filter(u => u.role === 'lo');
-    const loOptions = loUsers.map(u => `<option value="${u.id}">${Display.fullName(u)}</option>`).join('');
-
-    // Parent branch options (only non-sub-branches)
-    const parentBranches = State.getBranches().filter(b => !b.parentBranchId);
+    // Parent branch options — scoped to company if within a company context
+    let parentBranches = State.getBranches().filter(b => !b.parentBranchId);
+    if (scopedCompanyId) parentBranches = parentBranches.filter(b => b.companyId === scopedCompanyId);
     const parentOptions = parentBranches.map(b => `<option value="${b.id}">${b.name}</option>`).join('');
 
     document.getElementById('branch-modal-container').innerHTML = `
@@ -262,13 +301,13 @@ const BranchesView = {
                 <label>Branch Name *</label>
                 <input class="input" id="br-name" placeholder="e.g. Downtown DC" />
               </div>
-              ${role !== 'prog_admin' ? `
+              ${!scopedCompanyId ? `
               <div class="form-group form-full">
-                <label>Organization *</label>
+                <label>Origination Company *</label>
                 <select class="select-input" id="br-company">
-                  <option value="">Select organization…</option>${companyOptions}
+                  <option value="">Select company…</option>${companyOptions}
                 </select>
-              </div>` : `<input type="hidden" id="br-company" value="${currentUser?.companyId || ''}" />`}
+              </div>` : `<input type="hidden" id="br-company" value="${scopedCompanyId}" />`}
               <div class="form-group form-full">
                 <label>Street Address *</label>
                 <input class="input" id="br-address" placeholder="100 Main St, City, ST 00000" />
@@ -281,10 +320,8 @@ const BranchesView = {
                 </select>
               </div>
               <div class="form-group">
-                <label>Managing Loan Officer</label>
-                <select class="select-input" id="br-mgr">
-                  <option value="">None (N/A)</option>${loOptions}
-                </select>
+                <label>NMLS Branch ID</label>
+                <input class="input" id="br-nmls" placeholder="e.g. 2045871-001" />
               </div>
               <div class="form-group form-full">
                 <label>Parent Branch <span style="font-weight:400;color:var(--color-text-muted)">(optional — creates a sub-branch)</span></label>
@@ -315,7 +352,7 @@ const BranchesView = {
     const companyId      = document.getElementById('br-company')?.value;
     const address        = document.getElementById('br-address')?.value.trim();
     const state          = document.getElementById('br-state')?.value;
-    const managingLO     = document.getElementById('br-mgr')?.value || null;
+    const nmlsId         = document.getElementById('br-nmls')?.value.trim() || null;
     const parentBranchId = document.getElementById('br-parent')?.value || null;
     const programs       = [];
     if (document.getElementById('br-prog-dc')?.checked) programs.push('DC Dream Fund');
@@ -326,27 +363,31 @@ const BranchesView = {
       return;
     }
 
-    State.addBranch({ name, companyId, address, state, managingLO, programs, parentBranchId });
+    State.addBranch({ name, companyId, address, state, nmlsId, managingLO: null, programs, parentBranchId });
     this.closeModal();
     UsersView.showSuccess(`Branch "${name}" created`);
-    App.renderView('/branches');
+    BranchesView._rerender();
   },
 
   openEditModal(branchId) {
     const b = State.getBranch(branchId);
     if (!b) return;
 
-    const companyUsers = b.companyId ? State.getUsersByCompany(b.companyId).filter(u => u.role === 'lo') : State.getUsers().filter(u => u.role === 'lo');
+    const companyUsers = b.companyId ? State.getUsersByCompany(b.companyId) : State.getUsers();
     const subBranches  = State.getBranches().filter(x => x.parentBranchId === b.id);
 
     const loRows = companyUsers.map(u => `
       <div class="perm-user-row" id="lo-row-${u.id}">
         <div class="avatar avatar-sm" style="background:${avatarColor(u.role)}">${Display.initials(u)}</div>
-        <div style="flex:1">${Display.fullName(u)}</div>
-        <label class="checkbox-group">
+        <div style="flex:1">
+          <div style="font-size:13px;font-weight:500">${Display.fullName(u)}</div>
+          <div style="font-size:11px;color:var(--color-text-muted)">${Display.roleName(u.role)}</div>
+        </div>
+        <label class="checkbox-group" style="gap:4px;font-size:11px;color:var(--color-text-muted)">
           <input type="radio" name="edit-br-lo" value="${u.id}" ${b.managingLO === u.id ? 'checked' : ''} />
+          Managing LO
         </label>
-      </div>`).join('') || '<p style="font-size:12px;color:var(--color-text-muted)">No LOs in this company.</p>';
+      </div>`).join('') || '<p style="font-size:12px;color:var(--color-text-muted)">No users in this company.</p>';
 
     const subRows = subBranches.map(s => `
       <div style="display:flex;align-items:center;justify-content:space-between;padding:5px 0;border-bottom:1px solid var(--color-border-light);font-size:12px">
@@ -376,6 +417,10 @@ const BranchesView = {
                 <input class="input" id="edit-br-address" value="${b.address}" />
               </div>
               <div class="form-group">
+                <label>NMLS Branch ID</label>
+                <input class="input" id="edit-br-nmls" value="${b.nmlsId || ''}" placeholder="e.g. 2045871-001" />
+              </div>
+              <div class="form-group">
                 <label>State</label>
                 <select class="select-input" id="edit-br-state">
                   <option value="DC" ${b.state==='DC'?'selected':''}>DC</option>
@@ -397,8 +442,8 @@ const BranchesView = {
                 </div>
               </div>
               <div class="form-group form-full">
-                <label>Managing Loan Officer</label>
-                <input class="input input-sm" id="edit-br-lo-search" placeholder="Search LOs…" oninput="BranchesView._filterLOList(this.value)" style="margin-bottom:8px" />
+                <label>Branch Users</label>
+                <input class="input input-sm" id="edit-br-lo-search" placeholder="Search users…" oninput="BranchesView._filterBranchUsers(this.value)" style="margin-bottom:8px" />
                 <div id="edit-br-lo-list" style="max-height:160px;overflow-y:auto;border:1px solid var(--color-border);border-radius:var(--radius);padding:4px">
                   ${loRows}
                   <div style="padding:5px 0;font-size:12px">
@@ -425,16 +470,16 @@ const BranchesView = {
         </div>
       </div>`;
 
-    // Store LO rows for search filtering
-    this._loSearchData = companyUsers;
+    // Store user rows for search filtering
+    this._branchUserSearchData = companyUsers;
   },
 
-  _filterLOList(query) {
+  _filterBranchUsers(query) {
     const q = query.toLowerCase();
     const rows = document.querySelectorAll('#edit-br-lo-list .perm-user-row');
     rows.forEach(row => {
-      const name = row.querySelector('div:nth-child(2)')?.textContent.toLowerCase() || '';
-      row.style.display = name.includes(q) ? '' : 'none';
+      const text = row.querySelector('div:nth-child(2)')?.textContent.toLowerCase() || '';
+      row.style.display = text.includes(q) ? '' : 'none';
     });
   },
 
@@ -454,21 +499,22 @@ const BranchesView = {
   },
 
   submitEdit(branchId) {
-    const name    = document.getElementById('edit-br-name')?.value.trim();
-    const address = document.getElementById('edit-br-address')?.value.trim();
-    const state   = document.getElementById('edit-br-state')?.value;
-    const status  = document.getElementById('edit-br-status')?.value;
+    const name       = document.getElementById('edit-br-name')?.value.trim();
+    const address    = document.getElementById('edit-br-address')?.value.trim();
+    const nmlsId     = document.getElementById('edit-br-nmls')?.value.trim() || null;
+    const state      = document.getElementById('edit-br-state')?.value;
+    const status     = document.getElementById('edit-br-status')?.value;
     const programs = [];
     if (document.getElementById('edit-br-prog-dc')?.checked) programs.push('DC Dream Fund');
     if (document.getElementById('edit-br-prog-ky')?.checked) programs.push('Kentucky Dream Fund');
     const loRadio = document.querySelector('input[name="edit-br-lo"]:checked');
     const managingLO = loRadio?.value || null;
 
-    State.updateBranch(branchId, { name, address, state, status, programs, managingLO });
+    State.updateBranch(branchId, { name, address, nmlsId, state, status, programs, managingLO });
     this.closeModal();
     if (this._detailId === branchId) this.openDetail(branchId);
     UsersView.showSuccess('Branch updated');
-    App.renderView('/branches');
+    BranchesView._rerender();
   },
 
   closeModal() {

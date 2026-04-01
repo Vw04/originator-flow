@@ -3,7 +3,20 @@
    ============================================================ */
 
 const CompaniesView = {
+  LOAN_PROGRAMS: ['Utah Dream Fund', 'DC Dream Fund', 'Kentucky Dream Fund'],
   _filter: { search: '', status: '' },
+  _sort: { col: null, dir: 'asc' },
+  _clickMode: 'panel',  // 'panel' (side panel) | 'navigate' (drill-down)
+
+  setSort(col) {
+    if (this._sort.col === col) {
+      this._sort.dir = this._sort.dir === 'asc' ? 'desc' : 'asc';
+    } else {
+      this._sort.col = col;
+      this._sort.dir = 'asc';
+    }
+    App.renderView('/companies');
+  },
 
   render() {
     const canEdit = State.can('manageCompany') || State.can('editAny');
@@ -20,13 +33,24 @@ const CompaniesView = {
     }
     if (f.status) companies = companies.filter(c => c.status === f.status);
 
+    const s = this._sort;
+    if (s.col) {
+      const mul = s.dir === 'asc' ? 1 : -1;
+      companies = [...companies].sort((a, b) => {
+        if (s.col === 'name')   return mul * a.name.localeCompare(b.name);
+        if (s.col === 'status') return mul * a.status.localeCompare(b.status);
+        return 0;
+      });
+    }
+    const thClass = (col) => `sortable${s.col === col ? ' sort-' + s.dir : ''}`;
+
     const rows = companies.map(c => {
       const branches = State.getBranchesByCompany(c.id);
       const users    = State.getUsersByCompany(c.id);
       const pending  = users.filter(u => ['invited','email_verified','2fa_complete','verification_pending'].includes(u.onboardingStatus));
 
       return `
-        <tr class="clickable" onclick="CompaniesView.openDetail('${c.id}')">
+        <tr class="clickable" onclick="${this._clickMode === 'navigate' ? `Router.navigate('/origination-companies/${c.id}')` : `CompaniesView.openDetail('${c.id}')`}">
           <td>
             <div class="cell-primary">${c.name}</div>
             <div class="cell-secondary">${c.emailDomain}</div>
@@ -41,30 +65,29 @@ const CompaniesView = {
           <td>${c.programs.length ? c.programs.map(p => `<span class="tag">${p}</span>`).join(' ') : '<span class="text-muted">—</span>'}</td>
           <td><span class="badge ${c.status === 'active' ? 'badge-active' : 'badge-pending'}">${c.status === 'active' ? 'Active' : 'Pending Setup'}</span></td>
           <td>
-            ${canEdit ? `<button class="btn btn-ghost btn-xs" onclick="event.stopPropagation();CompaniesView.openEditModal('${c.id}')">Edit</button>` : ''}
-            <button class="btn btn-ghost btn-xs" onclick="event.stopPropagation();CompaniesView.openDetail('${c.id}')">View →</button>
+            <button class="btn btn-ghost btn-xs" onclick="event.stopPropagation();${this._clickMode === 'navigate' ? `Router.navigate('/origination-companies/${c.id}')` : `CompaniesView.openDetail('${c.id}')`}">View</button>
           </td>
         </tr>`;
     }).join('');
 
     return `
       <div class="page-header">
-        <div class="page-header-left">
-          <div>
-            <div class="page-title">Organizations</div>
-            <div class="page-subtitle">${companies.length} organization${companies.length !== 1 ? 's' : ''}</div>
+        <div class="page-header-inner">
+          <div class="page-header-left">
+            <div class="page-title">Origination Companies</div>
+            <div class="page-subtitle">${companies.length} company${companies.length !== 1 ? 'ies' : ''}</div>
           </div>
+          ${canEdit ? `
+            <div class="page-header-actions">
+              <button class="btn btn-primary btn-sm" onclick="CompaniesView.openAddModal()">+ Add Origination Company</button>
+            </div>` : ''}
         </div>
-        ${canEdit ? `
-          <div class="page-header-actions">
-            <button class="btn btn-primary btn-sm" onclick="CompaniesView.openAddModal()">+ Add Organization</button>
-          </div>` : ''}
       </div>
 
       <div class="page-body">
         <div class="table-container">
           <div class="table-toolbar">
-            <input type="text" class="input input-sm input-search" style="width:220px" placeholder="Search organizations…"
+            <input type="text" class="input input-sm input-search" style="width:220px" placeholder="Search companies…"
               value="${f.search}" oninput="CompaniesView.setFilter('search', this.value)" />
             <select class="filter-select" onchange="CompaniesView.setFilter('status', this.value)">
               <option value="">All Statuses</option>
@@ -77,16 +100,16 @@ const CompaniesView = {
           ${companies.length ? `
             <table>
               <thead><tr>
-                <th>Organization</th><th>NMLS ID</th><th>State</th><th>Branches</th><th>Users</th><th>Programs</th><th>Status</th><th></th>
+                <th class="${thClass('name')}" onclick="CompaniesView.setSort('name')">Company</th><th>NMLS ID</th><th>State</th><th>Branches</th><th>Users</th><th>Programs</th><th class="${thClass('status')}" onclick="CompaniesView.setSort('status')">Status</th><th></th>
               </tr></thead>
               <tbody>${rows}</tbody>
             </table>
             <div class="table-footer">
-              <span class="table-count">${companies.length} organization${companies.length !== 1 ? 's' : ''}</span>
+              <span class="table-count">${companies.length} company${companies.length !== 1 ? 'ies' : ''}</span>
             </div>` : `
             <div class="table-empty">
               <div class="table-empty-icon"><svg width="40" height="40" viewBox="0 0 40 40" fill="none" stroke="currentColor" stroke-width="1.5" opacity="0.4"><rect x="4" y="8" width="32" height="28" rx="2"/><path d="M12 8V5a2 2 0 0 1 2-2h12a2 2 0 0 1 2 2v3"/><path d="M12 20h16M12 28h10"/></svg></div>
-              <p>No organizations match your search.</p>
+              <p>No companies match your search.</p>
             </div>`}
         </div>
       </div>
@@ -113,7 +136,7 @@ const CompaniesView = {
     const canEdit  = State.can('manageCompany') || State.can('editAny');
 
     const branchRows = branches.map(b => `
-      <tr>
+      <tr class="clickable" onclick="BranchesView.openDetail('${b.id}')">
         <td><div class="cell-primary">${b.name}</div><div class="cell-secondary">${b.address}</div></td>
         <td>${b.state}</td>
         <td>${b.userCount}</td>
@@ -121,7 +144,7 @@ const CompaniesView = {
       </tr>`).join('');
 
     const userRows = users.slice(0, 5).map(u => `
-      <tr>
+      <tr class="clickable" onclick="ProfileView.open('${u.id}')">
         <td>
           <div style="display:flex;align-items:center;gap:8px">
             <div class="avatar avatar-sm" style="background:${avatarColor(u.role)}">${Display.initials(u)}</div>
@@ -181,7 +204,7 @@ const CompaniesView = {
         ${canEdit ? `
           <div class="side-panel-footer">
             <button class="btn btn-secondary" onclick="CompaniesView.closePanel()">Close</button>
-            <button class="btn btn-primary" onclick="CompaniesView.closePanel();CompaniesView.openEditModal('${c.id}')">Edit Organization</button>
+            <button class="btn btn-primary" onclick="CompaniesView.closePanel();CompaniesView.openEditModal('${c.id}')">Edit Company</button>
           </div>` : `
           <div class="side-panel-footer">
             <button class="btn btn-secondary" onclick="CompaniesView.closePanel()">Close</button>
@@ -195,7 +218,7 @@ const CompaniesView = {
         <div class="modal modal-lg">
           <div class="modal-header">
             <div>
-              <div class="modal-title">Add Organization</div>
+              <div class="modal-title">Add Origination Company</div>
               <div class="modal-subtitle">Create a new loan origination company</div>
             </div>
             <button class="modal-close" onclick="CompaniesView.closeModal()">×</button>
@@ -241,7 +264,7 @@ const CompaniesView = {
 
           <div class="modal-footer">
             <button class="btn btn-secondary" onclick="CompaniesView.closeModal()">Cancel</button>
-            <button class="btn btn-primary" onclick="CompaniesView.submitAdd()">Create Organization</button>
+            <button class="btn btn-primary" onclick="CompaniesView.submitAdd()">Create Company</button>
           </div>
         </div>
       </div>`;
@@ -266,7 +289,7 @@ const CompaniesView = {
 
     State.addCompany({ name, nmlsId, stateOfIncorporation: state, emailDomain: domain, primaryContact: contact, complianceDocs: docs });
     this.closeModal();
-    UsersView.showSuccess(`Organization "${name}" created`);
+    UsersView.showSuccess(`Company "${name}" created`);
     App.renderView('/companies');
   },
 
@@ -279,7 +302,7 @@ const CompaniesView = {
         <div class="modal modal-lg">
           <div class="modal-header">
             <div>
-              <div class="modal-title">Edit Organization</div>
+              <div class="modal-title">Edit Origination Company</div>
               <div class="modal-subtitle">${c.name}</div>
             </div>
             <button class="modal-close" onclick="CompaniesView.closeModal()">×</button>
@@ -308,16 +331,42 @@ const CompaniesView = {
               </div>
               <div class="form-group">
                 <label>Primary Contact</label>
-                <input class="input" id="edit-co-contact" value="${c.primaryContact || ''}" />
+                <select class="select-input" id="edit-co-contact">
+                  <option value="">— Select team member —</option>
+                  ${State.getUsersByCompany(companyId).map(u =>
+                    `<option value="${Display.fullName(u)}" ${c.primaryContact === Display.fullName(u) ? 'selected' : ''}>${Display.fullName(u)} (${Display.roleName(u.role)})</option>`
+                  ).join('')}
+                </select>
               </div>
               <div class="form-group form-full">
                 <label>Enabled Programs</label>
                 <div style="display:flex;gap:16px;flex-wrap:wrap;margin-top:4px">
-                  <label class="checkbox-group"><input type="checkbox" id="edit-co-prog-std" ${c.programs.includes('Standard HEI')?'checked':''} /> Standard HEI</label>
-                  <label class="checkbox-group"><input type="checkbox" id="edit-co-prog-jumbo" ${c.programs.includes('Jumbo HEI')?'checked':''} /> Jumbo HEI</label>
+                  ${CompaniesView.LOAN_PROGRAMS.map((p, i) => `<label class="checkbox-group"><input type="checkbox" id="edit-co-prog-${i}" value="${p}" ${c.programs.includes(p)?'checked':''} /> ${p}</label>`).join('')}
                 </div>
               </div>
             </div>
+
+            <hr class="divider" style="margin:16px 0" />
+            <div style="font-size:12px;font-weight:700;text-transform:uppercase;letter-spacing:0.07em;color:var(--color-text-muted);margin-bottom:12px">Add Branch</div>
+            <div class="form-grid" id="add-branch-form" style="margin-bottom:8px">
+              <div class="form-group">
+                <label>Branch Name</label>
+                <input class="input" id="new-br-name" placeholder="Main Branch" />
+              </div>
+              <div class="form-group">
+                <label>State</label>
+                <input class="input" id="new-br-state" placeholder="DC" maxlength="2" style="text-transform:uppercase" />
+              </div>
+              <div class="form-group form-full">
+                <label>Address</label>
+                <input class="input" id="new-br-address" placeholder="123 Main St, Washington, DC 20001" />
+              </div>
+            </div>
+            <button class="btn btn-ghost btn-sm" onclick="CompaniesView.addBranchInline('${companyId}')">+ Add Branch</button>
+
+            <hr class="divider" style="margin:16px 0" />
+            <div style="font-size:12px;font-weight:700;text-transform:uppercase;letter-spacing:0.07em;color:var(--color-text-muted);margin-bottom:8px">Invite User to this Company</div>
+            <button class="btn btn-ghost btn-sm" onclick="CompaniesView.closeModal();UsersView._presetCompany='${companyId}';UsersView.openInviteModal()">+ Invite User</button>
           </div>
 
           <div class="modal-footer">
@@ -328,20 +377,29 @@ const CompaniesView = {
       </div>`;
   },
 
+  addBranchInline(companyId) {
+    const name    = document.getElementById('new-br-name')?.value.trim();
+    const state   = document.getElementById('new-br-state')?.value.trim().toUpperCase();
+    const address = document.getElementById('new-br-address')?.value.trim();
+    if (!name) { alert('Branch name is required.'); return; }
+    State.addBranch({ name, address: address || '', state: state || '', companyId, programs: [] });
+    UsersView.showSuccess(`Branch "${name}" added`);
+    // Clear fields
+    ['new-br-name','new-br-state','new-br-address'].forEach(id => { const el = document.getElementById(id); if (el) el.value = ''; });
+  },
+
   submitEdit(companyId) {
     const name    = document.getElementById('edit-co-name')?.value.trim();
     const nmlsId  = document.getElementById('edit-co-nmls')?.value.trim();
     const status  = document.getElementById('edit-co-status')?.value;
     const domain  = document.getElementById('edit-co-domain')?.value.trim();
-    const contact = document.getElementById('edit-co-contact')?.value.trim();
-    const programs = [];
-    if (document.getElementById('edit-co-prog-std')?.checked)   programs.push('Standard HEI');
-    if (document.getElementById('edit-co-prog-jumbo')?.checked) programs.push('Jumbo HEI');
+    const contact = document.getElementById('edit-co-contact')?.value || '';
+    const programs = this.LOAN_PROGRAMS.filter((p, i) => document.getElementById(`edit-co-prog-${i}`)?.checked);
 
     State.updateCompany(companyId, { name, nmlsId, status, emailDomain: domain, primaryContact: contact, programs });
     this.closeModal();
     this.closePanel();
-    UsersView.showSuccess('Organization updated');
+    UsersView.showSuccess('Company updated');
     App.renderView('/companies');
   },
 

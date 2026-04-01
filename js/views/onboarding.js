@@ -6,6 +6,8 @@ const OnboardingView = {
   _selectedUserId: null,
   _wizardStep: 0,
   _filters: [],  // [{type, value}]
+  _search: '',
+  _sort: { field: 'status', dir: 'asc' }, // status asc = earliest → active
 
   addFilter(type, value) {
     if (!value) return;
@@ -22,19 +24,45 @@ const OnboardingView = {
 
   clearOnboardingFilters() {
     this._filters = [];
+    this._search  = '';
     App.renderView('/onboarding');
   },
 
+  setSearch(q) {
+    this._search = q;
+    App.renderView('/onboarding');
+  },
+
+  setSort(field, dir) {
+    this._sort = { field, dir };
+    App.renderView('/onboarding');
+  },
+
+  _statusOrder: { invited: 0, email_verified: 1, '2fa_complete': 2, verification_pending: 3, active: 4, verification_failed: 5, suspended: 6 },
+
   _applyFilters(users) {
-    const companies = State.getCompanies();
-    const branches  = State.getBranches();
-    return this._filters.reduce((list, f) => {
-      if (f.type === 'company') return list.filter(u => u.companyId === f.value);
-      if (f.type === 'role')    return list.filter(u => u.role === f.value);
-      if (f.type === 'status')  return list.filter(u => u.onboardingStatus === f.value);
-      if (f.type === 'branch')  return list.filter(u => u.branchId === f.value);
-      return list;
+    let list = this._filters.reduce((l, f) => {
+      if (f.type === 'company') return l.filter(u => u.companyId === f.value);
+      if (f.type === 'role')    return l.filter(u => u.role === f.value);
+      if (f.type === 'status')  return l.filter(u => u.onboardingStatus === f.value);
+      if (f.type === 'branch')  return l.filter(u => u.branchId === f.value);
+      return l;
     }, users);
+
+    if (this._search) {
+      const q = this._search.toLowerCase();
+      list = list.filter(u => Display.fullName(u).toLowerCase().includes(q) || u.email.toLowerCase().includes(q));
+    }
+
+    const { field, dir } = this._sort;
+    const mul = dir === 'asc' ? 1 : -1;
+    list = [...list].sort((a, b) => {
+      if (field === 'name')   return mul * Display.fullName(a).localeCompare(Display.fullName(b));
+      if (field === 'status') return mul * ((this._statusOrder[a.onboardingStatus] ?? 9) - (this._statusOrder[b.onboardingStatus] ?? 9));
+      return 0;
+    });
+
+    return list;
   },
 
   _renderFilterBar(companies, branches) {
@@ -47,38 +75,54 @@ const OnboardingView = {
       return `<span class="filter-chip">${label}<button class="filter-chip-remove" onclick="OnboardingView.removeFilter(${i})">×</button></span>`;
     }).join('');
 
-    return `
-      <div class="filter-chip-bar">
-        ${chips}
-        <div style="position:relative;display:inline-block">
-          <button class="btn-add-filter" onclick="OnboardingView.toggleFilterDropdown(event)">+ Add Filter</button>
-          <div class="filter-dropdown" id="onb-filter-dd" style="display:none">
-            <div class="filter-dropdown-section">By Organization</div>
-            ${companies.map(c => `<div class="filter-dropdown-item" onclick="OnboardingView.addFilter('company','${c.id}')">${c.name}</div>`).join('')}
-            <div class="filter-dropdown-section">By Role</div>
-            ${['lo','lp','prog_admin'].map(r => `<div class="filter-dropdown-item" onclick="OnboardingView.addFilter('role','${r}')">${Display.roleName(r)}</div>`).join('')}
-            <div class="filter-dropdown-section">By Status</div>
-            ${['invited','email_verified','2fa_complete','verification_pending','verification_failed'].map(s =>
-              `<div class="filter-dropdown-item" onclick="OnboardingView.addFilter('status','${s}')">${Display.onboardingStatusLabel(s)}</div>`
-            ).join('')}
-            <div class="filter-dropdown-section">By Branch</div>
-            ${branches.map(b => `<div class="filter-dropdown-item" onclick="OnboardingView.addFilter('branch','${b.id}')">${b.name}</div>`).join('')}
-          </div>
-        </div>
-        ${this._filters.length ? `<button class="btn btn-ghost btn-sm" onclick="OnboardingView.clearOnboardingFilters()">Clear all</button>` : ''}
-      </div>`;
-  },
+    const hasFilters = this._filters.length > 0 || this._search;
 
-  toggleFilterDropdown(e) {
-    e.stopPropagation();
-    const dd = document.getElementById('onb-filter-dd');
-    if (!dd) return;
-    const isOpen = dd.style.display !== 'none';
-    document.querySelectorAll('.filter-dropdown').forEach(d => d.style.display = 'none');
-    if (!isOpen) {
-      dd.style.display = 'block';
-      setTimeout(() => document.addEventListener('click', () => { dd.style.display = 'none'; }, { once: true }), 0);
-    }
+    return `
+      <div style="margin-bottom:16px">
+        <!-- Row 1: Search + category dropdowns -->
+        <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap;margin-bottom:8px">
+          <input class="input input-sm input-search" style="width:200px" placeholder="Search by name or email…"
+            value="${this._search}" oninput="OnboardingView.setSearch(this.value)" />
+
+          <select class="filter-select" onchange="OnboardingView.addFilter('company',this.value);this.value=''">
+            <option value="">Organization…</option>
+            ${companies.map(c => `<option value="${c.id}">${c.name}</option>`).join('')}
+          </select>
+
+          <select class="filter-select" onchange="OnboardingView.addFilter('status',this.value);this.value=''">
+            <option value="">Status…</option>
+            ${['invited','email_verified','2fa_complete','verification_pending','active','verification_failed','suspended'].map(s =>
+              `<option value="${s}">${Display.onboardingStatusLabel(s)}</option>`).join('')}
+          </select>
+
+          <select class="filter-select" onchange="OnboardingView.addFilter('role',this.value);this.value=''">
+            <option value="">Role…</option>
+            ${['lo','lp','prog_admin'].map(r => `<option value="${r}">${Display.roleName(r)}</option>`).join('')}
+          </select>
+
+          <select class="filter-select" onchange="OnboardingView.addFilter('branch',this.value);this.value=''">
+            <option value="">Branch…</option>
+            ${branches.map(b => `<option value="${b.id}">${b.name}</option>`).join('')}
+          </select>
+
+          ${hasFilters ? `<button class="btn btn-ghost btn-sm" onclick="OnboardingView.clearOnboardingFilters()">Clear</button>` : ''}
+        </div>
+
+        <!-- Row 2: Sort controls + active filter chips -->
+        <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap">
+          <span style="font-size:11px;font-weight:600;text-transform:uppercase;letter-spacing:0.07em;color:var(--color-text-muted)">Sort:</span>
+          ${[
+            { label: 'A → Z',           field: 'name',   dir: 'asc'  },
+            { label: 'Z → A',           field: 'name',   dir: 'desc' },
+            { label: 'Status ↑',        field: 'status', dir: 'asc'  },
+            { label: 'Status ↓',        field: 'status', dir: 'desc' },
+          ].map(s => {
+            const active = this._sort.field === s.field && this._sort.dir === s.dir;
+            return `<button class="btn btn-ghost btn-xs${active?' btn-ghost-active':''}" onclick="OnboardingView.setSort('${s.field}','${s.dir}')">${s.label}</button>`;
+          }).join('')}
+          ${chips ? `<span style="flex:1"></span>${chips}` : ''}
+        </div>
+      </div>`;
   },
 
   render() {
@@ -91,8 +135,9 @@ const OnboardingView = {
     // LO/LP: show their own onboarding steps
     if (role === 'lo' || role === 'lp') return this.renderPersonalOnboarding();
 
-    // Admin / Operator / ProgAdmin: manage all onboarding
-    return this.renderAdminOnboarding();
+    // Admin / Operator / ProgAdmin: redirect to section-specific users views
+    // (onboarding is now integrated into each section's Users tab)
+    return '<div class="page-body"><p>Redirecting…</p></div>';
   },
 
   /* ---- Admin: Onboarding Management ---- */
@@ -147,16 +192,16 @@ const OnboardingView = {
 
     return `
       <div class="page-header">
-        <div class="page-header-left">
-          <div>
+        <div class="page-header-inner">
+          <div class="page-header-left">
             <div class="page-title">Onboarding</div>
             <div class="page-subtitle">${pending.length} user${pending.length !== 1 ? 's' : ''} pending · ${active.length} active</div>
           </div>
+          ${canEdit ? `
+            <div class="page-header-actions">
+              <button class="btn btn-primary btn-sm" onclick="UsersView.openInviteModal()">+ Invite User</button>
+            </div>` : ''}
         </div>
-        ${canEdit ? `
-          <div class="page-header-actions">
-            <button class="btn btn-primary btn-sm" onclick="UsersView.openInviteModal()">+ Invite User</button>
-          </div>` : ''}
       </div>
 
       <div class="page-body">
@@ -309,8 +354,8 @@ const OnboardingView = {
     if (!user) return '<div class="page-body">No user found.</div>';
     return `
       <div class="page-header">
-        <div class="page-header-left">
-          <div class="page-title">Account Setup</div>
+        <div class="page-header-inner">
+          <div class="page-header-left"><div class="page-title">Account Setup</div></div>
         </div>
       </div>
       <div class="page-body" style="max-width:640px">
@@ -322,7 +367,9 @@ const OnboardingView = {
   renderInvestorKYC() {
     return `
       <div class="page-header">
-        <div class="page-header-left"><div class="page-title">KYC Verification Status</div></div>
+        <div class="page-header-inner">
+          <div class="page-header-left"><div class="page-title">KYC Verification Status</div></div>
+        </div>
       </div>
 
       <div class="page-body" style="max-width:640px">
