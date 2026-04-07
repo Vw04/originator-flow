@@ -1,290 +1,403 @@
 /* ============================================================
    HOMIUM ORIGINATOR FLOW — Company Permissions Workbench
+   Layout: Left hierarchy tree + Right inline editor panel
    Three-layer RBAC: Company Default → Branch Default → User Override
    ============================================================ */
 
 const CompanyPermissionsView = {
-  _companyId: null,
-  _activeBranchId: null,
-  _editingUserId: null,
+  _companyId:        null,
+  _selectedLevel:    'company',  // 'company' | 'branch' | 'user'
+  _selectedBranchId: null,
+  _selectedUserId:   null,
   _pendingOverrides: {},
-  _pendingTemplateId: null,  // staged template in user panel (before save)
-  _pendingTags: null,        // staged tags in user panel (before save)
+  _pendingTemplateId: null,
+  _pendingTags:      null,
+  _expandedBranches: {},         // { branchId: true } — which branches show their users
 
   render(companyId) {
     if (this._companyId !== companyId) {
-      // Reset drill-down state when switching companies
-      this._companyId = companyId;
-      this._activeBranchId = null;
-      this._editingUserId = null;
+      this._companyId       = companyId;
+      this._selectedLevel   = 'company';
+      this._selectedBranchId = null;
+      this._selectedUserId  = null;
       this._pendingOverrides = {};
       this._pendingTemplateId = null;
-      this._pendingTags = null;
+      this._pendingTags     = null;
+      this._expandedBranches = {};
+      // Auto-expand all branches
+      const branches = State.getBranchesByCompany(companyId);
+      branches.forEach(b => { this._expandedBranches[b.id] = true; });
     }
-    if (this._activeBranchId) {
-      return this._renderBranchDrillDown();
-    }
-    return this._renderOverview();
-  },
 
-  /* ================================================================
-     OVERVIEW — Company Default card + Branches list + Audit log
-  ================================================================ */
-  _renderOverview() {
-    const company = State.getCompany(this._companyId);
-    if (!company) return '<p>Company not found.</p>';
-
-    const branches = State.getBranchesByCompany(this._companyId);
-    const auditEntries = State.getAuditLogByCompany(this._companyId);
-
-    // Section 1: Company Default Card
-    const coTemplateId = company.defaultPermissionTemplateId;
-    const coTemplate = coTemplateId ? State.getTemplate(coTemplateId) : null;
-    const templateOptions = State.getTemplates().map(t =>
-      `<option value="${t.id}" ${t.id === coTemplateId ? 'selected' : ''}>${t.name}</option>`
-    ).join('');
-
-    const companyDefaultCard = `
-      <div class="card" style="margin-bottom:20px">
-        <div style="display:flex;align-items:flex-start;justify-content:space-between;gap:16px">
-          <div>
-            <div style="font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.07em;color:var(--color-text-muted);margin-bottom:6px">Company Default Template</div>
-            <div style="font-size:15px;font-weight:600;margin-bottom:4px">
-              ${coTemplate ? coTemplate.name : '<span style="color:var(--color-text-muted)">No Default Set</span>'}
-              ${coTemplate ? '' : ''}
-            </div>
-            <div style="font-size:12px;color:var(--color-text-secondary)">
-              ${coTemplate ? coTemplate.description : 'All branch users will inherit from their branch default, or have no permissions if no branch default is set.'}
-            </div>
-          </div>
-          <button class="btn btn-secondary btn-sm" onclick="CompanyPermissionsView._openCompanyDefaultModal()">Edit</button>
-        </div>
-      </div>`;
-
-    // Section 2: Branches List
-    const branchRows = branches.map(br => {
-      const brTemplateId = br.defaultPermissionTemplateId;
-      const brTemplate = brTemplateId ? State.getTemplate(brTemplateId) : null;
-      const userCount = State.getAssignmentsByBranch(br.id).length;
-      const isCustom = !!brTemplateId;
-      const badgeClass = isCustom ? 'badge-active' : 'badge-neutral';
-      const badgeLabel = isCustom ? 'Custom' : 'Inherited';
-      const templateLabel = brTemplate ? brTemplate.name : (coTemplate ? `${coTemplate.name} <span style="color:var(--color-text-muted);font-size:11px">(from company)</span>` : '<span style="color:var(--color-text-muted)">None</span>');
-
-      return `
-        <div class="branch-perm-row">
-          <div class="branch-perm-name">${br.name}</div>
-          <div class="branch-perm-template">${templateLabel}</div>
-          <div style="font-size:12px;color:var(--color-text-muted);min-width:60px;text-align:right">${userCount} user${userCount !== 1 ? 's' : ''}</div>
-          <span class="badge ${badgeClass}" style="font-size:11px">${badgeLabel}</span>
-          <button class="btn btn-secondary btn-sm" onclick="CompanyPermissionsView.drillInto('${br.id}')">View →</button>
-        </div>`;
-    }).join('');
-
-    const branchSection = `
-      <div style="margin-bottom:24px">
-        <div style="font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.07em;color:var(--color-text-muted);margin-bottom:10px">Branches</div>
-        <div class="card" style="padding:0 16px">
-          ${branchRows || '<div style="padding:16px 0;color:var(--color-text-muted);font-size:13px">No branches found.</div>'}
-        </div>
-      </div>`;
-
-    // Section 3: Recently Modified (audit log)
-    const auditRows = auditEntries.map(e => {
-      const actor = State.getUser(e.actorId);
-      const actorName = actor ? `${actor.firstName} ${actor.lastName}` : 'Unknown';
-      const initials = actor ? Display.initials(actor) : '?';
-      const avatarBg = actor ? avatarColor(actor.role) : '#999';
-      return `
-        <div class="perm-audit-row">
-          <div class="avatar" style="background:${avatarBg};width:24px;height:24px;font-size:9px;flex-shrink:0">${initials}</div>
-          <div class="perm-audit-detail">
-            <strong>${actorName}</strong> — ${e.detail}
-          </div>
-          <div class="perm-audit-time">${Display.relativeTime(e.timestamp)}</div>
-        </div>`;
-    }).join('');
-
-    const auditSection = `
-      <div>
-        <div style="font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.07em;color:var(--color-text-muted);margin-bottom:10px">Recently Modified</div>
-        <div class="card" style="padding:0 16px">
-          ${auditRows || '<div style="padding:16px 0;color:var(--color-text-muted);font-size:13px">No recent activity.</div>'}
-        </div>
-      </div>`;
-
-    // Company default modal (hidden by default, shown via _openCompanyDefaultModal)
-    const modal = `
-      <div id="co-perm-modal" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,.4);z-index:1000;align-items:center;justify-content:center">
-        <div class="card" style="width:440px;max-width:92vw;padding:24px">
-          <div style="font-size:15px;font-weight:700;margin-bottom:16px">Edit Company Default Template</div>
-          <div style="margin-bottom:8px;font-size:12px;font-weight:600;color:var(--color-text-secondary)">Template</div>
-          <select id="co-perm-template-select" onchange="CompanyPermissionsView._updateModalDesc(this.value)"
-                  style="width:100%;margin-bottom:8px;padding:8px;border:1px solid var(--color-border);border-radius:4px;font-size:13px">
-            <option value="">— No Default —</option>
-            ${templateOptions}
-          </select>
-          <div id="co-perm-template-desc" style="font-size:12px;color:var(--color-text-secondary);margin-bottom:20px;min-height:16px">
-            ${coTemplate ? coTemplate.description : ''}
-          </div>
-          <div style="display:flex;gap:8px;justify-content:flex-end">
-            <button class="btn btn-secondary btn-sm" onclick="CompanyPermissionsView._closeCompanyDefaultModal()">Cancel</button>
-            <button class="btn btn-primary btn-sm" onclick="CompanyPermissionsView._saveCompanyDefault()">Save</button>
-          </div>
-        </div>
-      </div>`;
-
-    return companyDefaultCard + branchSection + auditSection + modal;
-  },
-
-  /* ================================================================
-     BRANCH DRILL-DOWN — Branch template + users table + side panel
-  ================================================================ */
-  _renderBranchDrillDown() {
-    const branch = State.getBranch(this._activeBranchId);
-    if (!branch) return '<p>Branch not found.</p>';
-
-    const company = State.getCompany(this._companyId);
-    const assignments = State.getAssignmentsByBranch(this._activeBranchId);
-    const brTemplateId = branch.defaultPermissionTemplateId;
-    const coTemplate = company?.defaultPermissionTemplateId ? State.getTemplate(company.defaultPermissionTemplateId) : null;
-    const inheritCount = assignments.filter(a => !a.templateId).length;
-
-    const templateOptions = `
-      <option value="">— Inherit from Company (${coTemplate ? coTemplate.name : 'None'}) —</option>
-      ${State.getTemplates().map(t =>
-        `<option value="${t.id}" ${t.id === brTemplateId ? 'selected' : ''}>${t.name}</option>`
-      ).join('')}`;
-
-    // Users table
-    const tableRows = assignments.map(a => {
-      const user = State.getUser(a.userId);
-      if (!user) return '';
-      const isCustom = !!a.templateId || Object.keys(a.overridePermissions).length > 0;
-      const badgeClass = isCustom ? 'badge-active' : 'badge-neutral';
-      const badgeLabel = isCustom ? 'Custom' : 'Inherited';
-      const templateName = a.templateId ? (State.getTemplate(a.templateId)?.name || 'Custom') : 'Inherited';
-      const tagsHtml = a.tags.length
-        ? a.tags.map(t => `<span style="background:var(--color-surface);border:1px solid var(--color-border);border-radius:10px;padding:1px 7px;font-size:11px;color:var(--color-text-secondary)">${t}</span>`).join(' ')
-        : '<span style="color:var(--color-text-muted);font-size:12px">—</span>';
-      const isEditing = this._editingUserId === a.userId;
-
-      return `
-        <tr class="${isEditing ? 'table-row-selected' : ''}">
-          <td>
-            <div style="display:flex;align-items:center;gap:8px">
-              <div class="avatar" style="background:${avatarColor(user.role)};width:28px;height:28px;font-size:11px">${Display.initials(user)}</div>
-              <div>
-                <div style="font-weight:600;font-size:13px">${Display.fullName(user)}</div>
-                <div style="font-size:11px;color:var(--color-text-muted)">${user.email}</div>
-              </div>
-            </div>
-          </td>
-          <td><span class="badge ${Display.roleClass(user.role)}">${Display.roleName(user.role)}</span></td>
-          <td>${tagsHtml}</td>
-          <td><span class="badge ${badgeClass}">${badgeLabel}</span><span style="font-size:11px;color:var(--color-text-muted);margin-left:6px">${templateName}</span></td>
-          <td><button class="btn btn-secondary btn-sm" onclick="CompanyPermissionsView.openUserPanel('${a.userId}')">Edit</button></td>
-        </tr>`;
-    }).join('');
-
-    const table = `
-      <div class="card" style="padding:0">
-        <table style="width:100%">
-          <thead>
-            <tr>
-              <th>User</th>
-              <th>User Type</th>
-              <th>Tags</th>
-              <th>Template</th>
-              <th></th>
-            </tr>
-          </thead>
-          <tbody>${tableRows || '<tr><td colspan="5" style="text-align:center;color:var(--color-text-muted);padding:20px">No users assigned to this branch.</td></tr>'}</tbody>
-        </table>
-      </div>`;
-
-    // Side panel (if editing)
-    const panel = this._editingUserId ? this._renderUserEditPanel(this._editingUserId) : '';
+    const sidebar  = this._renderSidebar();
+    const mainPanel = this._renderMainPanel();
 
     return `
-      <div style="display:flex;align-items:center;gap:8px;margin-bottom:20px">
-        <button class="btn btn-secondary btn-sm" onclick="CompanyPermissionsView.drillInto(null)">← Branches</button>
-        <span style="font-size:18px;font-weight:700">${branch.name}</span>
-      </div>
-
-      <div class="card" style="margin-bottom:20px;padding:16px 20px">
-        <div style="display:flex;align-items:center;gap:16px;flex-wrap:wrap">
-          <div style="font-size:13px;font-weight:600;color:var(--color-text-secondary);white-space:nowrap">Branch Default Template</div>
-          <select id="br-template-select" onchange="CompanyPermissionsView._onBranchTemplateChange(this.value)"
-                  style="padding:6px 10px;border:1px solid var(--color-border);border-radius:4px;font-size:13px;min-width:260px">
-            ${templateOptions}
-          </select>
-          <span id="br-affected-msg" style="font-size:12px;color:var(--color-text-muted)">
-            ${inheritCount > 0 ? `${inheritCount} user${inheritCount !== 1 ? 's' : ''} currently set to Inherit` : ''}
-          </span>
-          <button class="btn btn-primary btn-sm" onclick="CompanyPermissionsView._saveBranchDefault()">Apply</button>
-        </div>
-      </div>
-
-      <div style="display:flex;gap:20px;align-items:flex-start">
-        <div style="flex:1;min-width:0">${table}</div>
-        ${panel ? `<div style="width:380px;flex-shrink:0">${panel}</div>` : ''}
+      <div class="pw-layout">
+        <div class="pw-sidebar">${sidebar}</div>
+        <div class="pw-main">${mainPanel}</div>
       </div>`;
   },
 
   /* ================================================================
-     USER EDIT PANEL — 4 zones
+     SIDEBAR — Company → Branches → Users hierarchy tree
   ================================================================ */
-  _renderUserEditPanel(userId) {
-    const assignment = State.getAssignment(userId, this._activeBranchId);
-    const user = State.getUser(userId);
-    const branch = State.getBranch(this._activeBranchId);
-    if (!user || !branch) return '';
+  _renderSidebar() {
+    const company  = State.getCompany(this._companyId);
+    const branches = State.getBranchesByCompany(this._companyId);
 
-    const currentTemplateId = this._pendingTemplateId !== null
+    const coTemplateId = company?.defaultPermissionTemplateId;
+    const coTemplate   = coTemplateId ? State.getTemplate(coTemplateId) : null;
+    const coActive     = this._selectedLevel === 'company';
+
+    const branchItems = branches.map(br => {
+      const brTemplateId = br.defaultPermissionTemplateId;
+      const brTemplate   = brTemplateId ? State.getTemplate(brTemplateId) : null;
+      const brActive     = this._selectedLevel === 'branch' && this._selectedBranchId === br.id;
+      const expanded     = this._expandedBranches[br.id];
+      const assignments  = State.getAssignmentsByBranch(br.id);
+      const customCount  = assignments.filter(a => a.templateId || Object.keys(a.overridePermissions).length > 0).length;
+
+      const userItems = expanded ? assignments.map(a => {
+        const user   = State.getUser(a.userId);
+        if (!user) return '';
+        const uActive = this._selectedLevel === 'user' && this._selectedUserId === a.userId && this._selectedBranchId === br.id;
+        const hasOverride = a.templateId || Object.keys(a.overridePermissions).length > 0;
+        return `
+          <div class="pw-tree-user ${uActive ? 'pw-tree-active' : ''}"
+               onclick="CompanyPermissionsView.selectUser('${a.userId}', '${br.id}')">
+            <div class="pw-tree-user-avatar" style="background:${avatarColor(user.role)}">${Display.initials(user)}</div>
+            <div class="pw-tree-user-info">
+              <div class="pw-tree-user-name">${Display.fullName(user)}</div>
+              <div class="pw-tree-user-sub">${hasOverride ? '<span class="pw-badge-custom">Custom</span>' : '<span class="pw-badge-inherit">Inherited</span>'}</div>
+            </div>
+          </div>`;
+      }).join('') : '';
+
+      return `
+        <div class="pw-tree-branch-wrap">
+          <div class="pw-tree-branch ${brActive ? 'pw-tree-active' : ''}"
+               onclick="CompanyPermissionsView.selectBranch('${br.id}')">
+            <div class="pw-tree-branch-toggle" onclick="event.stopPropagation();CompanyPermissionsView.toggleBranch('${br.id}')">
+              <svg width="10" height="10" viewBox="0 0 10 10" fill="none" stroke="currentColor" stroke-width="1.8"
+                   style="transform:${expanded ? 'rotate(90deg)' : 'rotate(0deg)'};transition:transform .15s">
+                <path d="M3 2l4 3-4 3"/>
+              </svg>
+            </div>
+            <div class="pw-tree-branch-icon">
+              <svg width="12" height="12" viewBox="0 0 12 12" fill="none" stroke="currentColor" stroke-width="1.5">
+                <rect x="1" y="3" width="10" height="8" rx="1"/><path d="M4 3V2a1 1 0 0 1 1-1h2a1 1 0 0 1 1 1v1"/>
+              </svg>
+            </div>
+            <div style="flex:1;min-width:0">
+              <div class="pw-tree-branch-name">${br.name}</div>
+              <div class="pw-tree-branch-sub">
+                ${brTemplate ? brTemplate.name : `<span style="color:var(--color-text-muted)">Inherited</span>`}
+                ${customCount > 0 ? `· <span style="color:var(--color-accent)">${customCount} custom</span>` : ''}
+              </div>
+            </div>
+          </div>
+          ${expanded ? `<div class="pw-tree-users">${userItems}</div>` : ''}
+        </div>`;
+    }).join('');
+
+    return `
+      <div class="pw-tree-company ${coActive ? 'pw-tree-active' : ''}"
+           onclick="CompanyPermissionsView.selectCompany()">
+        <div class="pw-tree-co-icon">
+          <svg width="14" height="14" viewBox="0 0 14 14" fill="none" stroke="currentColor" stroke-width="1.5">
+            <rect x="1" y="4" width="12" height="9" rx="1"/><path d="M4 4V3a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v1"/>
+            <path d="M5 8h4M5 11h4"/>
+          </svg>
+        </div>
+        <div style="flex:1;min-width:0">
+          <div class="pw-tree-co-name">${company?.name || 'Company'}</div>
+          <div class="pw-tree-co-sub">
+            Default: ${coTemplate ? coTemplate.name : '<span style="color:var(--color-text-muted)">Not set</span>'}
+          </div>
+        </div>
+      </div>
+
+      <div class="pw-tree-divider"></div>
+      <div class="pw-tree-section-label">Branches</div>
+
+      ${branchItems}`;
+  },
+
+  /* ================================================================
+     MAIN PANEL — switches based on selected level
+  ================================================================ */
+  _renderMainPanel() {
+    if (this._selectedLevel === 'company') return this._renderCompanyPanel();
+    if (this._selectedLevel === 'branch')  return this._renderBranchPanel();
+    if (this._selectedLevel === 'user')    return this._renderUserPanel();
+    return '';
+  },
+
+  /* ---- Company-level panel ---- */
+  _renderCompanyPanel() {
+    const company = State.getCompany(this._companyId);
+    const coTemplateId = company?.defaultPermissionTemplateId;
+    const coTemplate   = coTemplateId ? State.getTemplate(coTemplateId) : null;
+    const branches     = State.getBranchesByCompany(this._companyId);
+
+    const templateSelect = this._renderTemplateSelect(coTemplateId,
+      `CompanyPermissionsView._applyCompanyDefault(this.value)`, true);
+
+    // Propagation summary
+    const inheritingBranches = branches.filter(b => !b.defaultPermissionTemplateId);
+    const customBranches     = branches.filter(b => !!b.defaultPermissionTemplateId);
+
+    const propagationRows = branches.map(br => {
+      const isCustom = !!br.defaultPermissionTemplateId;
+      const effectiveTemplate = isCustom
+        ? State.getTemplate(br.defaultPermissionTemplateId)
+        : coTemplate;
+      const assignments = State.getAssignmentsByBranch(br.id);
+      return `
+        <div class="pw-prop-row">
+          <div class="pw-prop-branch">${br.name}</div>
+          <div class="pw-prop-template">
+            ${effectiveTemplate ? effectiveTemplate.name : '<span style="color:var(--color-text-muted)">None</span>'}
+          </div>
+          <div class="pw-prop-badge">
+            ${isCustom
+              ? '<span class="pw-badge-custom">Branch override</span>'
+              : '<span class="pw-badge-inherit">Inherits this default</span>'}
+          </div>
+          <div class="pw-prop-users" style="font-size:12px;color:var(--color-text-muted)">${assignments.length} users</div>
+        </div>`;
+    }).join('');
+
+    const matrixPreview = coTemplate ? this._renderMatrixPreview(coTemplate.defaultMatrix) : `
+      <div style="padding:32px;text-align:center;color:var(--color-text-muted);font-size:13px">
+        No default template set. Branches will have no permissions unless explicitly configured.
+      </div>`;
+
+    return `
+      <div class="pw-panel-header">
+        <div class="pw-panel-breadcrumb">Company</div>
+        <div class="pw-panel-title">${company?.name}</div>
+        <div class="pw-panel-subtitle">Set the default permissions inherited by all branches unless overridden.</div>
+      </div>
+
+      <div class="pw-panel-body">
+        <!-- Template selector -->
+        <div class="pw-section">
+          <div class="pw-section-label">Company Default Template</div>
+          <div class="pw-template-selector-row">
+            ${templateSelect}
+          </div>
+          ${coTemplate ? `
+            <div class="pw-template-desc">${coTemplate.description}</div>
+          ` : `
+            <div class="pw-template-desc" style="color:var(--color-text-muted)">No default selected. Branches must have their own template or users will have no permissions.</div>
+          `}
+        </div>
+
+        <!-- Propagation to branches -->
+        <div class="pw-section">
+          <div class="pw-section-label" style="margin-bottom:10px">
+            Propagation
+            <span style="font-weight:400;color:var(--color-text-muted);margin-left:6px">
+              ${inheritingBranches.length} inheriting · ${customBranches.length} overridden
+            </span>
+          </div>
+          <div class="pw-prop-table">
+            ${propagationRows}
+          </div>
+        </div>
+
+        <!-- Permission matrix preview -->
+        ${coTemplate ? `
+          <div class="pw-section">
+            <div class="pw-section-label">Template Permission Matrix</div>
+            <div class="pw-section-hint">What users get by default when this template is applied.</div>
+            ${matrixPreview}
+          </div>
+        ` : ''}
+      </div>`;
+  },
+
+  /* ---- Branch-level panel ---- */
+  _renderBranchPanel() {
+    const branch     = State.getBranch(this._selectedBranchId);
+    const company    = State.getCompany(this._companyId);
+    const brTemplateId = branch?.defaultPermissionTemplateId;
+    const coTemplateId = company?.defaultPermissionTemplateId;
+    const coTemplate   = coTemplateId ? State.getTemplate(coTemplateId) : null;
+    const brTemplate   = brTemplateId ? State.getTemplate(brTemplateId) : null;
+    const effectiveTemplate = brTemplate || coTemplate;
+    const assignments = State.getAssignmentsByBranch(this._selectedBranchId);
+    const inheritCount = assignments.filter(a => !a.templateId).length;
+
+    const templateSelect = this._renderTemplateSelect(brTemplateId,
+      `CompanyPermissionsView._applyBranchDefault(this.value)`, true,
+      `— Inherit from Company (${coTemplate ? coTemplate.name : 'None'}) —`);
+
+    const userRows = assignments.map(a => {
+      const user = State.getUser(a.userId);
+      if (!user) return '';
+      const hasOverride = a.templateId || Object.keys(a.overridePermissions).length > 0;
+      const uActive = this._selectedLevel === 'user' && this._selectedUserId === a.userId;
+      return `
+        <div class="pw-user-row ${uActive ? 'pw-user-row-active' : ''}"
+             onclick="CompanyPermissionsView.selectUser('${a.userId}', '${this._selectedBranchId}')">
+          <div class="pw-tree-user-avatar" style="background:${avatarColor(user.role)}">${Display.initials(user)}</div>
+          <div style="flex:1;min-width:0">
+            <div style="font-size:13px;font-weight:600">${Display.fullName(user)}</div>
+            <div style="font-size:11px;color:var(--color-text-muted)">${Display.roleName(user.role)}
+              ${a.tags.length ? '· ' + a.tags.join(', ') : ''}
+            </div>
+          </div>
+          <div>
+            ${hasOverride
+              ? `<span class="pw-badge-custom">Custom</span>`
+              : `<span class="pw-badge-inherit">Inherited</span>`}
+          </div>
+          <div style="font-size:11px;color:var(--color-text-muted);min-width:90px;text-align:right">
+            ${a.templateId ? (State.getTemplate(a.templateId)?.name || '—') : (effectiveTemplate ? effectiveTemplate.name : '—')}
+          </div>
+          <button class="btn btn-secondary btn-sm" onclick="event.stopPropagation();CompanyPermissionsView.selectUser('${a.userId}', '${this._selectedBranchId}')">Edit</button>
+        </div>`;
+    }).join('');
+
+    const matrixPreview = effectiveTemplate ? this._renderMatrixPreview(effectiveTemplate.defaultMatrix) : `
+      <div style="padding:24px;text-align:center;color:var(--color-text-muted);font-size:13px">
+        No effective template. Users in this branch will have no permissions.
+      </div>`;
+
+    return `
+      <div class="pw-panel-header">
+        <div class="pw-panel-breadcrumb">
+          <span class="pw-breadcrumb-link" onclick="CompanyPermissionsView.selectCompany()">${company?.name}</span>
+          <span class="pw-breadcrumb-sep">›</span>
+          Branch
+        </div>
+        <div class="pw-panel-title">${branch?.name}</div>
+        <div class="pw-panel-subtitle">Override or inherit the company default for this branch.</div>
+      </div>
+
+      <div class="pw-panel-body">
+        <!-- Inheritance chain -->
+        <div class="pw-section">
+          <div class="pw-section-label">Branch Default Template</div>
+          <div class="pw-inherit-chain">
+            <div class="pw-inherit-node ${!brTemplateId ? 'pw-inherit-active' : 'pw-inherit-dim'}">
+              <div class="pw-inherit-level">Company</div>
+              <div class="pw-inherit-value">${coTemplate ? coTemplate.name : '<span style="opacity:.5">Not set</span>'}</div>
+            </div>
+            <div class="pw-inherit-arrow">→</div>
+            <div class="pw-inherit-node ${brTemplateId ? 'pw-inherit-active' : 'pw-inherit-dim'}">
+              <div class="pw-inherit-level">This Branch</div>
+              <div class="pw-inherit-value">${brTemplate ? brTemplate.name : '<span style="opacity:.5">Inheriting</span>'}</div>
+            </div>
+            <div class="pw-inherit-arrow">→</div>
+            <div class="pw-inherit-node pw-inherit-result">
+              <div class="pw-inherit-level">Effective</div>
+              <div class="pw-inherit-value">${effectiveTemplate ? effectiveTemplate.name : '<span style="opacity:.5">None</span>'}</div>
+            </div>
+          </div>
+
+          <div class="pw-template-selector-row" style="margin-top:16px">
+            ${templateSelect}
+            ${brTemplateId ? `
+              <button class="btn btn-secondary btn-sm pw-clear-btn"
+                      onclick="CompanyPermissionsView._applyBranchDefault('')"
+                      title="Remove override, inherit from company">Clear override</button>
+            ` : ''}
+          </div>
+          ${effectiveTemplate ? `<div class="pw-template-desc">${effectiveTemplate.description}</div>` : ''}
+          ${inheritCount > 0 ? `
+            <div class="pw-affect-note">
+              <svg width="12" height="12" viewBox="0 0 12 12" fill="none" stroke="currentColor" stroke-width="1.5"><circle cx="6" cy="6" r="5"/><path d="M6 4v3M6 8.5v.5"/></svg>
+              ${inheritCount} user${inheritCount !== 1 ? 's' : ''} set to inherit will be affected by changes to this default.
+            </div>
+          ` : ''}
+        </div>
+
+        <!-- Users in branch -->
+        <div class="pw-section">
+          <div class="pw-section-label" style="margin-bottom:10px">
+            Users
+            <span style="font-weight:400;color:var(--color-text-muted);margin-left:6px">${assignments.length}</span>
+          </div>
+          <div class="pw-user-list">
+            ${userRows || '<div style="padding:16px;color:var(--color-text-muted);font-size:13px">No users in this branch.</div>'}
+          </div>
+        </div>
+
+        <!-- Matrix preview -->
+        ${effectiveTemplate ? `
+          <div class="pw-section">
+            <div class="pw-section-label">Effective Permission Matrix</div>
+            <div class="pw-section-hint">Applied to all users set to Inherit in this branch.</div>
+            ${matrixPreview}
+          </div>
+        ` : ''}
+      </div>`;
+  },
+
+  /* ---- User-level panel ---- */
+  _renderUserPanel() {
+    const assignment = State.getAssignment(this._selectedUserId, this._selectedBranchId);
+    const user    = State.getUser(this._selectedUserId);
+    const branch  = State.getBranch(this._selectedBranchId);
+    const company = State.getCompany(this._companyId);
+    if (!user || !branch) return '<div class="pw-panel-body"><p>User not found.</p></div>';
+
+    const coTemplateId = company?.defaultPermissionTemplateId;
+    const brTemplateId = branch?.defaultPermissionTemplateId;
+    const uTemplateId  = this._pendingTemplateId !== null
       ? this._pendingTemplateId
       : (assignment?.templateId || '');
+
+    const coTemplate   = coTemplateId ? State.getTemplate(coTemplateId) : null;
+    const brTemplate   = brTemplateId ? State.getTemplate(brTemplateId) : null;
+    const uTemplate    = uTemplateId  ? State.getTemplate(uTemplateId)  : null;
+    const effectiveTemplate = uTemplate || brTemplate || coTemplate;
+
     const currentTags = this._pendingTags !== null
       ? this._pendingTags
       : (assignment?.tags || []).join(', ');
 
-    // Zone 1: Context header
-    const zone1 = `
-      <div style="padding:16px 16px 0">
-        <div style="font-size:13px;font-weight:700;margin-bottom:2px">${Display.fullName(user)}</div>
-        <div style="font-size:12px;color:var(--color-text-muted);margin-bottom:12px">${branch.name}</div>
-        <div style="margin-bottom:4px;font-size:11px;font-weight:600;text-transform:uppercase;letter-spacing:.06em;color:var(--color-text-muted)">Tags (advisory)</div>
-        <input type="text" id="panel-tags-input" value="${currentTags}"
-               placeholder="e.g. Branch Manager, Loan Processor"
-               oninput="CompanyPermissionsView._onTagsChange(this.value)"
-               style="width:100%;padding:6px 8px;border:1px solid var(--color-border);border-radius:4px;font-size:12px;box-sizing:border-box;margin-bottom:4px">
-        <div style="font-size:11px;color:var(--color-text-muted)">Tags are advisory labels — they do not grant permissions directly.</div>
-      </div>`;
+    const overrides = assignment?.overridePermissions || {};
+    const hasOverrides = Object.keys(overrides).length > 0;
 
-    // Zone 2: Template selector
-    const selectedTemplate = currentTemplateId ? State.getTemplate(currentTemplateId) : null;
-    const templateOpts = `
-      <option value="">— Inherit from Branch/Company —</option>
-      ${State.getTemplates().map(t =>
-        `<option value="${t.id}" ${t.id === currentTemplateId ? 'selected' : ''}>${t.name}</option>`
-      ).join('')}`;
-
-    const zone2 = `
-      <div style="padding:12px 16px 0;border-top:1px solid var(--color-border-light)">
-        <div style="font-size:11px;font-weight:600;text-transform:uppercase;letter-spacing:.06em;color:var(--color-text-muted);margin-bottom:6px">Template</div>
-        <select id="panel-template-select" onchange="CompanyPermissionsView._onPanelTemplateChange(this.value)"
-                style="width:100%;padding:7px 10px;border:1px solid var(--color-border);border-radius:4px;font-size:13px;margin-bottom:6px">
-          ${templateOpts}
-        </select>
-        <div id="panel-template-desc" style="font-size:12px;color:var(--color-text-secondary);min-height:16px">
-          ${selectedTemplate ? selectedTemplate.description : 'Uses the branch or company default template.'}
+    // Inheritance chain
+    const inheritChain = `
+      <div class="pw-inherit-chain" style="margin-bottom:20px">
+        <div class="pw-inherit-node ${!uTemplateId && !hasOverrides ? 'pw-inherit-active' : 'pw-inherit-dim'}">
+          <div class="pw-inherit-level">Company</div>
+          <div class="pw-inherit-value">${coTemplate ? coTemplate.name : '<span style="opacity:.5">None</span>'}</div>
+        </div>
+        <div class="pw-inherit-arrow">→</div>
+        <div class="pw-inherit-node ${brTemplateId && !uTemplateId && !hasOverrides ? 'pw-inherit-active' : 'pw-inherit-dim'}">
+          <div class="pw-inherit-level">Branch</div>
+          <div class="pw-inherit-value">${brTemplate ? brTemplate.name : '<span style="opacity:.5">Inherited</span>'}</div>
+        </div>
+        <div class="pw-inherit-arrow">→</div>
+        <div class="pw-inherit-node ${(uTemplateId || hasOverrides) ? 'pw-inherit-active' : 'pw-inherit-dim'}">
+          <div class="pw-inherit-level">This User</div>
+          <div class="pw-inherit-value">
+            ${uTemplate ? uTemplate.name : (hasOverrides ? 'Custom overrides' : '<span style="opacity:.5">Inheriting</span>')}
+          </div>
+        </div>
+        <div class="pw-inherit-arrow">→</div>
+        <div class="pw-inherit-node pw-inherit-result">
+          <div class="pw-inherit-level">Effective</div>
+          <div class="pw-inherit-value">${effectiveTemplate ? effectiveTemplate.name : (hasOverrides ? 'Custom' : '<span style="opacity:.5">None</span>')}</div>
         </div>
       </div>`;
 
-    // Zone 3: 3-state permission matrix
-    const scopes = DEMO_DATA.permissionMatrix.scopes;
+    // Template selector
+    const templateSelect = this._renderTemplateSelect(uTemplateId,
+      `CompanyPermissionsView._onPanelTemplateChange(this.value)`, false,
+      `— Inherit from Branch/Company —`);
+
+    // 3-state override matrix
+    const scopes  = DEMO_DATA.permissionMatrix.scopes;
     const actions = DEMO_DATA.permissionMatrix.actions;
-    const overrides = assignment?.overridePermissions || {};
 
     const matrixRows = scopes.map(scope => {
       const cells = actions.map(action => {
@@ -293,41 +406,27 @@ const CompanyPermissionsView = {
           ? this._pendingOverrides[key]
           : (overrides.hasOwnProperty(key) ? overrides[key] : null);
 
-        const grantActive = pendingVal === true ? 'active-grant' : '';
-        const denyActive  = pendingVal === false ? 'active-deny' : '';
-        const inheritActive = (pendingVal === null || pendingVal === undefined) ? 'active-inherit' : '';
-
         return `
-          <td style="text-align:center;padding:3px">
+          <td class="pw-matrix-cell">
             <div class="btn-group-3state">
-              <button class="${grantActive}" onclick="CompanyPermissionsView._setOverride('${key}', true)" title="Grant">✓</button>
-              <button class="${denyActive}"  onclick="CompanyPermissionsView._setOverride('${key}', false)" title="Deny">✗</button>
-              <button class="${inheritActive}" onclick="CompanyPermissionsView._setOverride('${key}', null)" title="Inherit">–</button>
+              <button class="${pendingVal === true  ? 'active-grant'   : ''}" onclick="CompanyPermissionsView._setOverride('${key}', true)"  title="Grant">✓</button>
+              <button class="${pendingVal === false ? 'active-deny'    : ''}" onclick="CompanyPermissionsView._setOverride('${key}', false)" title="Deny">✗</button>
+              <button class="${pendingVal === null || pendingVal === undefined ? 'active-inherit' : ''}" onclick="CompanyPermissionsView._setOverride('${key}', null)" title="Inherit">–</button>
             </div>
           </td>`;
       }).join('');
-      return `<tr><td style="font-size:11px;padding:3px 6px;white-space:nowrap;color:var(--color-text-secondary)">${scope}</td>${cells}</tr>`;
+      return `<tr>
+        <td class="pw-matrix-scope">${scope}</td>${cells}
+      </tr>`;
     }).join('');
 
     const actionHeaders = actions.map(a =>
-      `<th style="font-size:10px;font-weight:600;text-align:center;padding:3px;color:var(--color-text-muted)">${a.replace('/', '/<br>')}</th>`
+      `<th class="pw-matrix-action">${a.replace('/', '/<wbr>')}</th>`
     ).join('');
 
-    const zone3 = `
-      <div style="padding:12px 16px 0;border-top:1px solid var(--color-border-light)">
-        <div style="font-size:11px;font-weight:600;text-transform:uppercase;letter-spacing:.06em;color:var(--color-text-muted);margin-bottom:8px">Permission Overrides</div>
-        <div style="overflow-x:auto">
-          <table style="width:100%;border-collapse:collapse;font-size:11px">
-            <thead><tr><th></th>${actionHeaders}</tr></thead>
-            <tbody>${matrixRows}</tbody>
-          </table>
-        </div>
-      </div>`;
-
-    // Zone 4: Effective preview
-    const resolved = State.resolvePermissions(userId, this._activeBranchId);
-    // Apply pending overrides on top of resolved (for live preview)
-    const preview = Object.assign({}, resolved);
+    // Effective preview
+    const resolved = State.resolvePermissions(this._selectedUserId, this._selectedBranchId);
+    const preview  = Object.assign({}, resolved);
     Object.entries(this._pendingOverrides).forEach(([k, v]) => {
       if (v !== null) preview[k] = v;
     });
@@ -336,73 +435,198 @@ const CompanyPermissionsView = {
       const cells = actions.map(action => {
         const key = `${scope}-${action}`;
         const val = preview[key];
-        return `<td style="text-align:center;padding:3px">
+        return `<td class="pw-matrix-cell" style="text-align:center">
           <span class="${val ? 'perm-cell-grant' : 'perm-cell-deny'}">${val ? '✓' : '✗'}</span>
         </td>`;
       }).join('');
-      return `<tr><td style="font-size:11px;padding:3px 6px;white-space:nowrap;color:var(--color-text-secondary)">${scope}</td>${cells}</tr>`;
+      return `<tr><td class="pw-matrix-scope">${scope}</td>${cells}</tr>`;
     }).join('');
 
-    const zone4 = `
-      <div style="padding:12px 16px 0;border-top:1px solid var(--color-border-light)">
-        <div style="font-size:11px;font-weight:600;text-transform:uppercase;letter-spacing:.06em;color:var(--color-text-muted);margin-bottom:8px">Effective Permissions (Preview)</div>
-        <div style="overflow-x:auto">
-          <table style="width:100%;border-collapse:collapse;font-size:11px">
-            <thead><tr><th></th>${actionHeaders}</tr></thead>
-            <tbody>${previewRows}</tbody>
-          </table>
-        </div>
-        <div style="font-size:11px;color:var(--color-text-muted);margin-top:6px">Resolved from: user overrides → branch template → company default. Deny always wins.</div>
-      </div>`;
-
-    // Footer
-    const footer = `
-      <div style="padding:12px 16px;border-top:1px solid var(--color-border);display:flex;gap:8px;justify-content:flex-end;background:var(--color-surface);border-radius:0 0 8px 8px">
-        <button class="btn btn-secondary btn-sm" onclick="CompanyPermissionsView._resetToTemplate()">Reset to Template</button>
-        <button class="btn btn-secondary btn-sm" onclick="CompanyPermissionsView.closeUserPanel()">Cancel</button>
-        <button class="btn btn-primary btn-sm" onclick="CompanyPermissionsView._saveUserPanel()">Save</button>
-      </div>`;
+    const pendingCount = Object.keys(this._pendingOverrides).filter(k =>
+      this._pendingOverrides[k] !== null
+    ).length;
 
     return `
-      <div class="card" style="padding:0;position:sticky;top:20px">
-        <div style="padding:14px 16px 10px;border-bottom:1px solid var(--color-border);background:var(--color-surface);border-radius:8px 8px 0 0">
-          <div style="font-size:12px;font-weight:700;text-transform:uppercase;letter-spacing:.07em;color:var(--color-text-muted)">Edit Permissions</div>
+      <div class="pw-panel-header">
+        <div class="pw-panel-breadcrumb">
+          <span class="pw-breadcrumb-link" onclick="CompanyPermissionsView.selectCompany()">${company?.name}</span>
+          <span class="pw-breadcrumb-sep">›</span>
+          <span class="pw-breadcrumb-link" onclick="CompanyPermissionsView.selectBranch('${this._selectedBranchId}')">${branch.name}</span>
+          <span class="pw-breadcrumb-sep">›</span>
+          User
         </div>
-        ${zone1}${zone2}${zone3}${zone4}${footer}
+        <div style="display:flex;align-items:center;justify-content:space-between;gap:16px">
+          <div style="display:flex;align-items:center;gap:12px">
+            <div class="pw-tree-user-avatar pw-avatar-lg" style="background:${avatarColor(user.role)}">${Display.initials(user)}</div>
+            <div>
+              <div class="pw-panel-title" style="margin-bottom:2px">${Display.fullName(user)}</div>
+              <div style="display:flex;gap:6px;align-items:center">
+                <span class="badge ${Display.roleClass(user.role)}">${Display.roleName(user.role)}</span>
+                ${assignment?.tags?.length ? assignment.tags.map(t =>
+                  `<span class="pw-tag">${t}</span>`).join('') : ''}
+              </div>
+            </div>
+          </div>
+          <div style="display:flex;gap:8px">
+            ${(uTemplateId || hasOverrides) ? `
+              <button class="btn btn-secondary btn-sm" onclick="CompanyPermissionsView._resetToTemplate()">Reset to Default</button>
+            ` : ''}
+          </div>
+        </div>
+      </div>
+
+      <div class="pw-panel-body">
+
+        <!-- Inheritance chain -->
+        <div class="pw-section">
+          <div class="pw-section-label">Permission Source</div>
+          ${inheritChain}
+        </div>
+
+        <!-- Tags -->
+        <div class="pw-section pw-two-col">
+          <div>
+            <div class="pw-section-label">Tags <span style="font-weight:400;color:var(--color-text-muted)">(advisory only)</span></div>
+            <input type="text" id="panel-tags-input" value="${currentTags}"
+                   placeholder="e.g. Branch Manager, Loan Processor"
+                   oninput="CompanyPermissionsView._onTagsChange(this.value)"
+                   class="pw-input">
+            <div class="pw-section-hint">Tags are labels — they don't grant permissions directly.</div>
+          </div>
+          <div>
+            <div class="pw-section-label">Template Override</div>
+            <div style="display:flex;gap:8px;align-items:center">
+              ${templateSelect}
+              ${uTemplateId ? `<button class="btn btn-secondary btn-sm pw-clear-btn" onclick="CompanyPermissionsView._onPanelTemplateChange('')">Clear</button>` : ''}
+            </div>
+            ${uTemplate ? `<div class="pw-template-desc">${uTemplate.description}</div>` : '<div class="pw-section-hint">Uses branch or company default.</div>'}
+          </div>
+        </div>
+
+        <!-- 3-state override matrix -->
+        <div class="pw-section">
+          <div class="pw-section-label">
+            Fine-grained Overrides
+            ${pendingCount > 0 ? `<span class="pw-unsaved-badge">${pendingCount} unsaved</span>` : ''}
+          </div>
+          <div class="pw-section-hint" style="margin-bottom:10px">
+            ✓ Grant &nbsp;✗ Deny &nbsp;– Inherit from template. Per-cell overrides take precedence over templates.
+          </div>
+          <div class="pw-matrix-wrap">
+            <table class="pw-matrix">
+              <thead><tr><th></th>${actionHeaders}</tr></thead>
+              <tbody>${matrixRows}</tbody>
+            </table>
+          </div>
+        </div>
+
+        <!-- Effective preview -->
+        <div class="pw-section">
+          <div class="pw-section-label">Effective Permissions Preview</div>
+          <div class="pw-section-hint" style="margin-bottom:10px">Resolved result after applying all layers. Deny always wins.</div>
+          <div class="pw-matrix-wrap">
+            <table class="pw-matrix">
+              <thead><tr><th></th>${actionHeaders}</tr></thead>
+              <tbody>${previewRows}</tbody>
+            </table>
+          </div>
+        </div>
+
+      </div>
+
+      <!-- Sticky save bar -->
+      <div class="pw-save-bar">
+        <button class="btn btn-secondary" onclick="CompanyPermissionsView.selectBranch('${this._selectedBranchId}')">Cancel</button>
+        <button class="btn btn-primary" onclick="CompanyPermissionsView._saveUserPanel()">Save Changes</button>
       </div>`;
   },
 
   /* ================================================================
-     ACTIONS
+     HELPERS
   ================================================================ */
-  drillInto(branchId) {
-    this._activeBranchId = branchId;
-    this._editingUserId = null;
-    this._pendingOverrides = {};
-    this._pendingTemplateId = null;
-    this._pendingTags = null;
+  _renderTemplateSelect(currentId, onchangeExpr, _autoApply, placeholder) {
+    const ph = placeholder || '— Select a template —';
+    const opts = State.getTemplates().map(t =>
+      `<option value="${t.id}" ${t.id === currentId ? 'selected' : ''}>${t.name}</option>`
+    ).join('');
+    return `
+      <select class="pw-template-select" onchange="${onchangeExpr}">
+        <option value="">${ph}</option>
+        ${opts}
+      </select>`;
+  },
+
+  _renderMatrixPreview(defaultMatrix) {
+    const scopes  = DEMO_DATA.permissionMatrix.scopes;
+    const actions = DEMO_DATA.permissionMatrix.actions;
+    const headers = actions.map(a => `<th class="pw-matrix-action">${a.replace('/', '/<wbr>')}</th>`).join('');
+    const rows = scopes.map(scope => {
+      const cells = actions.map(action => {
+        const key = `${scope}-${action}`;
+        const val = defaultMatrix[key];
+        const cls = val === true ? 'perm-cell-grant' : val === false ? 'perm-cell-deny' : 'perm-cell-inherit';
+        const sym = val === true ? '✓' : val === false ? '✗' : '–';
+        return `<td class="pw-matrix-cell" style="text-align:center"><span class="${cls}">${sym}</span></td>`;
+      }).join('');
+      return `<tr><td class="pw-matrix-scope">${scope}</td>${cells}</tr>`;
+    }).join('');
+    return `
+      <div class="pw-matrix-wrap">
+        <table class="pw-matrix">
+          <thead><tr><th></th>${headers}</tr></thead>
+          <tbody>${rows}</tbody>
+        </table>
+      </div>`;
+  },
+
+  /* ================================================================
+     SELECTION ACTIONS
+  ================================================================ */
+  selectCompany() {
+    this._selectedLevel    = 'company';
+    this._selectedBranchId = null;
+    this._selectedUserId   = null;
+    this._clearPending();
     App.renderView(Router.getCurrentPath());
   },
 
-  openUserPanel(userId) {
-    this._editingUserId = userId;
-    this._pendingOverrides = {};
-    this._pendingTemplateId = null;
-    this._pendingTags = null;
+  selectBranch(branchId) {
+    this._selectedLevel    = 'branch';
+    this._selectedBranchId = branchId;
+    this._selectedUserId   = null;
+    this._clearPending();
     App.renderView(Router.getCurrentPath());
   },
 
-  closeUserPanel() {
-    this._editingUserId = null;
-    this._pendingOverrides = {};
-    this._pendingTemplateId = null;
-    this._pendingTags = null;
+  selectUser(userId, branchId) {
+    this._selectedLevel    = 'user';
+    this._selectedBranchId = branchId;
+    this._selectedUserId   = userId;
+    this._clearPending();
     App.renderView(Router.getCurrentPath());
   },
 
-  _setOverride(key, value) {
-    this._pendingOverrides[key] = value;
-    // Re-render just the panel area without full page reload
+  toggleBranch(branchId) {
+    this._expandedBranches[branchId] = !this._expandedBranches[branchId];
+    App.renderView(Router.getCurrentPath());
+  },
+
+  _clearPending() {
+    this._pendingOverrides  = {};
+    this._pendingTemplateId = null;
+    this._pendingTags       = null;
+  },
+
+  /* ================================================================
+     APPLY ACTIONS (instant — no modal)
+  ================================================================ */
+  _applyCompanyDefault(templateId) {
+    State.setCompanyDefaultTemplate(this._companyId, templateId || null);
+    App.renderView(Router.getCurrentPath());
+  },
+
+  _applyBranchDefault(templateId) {
+    State.setBranchDefaultTemplate(this._selectedBranchId, templateId || null);
     App.renderView(Router.getCurrentPath());
   },
 
@@ -413,101 +637,48 @@ const CompanyPermissionsView = {
 
   _onTagsChange(value) {
     this._pendingTags = value;
-    // No re-render needed — just track the value
+  },
+
+  _setOverride(key, value) {
+    this._pendingOverrides[key] = value;
+    App.renderView(Router.getCurrentPath());
   },
 
   _resetToTemplate() {
-    const assignment = State.getAssignment(this._editingUserId, this._activeBranchId);
-    const templateId = this._pendingTemplateId !== null
-      ? this._pendingTemplateId
-      : (assignment?.templateId || null);
     this._pendingOverrides = {};
-    // Mark all keys as null (inherit) so they show as cleared
-    const template = templateId ? State.getTemplate(templateId) : null;
-    if (template) {
-      DEMO_DATA.permissionMatrix.scopes.forEach(scope => {
-        DEMO_DATA.permissionMatrix.actions.forEach(action => {
-          const key = `${scope}-${action}`;
-          this._pendingOverrides[key] = null;
-        });
+    this._pendingTemplateId = '';  // clear user template override
+    // Stage all overrides as null (clear)
+    DEMO_DATA.permissionMatrix.scopes.forEach(scope => {
+      DEMO_DATA.permissionMatrix.actions.forEach(action => {
+        this._pendingOverrides[`${scope}-${action}`] = null;
       });
-    }
+    });
     App.renderView(Router.getCurrentPath());
   },
 
   _saveUserPanel() {
-    const assignment = State.getAssignment(this._editingUserId, this._activeBranchId);
-    const tagsInput = document.getElementById('panel-tags-input');
-    const rawTags = tagsInput ? tagsInput.value : (this._pendingTags !== null ? this._pendingTags : (assignment?.tags || []).join(', '));
+    const assignment = State.getAssignment(this._selectedUserId, this._selectedBranchId);
+    const tagsInput  = document.getElementById('panel-tags-input');
+    const rawTags    = tagsInput
+      ? tagsInput.value
+      : (this._pendingTags !== null ? this._pendingTags : (assignment?.tags || []).join(', '));
     const tags = rawTags.split(',').map(t => t.trim()).filter(Boolean);
 
     const templateId = this._pendingTemplateId !== null
       ? this._pendingTemplateId
       : (assignment?.templateId || null);
 
-    // Merge pending overrides: null values mean "clear override"
     const baseOverrides = Object.assign({}, assignment?.overridePermissions || {});
     Object.entries(this._pendingOverrides).forEach(([k, v]) => {
-      if (v === null) {
-        delete baseOverrides[k];
-      } else {
-        baseOverrides[k] = v;
-      }
+      if (v === null) delete baseOverrides[k];
+      else baseOverrides[k] = v;
     });
 
-    State.upsertAssignment(this._editingUserId, this._activeBranchId, {
-      tags,
-      templateId,
-      overridePermissions: baseOverrides,
+    State.upsertAssignment(this._selectedUserId, this._selectedBranchId, {
+      tags, templateId, overridePermissions: baseOverrides,
     });
 
-    this._editingUserId = null;
-    this._pendingOverrides = {};
-    this._pendingTemplateId = null;
-    this._pendingTags = null;
-    App.renderView(Router.getCurrentPath());
-  },
-
-  _onBranchTemplateChange(value) {
-    const assignments = State.getAssignmentsByBranch(this._activeBranchId);
-    const inheritCount = assignments.filter(a => !a.templateId).length;
-    const msg = document.getElementById('br-affected-msg');
-    if (msg) {
-      msg.textContent = value
-        ? `${inheritCount} user${inheritCount !== 1 ? 's' : ''} set to Inherit will be updated`
-        : `${inheritCount} user${inheritCount !== 1 ? 's' : ''} currently set to Inherit`;
-    }
-  },
-
-  _saveBranchDefault() {
-    const select = document.getElementById('br-template-select');
-    const value = select ? select.value : null;
-    State.setBranchDefaultTemplate(this._activeBranchId, value || null);
-    App.renderView(Router.getCurrentPath());
-  },
-
-  _updateModalDesc(templateId) {
-    const desc = document.getElementById('co-perm-template-desc');
-    if (!desc) return;
-    const tmpl = templateId ? State.getTemplate(templateId) : null;
-    desc.textContent = tmpl ? tmpl.description : '';
-  },
-
-  _openCompanyDefaultModal() {
-    const modal = document.getElementById('co-perm-modal');
-    if (modal) modal.style.display = 'flex';
-  },
-
-  _closeCompanyDefaultModal() {
-    const modal = document.getElementById('co-perm-modal');
-    if (modal) modal.style.display = 'none';
-  },
-
-  _saveCompanyDefault() {
-    const select = document.getElementById('co-perm-template-select');
-    const value = select ? select.value : null;
-    State.setCompanyDefaultTemplate(this._companyId, value || null);
-    this._closeCompanyDefaultModal();
+    this._clearPending();
     App.renderView(Router.getCurrentPath());
   },
 };
