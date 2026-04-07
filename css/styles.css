@@ -2370,3 +2370,35 @@ label { font-size: 12px; font-weight: 600; color: var(--color-text); }
   border: 1px solid var(--color-border); border-radius: var(--radius);
   padding: 24px; text-align: center; margin-bottom: 16px;
 }
+
+/* ============================================================
+   COMPANY PERMISSIONS WORKBENCH — Additional Styles
+   ============================================================ */
+
+/* 3-state permission toggle */
+.btn-group-3state { display: inline-flex; border-radius: 4px; overflow: hidden; border: 1px solid var(--color-border); }
+.btn-group-3state button { padding: 3px 7px; font-size: 11px; border: none; background: var(--color-bg); color: var(--color-text-muted); cursor: pointer; border-right: 1px solid var(--color-border); line-height: 1.2; }
+.btn-group-3state button:last-child { border-right: none; }
+.btn-group-3state button:hover { background: var(--color-surface); }
+.btn-group-3state button.active-grant { background: var(--color-success-bg); color: var(--color-success); font-weight: 600; }
+.btn-group-3state button.active-deny { background: var(--color-danger-bg); color: var(--color-danger); font-weight: 600; }
+.btn-group-3state button.active-inherit { background: var(--color-surface); color: var(--color-text-secondary); font-weight: 600; }
+
+/* Branch permissions rows */
+.branch-perm-row { display: flex; align-items: center; gap: 12px; padding: 10px 0; border-bottom: 1px solid var(--color-border-light); }
+.branch-perm-row:last-child { border-bottom: none; }
+.branch-perm-name { flex: 1; font-size: 13px; font-weight: 600; }
+.branch-perm-template { font-size: 12px; color: var(--color-text-secondary); }
+
+/* Audit log rows */
+.perm-audit-row { display: flex; align-items: flex-start; gap: 10px; padding: 8px 0; border-bottom: 1px solid var(--color-border-light); font-size: 12px; }
+.perm-audit-row:last-child { border-bottom: none; }
+.perm-audit-detail { flex: 1; line-height: 1.4; }
+.perm-audit-time { color: var(--color-text-muted); font-size: 11px; white-space: nowrap; }
+
+/* Effective preview matrix */
+.perm-cell-grant { color: var(--color-success); font-weight: 700; }
+.perm-cell-deny { color: var(--color-danger); font-weight: 700; }
+
+/* Highlight selected table row in branch drill-down */
+.table-row-selected { background: #f0f7f2; }

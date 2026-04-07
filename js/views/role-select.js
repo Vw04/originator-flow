@@ -41,7 +41,7 @@ const RoleSelectView = {
 
         <!-- Body -->
         <div class="role-select-body">
-          <div class="role-select-title">Select a Role</div>
+          <div class="role-select-title">Select a User Type</div>
           <div class="role-select-subtitle">Choose a user type to preview the platform experience. All data is fictional and resets on refresh.</div>
 
           <div class="role-select-layout">
@@ -54,7 +54,7 @@ const RoleSelectView = {
               <p style="margin-top:12px;color:var(--color-text-muted);font-size:12px">No backend — changes are in-memory only.</p>
               <hr style="margin:16px 0;border:none;border-top:1px solid var(--color-border)">
               <div style="font-size:11px;color:var(--color-text-muted);line-height:1.6">
-                <strong style="display:block;margin-bottom:4px;font-size:10px;text-transform:uppercase;letter-spacing:.07em">Platform Roles</strong>
+                <strong style="display:block;margin-bottom:4px;font-size:10px;text-transform:uppercase;letter-spacing:.07em">User Types</strong>
                 <div>System Admin · Operator</div>
                 <div>Program Admin · Loan Officer</div>
                 <div>Loan Processor · Investor</div>

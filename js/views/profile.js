@@ -83,6 +83,29 @@ const ProfileView = {
               : '<span style="font-size:12px;color:var(--color-text-muted)">No policies assigned</span>'}
           </div>
 
+          <!-- Branch Assignments -->
+          ${(() => {
+            const assignments = State.getAssignmentsByUser(u.id);
+            if (!assignments.length) return '';
+            const rows = assignments.map(a => {
+              const br = State.getBranch(a.branchId);
+              const tmpl = a.templateId ? State.getTemplate(a.templateId) : null;
+              const badgeLabel = tmpl ? tmpl.name : 'Inherited';
+              const badgeClass = tmpl ? 'badge-active' : 'badge-neutral';
+              const tagsHtml = a.tags.length
+                ? a.tags.map(t => `<span style="background:var(--color-surface);border:1px solid var(--color-border);border-radius:10px;padding:1px 7px;font-size:11px">${t}</span>`).join(' ')
+                : '';
+              return `<div style="display:flex;align-items:center;gap:8px;padding:6px 0;border-bottom:1px solid var(--color-border-light)">
+                <div style="flex:1;font-size:13px;font-weight:500">${br ? br.name : a.branchId}</div>
+                <span class="badge ${badgeClass}" style="font-size:11px">${badgeLabel}</span>
+                ${tagsHtml}
+              </div>`;
+            }).join('');
+            return `
+              <div class="section-title">Branch Assignments</div>
+              <div style="margin-bottom:20px">${rows}</div>`;
+          })()}
+
           <!-- Loans (LO/LP only) -->
           ${(u.role === 'lo' || u.role === 'lp') && loans.length ? `
             <div class="section-title">Recent Applications (${loans.length})</div>
@@ -252,6 +275,30 @@ const ProfileView = {
           <div class="card-title" style="margin-bottom:16px">Account Onboarding</div>
           ${this._renderFlowchart(u)}
         </div>
+
+        ${(() => {
+          const assignments = State.getAssignmentsByUser(u.id);
+          if (!assignments.length) return '';
+          const rows = assignments.map(a => {
+            const brn = State.getBranch(a.branchId);
+            const tmpl = a.templateId ? State.getTemplate(a.templateId) : null;
+            const badgeLabel = tmpl ? tmpl.name : 'Inherited';
+            const badgeClass = tmpl ? 'badge-active' : 'badge-neutral';
+            const tagsHtml = a.tags.length
+              ? a.tags.map(t => `<span style="background:var(--color-surface);border:1px solid var(--color-border);border-radius:10px;padding:1px 7px;font-size:11px">${t}</span>`).join(' ')
+              : '';
+            return `<div style="display:flex;align-items:center;gap:8px;padding:8px 0;border-bottom:1px solid var(--color-border-light)">
+              <div style="flex:1;font-size:13px;font-weight:500">${brn ? brn.name : a.branchId}</div>
+              <span class="badge ${badgeClass}" style="font-size:11px">${badgeLabel}</span>
+              ${tagsHtml}
+            </div>`;
+          }).join('');
+          return `
+            <div class="card" style="margin-top:20px">
+              <div class="card-title" style="margin-bottom:12px">Branch Assignments</div>
+              ${rows}
+            </div>`;
+        })()}
       </div>`;
   },
 

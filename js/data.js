@@ -20,6 +20,7 @@ const DEMO_DATA = {
       primaryContact: 'Patricia Owens',
       programs: ['DC Dream Fund'],
       complianceDocs: ['W-9', 'Broker Agreement', 'E&O Insurance'],
+      defaultPermissionTemplateId: 'lo_own_only',
     },
     {
       id: 'co-002',
@@ -34,6 +35,7 @@ const DEMO_DATA = {
       primaryContact: 'Marcus Webb',
       programs: ['Kentucky Dream Fund'],
       complianceDocs: ['W-9', 'Broker Agreement'],
+      defaultPermissionTemplateId: 'lo_own_only',
     },
     {
       id: 'co-003',
@@ -48,22 +50,23 @@ const DEMO_DATA = {
       primaryContact: 'Sandra Hollis',
       programs: [],
       complianceDocs: ['W-9'],
+      defaultPermissionTemplateId: null,
     },
   ],
 
   /* ---- Branches ---- */
   branches: [
     // Capital City Lending (DC)
-    { id: 'br-001', companyId: 'co-001', name: 'Downtown DC',           address: '1100 New York Ave NW, Washington, DC 20005',  state: 'DC', managingLO: 'user-003', userCount: 4, programs: ['DC Dream Fund'], status: 'active',  parentBranchId: null,     nmlsId: '2045871-001' },
-    { id: 'br-002', companyId: 'co-001', name: 'Capitol Hill Branch',   address: '320 First St SE, Washington, DC 20003',        state: 'DC', managingLO: 'user-005', userCount: 4, programs: ['DC Dream Fund'], status: 'active',  parentBranchId: null,     nmlsId: '2045871-002' },
-    { id: 'br-003', companyId: 'co-001', name: 'Adams Morgan Office',   address: '1785 Columbia Rd NW, Washington, DC 20009',    state: 'DC', managingLO: null,       userCount: 2, programs: ['DC Dream Fund'], status: 'active',  parentBranchId: 'br-001', nmlsId: '2045871-003' },
+    { id: 'br-001', companyId: 'co-001', name: 'Downtown DC',           address: '1100 New York Ave NW, Washington, DC 20005',  state: 'DC', managingLO: 'user-003', userCount: 4, programs: ['DC Dream Fund'], status: 'active',  parentBranchId: null,     nmlsId: '2045871-001', defaultPermissionTemplateId: null },
+    { id: 'br-002', companyId: 'co-001', name: 'Capitol Hill Branch',   address: '320 First St SE, Washington, DC 20003',        state: 'DC', managingLO: 'user-005', userCount: 4, programs: ['DC Dream Fund'], status: 'active',  parentBranchId: null,     nmlsId: '2045871-002', defaultPermissionTemplateId: 'lo_full_branch' },
+    { id: 'br-003', companyId: 'co-001', name: 'Adams Morgan Office',   address: '1785 Columbia Rd NW, Washington, DC 20009',    state: 'DC', managingLO: null,       userCount: 2, programs: ['DC Dream Fund'], status: 'active',  parentBranchId: 'br-001', nmlsId: '2045871-003', defaultPermissionTemplateId: null },
 
     // Bluegrass Home Finance (KY)
-    { id: 'br-004', companyId: 'co-002', name: 'Louisville HQ',         address: '400 W Market St, Louisville, KY 40202',        state: 'KY', managingLO: 'user-011', userCount: 4, programs: ['Kentucky Dream Fund'], status: 'active',  parentBranchId: null, nmlsId: '3178904-001' },
-    { id: 'br-005', companyId: 'co-002', name: 'Lexington Branch',      address: '200 W Vine St, Lexington, KY 40507',           state: 'KY', managingLO: null,       userCount: 3, programs: ['Kentucky Dream Fund'], status: 'active',  parentBranchId: null, nmlsId: '3178904-002' },
+    { id: 'br-004', companyId: 'co-002', name: 'Louisville HQ',         address: '400 W Market St, Louisville, KY 40202',        state: 'KY', managingLO: 'user-011', userCount: 4, programs: ['Kentucky Dream Fund'], status: 'active',  parentBranchId: null, nmlsId: '3178904-001', defaultPermissionTemplateId: null },
+    { id: 'br-005', companyId: 'co-002', name: 'Lexington Branch',      address: '200 W Vine St, Lexington, KY 40507',           state: 'KY', managingLO: null,       userCount: 3, programs: ['Kentucky Dream Fund'], status: 'active',  parentBranchId: null, nmlsId: '3178904-002', defaultPermissionTemplateId: null },
 
     // Commonwealth Mortgage Group (KY)
-    { id: 'br-006', companyId: 'co-003', name: 'Frankfort Office',      address: '702 Capital Ave, Frankfort, KY 40601',         state: 'KY', managingLO: 'user-016', userCount: 3, programs: [], status: 'pending', parentBranchId: null, nmlsId: '4290136-001' },
+    { id: 'br-006', companyId: 'co-003', name: 'Frankfort Office',      address: '702 Capital Ave, Frankfort, KY 40601',         state: 'KY', managingLO: 'user-016', userCount: 3, programs: [], status: 'pending', parentBranchId: null, nmlsId: '4290136-001', defaultPermissionTemplateId: null },
   ],
 
   /* ---- Users ---- */
@@ -151,6 +154,120 @@ const DEMO_DATA = {
     { id: 'fund-002', investorId: 'inv-002', name: 'Heartland HEI Pool',      vintage: 2026, committed: 50000000,  deployed: 12000000, status: 'active' },
   ],
 
+  /* ---- Permission Templates ---- */
+  permissionTemplates: [
+    {
+      id: 'lo_own_only',
+      name: 'LO — Own Loans Only',
+      description: 'Loan Officer can view, edit, and submit only their own loan applications.',
+      defaultMatrix: {
+        'Own Loans-View': true, 'Own Loans-Create/Edit': true, 'Own Loans-Submit/Approve': true,
+        'Branch-View': true,
+      },
+    },
+    {
+      id: 'lo_full_branch',
+      name: 'LO — Full Branch',
+      description: 'Loan Officer has read/write access to all loans in the branch.',
+      defaultMatrix: {
+        'Branch-View': true,
+        'Own Loans-View': true, 'Own Loans-Create/Edit': true, 'Own Loans-Submit/Approve': true,
+        'Company-View': true,
+      },
+    },
+    {
+      id: 'lo_tagged_only',
+      name: 'LO — Tagged Only',
+      description: 'Loan Officer limited to loans matching their assigned tags.',
+      defaultMatrix: {
+        'Own Loans-View': true, 'Own Loans-Create/Edit': true, 'Own Loans-Submit/Approve': true,
+        'Branch-View': true,
+      },
+    },
+    {
+      id: 'processor_assigned',
+      name: 'Processor — Assigned LOs',
+      description: 'Can view and edit loans belonging to their assigned Loan Officers only.',
+      defaultMatrix: {
+        'Own Loans-View': true, 'Own Loans-Create/Edit': true,
+        'Branch-View': true,
+      },
+    },
+    {
+      id: 'processor_branch',
+      name: 'Processor — Branch-wide',
+      description: 'Can view and edit all loan applications across the branch.',
+      defaultMatrix: {
+        'Branch-View': true,
+        'Own Loans-View': true, 'Own Loans-Create/Edit': true,
+        'Company-View': true,
+      },
+    },
+    {
+      id: 'branch_manager_read',
+      name: 'Branch Manager — Read',
+      description: 'Read-only access to all branch activity, users, and loans.',
+      defaultMatrix: {
+        'Company-View': true,
+        'Branch-View': true,
+        'Own Loans-View': true,
+      },
+    },
+    {
+      id: 'branch_manager_full',
+      name: 'Branch Manager — Full',
+      description: 'Full branch access including user management and policy settings.',
+      defaultMatrix: {
+        'Company-View': true,
+        'Branch-View': true, 'Branch-Create/Edit': true, 'Branch-Manage Policies': true,
+        'Own Loans-View': true, 'Own Loans-Create/Edit': true,
+      },
+    },
+    {
+      id: 'compliance_observer',
+      name: 'Compliance Observer',
+      description: 'View-only access across all objects. Cannot create or modify anything.',
+      defaultMatrix: {
+        'Company-View': true,
+        'Branch-View': true,
+        'Own Loans-View': true,
+      },
+    },
+    {
+      id: 'custom',
+      name: 'Custom',
+      description: 'Manually configured permissions. No default matrix applied.',
+      defaultMatrix: {},
+    },
+  ],
+
+  /* ---- Branch Assignments ---- */
+  branchAssignments: [
+    { id: 'ba-001', userId: 'user-003', branchId: 'br-001', tags: ['Branch Manager'], templateId: 'branch_manager_full', overridePermissions: {} },
+    { id: 'ba-002', userId: 'user-004', branchId: 'br-001', tags: [], templateId: null, overridePermissions: {} },
+    { id: 'ba-003', userId: 'user-005', branchId: 'br-002', tags: ['Branch Manager'], templateId: null, overridePermissions: {} },
+    { id: 'ba-004', userId: 'user-006', branchId: 'br-001', tags: ['Loan Processor'], templateId: 'processor_assigned', overridePermissions: {} },
+    { id: 'ba-005', userId: 'user-007', branchId: 'br-003', tags: [], templateId: null, overridePermissions: {} },
+    { id: 'ba-006', userId: 'user-008', branchId: 'br-002', tags: ['Loan Processor'], templateId: null, overridePermissions: {} },
+    { id: 'ba-007', userId: 'user-009', branchId: 'br-003', tags: [], templateId: null, overridePermissions: {} },
+    { id: 'ba-008', userId: 'user-010', branchId: 'br-004', tags: ['Branch Manager'], templateId: 'branch_manager_full', overridePermissions: {} },
+    { id: 'ba-009', userId: 'user-011', branchId: 'br-004', tags: [], templateId: null, overridePermissions: {} },
+    { id: 'ba-010', userId: 'user-012', branchId: 'br-004', tags: ['Loan Processor'], templateId: null, overridePermissions: {} },
+    { id: 'ba-011', userId: 'user-013', branchId: 'br-005', tags: [], templateId: null, overridePermissions: {} },
+    { id: 'ba-012', userId: 'user-014', branchId: 'br-005', tags: [], templateId: null, overridePermissions: {} },
+    { id: 'ba-013', userId: 'user-015', branchId: 'br-006', tags: ['Branch Manager'], templateId: null, overridePermissions: {} },
+    { id: 'ba-014', userId: 'user-016', branchId: 'br-006', tags: [], templateId: null, overridePermissions: {} },
+    { id: 'ba-015', userId: 'user-017', branchId: 'br-006', tags: ['Loan Processor'], templateId: null, overridePermissions: {} },
+  ],
+
+  /* ---- Permissions Audit Log ---- */
+  auditLog: [
+    { id: 'al-001', actorId: 'user-001', action: 'company_default_changed', entityType: 'company', entityId: 'co-001', detail: 'Company default template set to "LO — Own Loans Only"', timestamp: '2026-04-05T14:22:00Z' },
+    { id: 'al-002', actorId: 'user-003', action: 'template_assigned',       entityType: 'branch',  entityId: 'br-002', detail: 'Branch default template set to "LO — Full Branch"',    timestamp: '2026-04-04T10:15:00Z' },
+    { id: 'al-003', actorId: 'user-003', action: 'template_assigned',       entityType: 'user',    entityId: 'user-004', detail: 'Patricia Owens assigned "Branch Manager — Full" to Downtown DC', timestamp: '2026-04-03T16:40:00Z' },
+    { id: 'al-004', actorId: 'user-001', action: 'company_default_changed', entityType: 'company', entityId: 'co-002', detail: 'Company default template set to "LO — Own Loans Only"', timestamp: '2026-04-02T09:05:00Z' },
+  ],
+
   /* ---- Activity Log ---- */
   activityLog: [
     { userId: 'user-001', action: 'invited',        subject: 'Yolanda Simmons',         subjectType: 'user',    time: '2 hours ago',  companyId: 'co-001' },
@@ -177,6 +294,10 @@ const Lookup = {
   loansByLO:         (loId)      => DEMO_DATA.loans.filter(l => l.loId === loId),
   loansByBranch:     (branchId)  => DEMO_DATA.loans.filter(l => l.branchId === branchId),
   loansByCompany:    (companyId) => DEMO_DATA.loans.filter(l => l.companyId === companyId),
+
+  template:                    (id)         => DEMO_DATA.permissionTemplates.find(t => t.id === id),
+  branchAssignmentsByUser:     (userId)     => DEMO_DATA.branchAssignments.filter(a => a.userId === userId),
+  branchAssignmentsByBranch:   (branchId)   => DEMO_DATA.branchAssignments.filter(a => a.branchId === branchId),
 };
 
 /* ---- Display helpers ---- */
@@ -248,4 +369,20 @@ const Display = {
 
   currency: (n) => n ? '$' + n.toLocaleString() : '—',
   date:     (d) => d ? new Date(d).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' }) : '—',
+
+  templateName: (templateId) => {
+    const t = DEMO_DATA.permissionTemplates.find(t => t.id === templateId);
+    return t ? t.name : 'Unknown Template';
+  },
+
+  relativeTime: (isoString) => {
+    if (!isoString) return '—';
+    const diff = Date.now() - new Date(isoString).getTime();
+    const mins = Math.floor(diff / 60000);
+    if (mins < 60) return `${mins}m ago`;
+    const hrs = Math.floor(mins / 60);
+    if (hrs < 24) return `${hrs}h ago`;
+    const days = Math.floor(hrs / 24);
+    return `${days}d ago`;
+  },
 };

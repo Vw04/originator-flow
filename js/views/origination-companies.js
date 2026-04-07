@@ -54,6 +54,8 @@ const OriginationCompaniesView = {
       { key: 'branches',    label: 'Branches' },
       { key: 'users',       label: 'Users' },
       { key: 'permissions', label: 'Permissions' },
+      { key: 'programs',    label: 'Programs' },
+      { key: 'settings',    label: 'Settings' },
     ];
 
     const tabsHtml = tabs.map(t =>
@@ -66,7 +68,9 @@ const OriginationCompaniesView = {
       case 'overview':    content = this._renderOverview(c, canEdit); break;
       case 'branches':    content = BranchesView.render({ companyId }); break;
       case 'users':       content = UsersView.render({ companyId, roles: ['prog_admin', 'lo', 'lp'] }); break;
-      case 'permissions': content = PermissionsView.render({ roles: ['prog_admin', 'lo', 'lp'], companyId }); break;
+      case 'permissions': content = CompanyPermissionsView.render(companyId); break;
+      case 'programs':    content = `<div style="padding:20px 0;color:var(--color-text-muted);text-align:center;font-size:13px">Programs configuration coming soon.</div>`; break;
+      case 'settings':    content = `<div style="padding:20px 0;color:var(--color-text-muted);text-align:center;font-size:13px">Company settings coming soon.</div>`; break;
       default:            content = this._renderOverview(c, canEdit);
     }
 

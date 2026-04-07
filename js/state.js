@@ -5,15 +5,18 @@
 
 const State = (() => {
   // Deep-clone demo data so mutations don't affect the original
-  let _companies = JSON.parse(JSON.stringify(DEMO_DATA.companies));
-  let _branches  = JSON.parse(JSON.stringify(DEMO_DATA.branches));
-  let _users     = JSON.parse(JSON.stringify(DEMO_DATA.users));
-  let _loans     = JSON.parse(JSON.stringify(DEMO_DATA.loans));
-  let _policies  = JSON.parse(JSON.stringify(DEMO_DATA.policies));
-  let _matrix    = JSON.parse(JSON.stringify(DEMO_DATA.permissionMatrix));
-  let _activity  = JSON.parse(JSON.stringify(DEMO_DATA.activityLog));
+  let _companies   = JSON.parse(JSON.stringify(DEMO_DATA.companies));
+  let _branches    = JSON.parse(JSON.stringify(DEMO_DATA.branches));
+  let _users       = JSON.parse(JSON.stringify(DEMO_DATA.users));
+  let _loans       = JSON.parse(JSON.stringify(DEMO_DATA.loans));
+  let _policies    = JSON.parse(JSON.stringify(DEMO_DATA.policies));
+  let _matrix      = JSON.parse(JSON.stringify(DEMO_DATA.permissionMatrix));
+  let _activity    = JSON.parse(JSON.stringify(DEMO_DATA.activityLog));
   let _investorEntities = JSON.parse(JSON.stringify(DEMO_DATA.investorEntities));
-  let _funds     = JSON.parse(JSON.stringify(DEMO_DATA.funds));
+  let _funds       = JSON.parse(JSON.stringify(DEMO_DATA.funds));
+  let _templates   = JSON.parse(JSON.stringify(DEMO_DATA.permissionTemplates));
+  let _assignments = JSON.parse(JSON.stringify(DEMO_DATA.branchAssignments));
+  let _auditLog    = JSON.parse(JSON.stringify(DEMO_DATA.auditLog));
 
   let _currentRole = null;  // role key: 'sys_admin' | 'operator' | 'prog_admin' | 'lo' | 'lp' | 'investor'
   let _currentUser = null;  // user object (simulated logged-in user per role)
@@ -236,6 +239,132 @@ const State = (() => {
 
     /* ---- Activity ---- */
     getActivity: () => [..._activity].slice(0, 20),
+
+    /* ---- Permission Templates ---- */
+    getTemplates: () => [..._templates],
+    getTemplate:  (id) => _templates.find(t => t.id === id),
+
+    /* ---- Branch Assignments ---- */
+    getAssignmentsByBranch: (branchId) => _assignments.filter(a => a.branchId === branchId),
+    getAssignmentsByUser:   (userId)   => _assignments.filter(a => a.userId === userId),
+    getAssignment:          (userId, branchId) => _assignments.find(a => a.userId === userId && a.branchId === branchId),
+
+    upsertAssignment(userId, branchId, data) {
+      const idx = _assignments.findIndex(a => a.userId === userId && a.branchId === branchId);
+      if (idx >= 0) {
+        _assignments[idx] = { ..._assignments[idx], ...data };
+      } else {
+        _assignments.push({ id: `ba-${Date.now()}`, userId, branchId, tags: [], templateId: null, overridePermissions: {}, ...data });
+      }
+      const actor = _currentUser;
+      const user = _users.find(u => u.id === userId);
+      _auditLog.unshift({
+        id: `al-${Date.now()}`,
+        actorId: actor?.id,
+        action: 'override_set',
+        entityType: 'user',
+        entityId: userId,
+        detail: `${actor?.firstName || 'Admin'} updated permissions for ${user?.firstName} ${user?.lastName} in branch`,
+        timestamp: new Date().toISOString(),
+      });
+      notify();
+    },
+
+    setCompanyDefaultTemplate(companyId, templateId) {
+      const co = _companies.find(c => c.id === companyId);
+      if (!co) return;
+      co.defaultPermissionTemplateId = templateId || null;
+      const actor = _currentUser;
+      const tmpl = _templates.find(t => t.id === templateId);
+      _auditLog.unshift({
+        id: `al-${Date.now()}`,
+        actorId: actor?.id,
+        action: 'company_default_changed',
+        entityType: 'company',
+        entityId: companyId,
+        detail: `${actor?.firstName || 'Admin'} set company default to "${tmpl ? tmpl.name : 'None'}"`,
+        timestamp: new Date().toISOString(),
+      });
+      notify();
+    },
+
+    setBranchDefaultTemplate(branchId, templateId) {
+      const br = _branches.find(b => b.id === branchId);
+      if (!br) return;
+      br.defaultPermissionTemplateId = templateId || null;
+      const actor = _currentUser;
+      const tmpl = _templates.find(t => t.id === templateId);
+      _auditLog.unshift({
+        id: `al-${Date.now()}`,
+        actorId: actor?.id,
+        action: 'branch_default_changed',
+        entityType: 'branch',
+        entityId: branchId,
+        detail: `${actor?.firstName || 'Admin'} set branch default to "${tmpl ? tmpl.name : 'Inherit from Company'}"`,
+        timestamp: new Date().toISOString(),
+      });
+      notify();
+    },
+
+    /* ---- Permission Resolver ---- */
+    resolvePermissions(userId, branchId) {
+      const branch = _branches.find(b => b.id === branchId);
+      if (!branch) return {};
+      const company = _companies.find(c => c.id === branch.companyId);
+      const assignment = _assignments.find(a => a.userId === userId && a.branchId === branchId);
+
+      const allKeys = [];
+      DEMO_DATA.permissionMatrix.scopes.forEach(scope => {
+        DEMO_DATA.permissionMatrix.actions.forEach(action => {
+          allKeys.push(`${scope}-${action}`);
+        });
+      });
+
+      const result = {};
+      allKeys.forEach(key => {
+        // Layer 1: company default template
+        const coTemplateId = company?.defaultPermissionTemplateId;
+        const coTemplate = coTemplateId ? _templates.find(t => t.id === coTemplateId) : null;
+        let resolved = coTemplate ? (coTemplate.defaultMatrix[key] ?? null) : null;
+
+        // Layer 2: branch default template (overrides company if set)
+        const brTemplateId = branch?.defaultPermissionTemplateId;
+        const brTemplate = brTemplateId ? _templates.find(t => t.id === brTemplateId) : null;
+        if (brTemplate) {
+          const brVal = brTemplate.defaultMatrix[key] ?? null;
+          if (brVal !== null) resolved = brVal;
+        }
+
+        // Layer 3: user assignment template, then overrides
+        if (assignment) {
+          const uTemplateId = assignment.templateId;
+          const uTemplate = uTemplateId ? _templates.find(t => t.id === uTemplateId) : null;
+          if (uTemplate) {
+            const uVal = uTemplate.defaultMatrix[key] ?? null;
+            if (uVal !== null) resolved = uVal;
+          }
+          const override = assignment.overridePermissions[key];
+          if (override !== undefined && override !== null) resolved = override;
+        }
+
+        // Deny-wins: any explicit false overrides everything
+        if (resolved === null) resolved = false; // no permission if unresolved
+        result[key] = resolved;
+      });
+
+      return result;
+    },
+
+    /* ---- Audit Log ---- */
+    getAuditLogByCompany(companyId) {
+      const branchIds = new Set(_branches.filter(b => b.companyId === companyId).map(b => b.id));
+      const userIds   = new Set(_users.filter(u => u.companyId === companyId).map(u => u.id));
+      return _auditLog.filter(e =>
+        (e.entityType === 'company' && e.entityId === companyId) ||
+        (e.entityType === 'branch'  && branchIds.has(e.entityId)) ||
+        (e.entityType === 'user'    && userIds.has(e.entityId))
+      ).slice(0, 8);
+    },
 
     /* ---- Subscriptions ---- */
     subscribe(fn) { _subscribers.push(fn); },
