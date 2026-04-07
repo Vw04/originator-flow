@@ -1,78 +1,67 @@
 /* ============================================================
    HOMIUM ORIGINATOR FLOW — Top Nav
-   Role-aware horizontal navigation component
+   Unified LOP nav with Administration dropdown for admin roles
    ============================================================ */
 
 const Nav = (() => {
 
-  /* Nav config per role split by mode */
-  const NAV_CONFIG = {
-    sys_admin: {
-      admin: [
-        { path: '/dashboard',               label: 'Dashboard' },
-        { path: '/origination-companies',    label: 'Origination Companies' },
-        { path: '/investors',                label: 'Investors & Funds' },
-        { path: '/platform',                 label: 'Platform Operations' },
-        { path: '/system-config',            label: 'System Configuration' },
-      ],
-      data: [
-        { path: '/data/analytics',    label: 'Analytics' },
-        { path: '/data/applications', label: 'Applications' },
-        { path: '/data/originations', label: 'Originations' },
-        { path: '/data/batches',      label: 'Batches' },
-        { path: '/data/activations',  label: 'Activations' },
-      ],
-    },
-    operator: {
-      admin: [
-        { path: '/dashboard',               label: 'Dashboard' },
-        { path: '/origination-companies',    label: 'Origination Companies' },
-        { path: '/investors',                label: 'Investors & Funds' },
-        { path: '/platform',                 label: 'Platform Operations' },
-        { path: '/system-config',            label: 'System Configuration' },
-      ],
-      data: [
-        { path: '/data/analytics',    label: 'Analytics' },
-        { path: '/data/applications', label: 'Applications' },
-        { path: '/data/originations', label: 'Originations' },
-        { path: '/data/batches',      label: 'Batches' },
-        { path: '/data/activations',  label: 'Activations' },
-      ],
-    },
-    prog_admin: {
-      admin: [
-        { path: '/dashboard',               label: 'Dashboard' },
-        { path: '/origination-companies',    label: 'My Company' },
-      ],
-      data: [
-        { path: '/data/analytics',    label: 'Analytics' },
-        { path: '/data/applications', label: 'Applications' },
-        { path: '/data/originations', label: 'Originations' },
-      ],
-    },
-    lo: {
-      admin: [],
-      data: [
-        { path: '/data/applications', label: 'Applications' },
-        { path: '/originations',      label: 'My Originations' },
-        { path: '/profile',           label: 'My Profile' },
-      ],
-    },
-    lp: {
-      admin: [],
-      data: [
-        { path: '/data/applications', label: 'Applications' },
-        { path: '/profile',           label: 'My Profile' },
-      ],
-    },
-    investor: {
-      admin: [],
-      data: [
-        { path: '/data/analytics', label: 'Analytics' },
-        { path: '/profile',        label: 'My Profile' },
-      ],
-    },
+  /* LOP tabs per role */
+  const LOP_TABS = {
+    sys_admin:  [
+      { path: '/data/analytics',    label: 'Dashboard' },
+      { path: '/data/applications', label: 'Applications' },
+      { path: '/data/originations', label: 'Originations' },
+      { path: '/data/batches',      label: 'Batches' },
+      { path: '/data/activations',  label: 'Activations' },
+    ],
+    operator:   [
+      { path: '/data/analytics',    label: 'Dashboard' },
+      { path: '/data/applications', label: 'Applications' },
+      { path: '/data/originations', label: 'Originations' },
+      { path: '/data/batches',      label: 'Batches' },
+      { path: '/data/activations',  label: 'Activations' },
+    ],
+    prog_admin: [
+      { path: '/data/analytics',    label: 'Dashboard' },
+      { path: '/data/applications', label: 'Applications' },
+      { path: '/data/originations', label: 'Originations' },
+    ],
+    lo: [
+      { path: '/data/applications', label: 'Applications' },
+      { path: '/originations',      label: 'My Originations' },
+      { path: '/profile',           label: 'My Profile' },
+    ],
+    lp: [
+      { path: '/data/applications', label: 'Applications' },
+      { path: '/profile',           label: 'My Profile' },
+    ],
+    investor: [
+      { path: '/data/analytics',    label: 'Dashboard' },
+      { path: '/profile',           label: 'My Profile' },
+    ],
   };
+
+  /* Administration dropdown items per role */
+  const ADMIN_ITEMS = {
+    sys_admin:  [
+      { path: '/origination-companies', label: 'Origination Companies' },
+      { path: '/investors',             label: 'Investors & Funds' },
+      { path: '/platform',              label: 'Platform Operations' },
+      { path: '/system-config',         label: 'System Configuration' },
+    ],
+    operator:   [
+      { path: '/origination-companies', label: 'Origination Companies' },
+      { path: '/investors',             label: 'Investors & Funds' },
+      { path: '/platform',              label: 'Platform Operations' },
+      { path: '/system-config',         label: 'System Configuration' },
+    ],
+    prog_admin: [
+      { path: '/origination-companies', label: 'My Company' },
+    ],
+    lo: [], lp: [], investor: [],
+  };
+
+  const ADMIN_PATHS = ['/dashboard', '/origination-companies', '/investors', '/platform', '/system-config'];
 
   const ROLE_META = {
     sys_admin:  { label: 'System Admin' },
@@ -88,25 +77,35 @@ const Nav = (() => {
     const user = State.getCurrentUser();
     if (!role) return '';
 
-    const mode    = State.getMode();
-    const config  = NAV_CONFIG[role] || { admin: [], data: [] };
-    const items   = config[mode] || [];
-    const meta    = ROLE_META[role] || {};
-    const hasBoth = config.admin.length > 0;
+    const currentPath = Router.getCurrentPath() || '/data/analytics';
+    const tabs        = LOP_TABS[role] || [];
+    const adminItems  = ADMIN_ITEMS[role] || [];
+    const meta        = ROLE_META[role] || {};
+    const isOnAdmin   = ADMIN_PATHS.some(p => currentPath === p || currentPath.startsWith(p + '/'));
 
-    const navLinks = items.map(item =>
-      `<span class="topnav-link" data-path="${item.path}" onclick="Router.navigate('${item.path}')">${item.label}</span>`
-    ).join('');
+    const navLinks = tabs.map(item => {
+      const isActive = currentPath === item.path ||
+        (item.path !== '/data/analytics' && item.path !== '/profile' && currentPath.startsWith(item.path));
+      return `<span class="topnav-link ${isActive ? 'active' : ''}"
+                    data-path="${item.path}"
+                    onclick="Nav._goLOP('${item.path}')">${item.label}</span>`;
+    }).join('');
 
-    const modeToggle = hasBoth ? `
-      <div class="topnav-mode-dropdown" id="topnav-mode-dropdown">
-        <button class="mode-dropdown-trigger" onclick="Nav.toggleModeDropdown(event)">
-          ${mode === 'admin' ? 'Administration' : 'Loan Origination Platform'}
-          <span class="mode-dropdown-caret">▼</span>
+    const adminDropdown = adminItems.length ? `
+      <div class="admin-nav-wrap" id="admin-nav-wrap">
+        <button class="topnav-link admin-nav-btn ${isOnAdmin ? 'active' : ''}"
+                onclick="Nav.toggleAdminDropdown(event)">
+          Administration
+          <svg class="admin-nav-caret" width="10" height="10" viewBox="0 0 10 10" fill="none" stroke="currentColor" stroke-width="1.8">
+            <path d="M2 3.5l3 3 3-3"/>
+          </svg>
         </button>
-        <div class="mode-dropdown-menu" id="mode-dropdown-menu">
-          <div class="mode-dropdown-item ${mode==='admin'?'active':''}" onclick="Nav.setMode('admin')">Administration</div>
-          <div class="mode-dropdown-item ${mode==='data'?'active':''}" onclick="Nav.setMode('data')">Loan Origination Platform</div>
+        <div class="admin-nav-menu" id="admin-nav-menu">
+          ${adminItems.map(item => `
+            <div class="admin-nav-item ${currentPath === item.path || currentPath.startsWith(item.path + '/') ? 'active' : ''}"
+                 onclick="Nav.goAdmin('${item.path}')">
+              ${item.label}
+            </div>`).join('')}
         </div>
       </div>` : '';
 
@@ -121,9 +120,11 @@ const Nav = (() => {
                  onerror="this.style.display='none';this.nextElementSibling.style.display='block'" />
             <span class="topnav-logo-text" style="display:none">Homium</span>
           </div>
-          ${modeToggle}
         </div>
-        <div class="topnav-links">${navLinks}</div>
+        <div class="topnav-links">
+          ${navLinks}
+          ${adminDropdown}
+        </div>
         <div class="topnav-right">
           <div class="topnav-user-info">
             <div class="topnav-user-name">${userName}</div>
@@ -155,29 +156,42 @@ const Nav = (() => {
     render,
 
     setActive(path) {
-      document.querySelectorAll('.topnav-link').forEach(el => {
+      document.querySelectorAll('.topnav-link[data-path]').forEach(el => {
         const elPath = el.dataset.path;
-        // Exact match, or prefix match for section drill-downs (e.g. /origination-companies/co-001)
-        const isActive = path === elPath || (elPath !== '/' && elPath !== '/dashboard' && path.startsWith(elPath));
+        const isActive = path === elPath ||
+          (elPath !== '/' && elPath !== '/data/analytics' && elPath !== '/profile' && path.startsWith(elPath));
         el.classList.toggle('active', isActive);
       });
+      const adminBtn = document.querySelector('.admin-nav-btn');
+      if (adminBtn) {
+        const onAdmin = ADMIN_PATHS.some(p => path === p || path.startsWith(p + '/'));
+        adminBtn.classList.toggle('active', onAdmin);
+      }
     },
 
     refresh() {
       const nav = document.querySelector('.topnav');
-      if (nav) {
-        nav.outerHTML = render();
-        Nav.setActive(Router.getCurrentPath() || '/dashboard');
-      }
+      if (nav) nav.outerHTML = render();
     },
 
-    toggleModeDropdown(e) {
+    _goLOP(path) {
+      State.setMode('data');
+      Router.navigate(path);
+    },
+
+    goAdmin(path) {
+      State.setMode('admin');
+      document.getElementById('admin-nav-menu')?.classList.remove('open');
+      Router.navigate(path);
+    },
+
+    toggleAdminDropdown(e) {
       if (e) e.stopPropagation();
-      const menu = document.getElementById('mode-dropdown-menu');
+      const menu = document.getElementById('admin-nav-menu');
       if (menu) menu.classList.toggle('open');
       const close = (ev) => {
-        if (!document.getElementById('topnav-mode-dropdown')?.contains(ev.target)) {
-          document.getElementById('mode-dropdown-menu')?.classList.remove('open');
+        if (!document.getElementById('admin-nav-wrap')?.contains(ev.target)) {
+          document.getElementById('admin-nav-menu')?.classList.remove('open');
           document.removeEventListener('click', close);
         }
       };
@@ -197,11 +211,11 @@ const Nav = (() => {
       document.addEventListener('click', close);
     },
 
+    // Legacy compat
     setMode(mode) {
       State.setMode(mode);
-      const defaultPath = mode === 'admin' ? '/dashboard' : '/data/analytics';
-      const nav = document.querySelector('.topnav');
-      if (nav) nav.outerHTML = render();
+      const defaultPath = mode === 'admin' ? '/origination-companies' : '/data/analytics';
+      this.refresh();
       Router.navigate(defaultPath);
     },
   };

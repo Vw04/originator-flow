@@ -45,8 +45,8 @@ const State = (() => {
       _currentRole = role;
       const uid = DEMO_USERS_BY_ROLE[role];
       _currentUser = _users.find(u => u.id === uid) || null;
-      // Default mode: admin roles start in admin, data-only roles start in data
-      _mode = ['lo', 'lp', 'investor'].includes(role) ? 'data' : 'admin';
+      // Everyone starts in LOP (data) mode; admin sections accessible via nav dropdown
+      _mode = 'data';
       _impersonating = null;
       notify();
     },

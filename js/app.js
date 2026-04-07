@@ -55,7 +55,7 @@ const App = {
         ${impBanner}
         <div class="main-content">${content}</div>
       </div>`;
-    Nav.setActive(Router.getCurrentPath() || '/dashboard');
+    Nav.setActive(Router.getCurrentPath() || '/data/analytics');
   },
 
   renderView(path) {
@@ -104,16 +104,17 @@ const App = {
   startImpersonation(userId) {
     State.startImpersonation(userId);
     ProfileView.close();
-    const defaultPath = State.getMode() === 'data' ? '/data/analytics' : '/dashboard';
-    this.renderShell(State.getMode() === 'data' ? DataPlatformView.render() : DashboardView.render());
-    Nav.setActive(defaultPath);
-    Router.navigate(defaultPath, { replace: true });
+    DataPlatformView._activeTab = 'analytics';
+    this.renderShell(DataPlatformView.render());
+    Nav.setActive('/data/analytics');
+    Router.navigate('/data/analytics', { replace: true });
   },
 
   stopImpersonation() {
     State.stopImpersonation();
-    this.renderShell(DashboardView.render());
-    Router.navigate('/dashboard', { replace: true });
+    DataPlatformView._activeTab = 'analytics';
+    this.renderShell(DataPlatformView.render());
+    Router.navigate('/data/analytics', { replace: true });
   },
 };
 
