@@ -41,15 +41,28 @@ const Nav = (() => {
     ],
   };
 
+  /* Notification data */
+  const DEMO_NOTIFICATIONS = [
+    { type: 'action',   loanId: 'DCDC000001', msg: 'Appraisal report due Apr 10 — upload required',             time: '2h ago' },
+    { type: 'action',   loanId: 'DCDC000002', msg: 'Rate lock expires Apr 12 — borrower action needed',         time: '4h ago' },
+    { type: 'sent',     loanId: 'DCDC000003', msg: 'Closing Disclosure sent to Marcus Johnson',                  time: '1d ago' },
+    { type: 'sent',     loanId: 'DCDC000001', msg: 'Loan Estimate sent to borrower — awaiting acknowledgement', time: '1d ago' },
+    { type: 'complete', loanId: 'DCDC000004', msg: 'Borrower documents approved — ready for final review',      time: '2d ago' },
+    { type: 'info',     loanId: null,          msg: 'BATCH-2026-001 advanced to Pending Issuance',              time: '3d ago' },
+    { type: 'complete', loanId: 'DCDC000002', msg: 'Title commitment received and verified',                    time: '3d ago' },
+  ];
+
   /* Administration dropdown items per role */
   const ADMIN_ITEMS = {
     sys_admin:  [
+      { path: '/admin-dashboard',       label: 'Administration Dashboard' },
       { path: '/origination-companies', label: 'Origination Companies' },
       { path: '/investors',             label: 'Investors & Funds' },
       { path: '/platform',              label: 'Platform Operations' },
       { path: '/system-config',         label: 'System Configuration' },
     ],
     operator:   [
+      { path: '/admin-dashboard',       label: 'Administration Dashboard' },
       { path: '/origination-companies', label: 'Origination Companies' },
       { path: '/investors',             label: 'Investors & Funds' },
       { path: '/platform',              label: 'Platform Operations' },
@@ -61,7 +74,7 @@ const Nav = (() => {
     lo: [], lp: [], investor: [],
   };
 
-  const ADMIN_PATHS = ['/dashboard', '/origination-companies', '/investors', '/platform', '/system-config'];
+  const ADMIN_PATHS = ['/admin-dashboard', '/dashboard', '/origination-companies', '/investors', '/platform', '/system-config'];
 
   const ROLE_META = {
     sys_admin:  { label: 'System Admin' },
@@ -71,6 +84,41 @@ const Nav = (() => {
     lp:         { label: 'Loan Processor' },
     investor:   { label: 'Investor' },
   };
+
+  function _notifForRole(role) {
+    if (role === 'lo' || role === 'lp') {
+      const user = State.getCurrentUser();
+      const myLoans = user ? State.getLoansByLO(user.id).map(l => l.id) : [];
+      return DEMO_NOTIFICATIONS.filter(n => !n.loanId || myLoans.includes(n.loanId));
+    }
+    return DEMO_NOTIFICATIONS;
+  }
+
+  function _notifCount(role) {
+    return _notifForRole(role).filter(n => n.type === 'action').length;
+  }
+
+  function _renderNotifications(role) {
+    const notifs = _notifForRole(role);
+    if (!notifs.length) return '<div style="padding:24px;text-align:center;color:var(--color-text-muted);font-size:13px">No notifications</div>';
+
+    const DOT = { action: 'notif-dot-action', sent: 'notif-dot-sent', complete: 'notif-dot-complete', info: 'notif-dot-info' };
+    const LABEL = { action: 'Action Required', sent: 'Sent', complete: 'Completed', info: 'Update' };
+    const TAG = { action: 'notif-tag-action', sent: 'notif-tag-sent', complete: 'notif-tag-complete', info: 'notif-tag-info' };
+
+    return notifs.map(n => `
+      <div class="notif-item ${n.loanId ? 'notif-item-clickable' : ''}"
+           ${n.loanId ? `onclick="event.stopPropagation();Nav._openNotifLoan('${n.loanId}')"` : ''}>
+        <span class="notif-dot ${DOT[n.type] || 'notif-dot-info'}"></span>
+        <div class="notif-item-body">
+          <div class="notif-item-msg">${n.msg}</div>
+          <div class="notif-item-meta">
+            <span class="notif-tag ${TAG[n.type]}">${LABEL[n.type]}</span>
+            <span class="notif-time">${n.time}</span>
+          </div>
+        </div>
+      </div>`).join('');
+  }
 
   function render() {
     const role = State.getRole();
@@ -126,6 +174,20 @@ const Nav = (() => {
           ${adminDropdown}
         </div>
         <div class="topnav-right">
+          <div class="topnav-notif" id="topnav-notif" onclick="Nav.toggleNotifications(event)">
+            <svg width="18" height="18" viewBox="0 0 18 18" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round">
+              <path d="M9 1.5a5.5 5.5 0 0 1 5.5 5.5c0 3 1 4 1.5 5H2c.5-1 1.5-2 1.5-5A5.5 5.5 0 0 1 9 1.5z"/>
+              <path d="M7 15.5a2 2 0 0 0 4 0"/>
+            </svg>
+            <span class="notif-badge" id="notif-badge">${_notifCount(role)}</span>
+            <div class="notif-panel" id="notif-panel">
+              <div class="notif-panel-header">
+                <span>Notifications</span>
+                <span style="font-size:11px;color:var(--color-text-muted)">${_notifCount(role)} unread</span>
+              </div>
+              ${_renderNotifications(role)}
+            </div>
+          </div>
           <div class="topnav-user-info">
             <div class="topnav-user-name">${userName}</div>
             <div class="topnav-role-label">${meta.label || role}</div>
@@ -196,6 +258,26 @@ const Nav = (() => {
         }
       };
       document.addEventListener('click', close);
+    },
+
+    toggleNotifications(e) {
+      if (e) e.stopPropagation();
+      const panel = document.getElementById('notif-panel');
+      if (panel) panel.classList.toggle('open');
+      const close = (ev) => {
+        if (!document.getElementById('topnav-notif')?.contains(ev.target)) {
+          document.getElementById('notif-panel')?.classList.remove('open');
+          document.removeEventListener('click', close);
+        }
+      };
+      document.addEventListener('click', close);
+    },
+
+    _openNotifLoan(loanId) {
+      document.getElementById('notif-panel')?.classList.remove('open');
+      DataPlatformView._selectedApplicationId = loanId;
+      DataPlatformView._activeTab = 'applications';
+      Router.navigate('/data/applications');
     },
 
     toggleProfileMenu(e) {

@@ -16,6 +16,7 @@ const App = {
     Router.register('/originations', () => this.renderShell(OriginationsView.render()));
 
     // Section routes
+    Router.register('/admin-dashboard',       () => this.renderShell(AdminDashboardView.render()));
     Router.register('/origination-companies', (path) => this.renderShell(OriginationCompaniesView.render(path)));
     Router.register('/investors',             (path) => this.renderShell(InvestorsView.render(path)));
     Router.register('/platform',              (path) => this.renderShell(PlatformOpsView.render(path)));
@@ -63,6 +64,7 @@ const App = {
     if (!mainEl) { Router.navigate(path); return; }
 
     const viewMap = {
+      '/admin-dashboard':          () => AdminDashboardView.render(),
       '/dashboard':               () => DashboardView.render(),
       '/onboarding':              () => {
         const r = State.getRole();
