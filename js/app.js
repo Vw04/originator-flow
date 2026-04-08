@@ -35,11 +35,27 @@ const App = {
     Router.register('/data/batches',      () => { DataPlatformView._activeTab = 'batches';      this.renderShell(DataPlatformView.render()); });
     Router.register('/data/activations',  () => { DataPlatformView._activeTab = 'activations';  this.renderShell(DataPlatformView.render()); });
 
+    // Mobile routes
+    Router.register('/m/home',          () => this.renderMobileShell(MobileHomeView.render()));
+    Router.register('/m/loans',         () => this.renderMobileShell(MobileLoansView.render()));
+    Router.register('/m/companies',     () => this.renderMobileShell(MobileLoansView.render()));
+    Router.register('/m/profile',       () => this.renderMobileShell(MobileProfileView.render()));
+    Router.register('/m/notifications', () => this.renderMobileShell(MobileNotificationsView.render()));
+
     Router.init();
   },
 
   renderRole() {
     document.getElementById('app').innerHTML = RoleSelectView.render();
+  },
+
+  renderMobileShell(content) {
+    document.getElementById('app').innerHTML = `
+      <div class="mobile-shell">
+        <div class="mobile-main" id="mobile-main">${content}</div>
+        ${MobileNav.render()}
+      </div>`;
+    MobileNav.setActive(Router.getCurrentPath());
   },
 
   renderShell(content) {
@@ -99,6 +115,7 @@ const App = {
 
   switchRole() {
     State.setRole(null);
+    State.setViewMode('desktop');
     Router.navigate('/', { replace: true });
     this.renderRole();
   },

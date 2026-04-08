@@ -13,6 +13,8 @@ const RoleSelectView = {
       { key: 'investor',   title: 'Investor',              scope: 'Portfolio',     desc: 'View your investment portfolio and HEI performance. Requires SecuritizeID verification.' },
     ];
 
+    const isMobile = State.getViewMode() === 'mobile';
+
     const cards = roles.map(r => `
       <div class="role-card" onclick="RoleSelectView.selectRole('${r.key}')">
         <span class="role-scope-tag">${r.scope}</span>
@@ -44,6 +46,23 @@ const RoleSelectView = {
           <div class="role-select-title">Select a User Type</div>
           <div class="role-select-subtitle">Choose a user type to preview the platform experience. All data is fictional and resets on refresh.</div>
 
+          <!-- View Mode Toggle -->
+          <div class="view-mode-toggle-wrap">
+            <span class="view-mode-label">View Mode</span>
+            <div class="view-mode-toggle" onclick="RoleSelectView.toggleViewMode()">
+              <span class="view-mode-opt${isMobile ? '' : ' active'}" id="vmt-desktop">
+                <svg width="14" height="14" viewBox="0 0 14 14" fill="none" stroke="currentColor" stroke-width="1.7"><rect x="1" y="2" width="12" height="8" rx="1.5"/><path d="M4.5 12.5h5M7 10v2.5"/></svg>
+                Desktop
+              </span>
+              <span class="view-mode-opt${isMobile ? ' active' : ''}" id="vmt-mobile">
+                <svg width="14" height="14" viewBox="0 0 14 14" fill="none" stroke="currentColor" stroke-width="1.7"><rect x="3.5" y="1" width="7" height="12" rx="2"/><circle cx="7" cy="10.5" r=".75" fill="currentColor" stroke="none"/></svg>
+                Mobile
+              </span>
+              <div class="view-mode-slider${isMobile ? ' mobile' : ''}" id="vmt-slider"></div>
+            </div>
+            <span class="view-mode-hint" id="vmt-hint">${isMobile ? 'Select a role to preview the mobile app experience' : 'Select a role to enter the desktop experience'}</span>
+          </div>
+
           <div class="role-select-layout">
             <div class="role-grid">${cards}</div>
 
@@ -65,11 +84,27 @@ const RoleSelectView = {
       </div>`;
   },
 
+  toggleViewMode() {
+    const isMobile = State.getViewMode() !== 'mobile';
+    State.setViewMode(isMobile ? 'mobile' : 'desktop');
+    document.getElementById('vmt-desktop')?.classList.toggle('active', !isMobile);
+    document.getElementById('vmt-mobile')?.classList.toggle('active', isMobile);
+    document.getElementById('vmt-slider')?.classList.toggle('mobile', isMobile);
+    const hint = document.getElementById('vmt-hint');
+    if (hint) hint.textContent = isMobile
+      ? 'Select a role to preview the mobile app experience'
+      : 'Select a role to enter the desktop experience';
+  },
+
   selectRole(role) {
     State.setRole(role);
     // Reset demo user to invited so the wizard starts from step 0
     const user = State.getCurrentUser();
     if (user) State.updateUser(user.id, { onboardingStatus: 'invited' });
-    OnboardingFlowView.open(role);
+    if (State.getViewMode() === 'mobile') {
+      Router.navigate('/m/home', { replace: true });
+    } else {
+      OnboardingFlowView.open(role);
+    }
   },
 };

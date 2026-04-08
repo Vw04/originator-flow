@@ -22,6 +22,7 @@ const State = (() => {
   let _currentUser = null;  // user object (simulated logged-in user per role)
   let _mode = 'admin';      // 'admin' | 'data'
   let _impersonating = null; // { savedRole, savedUserId } | null
+  let _viewMode = 'desktop'; // 'desktop' | 'mobile'
 
   const _subscribers = [];
 
@@ -56,6 +57,10 @@ const State = (() => {
     /* ---- Mode ---- */
     getMode: () => _mode,
     setMode(m) { _mode = m; },
+
+    /* ---- View Mode (desktop | mobile) ---- */
+    getViewMode: () => _viewMode,
+    setViewMode(m) { _viewMode = m === 'mobile' ? 'mobile' : 'desktop'; notify(); },
 
     /* ---- Impersonation ---- */
     startImpersonation(targetUserId) {
