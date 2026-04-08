@@ -3536,3 +3536,12 @@ label { font-size: 12px; font-weight: 600; color: var(--color-text); }
   text-align: center;
   margin-top: 2px;
 }
+
+/* ── Horizontal stage bar chart (Pipeline by Stage) ── */
+.horiz-stage-chart { display: flex; flex-direction: column; gap: 10px; }
+.horiz-stage-row { display: grid; grid-template-columns: 120px 1fr 32px 60px; align-items: center; gap: 10px; }
+.horiz-stage-label { font-size: 12px; color: var(--color-text-secondary); font-weight: 500; text-align: right; }
+.horiz-stage-track { background: var(--color-surface); border-radius: 4px; height: 12px; overflow: hidden; }
+.horiz-stage-bar { height: 100%; border-radius: 4px; transition: width 0.3s; }
+.horiz-stage-count { font-size: 13px; font-weight: 700; color: var(--color-text); text-align: center; }
+.horiz-stage-value { font-size: 11px; color: var(--color-text-muted); text-align: right; }

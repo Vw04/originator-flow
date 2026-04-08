@@ -180,19 +180,25 @@ const DataPlatformView = {
       const companyName = company ? company.name : '';
       const state = company ? company.state : '';
 
-      const maxPCount = Math.max(1, ...STAGE_DEFS.map(s => pLoans.filter(l=>s.statuses.includes(l.status)).length));
-      const miniStages = STAGE_DEFS.map(s => {
-        const cnt = pLoans.filter(l => s.statuses.includes(l.status)).length;
-        const pct = Math.round((cnt / maxPCount) * 100);
-        return `
-          <div class="dash-program-stage-row">
-            <div class="dash-program-stage-label">${s.label}</div>
-            <div class="dash-program-stage-bar-wrap">
-              <div class="dash-program-stage-bar" style="width:${Math.max(pct, cnt>0?4:0)}%;background:${s.color}"></div>
-            </div>
-            <div class="dash-program-stage-count">${cnt}</div>
-          </div>`;
-      }).join('');
+      const pMaxCount = Math.max(1, ...STAGE_DEFS.map(s => pLoans.filter(l=>s.statuses.includes(l.status)).length));
+      const SHORT_LABELS = ['Preq.', 'Subm.', 'Docs', 'Orig.', 'Done'];
+      const svgPW=260, svgPH=90, pPadL=8, pPadR=8, pPadT=20, pPadB=28;
+      const pChartW = svgPW - pPadL - pPadR, pChartH = svgPH - pPadT - pPadB;
+      const pBarW = Math.floor(pChartW / STAGE_DEFS.length * 0.6);
+      const pGap = (pChartW - pBarW * STAGE_DEFS.length) / (STAGE_DEFS.length + 1);
+      const programSvg = `<svg viewBox="0 0 ${svgPW} ${svgPH}" width="100%">
+        ${STAGE_DEFS.map((s, i) => {
+          const cnt = pLoans.filter(l => s.statuses.includes(l.status)).length;
+          const barH = cnt > 0 ? Math.max(Math.round((cnt / pMaxCount) * pChartH), 4) : 2;
+          const x = pPadL + pGap + i * (pBarW + pGap);
+          const y = pPadT + pChartH - barH;
+          const cx = x + pBarW / 2;
+          return `
+            <rect x="${x}" y="${y}" width="${pBarW}" height="${barH}" rx="2" fill="${s.color}"/>
+            <text x="${cx}" y="${y - 4}" text-anchor="middle" font-size="9" font-weight="700" fill="#374151">${cnt || ''}</text>
+            <text x="${cx}" y="${svgPH - 4}" text-anchor="middle" font-size="8" fill="#6B7280">${SHORT_LABELS[i]}</text>`;
+        }).join('')}
+      </svg>`;
 
       return `
         <div class="dash-program-card">
@@ -217,7 +223,7 @@ const DataPlatformView = {
             </div>
           </div>
           ${pStalled > 0 ? `<div class="dash-attn-badge">${pStalled} loan${pStalled!==1?'s':''} need attention</div>` : ''}
-          <div class="dash-program-stages">${miniStages}</div>
+          <div style="margin-top:12px;padding-top:12px;border-top:1px solid var(--color-border-light)">${programSvg}</div>
         </div>`;
     }).join('');
 
@@ -228,48 +234,22 @@ const DataPlatformView = {
     }));
     const maxCount  = Math.max(1, ...stageCounts.map(s => s.loans.length));
 
-    // SVG dimensions
-    const svgW = 400, svgH = 260;
-    const padL = 28, padR = 12, padT = 28, padB = 60;
-    const chartW = svgW - padL - padR;
-    const chartH = svgH - padT - padB;
-    const nBars  = stageCounts.length;
-    const barW   = Math.floor(chartW / nBars * 0.55);
-    const gap    = (chartW - barW * nBars) / (nBars + 1);
-
-    const svgBars = stageCounts.map((s, i) => {
-      const barH  = s.loans.length > 0 ? Math.max(Math.round((s.loans.length / maxCount) * chartH), 6) : 2;
-      const x     = padL + gap + i * (barW + gap);
-      const y     = padT + chartH - barH;
-      const cx    = x + barW / 2;
-      const val   = s.loans.reduce((acc, l) => acc + l.amount, 0);
-      const label = s.label.split('/')[0].trim(); // shorten "Docs / Appraisal" → "Docs"
-      const label2 = s.label.includes('/') ? '/ Appraisal' : (s.label === 'In Origination' ? 'Origination' : '');
-
-      const valY = padT + chartH + (label2 ? 38 : 27);
-      return `
-        <rect x="${x}" y="${y}" width="${barW}" height="${barH}" rx="3" fill="${s.color}" />
-        <text x="${cx}" y="${y - 6}" text-anchor="middle" font-size="12" font-weight="700" fill="#374151">${s.loans.length}</text>
-        <text x="${cx}" y="${padT + chartH + 14}" text-anchor="middle" font-size="10" fill="#6B7280">${label}</text>
-        ${label2 ? `<text x="${cx}" y="${padT + chartH + 25}" text-anchor="middle" font-size="10" fill="#6B7280">${label2}</text>` : ''}
-        <text x="${cx}" y="${valY}" text-anchor="middle" font-size="10" fill="#9CA3AF">${val ? Display.currency(Math.round(val/1000))+'k' : '—'}</text>
-      `;
-    }).join('');
-
-    // Horizontal guide lines
-    const guideLines = [0.25, 0.5, 0.75, 1].map(frac => {
-      const yg = padT + chartH - Math.round(frac * chartH);
-      const val = Math.round(frac * maxCount);
-      return `
-        <line x1="${padL}" y1="${yg}" x2="${svgW - padR}" y2="${yg}" stroke="#E5E7EB" stroke-width="1" stroke-dasharray="3,3"/>
-        <text x="${padL - 4}" y="${yg + 4}" text-anchor="end" font-size="9" fill="#9CA3AF">${val}</text>`;
-    }).join('');
-
     const barChartHtml = `
-      <svg viewBox="0 0 ${svgW} ${svgH}" width="100%" style="display:block;overflow:visible">
-        ${guideLines}
-        ${svgBars}
-      </svg>`;
+      <div class="horiz-stage-chart">
+        ${stageCounts.map(s => {
+          const pct = Math.round((s.loans.length / maxCount) * 100);
+          const val = s.loans.reduce((acc, l) => acc + l.amount, 0);
+          return `
+            <div class="horiz-stage-row">
+              <div class="horiz-stage-label">${s.label}</div>
+              <div class="horiz-stage-track">
+                <div class="horiz-stage-bar" style="width:${s.loans.length > 0 ? Math.max(pct, 3) : 0}%;background:${s.color}"></div>
+              </div>
+              <div class="horiz-stage-count">${s.loans.length}</div>
+              <div class="horiz-stage-value">${val ? Display.currency(Math.round(val / 1000)) + 'k' : '—'}</div>
+            </div>`;
+        }).join('')}
+      </div>`;
 
     const attnLoansHtml = stalledLoans.length
       ? `<table class="dash-attn-table">
@@ -305,7 +285,7 @@ const DataPlatformView = {
         </div>`;
 
     const midSection = isInvestor ? '' : `
-      <div style="display:grid;grid-template-columns:420px 1fr;gap:16px;margin-bottom:20px">
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-bottom:20px">
         <div class="card">
           <div class="card-title" style="margin-bottom:16px">Pipeline by Stage</div>
           ${barChartHtml}
