@@ -221,28 +221,55 @@ const DataPlatformView = {
         </div>`;
     }).join('');
 
-    /* ── Section 3: Vertical bar chart + attention queue ── */
+    /* ── Section 3: SVG bar chart + attention queue ── */
     const stageCounts = STAGE_DEFS.map(s => ({
       ...s,
       loans: loans.filter(l => s.statuses.includes(l.status)),
     }));
-    const maxCount = Math.max(1, ...stageCounts.map(s => s.loans.length));
-    const chartBarHeight = 100; // px — the max bar height
+    const maxCount  = Math.max(1, ...stageCounts.map(s => s.loans.length));
+
+    // SVG dimensions
+    const svgW = 340, svgH = 220;
+    const padL = 28, padR = 12, padT = 28, padB = 60;
+    const chartW = svgW - padL - padR;
+    const chartH = svgH - padT - padB;
+    const nBars  = stageCounts.length;
+    const barW   = Math.floor(chartW / nBars * 0.55);
+    const gap    = (chartW - barW * nBars) / (nBars + 1);
+
+    const svgBars = stageCounts.map((s, i) => {
+      const barH  = s.loans.length > 0 ? Math.max(Math.round((s.loans.length / maxCount) * chartH), 6) : 2;
+      const x     = padL + gap + i * (barW + gap);
+      const y     = padT + chartH - barH;
+      const cx    = x + barW / 2;
+      const val   = s.loans.reduce((acc, l) => acc + l.amount, 0);
+      const label = s.label.split('/')[0].trim(); // shorten "Docs / Appraisal" → "Docs"
+      const label2 = s.label.includes('/') ? '/ Appraisal' : (s.label === 'In Origination' ? 'Origination' : '');
+
+      const valY = padT + chartH + (label2 ? 38 : 27);
+      return `
+        <rect x="${x}" y="${y}" width="${barW}" height="${barH}" rx="3" fill="${s.color}" />
+        <text x="${cx}" y="${y - 6}" text-anchor="middle" font-size="12" font-weight="700" fill="#374151">${s.loans.length}</text>
+        <text x="${cx}" y="${padT + chartH + 14}" text-anchor="middle" font-size="10" fill="#6B7280">${label}</text>
+        ${label2 ? `<text x="${cx}" y="${padT + chartH + 25}" text-anchor="middle" font-size="10" fill="#6B7280">${label2}</text>` : ''}
+        <text x="${cx}" y="${valY}" text-anchor="middle" font-size="10" fill="#9CA3AF">${val ? Display.currency(Math.round(val/1000))+'k' : '—'}</text>
+      `;
+    }).join('');
+
+    // Horizontal guide lines
+    const guideLines = [0.25, 0.5, 0.75, 1].map(frac => {
+      const yg = padT + chartH - Math.round(frac * chartH);
+      const val = Math.round(frac * maxCount);
+      return `
+        <line x1="${padL}" y1="${yg}" x2="${svgW - padR}" y2="${yg}" stroke="#E5E7EB" stroke-width="1" stroke-dasharray="3,3"/>
+        <text x="${padL - 4}" y="${yg + 4}" text-anchor="end" font-size="9" fill="#9CA3AF">${val}</text>`;
+    }).join('');
 
     const barChartHtml = `
-      <div class="pipeline-bar-chart">
-        ${stageCounts.map(s => {
-          const h = Math.round((s.loans.length / maxCount) * chartBarHeight);
-          const val = s.loans.reduce((acc,l) => acc+l.amount, 0);
-          return `
-            <div class="pipeline-bar-col">
-              <div class="pipeline-bar-count">${s.loans.length}</div>
-              <div class="pipeline-bar-fill" style="height:${Math.max(h, s.loans.length>0?6:2)}px;background:${s.color}"></div>
-              <div class="pipeline-bar-label">${s.label}</div>
-              ${val ? `<div class="pipeline-bar-value">${Display.currency(val)}</div>` : '<div class="pipeline-bar-value">—</div>'}
-            </div>`;
-        }).join('')}
-      </div>`;
+      <svg viewBox="0 0 ${svgW} ${svgH}" width="100%" style="display:block;overflow:visible">
+        ${guideLines}
+        ${svgBars}
+      </svg>`;
 
     const attnLoansHtml = stalledLoans.length
       ? `<table class="dash-attn-table">
