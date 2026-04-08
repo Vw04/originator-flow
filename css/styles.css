@@ -2726,6 +2726,9 @@ label { font-size: 12px; font-weight: 600; color: var(--color-text); }
   border: none;
   font-family: inherit;
 }
+.admin-nav-btn.active {
+  background: transparent;
+}
 .admin-nav-caret {
   transition: transform 0.15s;
   flex-shrink: 0;
@@ -3348,3 +3351,148 @@ label { font-size: 12px; font-weight: 600; color: var(--color-text); }
   font-size: 13px;
   cursor: default;
 }
+
+/* ============================================================
+   Notification identifier line
+   ============================================================ */
+.notif-loan-id {
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 0.05em;
+  color: var(--color-primary);
+  text-transform: uppercase;
+  margin-bottom: 2px;
+}
+
+/* ============================================================
+   Dashboard — Program Performance Cards
+   ============================================================ */
+.dash-programs-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+  gap: 16px;
+  margin-bottom: 20px;
+}
+.dash-program-card {
+  background: #fff;
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-lg);
+  padding: 20px 22px;
+}
+.dash-program-name {
+  font-size: 15px;
+  font-weight: 700;
+  color: var(--color-text);
+  margin-bottom: 3px;
+}
+.dash-program-company {
+  font-size: 12px;
+  color: var(--color-text-muted);
+  margin-bottom: 14px;
+}
+.dash-program-stats {
+  display: grid;
+  grid-template-columns: 1fr 1fr 1fr 1fr;
+  gap: 8px;
+  margin-bottom: 14px;
+}
+.dash-program-stat-val {
+  font-size: 18px;
+  font-weight: 700;
+  color: var(--color-text);
+}
+.dash-program-stat-lbl {
+  font-size: 10px;
+  color: var(--color-text-muted);
+  margin-top: 2px;
+}
+.dash-program-stages {
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+  margin-top: 12px;
+  padding-top: 12px;
+  border-top: 1px solid var(--color-border-light);
+}
+.dash-program-stage-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 11px;
+}
+.dash-program-stage-label {
+  width: 100px;
+  color: var(--color-text-secondary);
+  flex-shrink: 0;
+}
+.dash-program-stage-bar-wrap {
+  flex: 1;
+  background: var(--color-surface);
+  border-radius: 3px;
+  height: 6px;
+  overflow: hidden;
+}
+.dash-program-stage-bar { height: 100%; border-radius: 3px; }
+.dash-program-stage-count {
+  width: 20px;
+  text-align: right;
+  color: var(--color-text-muted);
+  flex-shrink: 0;
+}
+.dash-attn-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  background: #FEE2E2;
+  color: #DC2626;
+  font-size: 10px;
+  font-weight: 700;
+  padding: 2px 7px;
+  border-radius: 10px;
+  margin-top: 8px;
+}
+
+/* ============================================================
+   Dashboard — Attention Queue + Branch Performance
+   ============================================================ */
+.dash-mid-row {
+  display: grid;
+  grid-template-columns: 55% 1fr;
+  gap: 16px;
+  margin-bottom: 20px;
+}
+.dash-attn-table { width: 100%; border-collapse: collapse; font-size: 12px; }
+.dash-attn-table th {
+  font-size: 10px; font-weight: 700; text-transform: uppercase;
+  letter-spacing: 0.04em; color: var(--color-text-muted);
+  padding: 6px 10px; border-bottom: 1px solid var(--color-border); text-align: left;
+}
+.dash-attn-table td { padding: 8px 10px; border-bottom: 1px solid var(--color-border-light); }
+.dash-attn-table tbody tr:last-child td { border-bottom: none; }
+.dash-attn-ok {
+  display: flex; align-items: center; gap: 8px;
+  padding: 20px; font-size: 13px; color: var(--color-success);
+}
+
+/* ============================================================
+   Admin Dashboard — Onboarding Funnel
+   ============================================================ */
+.admin-funnel-row {
+  display: grid;
+  grid-template-columns: 160px 1fr 40px 40px;
+  align-items: center;
+  gap: 12px;
+  padding: 7px 0;
+  border-bottom: 1px solid var(--color-border-light);
+}
+.admin-funnel-row:last-child { border-bottom: none; }
+.admin-funnel-label { font-size: 12px; color: var(--color-text-secondary); }
+.admin-funnel-bar-wrap {
+  background: var(--color-surface);
+  border-radius: 3px;
+  height: 8px;
+  overflow: hidden;
+}
+.admin-funnel-bar { height: 100%; border-radius: 3px; transition: width 0.3s; }
+.admin-funnel-count { font-size: 13px; font-weight: 700; text-align: right; color: var(--color-text); }
+.admin-funnel-pct { font-size: 11px; text-align: right; color: var(--color-text-muted); }

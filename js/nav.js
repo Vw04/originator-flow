@@ -43,13 +43,13 @@ const Nav = (() => {
 
   /* Notification data */
   const DEMO_NOTIFICATIONS = [
-    { type: 'action',   loanId: 'DCDC000001', msg: 'Appraisal report due Apr 10 — upload required',             time: '2h ago' },
-    { type: 'action',   loanId: 'DCDC000002', msg: 'Rate lock expires Apr 12 — borrower action needed',         time: '4h ago' },
-    { type: 'sent',     loanId: 'DCDC000003', msg: 'Closing Disclosure sent to Marcus Johnson',                  time: '1d ago' },
-    { type: 'sent',     loanId: 'DCDC000001', msg: 'Loan Estimate sent to borrower — awaiting acknowledgement', time: '1d ago' },
-    { type: 'complete', loanId: 'DCDC000004', msg: 'Borrower documents approved — ready for final review',      time: '2d ago' },
-    { type: 'info',     loanId: null,          msg: 'BATCH-2026-001 advanced to Pending Issuance',              time: '3d ago' },
-    { type: 'complete', loanId: 'DCDC000002', msg: 'Title commitment received and verified',                    time: '3d ago' },
+    { type: 'action',   loanId: 'DCDC000001', borrowerName: 'Evelyn & Marcus Ross',   msg: 'Appraisal report due Apr 10 — upload required',             time: '2h ago' },
+    { type: 'action',   loanId: 'DCDC000002', borrowerName: 'Carolyn Dupree',         msg: 'Rate lock expires Apr 12 — borrower action needed',         time: '4h ago' },
+    { type: 'sent',     loanId: 'DCDC000003', borrowerName: 'Terrence & Faith Hill',  msg: 'Closing Disclosure sent — awaiting borrower signature',     time: '1d ago' },
+    { type: 'sent',     loanId: 'DCDC000001', borrowerName: 'Evelyn & Marcus Ross',   msg: 'Loan Estimate sent to borrower — awaiting acknowledgement', time: '1d ago' },
+    { type: 'complete', loanId: 'DCDC000004', borrowerName: 'Naomi Jefferson',        msg: 'Borrower documents approved — ready for final review',      time: '2d ago' },
+    { type: 'info',     loanId: null,          borrowerName: null,                    msg: 'BATCH-2026-001 advanced to Pending Issuance',               time: '3d ago' },
+    { type: 'complete', loanId: 'DCDC000002', borrowerName: 'Carolyn Dupree',         msg: 'Title commitment received and verified',                    time: '3d ago' },
   ];
 
   /* Administration dropdown items per role */
@@ -111,6 +111,7 @@ const Nav = (() => {
            ${n.loanId ? `onclick="event.stopPropagation();Nav._openNotifLoan('${n.loanId}')"` : ''}>
         <span class="notif-dot ${DOT[n.type] || 'notif-dot-info'}"></span>
         <div class="notif-item-body">
+          ${n.loanId ? `<div class="notif-loan-id">${n.loanId}${n.borrowerName ? ' &middot; ' + n.borrowerName : ''}</div>` : ''}
           <div class="notif-item-msg">${n.msg}</div>
           <div class="notif-item-meta">
             <span class="notif-tag ${TAG[n.type]}">${LABEL[n.type]}</span>
