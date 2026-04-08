@@ -276,7 +276,8 @@ const OnboardingFlowView = {
     }
     const overlay = document.getElementById('onboarding-flow-overlay');
     if (overlay) overlay.remove();
-    Router.navigate('/dashboard');
+    DataPlatformView._activeTab = 'analytics';
+    Router.navigate('/data/analytics');
   },
 
   _skipAll() {
@@ -284,6 +285,7 @@ const OnboardingFlowView = {
     if (user) State.updateUser(user.id, { onboardingStatus: 'active' });
     const overlay = document.getElementById('onboarding-flow-overlay');
     if (overlay) overlay.remove();
-    Router.navigate('/dashboard');
+    DataPlatformView._activeTab = 'analytics';
+    Router.navigate('/data/analytics');
   },
 };

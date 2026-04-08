@@ -221,105 +221,143 @@ const DataPlatformView = {
         </div>`;
     }).join('');
 
-    /* ── Section 3: Pipeline breakdown + attention queue ── */
-    const maxCount  = Math.max(1, ...STAGE_DEFS.map(s => loans.filter(l=>s.statuses.includes(l.status)).length));
-    const stagesHtml = STAGE_DEFS.map(s => {
-      const stageLoans = loans.filter(l => s.statuses.includes(l.status));
-      const cnt = stageLoans.length;
-      const val = stageLoans.reduce((acc,l) => acc+l.amount, 0);
-      const pct = Math.round((cnt / maxCount) * 100);
-      return `
-        <div class="pipeline-stage-row">
-          <div class="pipeline-stage-label">${s.label}</div>
-          <div class="pipeline-stage-bar-wrap">
-            <div class="pipeline-stage-bar" style="width:${Math.max(pct,cnt>0?4:0)}%;background:${s.color}"></div>
-          </div>
-          <div class="pipeline-stage-count">${cnt}</div>
-          <div class="pipeline-stage-value">${cnt ? Display.currency(val) : '—'}</div>
-        </div>`;
-    }).join('');
+    /* ── Section 3: Vertical bar chart + attention queue ── */
+    const stageCounts = STAGE_DEFS.map(s => ({
+      ...s,
+      loans: loans.filter(l => s.statuses.includes(l.status)),
+    }));
+    const maxCount = Math.max(1, ...stageCounts.map(s => s.loans.length));
+    const chartBarHeight = 100; // px — the max bar height
+
+    const barChartHtml = `
+      <div class="pipeline-bar-chart">
+        ${stageCounts.map(s => {
+          const h = Math.round((s.loans.length / maxCount) * chartBarHeight);
+          const val = s.loans.reduce((acc,l) => acc+l.amount, 0);
+          return `
+            <div class="pipeline-bar-col">
+              <div class="pipeline-bar-count">${s.loans.length}</div>
+              <div class="pipeline-bar-fill" style="height:${Math.max(h, s.loans.length>0?6:2)}px;background:${s.color}"></div>
+              <div class="pipeline-bar-label">${s.label}</div>
+              ${val ? `<div class="pipeline-bar-value">${Display.currency(val)}</div>` : '<div class="pipeline-bar-value">—</div>'}
+            </div>`;
+        }).join('')}
+      </div>`;
 
     const attnLoansHtml = stalledLoans.length
       ? `<table class="dash-attn-table">
           <thead><tr>
             <th>Loan / Borrower</th>
+            <th>Program</th>
             <th>Stage</th>
-            <th>Stalled</th>
+            <th>Days Stalled</th>
+            <th>Amount</th>
             <th>Next Action</th>
           </tr></thead>
           <tbody>
-            ${stalledLoans.map(l => `
-              <tr style="cursor:pointer" onclick="DataPlatformView.openApplication('${l.id}')">
+            ${stalledLoans.map(l => {
+              return `
+              <tr class="row-needs-attention" style="cursor:pointer" onclick="DataPlatformView.openApplication('${l.id}')">
                 <td>
-                  <div style="font-size:11px;font-weight:700;color:var(--color-primary)">${l.id}</div>
-                  <div style="font-size:12px">${l.borrowerName}</div>
+                  <div style="font-size:11px;font-weight:700;color:var(--color-primary);margin-bottom:1px">${l.id}</div>
+                  <div style="font-size:13px;font-weight:600">${l.borrowerName}</div>
+                  <div style="font-size:11px;color:var(--color-text-muted)">${l.address.split(',').slice(0,2).join(',').trim()}</div>
                 </td>
-                <td><span class="badge ${Display.loanStatusClass(l.status)}" style="font-size:10px">${Display.loanStatusLabel(l.status)}</span></td>
+                <td style="font-size:12px"><span class="tag">${l.program}</span></td>
+                <td><span class="badge ${Display.loanStatusClass(l.status)}">${Display.loanStatusLabel(l.status)}</span></td>
                 <td>${this._daysBadge(this._daysInStage(l))}</td>
-                <td style="font-size:11px;color:var(--color-text-secondary)">${this._nextAction(l)}</td>
-              </tr>`).join('')}
+                <td style="font-weight:600;font-size:13px">${Display.currency(l.amount)}</td>
+                <td style="font-size:12px;color:var(--color-text-secondary)">${this._nextAction(l)}</td>
+              </tr>`;
+            }).join('')}
           </tbody>
         </table>`
       : `<div class="dash-attn-ok">
-          <span style="font-size:16px;color:var(--color-success)">&#10003;</span>
+          <span style="color:var(--color-success);font-weight:700;font-size:14px">&#10003;</span>
           All loans are on track — no loans stalled over 14 days.
         </div>`;
 
     const midSection = isInvestor ? '' : `
-      <div class="dash-mid-row" style="margin-bottom:20px">
+      <div style="display:grid;grid-template-columns:300px 1fr;gap:16px;margin-bottom:20px">
         <div class="card">
           <div class="card-title" style="margin-bottom:16px">Pipeline by Stage</div>
-          <div class="pipeline-stages">${stagesHtml}</div>
+          ${barChartHtml}
         </div>
         <div class="card">
           <div style="display:flex;align-items:center;gap:8px;margin-bottom:16px">
             <div class="card-title" style="margin-bottom:0">Requires Attention</div>
             ${stalledLoans.length > 0
-              ? `<span style="background:#FEE2E2;color:#DC2626;font-size:10px;font-weight:700;padding:2px 7px;border-radius:10px">${stalledLoans.length}</span>`
-              : ''}
+              ? `<span style="background:#FEE2E2;color:#DC2626;font-size:11px;font-weight:700;padding:2px 8px;border-radius:10px">${stalledLoans.length} loan${stalledLoans.length!==1?'s':''}</span>`
+              : `<span style="background:#D1FAE5;color:#065F46;font-size:11px;font-weight:700;padding:2px 8px;border-radius:10px">All on track</span>`}
           </div>
           ${attnLoansHtml}
         </div>
       </div>`;
 
-    /* ── Section 4: Branch Performance ── */
+    /* ── Section 4: Branch Performance grouped by company ── */
     const branchSection = isInvestor ? '' : (() => {
-      const branches  = State.getBranches().filter(b => b.status === 'active');
-      const branchRows = branches.map(b => {
-        const company    = State.getCompany?.(b.companyId);
-        const bLoans     = loans.filter(l => l.branchId === b.id && l.status !== 'draft' && l.status !== 'completed');
-        const bOnTrack   = bLoans.filter(l => this._daysInStage(l) <= 14).length;
-        const ltvB       = bLoans.filter(l => l.ltv);
-        const avgLTVb    = ltvB.length ? (ltvB.reduce((s,l)=>s+l.ltv,0)/ltvB.length).toFixed(1)+'%' : '—';
-        const bVal       = bLoans.reduce((s,l)=>s+l.amount,0);
-        if (!bLoans.length && !loans.filter(l=>l.branchId===b.id).length) return '';
+      const companies = State.getCompanies();
+      const allBranches = State.getBranches();
+
+      const companyGroups = companies.map(co => {
+        const coBranches = allBranches.filter(b => b.companyId === co.id);
+        const coAllLoans = loans.filter(l => l.companyId === co.id);
+        const coActive   = coAllLoans.filter(l => l.status !== 'draft' && l.status !== 'completed');
+        const coVal      = coActive.reduce((s,l) => s+l.amount, 0);
+
+        const branchRows = coBranches.map(b => {
+          const bActive  = loans.filter(l => l.branchId === b.id && l.status !== 'draft' && l.status !== 'completed');
+          const bOnTrack = bActive.filter(l => this._daysInStage(l) <= 14).length;
+          const ltvB     = bActive.filter(l => l.ltv);
+          const avgLTV   = ltvB.length ? (ltvB.reduce((s,l)=>s+l.ltv,0)/ltvB.length).toFixed(1)+'%' : '—';
+          const bVal     = bActive.reduce((s,l)=>s+l.amount,0);
+          return `
+            <tr>
+              <td style="padding-left:28px;color:var(--color-text-secondary);font-size:12px">${b.name}</td>
+              <td style="font-size:12px;font-weight:600;text-align:center">${bActive.length || '—'}</td>
+              <td style="font-size:12px">${bVal ? Display.currency(bVal) : '—'}</td>
+              <td style="font-size:12px;text-align:center">
+                <span style="color:${bActive.length > 0 && bOnTrack === bActive.length ? 'var(--color-success)' : bActive.length > 0 ? 'var(--color-warning)' : 'var(--color-text-muted)'}">
+                  ${bActive.length > 0 ? bOnTrack+'/'+bActive.length : '—'}
+                </span>
+              </td>
+              <td style="font-size:12px">${avgLTV}</td>
+              <td><span class="badge ${b.status === 'active' ? 'badge-active' : 'badge-pending'}" style="font-size:10px">${b.status}</span></td>
+            </tr>`;
+        }).join('');
+
         return `
-          <tr>
-            <td style="font-weight:600">${b.name}</td>
-            <td style="color:var(--color-text-muted);font-size:12px">${company?.name || '—'}</td>
-            <td style="text-align:center;font-weight:600">${bLoans.length}</td>
-            <td>${bVal ? Display.currency(bVal) : '—'}</td>
-            <td style="text-align:center">
-              <span style="color:${bOnTrack === bLoans.length && bLoans.length > 0 ? 'var(--color-success)' : 'var(--color-text-secondary)'}">
-                ${bLoans.length > 0 ? bOnTrack + '/' + bLoans.length : '—'}
-              </span>
+          <tr style="background:var(--color-surface)">
+            <td colspan="6" style="padding:10px 14px">
+              <div style="display:flex;align-items:center;justify-content:space-between">
+                <div>
+                  <span style="font-size:13px;font-weight:700;color:var(--color-text)">${co.name}</span>
+                  <span style="font-size:11px;color:var(--color-text-muted);margin-left:8px">${co.state || ''} &middot; ${coBranches.length} branch${coBranches.length!==1?'es':''}</span>
+                </div>
+                <div style="display:flex;gap:16px;font-size:12px;color:var(--color-text-secondary)">
+                  <span>${coActive.length} active loan${coActive.length!==1?'s':''}</span>
+                  <span style="font-weight:600">${coVal ? Display.currency(coVal) : '$0'}</span>
+                </div>
+              </div>
             </td>
-            <td>${avgLTVb}</td>
-            <td><span class="badge ${b.status === 'active' ? 'badge-active' : 'badge-pending'}">${b.status}</span></td>
-          </tr>`;
-      }).filter(Boolean).join('');
+          </tr>
+          ${branchRows}`;
+      }).join('');
 
       return `
         <div class="card" style="margin-bottom:20px">
-          <div class="card-title" style="margin-bottom:16px">Branch Performance</div>
+          <div class="card-title" style="margin-bottom:16px">Company &amp; Branch Performance</div>
           <div class="table-container">
             <table>
               <thead><tr>
-                <th>Branch</th><th>Company</th><th style="text-align:center">Active Loans</th>
-                <th>Pipeline Value</th><th style="text-align:center">On-Track</th>
-                <th>Avg LTV</th><th>Status</th>
+                <th>Branch</th>
+                <th style="text-align:center">Active Loans</th>
+                <th>Pipeline Value</th>
+                <th style="text-align:center">On-Track</th>
+                <th>Avg LTV</th>
+                <th>Status</th>
               </tr></thead>
-              <tbody>${branchRows || '<tr><td colspan="7" style="text-align:center;padding:16px;color:var(--color-text-muted)">No branch data available</td></tr>'}</tbody>
+              <tbody>${companyGroups}</tbody>
             </table>
           </div>
         </div>`;

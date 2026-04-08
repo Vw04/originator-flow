@@ -55,14 +55,14 @@ const Nav = (() => {
   /* Administration dropdown items per role */
   const ADMIN_ITEMS = {
     sys_admin:  [
-      { path: '/admin-dashboard',       label: 'Administration Dashboard' },
+      { path: '/dashboard',             label: 'Administration Dashboard' },
       { path: '/origination-companies', label: 'Origination Companies' },
       { path: '/investors',             label: 'Investors & Funds' },
       { path: '/platform',              label: 'Platform Operations' },
       { path: '/system-config',         label: 'System Configuration' },
     ],
     operator:   [
-      { path: '/admin-dashboard',       label: 'Administration Dashboard' },
+      { path: '/dashboard',             label: 'Administration Dashboard' },
       { path: '/origination-companies', label: 'Origination Companies' },
       { path: '/investors',             label: 'Investors & Funds' },
       { path: '/platform',              label: 'Platform Operations' },
