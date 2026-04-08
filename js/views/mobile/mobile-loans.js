@@ -12,20 +12,18 @@ const MobileLoansView = {
   _LOAN_DAYS: MobileHomeView._LOAN_DAYS,
 
   render() {
-    const role = State.getRole();
-    if (role === 'sys_admin' || role === 'operator') {
-      return this._renderCompaniesList();
-    }
     return this._renderLoansList();
   },
 
-  /* ── Loans List (LO / LP / Prog Admin) ── */
+  /* ── Loans List (all roles) ── */
   _renderLoansList() {
     const role = State.getRole();
     const user = State.getCurrentUser();
 
     let loans;
-    if (role === 'prog_admin') {
+    if (role === 'sys_admin' || role === 'operator') {
+      loans = State.getLoans();
+    } else if (role === 'prog_admin') {
       loans = user ? State.getLoansByCompany(user.companyId) : [];
     } else {
       loans = user ? State.getLoansByLO(user.id) : [];
@@ -50,7 +48,10 @@ const MobileLoansView = {
 
     const filterPills = ['All', 'Draft', 'Submitted', 'In Review', 'Completed'];
 
-    const title = role === 'lo' ? 'My Loans' : role === 'prog_admin' ? 'Company Loans' : 'Assigned Loans';
+    const title = (role === 'sys_admin' || role === 'operator') ? 'All Loans'
+      : role === 'lo' ? 'My Loans'
+      : role === 'prog_admin' ? 'Company Loans'
+      : 'Assigned Loans';
 
     return `
       <div class="m-page-header">
@@ -96,7 +97,7 @@ const MobileLoansView = {
           <span class="m-stage-count-badge">${stageLoans.length}</span>
         </div>
         <div class="m-list">
-          ${stageLoans.map(l => this._loanRow(l, stage)).join('')}
+          ${stageLoans.map(l => this._loanRow(l)).join('')}
         </div>`;
     });
 
@@ -113,18 +114,15 @@ const MobileLoansView = {
     }
     return `
       <div class="m-list" style="padding-bottom:14px">
-        ${loans.map(l => {
-          const stageLabel = this._STATUS_LABELS[l.status] || l.status;
-          return this._loanRow(l, stageLabel);
-        }).join('')}
+        ${loans.map(l => this._loanRow(l)).join('')}
       </div>`;
   },
 
-  _loanRow(l, stageLabel) {
+  _loanRow(l) {
     const days = this._LOAN_DAYS[l.id] || 0;
     const label = this._STATUS_LABELS[l.status] || l.status;
     return `
-      <div class="m-list-item${days > 14 ? ' attention' : ''}">
+      <div class="m-list-item${days > 14 ? ' attention' : ''}" onclick="MobileDetailView.open('${l.id}')">
         <div class="m-list-item-header">
           <span class="m-list-item-title">${l.borrowerName}</span>
           <span class="m-days-badge${days <= 7 ? ' ok' : ''}">${days}d</span>
@@ -136,57 +134,6 @@ const MobileLoansView = {
           <span class="m-list-item-amount">$${(l.amount).toLocaleString()}</span>
         </div>
       </div>`;
-  },
-
-  /* ── Companies List (Operator / Sys Admin) ── */
-  _renderCompaniesList() {
-    const companies = State.getCompanies();
-    const users = State.getUsers();
-
-    return `
-      <div class="m-page-header">
-        <div class="m-page-header-left">
-          <div>
-            <div class="m-page-title">Companies</div>
-            <div class="m-page-subtitle">${companies.length} total</div>
-          </div>
-        </div>
-      </div>
-
-      <div class="m-list" style="padding:14px">
-        ${companies.map(co => {
-          const coUsers = users.filter(u => u.companyId === co.id);
-          const active = coUsers.filter(u => u.onboardingStatus === 'active').length;
-          const total = coUsers.length;
-          const pct = total > 0 ? Math.round((active / total) * 100) : 0;
-          const pillClass = pct >= 80 ? 'green' : pct >= 50 ? 'amber' : 'red';
-          const branches = State.getBranchesByCompany(co.id);
-
-          return `
-            <div class="m-co-item">
-              <div class="m-co-row" onclick="MobileLoansView.toggleCompany('${co.id}')">
-                <div>
-                  <div class="m-co-name">${co.name}</div>
-                  <div class="m-co-meta">${co.stateOfIncorporation} &middot; ${branches.length} branch${branches.length !== 1 ? 'es' : ''} &middot; ${total} users</div>
-                </div>
-                <div class="m-co-right">
-                  <span class="m-onboard-pill ${pillClass}">${pct}%</span>
-                  <span class="status-badge status-${co.status === 'active' ? 'success' : 'warning'}" style="font-size:10px;padding:2px 7px">${co.status}</span>
-                </div>
-              </div>
-              <div class="m-co-detail" id="co-detail-${co.id}">
-                <div class="m-co-detail-row"><span>Primary Contact</span><span class="m-co-detail-val">${co.primaryContact}</span></div>
-                <div class="m-co-detail-row"><span>NMLS</span><span class="m-co-detail-val">${co.nmlsId}</span></div>
-                <div class="m-co-detail-row"><span>Programs</span><span class="m-co-detail-val">${co.programs.length ? co.programs.join(', ') : 'None'}</span></div>
-                <div class="m-co-detail-row"><span>Active Users</span><span class="m-co-detail-val">${active} / ${total}</span></div>
-                ${branches.map(br => `
-                  <div class="m-co-detail-row"><span style="padding-left:8px">${br.name}</span><span class="m-co-detail-val">${br.state} &middot; ${br.userCount} users</span></div>
-                `).join('')}
-              </div>
-            </div>`;
-        }).join('')}
-      </div>
-    `;
   },
 
   /* ── Actions ── */

@@ -62,27 +62,47 @@ const MobileHomeView = {
     }
   },
 
+  _adminTab: 'overview', // 'overview' | 'pipeline' | 'companies'
+
   /* ── Operator / Sys Admin ── */
   _renderOperatorHome() {
     const role = State.getRole();
     const user = State.getCurrentUser();
+    const tab = this._adminTab || 'overview';
+
+    return `
+      ${this._pageHeader(Display.roleName(role), user)}
+
+      <!-- Admin sub-tabs -->
+      <div class="m-filter-strip" style="padding-top:6px">
+        <button class="m-filter-pill${tab === 'overview' ? ' active' : ''}" onclick="MobileHomeView._adminTab='overview';App.renderMobileShell(MobileHomeView.render())">Overview</button>
+        <button class="m-filter-pill${tab === 'pipeline' ? ' active' : ''}" onclick="MobileHomeView._adminTab='pipeline';App.renderMobileShell(MobileHomeView.render())">Loan Pipeline</button>
+        <button class="m-filter-pill${tab === 'companies' ? ' active' : ''}" onclick="MobileHomeView._adminTab='companies';App.renderMobileShell(MobileHomeView.render())">Companies</button>
+      </div>
+
+      ${tab === 'overview' ? this._renderAdminOverview() : ''}
+      ${tab === 'pipeline' ? this._renderAdminPipeline() : ''}
+      ${tab === 'companies' ? this._renderAdminCompanies() : ''}
+    `;
+  },
+
+  _renderAdminOverview() {
     const users = State.getUsers();
     const companies = State.getCompanies();
     const activity = State.getActivity();
+    const loans = State.getLoans();
 
     const totalUsers = users.length;
     const totalCos = companies.length;
     const pending = users.filter(u => u.onboardingStatus !== 'active' && u.onboardingStatus !== 'suspended').length;
+    const activeLoans = loans.filter(l => l.status !== 'draft' && l.status !== 'completed').length;
 
-    /* Stuck users: verification_pending or verification_failed */
     const stuckUsers = users.filter(u =>
       u.onboardingStatus === 'verification_pending' || u.onboardingStatus === 'verification_failed'
     );
 
     return `
-      ${this._pageHeader(Display.roleName(role), user)}
-
-      <div class="m-kpi-strip cols-3">
+      <div class="m-kpi-strip cols-2" style="padding-top:10px">
         <div class="m-kpi-card">
           <div class="m-kpi-value">${totalUsers}</div>
           <div class="m-kpi-label">Total Users</div>
@@ -93,7 +113,11 @@ const MobileHomeView = {
         </div>
         <div class="m-kpi-card">
           <div class="m-kpi-value${pending > 0 ? ' accent-warning' : ''}">${pending}</div>
-          <div class="m-kpi-label">Pending</div>
+          <div class="m-kpi-label">Pending Onboarding</div>
+        </div>
+        <div class="m-kpi-card">
+          <div class="m-kpi-value accent-success">${activeLoans}</div>
+          <div class="m-kpi-label">Active Loans</div>
         </div>
       </div>
 
@@ -115,7 +139,7 @@ const MobileHomeView = {
                 <div class="m-list-item-sub">${co ? co.name : 'N/A'} &middot; ${Display.roleName(u.role)}</div>
                 <div class="m-list-item-footer">
                   <span style="font-size:11px;color:var(--color-text-muted)">${u.email}</span>
-                  <button class="m-alert-action" onclick="State.advanceOnboarding('${u.id}');Router.navigate('/m/home')">Advance</button>
+                  <button class="m-alert-action" onclick="State.advanceOnboarding('${u.id}');App.renderMobileShell(MobileHomeView.render())">Advance</button>
                 </div>
               </div>`;
           }).join('')}
@@ -135,6 +159,94 @@ const MobileHomeView = {
               <div class="m-activity-body">
                 <div class="m-activity-text"><strong>${name}</strong> ${a.action} <em>${a.subject || ''}</em></div>
                 <div class="m-activity-time">${a.time}</div>
+              </div>
+            </div>`;
+        }).join('')}
+      </div>
+    `;
+  },
+
+  _renderAdminPipeline() {
+    const loans = State.getLoans();
+    const active = loans.filter(l => l.status !== 'draft' && l.status !== 'completed');
+    const attentionLoans = loans.filter(l => (this._LOAN_DAYS[l.id] || 0) > 14 && l.status !== 'completed');
+    const maxCount = Math.max(...Object.values(this._STAGE_MAP).map(statuses => loans.filter(l => statuses.includes(l.status)).length), 1);
+
+    return `
+      <div class="m-kpi-strip cols-3" style="padding-top:10px">
+        <div class="m-kpi-card">
+          <div class="m-kpi-value accent-success">${active.length}</div>
+          <div class="m-kpi-label">Active</div>
+        </div>
+        <div class="m-kpi-card">
+          <div class="m-kpi-value${attentionLoans.length > 0 ? ' accent-warning' : ''}">${attentionLoans.length}</div>
+          <div class="m-kpi-label">Needs Attn</div>
+        </div>
+        <div class="m-kpi-card">
+          <div class="m-kpi-value">${loans.filter(l => l.status === 'completed').length}</div>
+          <div class="m-kpi-label">Completed</div>
+        </div>
+      </div>
+
+      <div class="m-section-header">
+        <span class="m-section-title">Pipeline by Stage</span>
+      </div>
+      <div class="m-pipeline-bars">
+        ${Object.entries(this._STAGE_MAP).map(([stage, statuses]) => {
+          const count = loans.filter(l => statuses.includes(l.status)).length;
+          const pct = maxCount > 0 ? Math.round((count / maxCount) * 100) : 0;
+          return `
+            <div class="m-pipeline-row">
+              <span class="m-pipeline-label">${stage}</span>
+              <div class="m-pipeline-track"><div class="m-pipeline-bar" style="width:${pct}%"></div></div>
+              <span class="m-pipeline-count">${count}</span>
+            </div>`;
+        }).join('')}
+      </div>
+
+      ${attentionLoans.length ? `
+        <div class="m-section-header">
+          <span class="m-section-title">Stalled Loans</span>
+          <span class="m-section-count">${attentionLoans.length}</span>
+        </div>
+        <div class="m-list" style="padding-bottom:14px">
+          ${attentionLoans.map(l => this._loanCard(l)).join('')}
+        </div>
+      ` : ''}
+    `;
+  },
+
+  _renderAdminCompanies() {
+    const companies = State.getCompanies();
+    const users = State.getUsers();
+
+    return `
+      <div class="m-list" style="padding:10px 14px 14px">
+        ${companies.map(co => {
+          const coUsers = users.filter(u => u.companyId === co.id);
+          const active = coUsers.filter(u => u.onboardingStatus === 'active').length;
+          const total = coUsers.length;
+          const pct = total > 0 ? Math.round((active / total) * 100) : 0;
+          const pillClass = pct >= 80 ? 'green' : pct >= 50 ? 'amber' : 'red';
+          const branches = State.getBranchesByCompany(co.id);
+          const coLoans = State.getLoansByCompany(co.id);
+
+          return `
+            <div class="m-co-item">
+              <div class="m-co-row" onclick="MobileLoansView.toggleCompany('${co.id}')">
+                <div>
+                  <div class="m-co-name">${co.name}</div>
+                  <div class="m-co-meta">${co.stateOfIncorporation} &middot; ${branches.length} branch${branches.length !== 1 ? 'es' : ''} &middot; ${total} users &middot; ${coLoans.length} loans</div>
+                </div>
+                <div class="m-co-right">
+                  <span class="m-onboard-pill ${pillClass}">${pct}%</span>
+                </div>
+              </div>
+              <div class="m-co-detail" id="co-detail-${co.id}">
+                <div class="m-co-detail-row"><span>Primary Contact</span><span class="m-co-detail-val">${co.primaryContact}</span></div>
+                <div class="m-co-detail-row"><span>NMLS</span><span class="m-co-detail-val">${co.nmlsId}</span></div>
+                <div class="m-co-detail-row"><span>Programs</span><span class="m-co-detail-val">${co.programs.length ? co.programs.join(', ') : 'None'}</span></div>
+                <div class="m-co-detail-row"><span>Active Users</span><span class="m-co-detail-val">${active} / ${total}</span></div>
               </div>
             </div>`;
         }).join('')}
@@ -351,7 +463,7 @@ const MobileHomeView = {
     const nextAction = this._NEXT_ACTIONS[l.status] || '';
     const isAttention = days > 14;
     return `
-      <div class="m-list-item${isAttention ? ' attention' : ''}" onclick="Router.navigate('/m/loans')">
+      <div class="m-list-item${isAttention ? ' attention' : ''}" onclick="MobileDetailView.open('${l.id}')">
         <div class="m-list-item-header">
           <span class="m-list-item-title">${l.borrowerName}</span>
           <span class="m-days-badge${days <= 7 ? ' ok' : ''}">${days}d</span>

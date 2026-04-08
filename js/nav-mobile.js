@@ -15,13 +15,13 @@ const MobileNav = (() => {
   const TABS = {
     sys_admin: [
       { path: '/m/home',          label: 'Home',      icon: 'home' },
-      { path: '/m/companies',     label: 'Companies', icon: 'building' },
+      { path: '/m/loans',         label: 'Loans',     icon: 'file' },
       { path: '/m/notifications', label: 'Alerts',    icon: 'bell', badge: true },
       { path: '/m/profile',       label: 'Profile',   icon: 'user' },
     ],
     operator: [
       { path: '/m/home',          label: 'Home',      icon: 'home' },
-      { path: '/m/companies',     label: 'Companies', icon: 'building' },
+      { path: '/m/loans',         label: 'Loans',     icon: 'file' },
       { path: '/m/notifications', label: 'Alerts',    icon: 'bell', badge: true },
       { path: '/m/profile',       label: 'Profile',   icon: 'user' },
     ],

@@ -4312,3 +4312,126 @@ label { font-size: 12px; font-weight: 600; color: var(--color-text); }
   opacity: 0.4;
 }
 .m-spacer { height: 12px; }
+
+/* ── Back button ── */
+.m-back-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 36px;
+  height: 36px;
+  border: none;
+  background: var(--color-surface, #F8F9FA);
+  border-radius: 50%;
+  cursor: pointer;
+  flex-shrink: 0;
+  color: var(--color-text);
+  transition: background 0.15s;
+}
+.m-back-btn:active { background: var(--color-border); }
+
+/* ── Vertical Stepper ── */
+.m-stepper {
+  padding: 0 14px 8px;
+  display: flex;
+  flex-direction: column;
+}
+.m-stepper-step {
+  display: flex;
+  align-items: stretch;
+  min-height: 44px;
+}
+.m-stepper-indicator {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  width: 32px;
+  flex-shrink: 0;
+}
+.m-stepper-dot {
+  width: 26px;
+  height: 26px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 11px;
+  font-weight: 700;
+  flex-shrink: 0;
+  border: 2px solid var(--color-border);
+  background: var(--color-card);
+  color: var(--color-text-muted);
+  transition: all 0.2s;
+}
+.m-stepper-step.done .m-stepper-dot {
+  background: var(--color-primary);
+  border-color: var(--color-primary);
+  color: #fff;
+  font-size: 12px;
+}
+.m-stepper-step.current .m-stepper-dot {
+  border-color: var(--color-primary);
+  color: var(--color-primary);
+  box-shadow: 0 0 0 3px rgba(29,61,42,0.15);
+}
+.m-stepper-line {
+  flex: 1;
+  width: 2px;
+  background: var(--color-border);
+  margin: 3px 0;
+  min-height: 12px;
+}
+.m-stepper-step.done .m-stepper-line {
+  background: var(--color-primary);
+}
+.m-stepper-content {
+  flex: 1;
+  padding: 3px 0 10px 12px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+.m-stepper-label {
+  font-size: 13px;
+  font-weight: 500;
+  color: var(--color-text-muted);
+}
+.m-stepper-step.done .m-stepper-label { color: var(--color-text); }
+.m-stepper-step.current .m-stepper-label { color: var(--color-text); font-weight: 600; }
+.m-stepper-badge {
+  font-size: 9px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  padding: 2px 7px;
+  border-radius: 9999px;
+  background: var(--color-primary);
+  color: #fff;
+}
+.m-stepper-check {
+  font-size: 10px;
+  color: var(--color-success);
+  font-weight: 500;
+}
+
+/* ── Document action buttons (small) ── */
+.m-btn-sm {
+  padding: 8px 14px;
+  font-size: 12px;
+  font-weight: 600;
+  border-radius: 8px;
+  border: none;
+  cursor: pointer;
+  font-family: inherit;
+  transition: opacity 0.15s;
+}
+.m-btn-sm:hover { opacity: 0.88; }
+.m-btn-sm-primary {
+  background: var(--color-primary);
+  color: #fff;
+}
+.m-btn-sm-secondary {
+  background: var(--color-surface, #F8F9FA);
+  color: var(--color-text);
+  border: 1px solid var(--color-border);
+}
