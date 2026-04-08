@@ -3545,3 +3545,16 @@ label { font-size: 12px; font-weight: 600; color: var(--color-text); }
 .horiz-stage-bar { height: 100%; border-radius: 4px; transition: width 0.3s; }
 .horiz-stage-count { font-size: 13px; font-weight: 700; color: var(--color-text); text-align: center; }
 .horiz-stage-value { font-size: 11px; color: var(--color-text-muted); text-align: right; }
+
+/* ── Program filter tabs (Pipeline by Stage) ── */
+.dash-prog-tabs { display: flex; gap: 4px; }
+.dash-prog-tab { padding: 4px 12px; font-size: 12px; font-weight: 500; border: 1px solid var(--color-border); border-radius: 6px; background: transparent; color: var(--color-text-secondary); cursor: pointer; }
+.dash-prog-tab:hover { background: var(--color-surface); color: var(--color-text); }
+.dash-prog-tab.active { background: var(--color-primary); color: #fff; border-color: var(--color-primary); }
+
+/* ── Company/Branch table rows ── */
+.dash-co-row { cursor: pointer; background: var(--color-surface); }
+.dash-co-row:hover { background: var(--color-surface-hover, #F1F5F9); }
+.dash-co-row td { padding-top: 10px; padding-bottom: 10px; }
+.dash-branch-row td { padding-top: 7px; padding-bottom: 7px; }
+.dash-co-caret { font-size: 9px; color: var(--color-text-muted); width: 12px; display: inline-block; }
