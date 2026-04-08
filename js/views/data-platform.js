@@ -229,7 +229,7 @@ const DataPlatformView = {
     const maxCount  = Math.max(1, ...stageCounts.map(s => s.loans.length));
 
     // SVG dimensions
-    const svgW = 340, svgH = 220;
+    const svgW = 400, svgH = 260;
     const padL = 28, padR = 12, padT = 28, padB = 60;
     const chartW = svgW - padL - padR;
     const chartH = svgH - padT - padB;
@@ -305,7 +305,7 @@ const DataPlatformView = {
         </div>`;
 
     const midSection = isInvestor ? '' : `
-      <div style="display:grid;grid-template-columns:300px 1fr;gap:16px;margin-bottom:20px">
+      <div style="display:grid;grid-template-columns:420px 1fr;gap:16px;margin-bottom:20px">
         <div class="card">
           <div class="card-title" style="margin-bottom:16px">Pipeline by Stage</div>
           ${barChartHtml}
