@@ -158,6 +158,59 @@ img { max-width: 100%; display: block; }
   flex: 1;
 }
 
+/* Contextual loan nav */
+.topnav-loan-context {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  margin-left: 8px;
+  padding-left: 10px;
+  border-left: 1px solid var(--color-border);
+}
+.topnav-loan-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  padding: 3px 10px;
+  background: var(--color-primary-container);
+  border: 1px solid rgba(29,61,42,0.15);
+  border-radius: var(--radius-full);
+  font-size: 11px;
+  font-weight: 700;
+  color: var(--color-primary);
+  cursor: pointer;
+  white-space: nowrap;
+  transition: background 0.15s;
+}
+.topnav-loan-chip:hover { background: rgba(29,61,42,0.12); }
+.topnav-loan-status {
+  font-size: 9px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  color: var(--color-text-muted);
+}
+.topnav-section-link {
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: var(--color-text-muted);
+  padding: 4px 8px;
+  cursor: pointer;
+  border-radius: var(--radius-sm);
+  transition: color 0.15s, background 0.15s;
+  white-space: nowrap;
+}
+.topnav-section-link:hover {
+  color: var(--color-text);
+  background: rgba(0,0,0,0.04);
+}
+.topnav-section-link.active {
+  color: var(--color-primary);
+  background: rgba(29,61,42,0.07);
+}
+
 .topnav-link {
   position: relative;
   display: inline-flex;
@@ -3191,6 +3244,34 @@ label { font-size: 12px; font-weight: 600; color: var(--color-text); }
   color: var(--color-primary);
 }
 
+/* Sort, pagination, bulk action bar */
+.sortable-th { cursor: pointer; user-select: none; white-space: nowrap; }
+.sortable-th:hover { color: var(--color-primary); }
+.sort-icon { font-size: 10px; opacity: 0.35; margin-left: 2px; }
+.sort-icon.active { opacity: 1; color: var(--color-primary); }
+.app-pagination {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 12px;
+  padding: 12px 0 4px;
+}
+.app-pagination-info {
+  font-size: 12px;
+  color: var(--color-text-muted);
+  font-weight: 500;
+}
+.app-bulk-bar {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 8px 16px;
+  background: var(--color-primary-container);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius);
+  margin-bottom: 8px;
+}
+
 /* Days-in-stage badges */
 .days-badge { font-size: 12px; font-weight: 600; }
 .days-badge-ok   { color: #059669; }
@@ -3217,6 +3298,77 @@ label { font-size: 12px; font-weight: 600; color: var(--color-text); }
 /* ============================================================
    Application Detail — Redesigned
    ============================================================ */
+
+/* Sticky loan context bar */
+.loan-context-bar {
+  position: sticky;
+  top: var(--topnav-height);
+  z-index: 50;
+  background: var(--color-card);
+  border-bottom: 1px solid var(--color-border);
+  padding: 10px 24px;
+  margin: -28px -40px 20px -40px;
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  min-height: 52px;
+}
+.loan-context-bar .context-address {
+  font-family: var(--font-display);
+  font-size: 16px;
+  font-weight: 400;
+  color: var(--color-text);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  max-width: 280px;
+}
+.loan-context-bar .context-address-sub {
+  font-size: 11px;
+  color: var(--color-text-muted);
+  margin-top: 1px;
+}
+.loan-context-bar .context-divider {
+  width: 1px;
+  height: 28px;
+  background: var(--color-border);
+  flex-shrink: 0;
+}
+.loan-context-bar .context-metrics {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  flex: 1;
+  min-width: 0;
+  flex-wrap: wrap;
+}
+.loan-context-bar .context-chip {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 1px;
+  padding: 3px 10px;
+  background: var(--color-surface);
+  border: 1px solid var(--color-border-light);
+  border-radius: var(--radius);
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--color-text);
+  white-space: nowrap;
+}
+.loan-context-bar .context-chip-label {
+  font-size: 9px;
+  font-weight: 600;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--color-text-muted);
+}
+.loan-context-bar .context-chip.chip-danger {
+  border-color: var(--color-danger);
+  background: rgba(220, 38, 38, 0.06);
+}
+.loan-context-bar .context-chip.chip-danger .context-chip-label { color: var(--color-danger); }
+
 .app-detail-header {
   display: flex;
   align-items: flex-start;
@@ -3256,7 +3408,7 @@ label { font-size: 12px; font-weight: 600; color: var(--color-text); }
   align-items: center;
   flex: 1;
   position: relative;
-  min-width: 64px;
+  min-width: 72px;
 }
 .app-stepper-dot {
   width: 26px;
@@ -3293,6 +3445,47 @@ label { font-size: 12px; font-weight: 600; color: var(--color-text); }
   background: var(--color-border);
 }
 .app-stepper-line.done { background: var(--color-primary); }
+
+/* Workstream detail text beneath stepper labels */
+.app-stepper-detail {
+  font-size: 9px;
+  font-weight: 600;
+  margin-top: 2px;
+  text-align: center;
+  white-space: nowrap;
+  max-width: 68px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+/* Section jump bar */
+.section-jump-bar {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  margin-bottom: 16px;
+  padding: 4px 0;
+  border-bottom: 1px solid var(--color-border-light);
+}
+.section-jump-link {
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--color-text-muted);
+  padding: 6px 12px;
+  cursor: pointer;
+  border-bottom: 2px solid transparent;
+  transition: color 0.15s, border-color 0.15s;
+  text-decoration: none;
+}
+.section-jump-link:hover {
+  color: var(--color-text);
+}
+.section-jump-link.active {
+  color: var(--color-primary);
+  border-bottom-color: var(--color-primary);
+}
 
 /* Application detail body */
 .app-detail-body {
@@ -3370,6 +3563,29 @@ label { font-size: 12px; font-weight: 600; color: var(--color-text); }
   gap: 10px;
   font-size: 13px;
   cursor: default;
+}
+
+/* Enhanced condition rows with expand */
+.condition-row-enhanced {
+  border-bottom: 1px solid var(--color-border-light);
+  padding: 8px 0;
+  cursor: pointer;
+}
+.condition-row-enhanced:last-child { border-bottom: none; }
+.condition-row-main {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+.condition-expand {
+  max-height: 0;
+  overflow: hidden;
+  transition: max-height 0.2s ease, padding 0.2s ease;
+  padding: 0 0 0 28px;
+}
+.condition-expand.open {
+  max-height: 120px;
+  padding: 8px 0 4px 28px;
 }
 
 /* ============================================================

@@ -8,8 +8,14 @@ const DataPlatformView = {
   _activeTab: 'analytics',
   _selectedApplicationId: null,
   _activeStep: 4,
+  _activeSection: null,
   _appFilter: 'all',
   _appSearch: '',
+  _appSortField: null,
+  _appSortDir: 'asc',
+  _appPage: 0,
+  _appPageSize: 15,
+  _appSelected: new Set(),
   _batchExpanded: null,
   _dashProgramFilter: 'all',
   _dashCollapsedCompanies: [],
@@ -108,11 +114,14 @@ const DataPlatformView = {
   openApplication(loanId) {
     this._selectedApplicationId = loanId;
     this._activeStep = 4;
+    this._activeSection = null;
     App.renderView('/data/applications');
+    Nav.refresh();
   },
 
   selectStep(idx) {
     this._activeStep = idx;
+    this._activeSection = null;
     App.renderView('/data/applications');
   },
 
@@ -424,7 +433,34 @@ const DataPlatformView = {
         <span class="lop-filter-tab-count ${this._appFilter === t.key ? 'active' : ''}">${t.count}</span>
       </div>`).join('');
 
-    const rows = filtered.map((l, i) => {
+    // Sorting
+    if (this._appSortField) {
+      const dir = this._appSortDir === 'asc' ? 1 : -1;
+      filtered = [...filtered].sort((a, b) => {
+        let va, vb;
+        switch (this._appSortField) {
+          case 'id':       va = a.id; vb = b.id; break;
+          case 'borrower': va = a.borrowerName; vb = b.borrowerName; break;
+          case 'amount':   va = a.amount; vb = b.amount; return (va - vb) * dir;
+          case 'days':     va = this._daysInStage(a); vb = this._daysInStage(b); return (va - vb) * dir;
+          case 'progress': va = this._loanStep(a); vb = this._loanStep(b); return (va - vb) * dir;
+          case 'updated':  va = a.submittedAt || ''; vb = b.submittedAt || ''; break;
+          default: return 0;
+        }
+        return (va < vb ? -1 : va > vb ? 1 : 0) * dir;
+      });
+    }
+
+    // Pagination
+    const totalPages = Math.ceil(filtered.length / this._appPageSize);
+    if (this._appPage >= totalPages) this._appPage = Math.max(0, totalPages - 1);
+    const pageStart = this._appPage * this._appPageSize;
+    const pageLoans = filtered.slice(pageStart, pageStart + this._appPageSize);
+
+    const allChecked = pageLoans.length > 0 && pageLoans.every(l => this._appSelected.has(l.id));
+    const someChecked = this._appSelected.size > 0;
+
+    const rows = pageLoans.map((l, i) => {
       const step     = this._loanStep(l);
       const days     = this._daysInStage(l);
       const attn     = days > 14 && l.status !== 'completed' && l.status !== 'draft';
@@ -433,11 +469,16 @@ const DataPlatformView = {
       const dots     = Array.from({length: 9}, (_, di) =>
         `<span class="loan-progress-dot ${di < step ? 'done' : di === step ? 'current' : ''}"></span>`
       ).join('');
+      const checked  = this._appSelected.has(l.id);
+      const timeAgo  = l.submittedAt ? Display.relativeTime(l.submittedAt) : '—';
 
       return `
         <tr class="${attn ? 'row-needs-attention' : ''}" style="cursor:pointer"
             onclick="DataPlatformView.openApplication('${l.id}')">
-          <td style="color:var(--color-text-muted);font-size:12px">${i + 1}</td>
+          <td onclick="event.stopPropagation()">
+            <input type="checkbox" ${checked ? 'checked' : ''} style="accent-color:var(--color-primary)"
+                   onchange="DataPlatformView._toggleSelect('${l.id}')" />
+          </td>
           <td>
             <div style="font-size:12px;font-weight:700;color:var(--color-primary)">${l.id}</div>
             <div style="font-size:13px;color:var(--color-text)">${l.borrowerName}</div>
@@ -448,7 +489,7 @@ const DataPlatformView = {
           <td style="font-size:12px;color:var(--color-text-secondary);max-width:160px">${this._nextAction(l)}</td>
           <td style="font-size:12px;color:var(--color-text-secondary)">${loName}</td>
           <td style="font-weight:600">${Display.currency(l.amount)}</td>
-          <td><button class="btn btn-ghost btn-xs" onclick="event.stopPropagation();DataPlatformView.openApplication('${l.id}')">View</button></td>
+          <td style="font-size:11px;color:var(--color-text-muted);white-space:nowrap">${timeAgo}</td>
         </tr>`;
     }).join('');
 
@@ -467,27 +508,279 @@ const DataPlatformView = {
         </div>
       </div>
       <div class="lop-filter-tabs">${filterTabsHtml}</div>
+      ${someChecked ? `
+      <div class="app-bulk-bar">
+        <span style="font-size:12px;font-weight:600;color:var(--color-text)">${this._appSelected.size} selected</span>
+        <button class="btn btn-secondary btn-sm" onclick="event.stopPropagation()">Export</button>
+        <button class="btn btn-secondary btn-sm" onclick="event.stopPropagation()">Batch</button>
+        <button class="btn btn-ghost btn-sm" onclick="DataPlatformView._clearSelection()">Clear</button>
+      </div>` : ''}
       <div class="table-container">
         <table>
           <thead><tr>
-            <th>#</th>
-            <th>Loan / Borrower</th>
+            <th style="width:32px" onclick="event.stopPropagation()">
+              <input type="checkbox" ${allChecked ? 'checked' : ''} style="accent-color:var(--color-primary)"
+                     onchange="DataPlatformView._toggleSelectAll()" />
+            </th>
+            <th class="sortable-th" onclick="DataPlatformView._setSort('id')">Loan / Borrower ${this._sortIcon('id')}</th>
             <th>Address</th>
-            <th>Progress</th>
-            <th>Days in Stage</th>
+            <th class="sortable-th" onclick="DataPlatformView._setSort('progress')">Progress ${this._sortIcon('progress')}</th>
+            <th class="sortable-th" onclick="DataPlatformView._setSort('days')">Days in Stage ${this._sortIcon('days')}</th>
             <th>Next Action</th>
-            <th>Loan Officer</th>
-            <th>Amount</th>
-            <th></th>
+            <th class="sortable-th" onclick="DataPlatformView._setSort('borrower')">Loan Officer ${this._sortIcon('borrower')}</th>
+            <th class="sortable-th" onclick="DataPlatformView._setSort('amount')">Amount ${this._sortIcon('amount')}</th>
+            <th class="sortable-th" onclick="DataPlatformView._setSort('updated')">Updated ${this._sortIcon('updated')}</th>
           </tr></thead>
-          <tbody>${rows || '<tr><td colspan="9" style="text-align:center;color:var(--color-text-muted);padding:32px">No applications found</td></tr>'}</tbody>
+          <tbody>${rows || '<tr><td colspan="10" style="text-align:center;color:var(--color-text-muted);padding:32px">No applications found</td></tr>'}</tbody>
         </table>
       </div>
+      ${totalPages > 1 ? `
+      <div class="app-pagination">
+        <button class="btn btn-ghost btn-sm" ${this._appPage === 0 ? 'disabled' : ''} onclick="DataPlatformView._setPage(${this._appPage - 1})">← Prev</button>
+        <span class="app-pagination-info">Page ${this._appPage + 1} of ${totalPages} · ${filtered.length} loans</span>
+        <button class="btn btn-ghost btn-sm" ${this._appPage >= totalPages - 1 ? 'disabled' : ''} onclick="DataPlatformView._setPage(${this._appPage + 1})">Next →</button>
+      </div>` : `<div class="app-pagination"><span class="app-pagination-info">${filtered.length} loan${filtered.length !== 1 ? 's' : ''}</span></div>`}
       <div id="dp-modal"></div>`;
   },
 
-  _setFilter(f) { this._appFilter = f; App.renderView('/data/applications'); },
-  _setSearch(v) { this._appSearch = v; App.renderView('/data/applications'); },
+  _setFilter(f) { this._appFilter = f; this._appPage = 0; this._appSelected.clear(); App.renderView('/data/applications'); },
+  _setSearch(v) { this._appSearch = v; this._appPage = 0; App.renderView('/data/applications'); },
+  _setSort(field) {
+    if (this._appSortField === field) {
+      this._appSortDir = this._appSortDir === 'asc' ? 'desc' : 'asc';
+    } else {
+      this._appSortField = field;
+      this._appSortDir = 'asc';
+    }
+    App.renderView('/data/applications');
+  },
+  _sortIcon(field) {
+    if (this._appSortField !== field) return '<span class="sort-icon">⇅</span>';
+    return `<span class="sort-icon active">${this._appSortDir === 'asc' ? '↑' : '↓'}</span>`;
+  },
+  _setPage(p) { this._appPage = p; App.renderView('/data/applications'); },
+  _toggleSelect(id) {
+    if (this._appSelected.has(id)) this._appSelected.delete(id);
+    else this._appSelected.add(id);
+    App.renderView('/data/applications');
+  },
+  _toggleSelectAll() {
+    const role = State.getRole();
+    const user = State.getCurrentUser();
+    const allLoans = (role === 'lo' || role === 'lp') ? State.getLoansByLO(user?.id) : State.getLoans();
+    let filtered = allLoans;
+    if (this._appFilter === 'needs_action') filtered = filtered.filter(l => this._daysInStage(l) > 14 && l.status !== 'completed' && l.status !== 'draft');
+    else if (this._appFilter === 'in_review') filtered = filtered.filter(l => ['application_documents_approved','original_appraisal_submitted','sent_to_docutech','pending_origination_creation'].includes(l.status));
+    else if (this._appFilter === 'completed') filtered = filtered.filter(l => l.status === 'completed');
+    const pageLoans = filtered.slice(this._appPage * this._appPageSize, (this._appPage + 1) * this._appPageSize);
+    const allChecked = pageLoans.every(l => this._appSelected.has(l.id));
+    if (allChecked) pageLoans.forEach(l => this._appSelected.delete(l.id));
+    else pageLoans.forEach(l => this._appSelected.add(l.id));
+    App.renderView('/data/applications');
+  },
+  _clearSelection() { this._appSelected.clear(); App.renderView('/data/applications'); },
+
+  /* ================================================================
+     LOAN WARNINGS (derived from loan data)
+  ================================================================ */
+  _deriveLoanWarnings(loan, rateLockDate, estCloseDate) {
+    const warnings = [];
+    const step = this._loanStep(loan);
+    const daysInStage = loan.submittedAt
+      ? Math.floor((Date.now() - new Date(loan.submittedAt).getTime()) / 86400000)
+      : 0;
+
+    // Rate lock expiring soon
+    if (rateLockDate) {
+      const rlDate = new Date(rateLockDate);
+      const daysUntilRL = Math.floor((rlDate - Date.now()) / 86400000);
+      if (daysUntilRL < 0) {
+        warnings.push({ icon: '⚠', msg: 'Rate lock has expired', severity: 'danger', action: 'Review pricing', stepIdx: 5 });
+      } else if (daysUntilRL <= 7) {
+        warnings.push({ icon: '⏱', msg: `Rate lock expires in ${daysUntilRL} day${daysUntilRL !== 1 ? 's' : ''}`, severity: 'warning', action: 'Extend or close', stepIdx: 5 });
+      }
+    }
+
+    // Stalled in stage
+    if (daysInStage > 14 && step < 8) {
+      warnings.push({ icon: '◷', msg: `${daysInStage} days in current stage`, severity: 'warning', action: 'Review progress', stepIdx: step });
+    }
+
+    // Missing conditions (steps 2-3)
+    if (step === 2 || step === 3) {
+      warnings.push({ icon: '◔', msg: 'Outstanding conditions need attention', severity: 'info', action: 'View conditions', stepIdx: 2 });
+    }
+
+    // Close date approaching
+    if (estCloseDate) {
+      const cdDate = new Date(estCloseDate);
+      const daysUntilClose = Math.floor((cdDate - Date.now()) / 86400000);
+      if (daysUntilClose <= 14 && daysUntilClose > 0 && step < 7) {
+        warnings.push({ icon: '📅', msg: `Closing in ${daysUntilClose} days — not yet in final review`, severity: 'warning', action: 'Expedite', stepIdx: 7 });
+      }
+    }
+
+    return warnings;
+  },
+
+  _renderWarningsPanel(warnings) {
+    if (!warnings.length) return '';
+    const severityDot = { danger: 'notif-dot-action', warning: 'notif-dot-action', info: 'notif-dot-info' };
+    const items = warnings.map(w => `
+      <div class="app-comms-item" style="padding:6px 0">
+        <span class="notif-dot ${severityDot[w.severity] || 'notif-dot-info'}" style="margin-top:3px;flex-shrink:0"></span>
+        <div style="flex:1;min-width:0">
+          <div style="font-size:12px;color:var(--color-text)">${w.icon} ${w.msg}</div>
+          <a style="font-size:11px;color:var(--color-primary);cursor:pointer;text-decoration:none"
+             onclick="DataPlatformView.selectStep(${w.stepIdx})">${w.action} →</a>
+        </div>
+      </div>`).join('');
+
+    return `
+      <div class="app-comms-panel" style="margin-bottom:16px;border-color:var(--color-warning);background:rgba(217,119,6,0.04)">
+        <div class="app-comms-section-title" style="color:var(--color-warning)">Needs Attention</div>
+        ${items}
+      </div>`;
+  },
+
+  /* ================================================================
+     SECTION JUMP BAR & SECTION CONTENT
+  ================================================================ */
+  _SECTIONS: [
+    { key: 'documents',   label: 'Documents' },
+    { key: 'conditions',  label: 'Conditions' },
+    { key: 'compliance',  label: 'Compliance' },
+    { key: 'contacts',    label: 'Contacts' },
+    { key: 'uw_notes',    label: 'UW Notes' },
+  ],
+
+  _renderSectionJumpBar() {
+    return this._SECTIONS.map(s =>
+      `<a class="section-jump-link ${this._activeSection === s.key ? 'active' : ''}"
+          onclick="DataPlatformView._jumpToSection('${s.key}')">${s.label}</a>`
+    ).join('');
+  },
+
+  _jumpToSection(key) {
+    this._activeSection = this._activeSection === key ? null : key;
+    App.renderView('/data/applications');
+    Nav.refresh();
+  },
+
+  _renderSectionContent(sectionKey, loan) {
+    switch (sectionKey) {
+      case 'documents':
+        return this._renderDocumentsSection(loan);
+      case 'conditions':
+        return this._renderConditionsSection(loan);
+      case 'compliance':
+        return `<div class="app-step-section">
+          <div class="app-step-section-title">Compliance Check</div>
+          <div style="padding:24px;text-align:center;color:var(--color-text-muted)">
+            <div style="font-size:28px;margin-bottom:8px">◎</div>
+            <div style="font-size:13px">TRID, HMDA, and fair lending compliance checks will appear here.</div>
+          </div>
+        </div>`;
+      case 'contacts':
+        return `<div class="app-step-section">
+          <div class="app-step-section-title">Contacts & Parties</div>
+          <table class="app-detail-table" style="margin-top:12px">
+            <tbody>
+              <tr><td>Borrower</td><td><strong>${loan.borrowerName}</strong></td></tr>
+              <tr><td>Loan Officer</td><td><strong>${State.getUser(loan.loId) ? Display.fullName(State.getUser(loan.loId)) : '—'}</strong></td></tr>
+              <tr><td>Processor</td><td><strong>Kevin Park</strong></td></tr>
+              <tr><td>Title Company</td><td><strong>First American Title</strong></td></tr>
+              <tr><td>Appraiser</td><td><strong>Metro Appraisal Services</strong></td></tr>
+              <tr><td>Insurance Agent</td><td><strong>State Farm — J. Mitchell</strong></td></tr>
+            </tbody>
+          </table>
+        </div>`;
+      case 'uw_notes':
+        return `<div class="app-step-section">
+          <div class="app-step-section-title">Underwriting Notes</div>
+          <div style="padding:24px;text-align:center;color:var(--color-text-muted)">
+            <div style="font-size:28px;margin-bottom:8px">✎</div>
+            <div style="font-size:13px">Underwriting observations, stipulations, and sign-off notes will appear here.</div>
+          </div>
+        </div>`;
+      default:
+        return '';
+    }
+  },
+
+  _renderDocumentsSection(loan) {
+    const docs = [
+      { name: 'Uniform Residential Loan Application (1003)', status: 'received', party: 'Borrower', date: 'Mar 18, 2026' },
+      { name: 'W-2 Wage Statements (2 years)',                status: 'received', party: 'Borrower', date: 'Mar 20, 2026' },
+      { name: 'Federal Tax Returns (2 years)',                 status: 'pending',  party: 'Borrower', date: '' },
+      { name: 'Bank Statements (2 months)',                    status: 'received', party: 'Borrower', date: 'Mar 22, 2026' },
+      { name: 'Photo ID',                                      status: 'received', party: 'Borrower', date: 'Mar 18, 2026' },
+      { name: 'Loan Estimate',                                 status: 'sent',     party: 'LO',       date: 'Mar 20, 2026' },
+      { name: 'Credit Report',                                 status: 'received', party: 'System',   date: 'Mar 19, 2026' },
+      { name: 'Title Commitment',                              status: 'pending',  party: 'Title Co.', date: '' },
+      { name: 'Appraisal Report',                              status: loan.status === 'completed' ? 'received' : 'pending', party: 'Appraiser', date: loan.status === 'completed' ? 'Mar 8, 2026' : '' },
+      { name: 'Homeowner\'s Insurance Binder',                 status: 'pending',  party: 'Borrower', date: '' },
+    ];
+    const statusBadge = { received: 'badge-active', pending: 'badge-pending', sent: 'badge-submitted' };
+    const statusLabel = { received: 'Received', pending: 'Pending', sent: 'Sent' };
+
+    return `<div class="app-step-section">
+      <div class="app-step-section-title">Documents</div>
+      <div style="margin-top:12px">
+        ${docs.map(d => `
+          <div class="app-condition-row" style="justify-content:space-between">
+            <div style="flex:1;min-width:0">
+              <div style="font-size:13px;color:var(--color-text)">${d.name}</div>
+              <div style="font-size:11px;color:var(--color-text-muted);margin-top:2px">${d.date || 'Not yet received'}</div>
+            </div>
+            <div style="display:flex;align-items:center;gap:8px">
+              <span class="tag" style="font-size:10px">${d.party}</span>
+              <span class="badge ${statusBadge[d.status]}" style="font-size:10px">${statusLabel[d.status]}</span>
+            </div>
+          </div>`).join('')}
+      </div>
+    </div>`;
+  },
+
+  _renderConditionsSection(loan) {
+    const conditions = [
+      { label: 'Signed 1003 received',                  done: true,  party: 'Borrower',  status: 'Accepted',  doc: 'Form_1003_signed.pdf',  notes: 'Verified by processor on Mar 19' },
+      { label: 'Proof of income verified',              done: false, party: 'Borrower',  status: 'Pending',   doc: '',                       notes: 'W-2s received, awaiting most recent pay stub' },
+      { label: 'Credit report pulled',                  done: true,  party: 'System',    status: 'Accepted',  doc: 'credit_report_equifax.pdf', notes: `FICO: ${loan.ltv ? Math.round(680 + loan.ltv / 2) : '—'}` },
+      { label: 'Flood certification ordered',           done: false, party: 'Processor', status: 'In Review', doc: '',                       notes: 'Order submitted to CoreLogic Apr 1' },
+      { label: 'Property insurance verification',       done: false, party: 'Borrower',  status: 'Pending',   doc: '',                       notes: 'Borrower contacted, awaiting binder' },
+      { label: 'Title commitment received',             done: false, party: 'Title Co.', status: 'Pending',   doc: '',                       notes: 'First American engaged, ETA 5 business days' },
+      { label: 'Appraisal report reviewed',             done: loan.status === 'completed', party: 'Appraiser', status: loan.status === 'completed' ? 'Accepted' : 'Pending', doc: loan.status === 'completed' ? 'appraisal_final.pdf' : '', notes: '' },
+      { label: 'VOE — Verification of Employment',      done: false, party: 'LO',        status: 'In Review', doc: '',                       notes: 'Phone verification scheduled' },
+    ];
+    const statusClass = { Accepted: 'badge-active', Pending: 'badge-pending', 'In Review': 'badge-submitted' };
+
+    return `<div class="app-step-section">
+      <div class="app-step-section-title">Conditions</div>
+      <div style="font-size:12px;color:var(--color-text-muted);margin-bottom:16px">
+        ${conditions.filter(c => c.done).length} of ${conditions.length} conditions cleared
+      </div>
+      <div>
+        ${conditions.map((c, i) => `
+          <div class="condition-row-enhanced" onclick="this.querySelector('.condition-expand').classList.toggle('open')">
+            <div class="condition-row-main">
+              <input type="checkbox" ${c.done ? 'checked' : ''} onclick="return false" style="accent-color:var(--color-primary);flex-shrink:0" />
+              <span style="flex:1;font-size:13px;color:${c.done ? 'var(--color-text)' : 'var(--color-text-secondary)'}">${c.label}</span>
+              <span class="tag" style="font-size:10px">${c.party}</span>
+              <span class="badge ${statusClass[c.status] || 'badge-pending'}" style="font-size:10px">${c.status}</span>
+              <span style="font-size:11px;color:var(--color-text-muted);cursor:pointer">▾</span>
+            </div>
+            <div class="condition-expand">
+              ${c.doc ? `<div style="display:flex;align-items:center;gap:6px;margin-bottom:6px">
+                <span style="font-size:11px;color:var(--color-text-secondary)">📄 ${c.doc}</span>
+                <span class="badge badge-active" style="font-size:9px">Reviewed ✓</span>
+              </div>` : ''}
+              ${c.notes ? `<div style="font-size:11px;color:var(--color-text-muted)">${c.notes}</div>` : ''}
+            </div>
+          </div>`).join('')}
+      </div>
+    </div>`;
+  },
 
   /* ================================================================
      APPLICATION DETAIL
@@ -503,23 +796,41 @@ const DataPlatformView = {
     const cityState  = addrParts.slice(1).join(',').trim();
     const step = this._loanStep(loan);
 
+    // Workstream detail per step (contextual status beneath each stepper dot)
+    const stepDetails = {
+      0: step === 0 ? 'Awaiting file' : step > 0 ? 'Received' : '',
+      1: step === 1 ? 'In progress' : step > 1 ? 'Qualified' : '',
+      2: step === 2 ? 'Conditions due' : step > 2 ? 'Submitted' : '',
+      3: step === 3 ? 'Under review' : step > 3 ? 'Approved' : '',
+      4: step === 4 ? (loanId === 'DCDC000001' ? 'Ordered Apr 2' : 'Pending order') : step > 4 ? 'Complete' : '',
+      5: step >= 5 ? (loanId === 'DCDC000002' ? 'TRID Triggered' : step > 5 ? 'Sent' : 'Preparing') : '',
+      6: step === 6 ? 'Pending creation' : step > 6 ? 'Created' : '',
+      7: step === 7 ? 'UW review' : step > 7 ? 'Cleared' : '',
+      8: step === 8 ? 'Funded' : '',
+    };
+    const detailSeverity = {
+      'Conditions due': 'warning', 'Under review': 'info', 'Pending order': 'warning',
+      'TRID Triggered': 'warning', 'Awaiting file': 'info', 'UW review': 'info', 'Preparing': 'info',
+    };
+
     const STEPS = [
-      { label: 'Upload\nLoan File',               short: 'Upload',        status: step > 0 ? 'completed' : step === 0 ? 'in_progress' : 'pending' },
-      { label: 'Prequalification',                 short: 'Prequalify',    status: step > 1 ? 'completed' : step === 1 ? 'in_progress' : 'pending' },
-      { label: 'Application\nSubmitted',           short: 'App Submitted', status: step > 2 ? 'completed' : step === 2 ? 'in_progress' : 'pending' },
-      { label: 'Docs\nApproved',                   short: 'Docs Approved', status: step > 3 ? 'completed' : step === 3 ? 'in_progress' : 'pending' },
-      { label: 'Appraisal',                        short: 'Appraisal',     status: step > 4 ? 'completed' : step === 4 ? 'in_progress' : 'pending' },
-      { label: 'Sent to\nDocuTech',                short: 'DocuTech',      status: step > 5 ? 'completed' : step === 5 ? 'in_progress' : 'pending' },
-      { label: 'Origination\nCreated',             short: 'Origination',   status: step > 6 ? 'completed' : step === 6 ? 'in_progress' : 'pending' },
-      { label: 'Final\nReview',                    short: 'Final Review',  status: step > 7 ? 'completed' : step === 7 ? 'in_progress' : 'pending' },
-      { label: 'Closed',                           short: 'Closed',        status: step === 8 ? 'completed' : 'pending' },
+      { label: 'Upload\nLoan File',               short: 'Upload',        status: step > 0 ? 'completed' : step === 0 ? 'in_progress' : 'pending', detail: stepDetails[0] },
+      { label: 'Prequalification',                 short: 'Prequalify',    status: step > 1 ? 'completed' : step === 1 ? 'in_progress' : 'pending', detail: stepDetails[1] },
+      { label: 'Application\nSubmitted',           short: 'App Submitted', status: step > 2 ? 'completed' : step === 2 ? 'in_progress' : 'pending', detail: stepDetails[2] },
+      { label: 'Docs\nApproved',                   short: 'Docs Approved', status: step > 3 ? 'completed' : step === 3 ? 'in_progress' : 'pending', detail: stepDetails[3] },
+      { label: 'Appraisal',                        short: 'Appraisal',     status: step > 4 ? 'completed' : step === 4 ? 'in_progress' : 'pending', detail: stepDetails[4] },
+      { label: 'Sent to\nDocuTech',                short: 'DocuTech',      status: step > 5 ? 'completed' : step === 5 ? 'in_progress' : 'pending', detail: stepDetails[5] },
+      { label: 'Origination\nCreated',             short: 'Origination',   status: step > 6 ? 'completed' : step === 6 ? 'in_progress' : 'pending', detail: stepDetails[6] },
+      { label: 'Final\nReview',                    short: 'Final Review',  status: step > 7 ? 'completed' : step === 7 ? 'in_progress' : 'pending', detail: stepDetails[7] },
+      { label: 'Closed',                           short: 'Closed',        status: step === 8 ? 'completed' : 'pending', detail: stepDetails[8] },
     ];
 
-    // Horizontal stepper
+    // Horizontal stepper with workstream details
     const stepperHtml = STEPS.map((s, i) => {
       const isCurrent   = i === step;
       const isCompleted = s.status === 'completed';
-      const isPending   = s.status === 'pending';
+      const severity = detailSeverity[s.detail] || (isCompleted ? 'done' : 'muted');
+      const detailColor = { warning: 'var(--color-warning)', info: 'var(--color-info)', done: 'var(--color-success)', muted: 'var(--color-text-muted)' }[severity];
       return `
         <div class="app-stepper-step ${isCurrent ? 'current' : ''} ${isCompleted ? 'done' : ''}"
              onclick="DataPlatformView.selectStep(${i})" style="cursor:pointer">
@@ -527,6 +838,7 @@ const DataPlatformView = {
             ${isCompleted ? '✓' : i + 1}
           </div>
           <div class="app-stepper-label">${s.short}</div>
+          ${s.detail ? `<div class="app-stepper-detail" style="color:${detailColor}">${s.detail}</div>` : ''}
           ${i < STEPS.length - 1 ? `<div class="app-stepper-line ${isCompleted ? 'done' : ''}"></div>` : ''}
         </div>`;
     }).join('');
@@ -573,36 +885,82 @@ const DataPlatformView = {
     const submittedDate = loan.submittedAt ? Display.date(loan.submittedAt) : '—';
     const rateLockDate  = loanId === 'DCDC000002' ? 'Apr 12, 2026' : 'Apr 30, 2026';
     const estCloseDate  = loanId === 'DCDC000003' ? 'Mar 15, 2026' : 'May 15, 2026';
+    const dti = loanId === 'DCDC000003' ? 38 : Math.round(28 + (loan.ltv || 70) / 5);
+    const rate = loanId === 'DCDC000003' ? '6.125%' : loanId === 'DCDC000002' ? '5.875%' : '6.250%';
+    const rateLockExpiring = loanId === 'DCDC000002';
+
+    const activeStepLabel = STEPS[this._activeStep]?.short || STEPS[step]?.short || '';
+    const activeSectionLabel = this._activeSection
+      ? this._SECTIONS.find(s => s.key === this._activeSection)?.label
+      : null;
 
     return `
-      <div style="margin-bottom:16px">
-        <button class="btn btn-ghost btn-sm" onclick="DataPlatformView._backToApplications()">← Back to Applications</button>
+      <div class="breadcrumb" style="margin-bottom:16px">
+        <a class="breadcrumb-link" onclick="DataPlatformView._backToApplications()">Applications</a>
+        <span class="breadcrumb-sep">›</span>
+        <a class="breadcrumb-link" onclick="DataPlatformView.selectStep(${step})">${loan.id}</a>
+        <span class="breadcrumb-sep">›</span>
+        <span class="breadcrumb-current">${activeSectionLabel || activeStepLabel}</span>
       </div>
 
-      <!-- Header -->
-      <div class="app-detail-header">
-        <div style="flex:1;min-width:0">
-          <div class="app-header-address">${streetAddr}</div>
-          <div class="app-header-citystate">${cityState}</div>
-          <span class="tag" style="margin-top:8px;display:inline-block">${loan.program}</span>
+      <!-- Sticky Context Bar -->
+      <div class="loan-context-bar">
+        <div style="min-width:0;flex-shrink:1">
+          <div class="context-address">${streetAddr}</div>
+          <div class="context-address-sub">${cityState}</div>
         </div>
-        <div class="app-detail-header-meta">
-          <div class="app-detail-header-meta-row"><span>Loan ID</span><strong style="color:var(--color-primary)">${loan.id}</strong></div>
-          <div class="app-detail-header-meta-row"><span>Amount</span><strong>${Display.currency(loan.amount)}</strong></div>
-          <div class="app-detail-header-meta-row"><span>LTV / CLTV</span><strong>${loan.ltv ?? '—'}% / ${loan.cltv ?? '—'}%</strong></div>
-          <div class="app-detail-header-meta-row"><span>Loan Officer</span><strong>${loName}</strong></div>
+        <div class="context-divider"></div>
+        <div class="context-metrics">
+          <span class="tag">${loan.program}</span>
+          <div class="context-chip">
+            <span class="context-chip-label">Loan ID</span>
+            ${loan.id}
+          </div>
+          <div class="context-chip">
+            <span class="context-chip-label">Amount</span>
+            ${Display.currency(loan.amount)}
+          </div>
+          <div class="context-chip">
+            <span class="context-chip-label">LTV / CLTV</span>
+            ${loan.ltv ?? '—'}% / ${loan.cltv ?? '—'}%
+          </div>
+          <div class="context-chip">
+            <span class="context-chip-label">DTI</span>
+            ${dti}%
+          </div>
+          <div class="context-chip">
+            <span class="context-chip-label">Rate</span>
+            ${rate}
+          </div>
+          <div class="context-chip${rateLockExpiring ? ' chip-danger' : ''}">
+            <span class="context-chip-label">Rate Lock</span>
+            ${rateLockDate}
+          </div>
+          <div class="context-chip">
+            <span class="context-chip-label">Est. Close</span>
+            ${estCloseDate}
+          </div>
         </div>
       </div>
 
       <!-- Stepper -->
       <div class="app-stepper">${stepperHtml}</div>
 
+      <!-- Section jump bar -->
+      <div class="section-jump-bar">
+        ${this._renderSectionJumpBar()}
+      </div>
+
       <!-- Body -->
       <div class="app-detail-body">
         <div class="app-detail-content">
-          ${this._renderStepContent(this._activeStep, loan, STEPS)}
+          ${this._activeSection
+            ? this._renderSectionContent(this._activeSection, loan)
+            : this._renderStepContent(this._activeStep, loan, STEPS)}
         </div>
         <div>
+          <!-- Warnings panel -->
+          ${this._renderWarningsPanel(this._deriveLoanWarnings(loan, rateLockDate, estCloseDate))}
           <!-- Communications panel -->
           <div class="app-comms-panel" style="margin-bottom:16px">
             <div class="app-comms-section-title">Activity & Communications</div>
@@ -630,7 +988,9 @@ const DataPlatformView = {
 
   _backToApplications() {
     this._selectedApplicationId = null;
+    this._activeSection = null;
     App.renderView('/data/applications');
+    Nav.refresh();
   },
 
   _renderStepContent(stepIdx, loan, STEPS) {
@@ -642,17 +1002,22 @@ const DataPlatformView = {
     // Step 2: Initial Application Review
     if (stepIdx === 2) {
       const conditions = [
-        { label: 'Signed 1003 (Uniform Residential Loan Application) received', done: true },
-        { label: 'Proof of income verified',                                       done: false },
-        { label: `Credit report pulled — FICO: ${loan.ltv ? Math.round(680 + loan.ltv / 2) : '—'}`, done: true },
-        { label: 'Flood certification ordered',                                    done: false },
-        { label: 'Property insurance verification',                                done: false },
+        { label: 'Signed 1003 (Uniform Residential Loan Application) received', done: true,  party: 'Borrower',  status: 'Accepted' },
+        { label: 'Proof of income verified',                                      done: false, party: 'Borrower',  status: 'Pending' },
+        { label: `Credit report pulled — FICO: ${loan.ltv ? Math.round(680 + loan.ltv / 2) : '—'}`, done: true, party: 'System', status: 'Accepted' },
+        { label: 'Flood certification ordered',                                   done: false, party: 'Processor', status: 'In Review' },
+        { label: 'Property insurance verification',                               done: false, party: 'Borrower',  status: 'Pending' },
       ];
+      const statusClass = { Accepted: 'badge-active', Pending: 'badge-pending', 'In Review': 'badge-submitted' };
       const checklist = conditions.map(c => `
-        <label class="app-condition-row">
-          <input type="checkbox" ${c.done ? 'checked' : ''} onclick="return false" style="accent-color:var(--color-primary)" />
-          <span style="color:${c.done ? 'var(--color-text)' : 'var(--color-text-secondary)'}">${c.label}</span>
-        </label>`).join('');
+        <div class="condition-row-enhanced" style="cursor:default">
+          <div class="condition-row-main">
+            <input type="checkbox" ${c.done ? 'checked' : ''} onclick="return false" style="accent-color:var(--color-primary);flex-shrink:0" />
+            <span style="flex:1;font-size:13px;color:${c.done ? 'var(--color-text)' : 'var(--color-text-secondary)'}">${c.label}</span>
+            <span class="tag" style="font-size:10px">${c.party}</span>
+            <span class="badge ${statusClass[c.status] || 'badge-pending'}" style="font-size:10px">${c.status}</span>
+          </div>
+        </div>`).join('');
 
       return `
         <div class="app-step-section">
@@ -687,7 +1052,7 @@ const DataPlatformView = {
               </table>
             </div>
           </div>
-          <div class="app-step-subsection-title">Conditions Checklist</div>
+          <div class="app-step-subsection-title">Conditions Checklist <span style="font-size:11px;font-weight:400;color:var(--color-text-muted)">${conditions.filter(c=>c.done).length}/${conditions.length} cleared</span></div>
           <div class="app-conditions">${checklist}</div>
           <div style="display:flex;gap:10px;margin-top:20px">
             <button class="btn btn-secondary btn-sm">Uniform Residential Loan Application</button>
