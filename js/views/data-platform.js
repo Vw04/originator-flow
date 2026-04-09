@@ -683,6 +683,196 @@ const DataPlatformView = {
   },
 
   /* ================================================================
+     REUSABLE ENRICHMENT HELPERS
+  ================================================================ */
+
+  /** Enhanced document table with upload zones */
+  _renderUploadDocTable(docs) {
+    const rows = docs.map(d => {
+      const isPending = d.status === 'Pending Upload' || d.status === 'pending';
+      const isApproved = d.status === 'Approved' || d.status === 'received';
+      const statusClass = isApproved ? 'badge-active' : 'badge-pending';
+      const statusLabel = isApproved ? (d.status === 'received' ? 'Received' : 'Approved') : 'Pending Upload';
+      const action = isPending
+        ? `<span class="upload-action-zone" onclick="event.stopPropagation()">📎 Click to upload or drag and drop PDF <span style="color:var(--color-text-muted)">(max. 5MB)</span></span>`
+        : `<a class="upload-action-link">View and Review</a>`;
+      return `<tr>
+        <td>${d.name}</td>
+        <td><span class="badge ${statusClass}" style="font-size:10px">${statusLabel}</span></td>
+        <td><span class="tag" style="font-size:10px">${d.party || ''}</span></td>
+        <td>${action}</td>
+      </tr>`;
+    }).join('');
+    return `<table class="upload-doc-table">
+      <thead><tr><th>Document</th><th>Status</th><th>Party</th><th>Action</th></tr></thead>
+      <tbody>${rows}</tbody>
+    </table>`;
+  },
+
+  /** Origination process task tracker */
+  _renderProcessTracker(title, tasks) {
+    const done = tasks.filter(t => t.status === 'done').length;
+    const items = tasks.map(t => {
+      const checkClass = t.status === 'done' ? 'done' : t.status === 'active' ? 'active' : 'pending';
+      const icon = t.status === 'done' ? '✓' : t.status === 'active' ? '◎' : '·';
+      const labelClass = t.status === 'done' ? 'done' : '';
+      return `<div class="process-tracker-task">
+        <div class="process-tracker-check ${checkClass}">${icon}</div>
+        <div class="process-tracker-task-label ${labelClass}">${t.label}</div>
+        <span class="tag" style="font-size:10px">${t.party}</span>
+        <span class="badge ${t.status === 'done' ? 'badge-active' : t.status === 'active' ? 'badge-submitted' : 'badge-pending'}" style="font-size:10px">${t.status === 'done' ? 'Complete' : t.status === 'active' ? 'In Progress' : 'Pending'}</span>
+        ${t.action ? `<button class="process-tracker-validate-btn">${t.action}</button>` : ''}
+      </div>`;
+    }).join('');
+    return `<div class="process-tracker">
+      <div class="process-tracker-header">
+        <div class="process-tracker-title">${title}</div>
+        <div class="process-tracker-progress">${done} of ${tasks.length} tasks completed</div>
+      </div>
+      ${items}
+    </div>`;
+  },
+
+  /** Originator/LO verification info grid */
+  _renderOriginatorInfo(loan) {
+    const lo = State.getUser(loan.loId);
+    if (!lo) return '';
+    const company = State.getCompanies().find(c => c.id === lo.companyId);
+    const branch = State.getBranches().find(b => b.id === lo.branchId);
+    return `
+      <div class="app-step-subsection-title">Verify Originator Information</div>
+      <div class="form-grid" style="margin-bottom:20px">
+        <div class="form-group">
+          <label>Loan Officer</label>
+          <input class="input" value="${Display.fullName(lo)}" readonly style="background:var(--color-surface)" />
+        </div>
+        <div class="form-group">
+          <label>NMLS #</label>
+          <input class="input" value="${lo.nmlsId || '—'}" readonly style="background:var(--color-surface)" />
+        </div>
+        <div class="form-group">
+          <label>Email</label>
+          <input class="input" value="${lo.email || '—'}" readonly style="background:var(--color-surface)" />
+        </div>
+        <div class="form-group">
+          <label>Phone</label>
+          <input class="input" value="${lo.phone || '—'}" readonly style="background:var(--color-surface)" />
+        </div>
+        <div class="form-group">
+          <label>Company</label>
+          <input class="input" value="${company?.name || '—'}" readonly style="background:var(--color-surface)" />
+        </div>
+        <div class="form-group">
+          <label>Branch</label>
+          <input class="input" value="${branch?.name || '—'}" readonly style="background:var(--color-surface)" />
+        </div>
+        <div class="form-group">
+          <label>Title</label>
+          <input class="input" value="${lo.title || '—'}" readonly style="background:var(--color-surface)" />
+        </div>
+        <div class="form-group">
+          <label>Branch NMLS #</label>
+          <input class="input" value="${branch?.nmlsId || '—'}" readonly style="background:var(--color-surface)" />
+        </div>
+      </div>`;
+  },
+
+  /** Borrower information section with demo data */
+  _renderBorrowerInfo(loan) {
+    const BORROWER_DEMO = {
+      'DCDC000001': { ssn: '***-**-4829', dob: '03/15/1985', phone: '(202) 555-0312', email: 'mthompson@email.com', employer: 'Federal Government — GS-13', employerYears: '8 years', coBorrower: 'Robert Thompson' },
+      'DCDC000002': { ssn: '***-**-7741', dob: '11/22/1990', phone: '(202) 555-0188', email: 'sjohnson@email.com', employer: 'Deloitte Consulting', employerYears: '4 years', coBorrower: '' },
+      'DCDC000003': { ssn: '***-**-3356', dob: '07/04/1978', phone: '(202) 555-0255', email: 'awilliams@email.com', employer: 'Georgetown University', employerYears: '12 years', coBorrower: 'Lisa Williams' },
+    };
+    const b = BORROWER_DEMO[loan.id] || { ssn: '***-**-0000', dob: '01/01/1988', phone: '(555) 555-0100', email: 'borrower@email.com', employer: 'Self-Employed', employerYears: '3 years', coBorrower: '' };
+    const addrParts = loan.address.split(',');
+    return `
+      <div class="app-step-subsection-title">Borrower Information</div>
+      <div class="form-grid" style="margin-bottom:20px">
+        <div class="form-group">
+          <label>Full Name</label>
+          <input class="input" value="${loan.borrowerName}" readonly style="background:var(--color-surface)" />
+        </div>
+        <div class="form-group">
+          <label>SSN</label>
+          <input class="input" value="${b.ssn}" readonly style="background:var(--color-surface)" />
+        </div>
+        <div class="form-group">
+          <label>Date of Birth</label>
+          <input class="input" value="${b.dob}" readonly style="background:var(--color-surface)" />
+        </div>
+        <div class="form-group">
+          <label>Phone</label>
+          <input class="input" value="${b.phone}" readonly style="background:var(--color-surface)" />
+        </div>
+        <div class="form-group">
+          <label>Email</label>
+          <input class="input" value="${b.email}" readonly style="background:var(--color-surface)" />
+        </div>
+        <div class="form-group">
+          <label>Current Address</label>
+          <input class="input" value="${addrParts[0]?.trim() || loan.address}" readonly style="background:var(--color-surface)" />
+        </div>
+        <div class="form-group">
+          <label>Employer</label>
+          <input class="input" value="${b.employer}" readonly style="background:var(--color-surface)" />
+        </div>
+        <div class="form-group">
+          <label>Years Employed</label>
+          <input class="input" value="${b.employerYears}" readonly style="background:var(--color-surface)" />
+        </div>
+        ${b.coBorrower ? `<div class="form-group form-full">
+          <label>Co-Borrower</label>
+          <input class="input" value="${b.coBorrower}" readonly style="background:var(--color-surface)" />
+        </div>` : ''}
+      </div>`;
+  },
+
+  /** Property & loan information grid */
+  _renderPropertyInfo(loan) {
+    const addrParts = loan.address.split(',');
+    const street = addrParts[0]?.trim() || '';
+    const city = addrParts[1]?.trim() || '';
+    const stateZip = addrParts[2]?.trim() || '';
+    const statePart = stateZip.split(' ').filter(Boolean);
+    const state = statePart[0] || '';
+    const zip = statePart[1] || '';
+    const purchasePrice = Math.round(loan.amount / ((loan.ltv || 75) / 100));
+    return `
+      <div class="app-step-subsection-title">Property & Loan Information</div>
+      <div class="form-grid-4" style="margin-bottom:20px">
+        <div class="form-group form-half">
+          <label>Street Address</label>
+          <input class="input" value="${street}" readonly style="background:var(--color-surface)" />
+        </div>
+        <div class="form-group">
+          <label>City</label>
+          <input class="input" value="${city}" readonly style="background:var(--color-surface)" />
+        </div>
+        <div class="form-group">
+          <label>State / ZIP</label>
+          <input class="input" value="${state} ${zip}" readonly style="background:var(--color-surface)" />
+        </div>
+        <div class="form-group">
+          <label>Property Type</label>
+          <input class="input" value="Single Family Residence" readonly style="background:var(--color-surface)" />
+        </div>
+        <div class="form-group">
+          <label>Occupancy</label>
+          <input class="input" value="Primary Residence" readonly style="background:var(--color-surface)" />
+        </div>
+        <div class="form-group">
+          <label>Est. Property Value</label>
+          <input class="input" value="${Display.currency(purchasePrice)}" readonly style="background:var(--color-surface)" />
+        </div>
+        <div class="form-group">
+          <label>Loan Purpose</label>
+          <input class="input" value="Purchase" readonly style="background:var(--color-surface)" />
+        </div>
+      </div>`;
+  },
+
+  /* ================================================================
      APPLICATION DETAIL
   ================================================================ */
   _renderApplicationDetail(loanId) {
@@ -898,20 +1088,20 @@ const DataPlatformView = {
         { label: 'Flood certification ordered',                                   done: false, party: 'Processor', status: 'In Review' },
         { label: 'Property insurance verification',                               done: false, party: 'Borrower',  status: 'Pending' },
       ];
-      const statusClass = { Accepted: 'badge-active', Pending: 'badge-pending', 'In Review': 'badge-submitted' };
-      const checklist = conditions.map(c => `
-        <div class="condition-row-enhanced" style="cursor:default">
-          <div class="condition-row-main">
-            <input type="checkbox" ${c.done ? 'checked' : ''} onclick="return false" style="accent-color:var(--color-primary);flex-shrink:0" />
-            <span style="flex:1;font-size:13px;color:${c.done ? 'var(--color-text)' : 'var(--color-text-secondary)'}">${c.label}</span>
-            <span class="tag" style="font-size:10px">${c.party}</span>
-            <span class="badge ${statusClass[c.status] || 'badge-pending'}" style="font-size:10px">${c.status}</span>
-          </div>
-        </div>`).join('');
+
+      const tasks = [
+        { label: 'Initial application submission and origination creation', party: 'Loan Officer',  status: 'done' },
+        { label: 'Validate title information and send initial disclosures', party: 'Account Mgr',   status: 'active', action: 'Validate' },
+        { label: 'Initial disclosures signed',                              party: 'Borrower',      status: 'pending' },
+      ];
 
       return `
         <div class="app-step-section">
           <div class="app-step-section-title">Initial Application Review</div>
+          <div style="font-size:13px;color:var(--color-text-secondary);margin-bottom:16px">Application submitted. Review loan terms, fees, property details, and outstanding conditions.</div>
+
+          ${this._renderPropertyInfo(loan)}
+
           <div style="display:grid;grid-template-columns:1fr 1fr;gap:20px;margin-bottom:20px">
             <div>
               <div class="app-step-subsection-title">Loan Overview</div>
@@ -942,8 +1132,14 @@ const DataPlatformView = {
               </table>
             </div>
           </div>
-          <div class="app-step-subsection-title">Conditions Checklist <span style="font-size:11px;font-weight:400;color:var(--color-text-muted)">${conditions.filter(c=>c.done).length}/${conditions.length} cleared</span></div>
-          <div class="app-conditions">${checklist}</div>
+
+          <div class="condition-category-header">Prior to Approval</div>
+          <div class="app-conditions">${this._renderStepConditions(conditions.slice(0, 3))}</div>
+          <div class="condition-category-header">Prior to Close</div>
+          <div class="app-conditions" style="margin-bottom:16px">${this._renderStepConditions(conditions.slice(3))}</div>
+
+          ${this._renderProcessTracker('Application Process', tasks)}
+
           <div style="display:flex;gap:10px;margin-top:20px">
             <button class="btn btn-secondary btn-sm">Uniform Residential Loan Application</button>
             <button class="btn btn-secondary btn-sm">Download MISMO XML</button>
@@ -953,9 +1149,43 @@ const DataPlatformView = {
 
     // Step 4: Appraisal
     if (stepIdx === 4) {
+      const appraisalDocs = [
+        { name: 'Appraisal Report',              status: 'Pending Upload', party: 'Appraiser' },
+        { name: 'Homeowner\'s Insurance Binder',  status: 'Pending Upload', party: 'Borrower' },
+        { name: 'Flood Certification',            status: 'Pending Upload', party: 'Processor' },
+      ];
+      const tasks = [
+        { label: 'Order appraisal through AMC',    party: 'Loan Officer', status: 'done' },
+        { label: 'Schedule property inspection',   party: 'Appraiser',   status: 'done' },
+        { label: 'Receive appraisal report',       party: 'Appraiser',   status: 'active' },
+        { label: 'Review appraisal for adequacy',  party: 'Processor',   status: 'pending', action: 'Review' },
+      ];
       return `
         <div class="app-step-section">
           <div class="app-step-section-title">Appraisal</div>
+          <div style="font-size:13px;color:var(--color-text-secondary);margin-bottom:16px">Order and review the property appraisal. Upload the completed report to proceed.</div>
+
+          <div class="app-step-subsection-title">Property Details</div>
+          <div class="form-grid-4" style="margin-bottom:20px">
+            <div class="form-group">
+              <label>Property Type</label>
+              <input class="input" value="Single Family Residence" readonly style="background:var(--color-surface)" />
+            </div>
+            <div class="form-group">
+              <label>Year Built</label>
+              <input class="input" value="2004" readonly style="background:var(--color-surface)" />
+            </div>
+            <div class="form-group">
+              <label>Square Footage</label>
+              <input class="input" value="2,150 sq ft" readonly style="background:var(--color-surface)" />
+            </div>
+            <div class="form-group">
+              <label>Bed / Bath</label>
+              <input class="input" value="4 bed / 2.5 bath" readonly style="background:var(--color-surface)" />
+            </div>
+          </div>
+
+          <div class="app-step-subsection-title">Appraisal Information</div>
           <div class="app-appraisal-grid">
             <div class="app-appraisal-field">
               <div class="app-appraisal-field-label">Ordered Date</div>
@@ -986,65 +1216,115 @@ const DataPlatformView = {
               <div class="app-appraisal-field-value">Full Interior — USPAP</div>
             </div>
           </div>
-          <div style="margin-top:20px;padding:14px 16px;background:#FEF3C7;border-radius:var(--radius-lg);border:1px solid #FCD34D;font-size:13px;color:#92400E">
+
+          <div style="margin-top:20px">
+            <div class="app-step-subsection-title">Comparable Sales</div>
+            <table class="app-detail-table" style="width:100%;margin-bottom:16px">
+              <thead><tr><th>Address</th><th>Sale Price</th><th>Date</th><th>Distance</th></tr></thead>
+              <tbody>
+                <tr><td style="font-size:12px">742 Oak Lane, ${loan.address.split(',')[1]?.trim() || ''}</td><td>${Display.currency(purchasePrice + 12000)}</td><td>Feb 2026</td><td>0.3 mi</td></tr>
+                <tr><td style="font-size:12px">1105 Maple Dr, ${loan.address.split(',')[1]?.trim() || ''}</td><td>${Display.currency(purchasePrice - 8000)}</td><td>Jan 2026</td><td>0.5 mi</td></tr>
+                <tr><td style="font-size:12px">890 Elm St, ${loan.address.split(',')[1]?.trim() || ''}</td><td>${Display.currency(purchasePrice + 5000)}</td><td>Dec 2025</td><td>0.7 mi</td></tr>
+              </tbody>
+            </table>
+          </div>
+
+          <div style="margin-top:16px;padding:14px 16px;background:#FEF3C7;border-radius:var(--radius-lg);border:1px solid #FCD34D;font-size:13px;color:#92400E">
             <strong>Action Required:</strong> Appraisal report due by <strong>Apr 10, 2026</strong>. Upload the completed report to proceed.
           </div>
+
           <div style="margin-top:20px">
-            <div class="app-step-subsection-title">Required for This Phase</div>
-            ${this._renderStepDocs([
-              { name: 'Appraisal Report', status: 'pending', party: 'Appraiser', date: '' },
-              { name: 'Homeowner\'s Insurance Binder', status: 'pending', party: 'Borrower', date: '' },
-              { name: 'Flood Certification', status: 'pending', party: 'Processor', date: '' },
-            ])}
+            <div class="app-step-subsection-title">Required Documents</div>
+            ${this._renderUploadDocTable(appraisalDocs)}
           </div>
-          <div style="margin-top:12px">
-            <button class="btn btn-primary btn-sm">Upload Appraisal Report</button>
+
+          <div class="upload-dropzone" style="margin-top:16px" ondragover="event.preventDefault();this.classList.add('dragover')" ondragleave="this.classList.remove('dragover')" ondrop="event.preventDefault();this.classList.remove('dragover')">
+            <div class="upload-dropzone-icon">📄</div>
+            <div class="upload-dropzone-text">Upload Appraisal Report</div>
+            <div class="upload-dropzone-hint">PDF — max 5MB</div>
           </div>
+
+          ${this._renderProcessTracker('Appraisal Process', tasks)}
         </div>`;
     }
 
     // Step 6: Application Documents
     if (stepIdx === 6) {
       const docs = [
-        { name: 'Appraisal Report',           status: 'Pending Upload', sentToBorrower: false },
-        { name: 'Title Commitment',            status: 'Pending Upload', sentToBorrower: false },
-        { name: 'Property Insurance Binder',   status: 'Approved',       sentToBorrower: true  },
-        { name: 'Signed Loan Application 1003',status: 'Approved',       sentToBorrower: true  },
-        { name: 'Borrower ID Verification',    status: 'Approved',       sentToBorrower: true  },
-        { name: 'Income Verification',         status: 'Pending Upload', sentToBorrower: false },
-        { name: 'Flood Zone Certification',    status: 'Pending Upload', sentToBorrower: false },
-        { name: 'Closing Disclosure',          status: 'Pending Upload', sentToBorrower: false },
+        { name: 'Appraisal Report',            status: 'Pending Upload', party: 'Appraiser',  sentToBorrower: false },
+        { name: 'Title Commitment',             status: 'Pending Upload', party: 'Title Co.',  sentToBorrower: false },
+        { name: 'Property Insurance Binder',    status: 'Approved',       party: 'Borrower',   sentToBorrower: true  },
+        { name: 'Signed Loan Application 1003', status: 'Approved',       party: 'Borrower',   sentToBorrower: true  },
+        { name: 'Borrower ID Verification',     status: 'Approved',       party: 'Borrower',   sentToBorrower: true  },
+        { name: 'Income Verification (W-2s)',   status: 'Pending Upload', party: 'Borrower',   sentToBorrower: false },
+        { name: 'Flood Zone Certification',     status: 'Pending Upload', party: 'Processor',  sentToBorrower: false },
+        { name: 'Closing Disclosure',           status: 'Pending Upload', party: 'LO',         sentToBorrower: false },
       ];
-      const docRows = docs.map(d => `
-        <tr>
-          <td>${d.name}</td>
-          <td><span class="badge ${d.status === 'Approved' ? 'badge-active' : 'badge-pending'}">${d.status}</span></td>
-          <td style="text-align:center">${d.sentToBorrower ? '<span style="color:var(--color-success)">✓ Sent</span>' : '<span style="color:var(--color-text-muted)">—</span>'}</td>
-          <td>
-            ${d.status === 'Pending Upload'
-              ? `<button class="btn btn-ghost btn-xs">Upload</button>
-                 <button class="btn btn-ghost btn-xs" style="margin-left:4px">Send Reminder</button>`
-              : '—'}
-          </td>
-        </tr>`).join('');
+      const approvedCount = docs.filter(d => d.status === 'Approved').length;
+      const pendingCount = docs.length - approvedCount;
+
+      const tasks = [
+        { label: 'Prepare document package',           party: 'Processor',    status: approvedCount >= 3 ? 'done' : 'active' },
+        { label: 'Upload outstanding documents',       party: 'Loan Officer', status: pendingCount === 0 ? 'done' : 'active' },
+        { label: 'Send documents to borrower for sig', party: 'System',       status: 'pending' },
+        { label: 'All documents signed by borrower',   party: 'Borrower',     status: 'pending' },
+      ];
 
       return `
         <div class="app-step-section">
           <div class="app-step-section-title">Application Documents</div>
-          <table class="app-detail-table" style="width:100%">
-            <thead><tr>
-              <th>Document</th><th>Status</th><th style="text-align:center">Sent to Borrower</th><th>Actions</th>
-            </tr></thead>
-            <tbody>${docRows}</tbody>
-          </table>
+          <div style="font-size:13px;color:var(--color-text-secondary);margin-bottom:16px">Upload and manage all required loan documents. Send to borrower for signature when complete.</div>
+
+          <div class="doc-package-summary">
+            <div class="doc-package-stat"><strong>${approvedCount}</strong> approved</div>
+            <div class="doc-package-stat" style="color:var(--color-warning)"><strong>${pendingCount}</strong> pending</div>
+            <div class="doc-package-stat">${docs.filter(d => d.sentToBorrower).length} sent to borrower</div>
+            <div class="doc-package-bar"><div class="doc-package-bar-fill" style="width:${Math.round(approvedCount/docs.length*100)}%"></div></div>
+          </div>
+
+          ${this._renderUploadDocTable(docs)}
+
+          <div style="display:flex;gap:8px;margin-top:16px">
+            <button class="btn btn-primary btn-sm">Send All to Borrower</button>
+            <button class="btn btn-secondary btn-sm">Send Reminder</button>
+          </div>
+
+          ${this._renderProcessTracker('Document Process', tasks)}
         </div>`;
     }
 
     // Step 7: Final Review / Title
     if (stepIdx === 7) {
+      const dti = loanId === 'DCDC000003' ? 38 : Math.round(28 + (loan.ltv || 70) / 5);
+      const fico = loan.ltv ? Math.round(680 + loan.ltv / 2) : '—';
+      const riskRating = dti > 40 ? 'Medium' : 'Low';
+      const riskColor = dti > 40 ? 'var(--color-warning)' : 'var(--color-success)';
       return `
         <div class="app-step-section">
-          <div class="app-step-section-title">Title Information</div>
+          <div class="app-step-section-title">Final Review</div>
+          <div style="font-size:13px;color:var(--color-text-secondary);margin-bottom:16px">Verify title, review final conditions, and prepare for closing.</div>
+
+          <div class="app-step-subsection-title">Underwriting Summary</div>
+          <div class="step-summary-strip cols-4" style="margin-bottom:20px">
+            <div>
+              <div class="step-summary-metric-value">${dti}%</div>
+              <div class="step-summary-metric-label">DTI Ratio</div>
+            </div>
+            <div>
+              <div class="step-summary-metric-value">${loan.ltv ?? '—'}% / ${loan.cltv ?? '—'}%</div>
+              <div class="step-summary-metric-label">LTV / CLTV</div>
+            </div>
+            <div>
+              <div class="step-summary-metric-value">${fico}</div>
+              <div class="step-summary-metric-label">Credit Score</div>
+            </div>
+            <div>
+              <div class="step-summary-metric-value" style="color:${riskColor}">${riskRating}</div>
+              <div class="step-summary-metric-label">Risk Rating</div>
+            </div>
+          </div>
+
+          <div class="app-step-subsection-title">Title Company Information</div>
           <div class="form-grid">
             <div class="form-group">
               <label>Title Company Name</label>
@@ -1074,10 +1354,12 @@ const DataPlatformView = {
           <div style="margin-top:24px">
             <div class="app-step-subsection-title">Final Review Conditions</div>
             ${this._renderStepConditions([
-              { label: 'Title commitment received and reviewed', done: false, party: 'Title Co.', status: 'Pending', doc: '', notes: 'First American engaged, ETA 5 business days' },
-              { label: 'Final underwriting sign-off', done: false, party: 'Processor', status: 'Pending', doc: '', notes: '' },
-              { label: 'Closing Disclosure sent (3-day rule)', done: false, party: 'LO', status: 'Pending', doc: '', notes: 'Must be sent 3 business days before closing' },
-              { label: 'VOE — Verification of Employment', done: false, party: 'LO', status: 'In Review', doc: '', notes: 'Phone verification scheduled' },
+              { label: 'Title commitment received and reviewed',    done: false, party: 'Title Co.',  status: 'Pending',   doc: '', notes: 'First American engaged, ETA 5 business days' },
+              { label: 'Final underwriting sign-off',               done: false, party: 'Processor',  status: 'Pending',   doc: '', notes: '' },
+              { label: 'Closing Disclosure sent (3-day rule)',      done: false, party: 'LO',         status: 'Pending',   doc: '', notes: 'Must be sent 3 business days before closing' },
+              { label: 'VOE — Verification of Employment',         done: false, party: 'LO',         status: 'In Review', doc: '', notes: 'Phone verification scheduled' },
+              { label: 'Power of Attorney verification (if applic.)', done: true,  party: 'Processor', status: 'Accepted', doc: '', notes: 'N/A — no POA on file' },
+              { label: 'Final credit pull (soft)',                  done: false, party: 'System',     status: 'Pending',   doc: '', notes: 'Scheduled 3 days before close' },
             ])}
           </div>
           <div style="margin-top:24px">
@@ -1089,6 +1371,7 @@ const DataPlatformView = {
                 <tr><td>Processor</td><td><strong>Kevin Park</strong></td></tr>
                 <tr><td>Appraiser</td><td><strong>Metro Appraisal Services</strong></td></tr>
                 <tr><td>Insurance Agent</td><td><strong>State Farm — J. Mitchell</strong></td></tr>
+                <tr><td>Title Company</td><td><strong>First American Title — Sandra Reeves</strong></td></tr>
               </tbody>
             </table>
           </div>
@@ -1098,90 +1381,291 @@ const DataPlatformView = {
     // Step 8: Confirm & Submit
     if (stepIdx === 8) {
       const completedSteps = STEPS.filter(s => s.status === 'completed').length;
+      const allDone = completedSteps >= STEPS.length - 1;
+      const dti = loanId === 'DCDC000003' ? 38 : Math.round(28 + (loan.ltv || 70) / 5);
+      const rate = loanId === 'DCDC000003' ? '6.125%' : loanId === 'DCDC000002' ? '5.875%' : '6.250%';
+      const estCloseDate = loanId === 'DCDC000003' ? 'Mar 15, 2026' : 'May 15, 2026';
+      const monthlyPayment = Math.round(loan.amount * 0.006); // rough estimate
+      const stepDates = ['Mar 15', 'Mar 16', 'Mar 18', 'Mar 22', 'Apr 2', 'Apr 5', 'Apr 8', 'Apr 10', '—'];
+      const stepItems = STEPS.map((s, i) => {
+        const isDone = s.status === 'completed';
+        return `<li class="step-completion-item">
+          <span class="step-completion-icon ${isDone ? 'done' : 'pending'}">${isDone ? '✓' : i + 1}</span>
+          <span class="step-completion-label" style="color:${isDone ? 'var(--color-text)' : 'var(--color-text-muted)'}">${s.short}</span>
+          <span class="step-completion-date">${isDone ? stepDates[i] + ', 2026' : 'Pending'}</span>
+        </li>`;
+      }).join('');
+
       return `
         <div class="app-step-section">
           <div class="app-step-section-title">Confirm and Submit</div>
-          <div style="padding:16px;background:var(--color-surface);border-radius:var(--radius-lg);margin-bottom:16px">
-            <div style="font-size:13px;color:var(--color-text-secondary);margin-bottom:12px">${completedSteps} of ${STEPS.length} steps completed</div>
-            <div style="background:var(--color-border);border-radius:4px;height:8px;overflow:hidden">
-              <div style="background:var(--color-primary);height:100%;width:${Math.round(completedSteps/STEPS.length*100)}%"></div>
+          <div style="font-size:13px;color:var(--color-text-secondary);margin-bottom:16px">Review all steps, confirm loan terms, and submit for final processing.</div>
+
+          <div style="padding:16px;background:var(--color-surface);border-radius:var(--radius-lg);margin-bottom:20px;border:1px solid var(--color-border)">
+            <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:12px">
+              <div style="font-size:14px;font-weight:700;color:var(--color-text)">Application Progress</div>
+              <div style="font-size:13px;font-weight:600;color:${allDone ? 'var(--color-success)' : 'var(--color-text-secondary)'}">${completedSteps} of ${STEPS.length} steps completed</div>
+            </div>
+            <div style="background:var(--color-border);border-radius:4px;height:8px;overflow:hidden;margin-bottom:16px">
+              <div style="background:var(--color-primary);height:100%;width:${Math.round(completedSteps/STEPS.length*100)}%;border-radius:4px"></div>
+            </div>
+            <ul class="step-completion-list">${stepItems}</ul>
+          </div>
+
+          <div class="app-step-subsection-title">Final Loan Terms Summary</div>
+          <div class="step-summary-strip cols-5" style="margin-bottom:20px">
+            <div>
+              <div class="step-summary-metric-value">${Display.currency(loan.amount)}</div>
+              <div class="step-summary-metric-label">Loan Amount</div>
+            </div>
+            <div>
+              <div class="step-summary-metric-value">${rate}</div>
+              <div class="step-summary-metric-label">Interest Rate</div>
+            </div>
+            <div>
+              <div class="step-summary-metric-value">${loan.ltv ?? '—'}% / ${loan.cltv ?? '—'}%</div>
+              <div class="step-summary-metric-label">LTV / CLTV</div>
+            </div>
+            <div>
+              <div class="step-summary-metric-value">${dti}%</div>
+              <div class="step-summary-metric-label">DTI Ratio</div>
+            </div>
+            <div>
+              <div class="step-summary-metric-value">${Display.currency(monthlyPayment)}</div>
+              <div class="step-summary-metric-label">Est. Monthly Payment</div>
             </div>
           </div>
-          <button class="btn btn-primary" ${completedSteps < STEPS.length - 1 ? 'disabled style="opacity:0.5"' : ''}>Submit for Final Review</button>
+
+          <div style="display:grid;grid-template-columns:1fr 1fr;gap:20px;margin-bottom:20px">
+            <div>
+              <div class="app-step-subsection-title">Borrower & Property</div>
+              <table class="app-detail-table">
+                <tbody>
+                  <tr><td>Borrower</td><td><strong>${loan.borrowerName}</strong></td></tr>
+                  <tr><td>Property</td><td>${loan.address}</td></tr>
+                  <tr><td>Property Type</td><td>Single Family Residence</td></tr>
+                  <tr><td>Occupancy</td><td>Primary Residence</td></tr>
+                  <tr><td>Program</td><td>${loan.program}</td></tr>
+                </tbody>
+              </table>
+            </div>
+            <div>
+              <div class="app-step-subsection-title">Closing Details</div>
+              <table class="app-detail-table">
+                <tbody>
+                  <tr><td>Est. Closing Date</td><td><strong>${estCloseDate}</strong></td></tr>
+                  <tr><td>Closing Location</td><td>First American Title — DC Office</td></tr>
+                  <tr><td>Title Company</td><td>First American Title</td></tr>
+                  <tr><td>Escrow Officer</td><td>Sandra Reeves</td></tr>
+                  <tr><td>Wire Instructions</td><td><a style="color:var(--color-primary);font-size:12px;cursor:pointer">View wire details →</a></td></tr>
+                </tbody>
+              </table>
+            </div>
+          </div>
+
+          ${!allDone ? `<div style="padding:14px 16px;background:#FEF3C7;border-radius:var(--radius-lg);border:1px solid #FCD34D;font-size:13px;color:#92400E;margin-bottom:16px">
+            <strong>Cannot submit yet:</strong> ${STEPS.length - 1 - completedSteps} step${STEPS.length - 1 - completedSteps !== 1 ? 's' : ''} still pending. Complete all prior steps before submitting.
+          </div>` : ''}
+
+          <button class="btn btn-primary" ${!allDone ? 'disabled style="opacity:0.5"' : ''}>Submit for Final Review</button>
         </div>`;
     }
 
     // Step 0: Upload Loan File
     if (stepIdx === 0) {
+      const isComplete = step?.status === 'completed';
       const docs = [
-        { name: 'Loan File Package', status: step?.status === 'completed' ? 'received' : 'pending', party: 'LO', date: step?.status === 'completed' ? 'Mar 16, 2026' : '' },
-        { name: 'Borrower Photo ID', status: step?.status === 'completed' ? 'received' : 'pending', party: 'Borrower', date: step?.status === 'completed' ? 'Mar 16, 2026' : '' },
-        { name: 'Initial Borrower Authorization', status: step?.status === 'completed' ? 'received' : 'pending', party: 'Borrower', date: step?.status === 'completed' ? 'Mar 16, 2026' : '' },
+        { name: 'Loan File Package (1003 + supporting docs)', status: isComplete ? 'Approved' : 'Pending Upload', party: 'LO' },
+        { name: 'Borrower Photo ID (government-issued)',       status: isComplete ? 'Approved' : 'Pending Upload', party: 'Borrower' },
+        { name: 'Initial Borrower Authorization Form',         status: isComplete ? 'Approved' : 'Pending Upload', party: 'Borrower' },
+        { name: 'Purchase Contract / Sales Agreement',         status: isComplete ? 'Approved' : 'Pending Upload', party: 'LO' },
+        { name: 'Preliminary Title Report',                    status: isComplete ? 'Approved' : 'Pending Upload', party: 'LO' },
+      ];
+      const approvedCount = docs.filter(d => d.status === 'Approved').length;
+      const tasks = [
+        { label: 'Upload loan file package',           party: 'Loan Officer', status: isComplete ? 'done' : 'active' },
+        { label: 'Collect borrower photo ID',          party: 'Borrower',     status: isComplete ? 'done' : 'pending' },
+        { label: 'Obtain borrower authorization',      party: 'Borrower',     status: isComplete ? 'done' : 'pending' },
+        { label: 'Upload purchase contract',           party: 'Loan Officer', status: isComplete ? 'done' : 'pending' },
       ];
       return `
         <div class="app-step-section">
           <div class="app-step-section-title">Upload Loan File</div>
-          <div style="font-size:13px;color:var(--color-text-secondary);margin-bottom:16px">Upload the initial loan package to begin the origination process.</div>
-          <div class="app-step-subsection-title">Required Documents</div>
-          <div style="margin-bottom:16px">${this._renderStepDocs(docs)}</div>
-          <button class="btn btn-primary btn-sm">Upload Loan File</button>
+          <div class="step-info-callout">
+            <span class="step-info-callout-icon">📋</span>
+            <div>Upload the initial loan package to begin the origination process. All required documents must be submitted before the application can move to prequalification.</div>
+          </div>
+          <div class="doc-package-summary">
+            <div class="doc-package-stat"><strong>${approvedCount}</strong> of <strong>${docs.length}</strong> documents received</div>
+            <div class="doc-package-bar"><div class="doc-package-bar-fill" style="width:${Math.round(approvedCount/docs.length*100)}%"></div></div>
+          </div>
+
+          <div class="upload-dropzone" ondragover="event.preventDefault();this.classList.add('dragover')" ondragleave="this.classList.remove('dragover')" ondrop="event.preventDefault();this.classList.remove('dragover')">
+            <div class="upload-dropzone-icon">📁</div>
+            <div class="upload-dropzone-text">Drag and drop files here, or click to browse</div>
+            <div class="upload-dropzone-hint">PDF, DOC, DOCX — max 5MB per file</div>
+          </div>
+
+          <div style="margin-top:20px">
+            <div class="app-step-subsection-title">Required Documents</div>
+            ${this._renderUploadDocTable(docs)}
+          </div>
+
+          ${this._renderProcessTracker('Origination Process', tasks)}
         </div>`;
     }
 
     // Step 1: Prequalification
     if (stepIdx === 1) {
+      const isComplete = step?.status === 'completed';
+      const fico = loan.ltv ? Math.round(680 + loan.ltv / 2) : '—';
       const conditions = [
-        { label: 'Credit report pulled', done: step?.status === 'completed', party: 'System', status: step?.status === 'completed' ? 'Accepted' : 'Pending', doc: step?.status === 'completed' ? 'credit_report_equifax.pdf' : '', notes: `FICO: ${loan.ltv ? Math.round(680 + loan.ltv / 2) : '—'}` },
-        { label: 'Income documentation received', done: step?.status === 'completed', party: 'Borrower', status: step?.status === 'completed' ? 'Accepted' : 'Pending', doc: '', notes: 'W-2s and/or tax returns required' },
-        { label: 'Asset verification initiated', done: step?.status === 'completed', party: 'Borrower', status: step?.status === 'completed' ? 'Accepted' : 'Pending', doc: '', notes: 'Bank statements — 2 most recent months' },
+        { label: 'Credit report pulled',                        done: isComplete, party: 'System',    status: isComplete ? 'Accepted' : 'Pending',   doc: isComplete ? 'credit_report_equifax.pdf' : '', notes: `FICO: ${fico}` },
+        { label: 'Income documentation received',               done: isComplete, party: 'Borrower',  status: isComplete ? 'Accepted' : 'Pending',   doc: '', notes: 'W-2s and/or tax returns required' },
+        { label: 'Asset verification initiated',                done: isComplete, party: 'Borrower',  status: isComplete ? 'Accepted' : 'Pending',   doc: '', notes: 'Bank statements — 2 most recent months' },
+        { label: 'Employment verification completed',           done: isComplete, party: 'LO',        status: isComplete ? 'Accepted' : 'In Review', doc: '', notes: 'Written or verbal VOE required' },
+        { label: 'DTI calculation within program limits',       done: isComplete, party: 'System',    status: isComplete ? 'Accepted' : 'Pending',   doc: '', notes: `DTI must be ≤ 50% — current est: ${Math.round(28 + (loan.ltv || 70) / 5)}%` },
+        { label: 'Program eligibility confirmed',               done: isComplete, party: 'System',    status: isComplete ? 'Accepted' : 'Pending',   doc: '', notes: `${loan.program} — property must be in eligible market` },
+      ];
+      const tasks = [
+        { label: 'Pull credit report',          party: 'System',       status: isComplete ? 'done' : 'active' },
+        { label: 'Verify income documentation', party: 'Borrower',     status: isComplete ? 'done' : 'pending' },
+        { label: 'Verify asset statements',     party: 'Borrower',     status: isComplete ? 'done' : 'pending' },
+        { label: 'Confirm employment',          party: 'Loan Officer', status: isComplete ? 'done' : 'pending', action: 'Verify' },
+        { label: 'Calculate DTI ratio',         party: 'System',       status: isComplete ? 'done' : 'pending' },
       ];
       return `
         <div class="app-step-section">
           <div class="app-step-section-title">Prequalification</div>
-          <div style="font-size:13px;color:var(--color-text-secondary);margin-bottom:16px">Verify borrower eligibility before proceeding with the full application.</div>
+          <div style="font-size:13px;color:var(--color-text-secondary);margin-bottom:16px">Verify originator, borrower eligibility, and financial qualification before proceeding.</div>
+
+          <div class="step-summary-strip cols-4">
+            <div>
+              <div class="step-summary-metric-value">${fico}</div>
+              <div class="step-summary-metric-label">FICO Score</div>
+            </div>
+            <div>
+              <div class="step-summary-metric-value">${Math.round(28 + (loan.ltv || 70) / 5)}%</div>
+              <div class="step-summary-metric-label">Est. DTI</div>
+            </div>
+            <div>
+              <div class="step-summary-metric-value">${loan.ltv ?? '—'}%</div>
+              <div class="step-summary-metric-label">LTV</div>
+            </div>
+            <div>
+              <div class="step-summary-metric-value">${conditions.filter(c=>c.done).length}/${conditions.length}</div>
+              <div class="step-summary-metric-label">Conditions Met</div>
+            </div>
+          </div>
+
+          ${this._renderOriginatorInfo(loan)}
+          ${this._renderBorrowerInfo(loan)}
+
           <div class="app-step-subsection-title">Prequalification Conditions <span style="font-size:11px;font-weight:400;color:var(--color-text-muted)">${conditions.filter(c=>c.done).length}/${conditions.length}</span></div>
           <div style="margin-bottom:16px">${this._renderStepConditions(conditions)}</div>
-          <button class="btn btn-primary btn-sm" ${step?.status === 'completed' ? 'disabled style="opacity:0.5"' : ''}>Mark Prequalification Complete</button>
+
+          ${this._renderProcessTracker('Prequalification Process', tasks)}
+
+          <div style="margin-top:20px">
+            <button class="btn btn-primary btn-sm" ${isComplete ? 'disabled style="opacity:0.5"' : ''}>Mark Prequalification Complete</button>
+          </div>
         </div>`;
     }
 
     // Step 3: Documents Approved
     if (stepIdx === 3) {
+      const isComplete = step?.status === 'completed';
       const docs = [
-        { name: 'Signed 1003 — Uniform Residential Loan Application', status: 'received', party: 'Borrower', date: 'Mar 18, 2026' },
-        { name: 'W-2 Wage Statements (2 years)', status: 'received', party: 'Borrower', date: 'Mar 20, 2026' },
-        { name: 'Bank Statements (2 months)', status: 'received', party: 'Borrower', date: 'Mar 22, 2026' },
-        { name: 'Federal Tax Returns (2 years)', status: step?.status === 'completed' ? 'received' : 'pending', party: 'Borrower', date: step?.status === 'completed' ? 'Mar 25, 2026' : '' },
-        { name: 'Loan Estimate sent to borrower', status: 'sent', party: 'LO', date: 'Mar 20, 2026' },
+        { name: 'Signed 1003 — Uniform Residential Loan Application', status: 'Approved',       party: 'Borrower' },
+        { name: 'W-2 Wage Statements (2 years)',                       status: 'Approved',       party: 'Borrower' },
+        { name: 'Bank Statements (2 months)',                          status: 'Approved',       party: 'Borrower' },
+        { name: 'Federal Tax Returns (2 years)',                       status: isComplete ? 'Approved' : 'Pending Upload', party: 'Borrower' },
+        { name: 'Loan Estimate (sent to borrower)',                    status: 'Approved',       party: 'LO' },
       ];
       const conditions = [
-        { label: 'All income docs verified and cross-referenced', done: step?.status === 'completed', party: 'Processor', status: step?.status === 'completed' ? 'Accepted' : 'In Review', doc: '', notes: 'Processor must verify employment and income against 1003' },
-        { label: 'Loan Estimate acknowledged by borrower', done: step?.status === 'completed', party: 'Borrower', status: step?.status === 'completed' ? 'Accepted' : 'Pending', doc: '', notes: '' },
+        { label: 'All income docs verified and cross-referenced',  done: isComplete, party: 'Processor', status: isComplete ? 'Accepted' : 'In Review', doc: '', notes: 'Processor must verify employment and income against 1003' },
+        { label: 'Loan Estimate acknowledged by borrower',         done: isComplete, party: 'Borrower',  status: isComplete ? 'Accepted' : 'Pending',   doc: '', notes: '' },
+        { label: 'Employment verification completed',              done: isComplete, party: 'LO',        status: isComplete ? 'Accepted' : 'In Review', doc: '', notes: 'Written or verbal VOE' },
+        { label: 'LTV within program guidelines',                  done: true,       party: 'System',    status: 'Accepted',                            doc: '', notes: `LTV: ${loan.ltv ?? '—'}% — within ${loan.program} limits` },
       ];
+      const approvedCount = docs.filter(d => d.status === 'Approved').length;
       return `
         <div class="app-step-section">
           <div class="app-step-section-title">Document Approval Review</div>
           <div style="font-size:13px;color:var(--color-text-secondary);margin-bottom:16px">Review and approve all submitted documents before ordering the appraisal.</div>
+
+          <div class="doc-package-summary">
+            <div class="doc-package-stat"><strong>${approvedCount}</strong> of <strong>${docs.length}</strong> approved</div>
+            <div class="doc-package-bar"><div class="doc-package-bar-fill" style="width:${Math.round(approvedCount/docs.length*100)}%"></div></div>
+          </div>
+
           <div class="app-step-subsection-title">Documents for This Phase</div>
-          <div style="margin-bottom:20px">${this._renderStepDocs(docs)}</div>
+          <div style="margin-bottom:20px">${this._renderUploadDocTable(docs)}</div>
+
           <div class="app-step-subsection-title">Approval Conditions <span style="font-size:11px;font-weight:400;color:var(--color-text-muted)">${conditions.filter(c=>c.done).length}/${conditions.length}</span></div>
           <div style="margin-bottom:16px">${this._renderStepConditions(conditions)}</div>
-          <button class="btn btn-primary btn-sm" ${step?.status === 'completed' ? 'disabled style="opacity:0.5"' : ''}>Approve Documents</button>
+          <button class="btn btn-primary btn-sm" ${isComplete ? 'disabled style="opacity:0.5"' : ''}>Approve Documents</button>
         </div>`;
     }
 
     // Step 5: DocuTech / Disclosures
     if (stepIdx === 5) {
+      const isComplete = step?.status === 'completed';
       const conditions = [
-        { label: 'Initial disclosures sent within 3 business days', done: step?.status === 'completed', party: 'System', status: step?.status === 'completed' ? 'Accepted' : 'In Review', doc: '', notes: 'TRID compliance — Loan Estimate timing' },
-        { label: 'TRID Closing Disclosure prepared', done: false, party: 'Processor', status: 'Pending', doc: '', notes: 'Must be sent 3 business days before closing' },
-        { label: 'HMDA data fields verified', done: step?.status === 'completed', party: 'System', status: step?.status === 'completed' ? 'Accepted' : 'Pending', doc: '', notes: 'Race, ethnicity, sex, income — auto-checked' },
-        { label: 'Fair lending review cleared', done: step?.status === 'completed', party: 'System', status: step?.status === 'completed' ? 'Accepted' : 'Pending', doc: '', notes: '' },
+        { label: 'Initial disclosures sent within 3 business days', done: isComplete, party: 'System',    status: isComplete ? 'Accepted' : 'In Review', doc: '', notes: 'TRID compliance — Loan Estimate timing' },
+        { label: 'TRID Closing Disclosure prepared',                done: false,      party: 'Processor', status: 'Pending',                              doc: '', notes: 'Must be sent 3 business days before closing' },
+        { label: 'HMDA data fields verified',                       done: isComplete, party: 'System',    status: isComplete ? 'Accepted' : 'Pending',    doc: '', notes: 'Race, ethnicity, sex, income — auto-checked' },
+        { label: 'Fair lending review cleared',                     done: isComplete, party: 'System',    status: isComplete ? 'Accepted' : 'Pending',    doc: '', notes: '' },
       ];
+      const tlSteps = [
+        { label: 'LE Sent',                done: true,       date: 'Mar 20, 2026' },
+        { label: 'CD Prepared',            done: false,      date: 'Pending' },
+        { label: 'CD Sent (3-day rule)',   done: false,      date: 'Pending' },
+        { label: 'Borrower Acknowledged',  done: false,      date: 'Pending' },
+      ];
+      const timelineHtml = tlSteps.map(t => `
+        <div class="disclosure-timeline-step ${t.done ? 'done' : ''}">
+          <div class="disclosure-timeline-dot ${t.done ? 'done' : 'pending'}">${t.done ? '✓' : ''}</div>
+          <div class="disclosure-timeline-label">${t.label}</div>
+          <div class="disclosure-timeline-date">${t.date}</div>
+        </div>`).join('');
+
       return `
         <div class="app-step-section">
           <div class="app-step-section-title">Disclosures & Compliance</div>
           <div style="font-size:13px;color:var(--color-text-secondary);margin-bottom:16px">Prepare and send required disclosures. Verify TRID, HMDA, and fair lending compliance.</div>
+
+          <div class="app-step-subsection-title">Disclosure Timeline</div>
+          <div class="disclosure-timeline" style="margin-bottom:24px">${timelineHtml}</div>
+
+          <div class="app-step-subsection-title">Compliance Status</div>
+          <div class="compliance-grid">
+            <div class="compliance-item"><span class="compliance-dot ${isComplete ? 'pass' : 'pending'}"></span>TRID Compliant</div>
+            <div class="compliance-item"><span class="compliance-dot ${isComplete ? 'pass' : 'pending'}"></span>HMDA Complete</div>
+            <div class="compliance-item"><span class="compliance-dot ${isComplete ? 'pass' : 'pass'}"></span>Fair Lending Cleared</div>
+            <div class="compliance-item"><span class="compliance-dot ${isComplete ? 'pass' : 'pass'}"></span>ECOA Compliance</div>
+          </div>
+
+          <div class="app-step-subsection-title">HMDA Data Fields</div>
+          <div class="form-grid-4" style="margin-bottom:20px">
+            <div class="form-group">
+              <label>Ethnicity</label>
+              <input class="input" value="Not Hispanic or Latino" readonly style="background:var(--color-surface);font-size:12px" />
+            </div>
+            <div class="form-group">
+              <label>Race</label>
+              <input class="input" value="White" readonly style="background:var(--color-surface);font-size:12px" />
+            </div>
+            <div class="form-group">
+              <label>Sex</label>
+              <input class="input" value="Male" readonly style="background:var(--color-surface);font-size:12px" />
+            </div>
+            <div class="form-group">
+              <label>Income Bracket</label>
+              <input class="input" value="$75,000–$99,999" readonly style="background:var(--color-surface);font-size:12px" />
+            </div>
+          </div>
+
           <div class="app-step-subsection-title">Compliance Checklist <span style="font-size:11px;font-weight:400;color:var(--color-text-muted)">${conditions.filter(c=>c.done).length}/${conditions.length}</span></div>
           <div style="margin-bottom:16px">${this._renderStepConditions(conditions)}</div>
           <div style="display:flex;gap:10px">
