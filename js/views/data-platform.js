@@ -8,7 +8,6 @@ const DataPlatformView = {
   _activeTab: 'analytics',
   _selectedApplicationId: null,
   _activeStep: 4,
-  _activeSection: null,
   _appFilter: 'all',
   _appSearch: '',
   _appSortField: null,
@@ -114,14 +113,13 @@ const DataPlatformView = {
   openApplication(loanId) {
     this._selectedApplicationId = loanId;
     this._activeStep = 4;
-    this._activeSection = null;
+
     App.renderView('/data/applications');
-    Nav.refresh();
   },
 
   selectStep(idx) {
     this._activeStep = idx;
-    this._activeSection = null;
+
     App.renderView('/data/applications');
   },
 
@@ -644,142 +642,44 @@ const DataPlatformView = {
   },
 
   /* ================================================================
-     SECTION JUMP BAR & SECTION CONTENT
+     STEP-CONTEXTUAL DOCUMENT & CONDITION HELPERS
+     Each step shows only what's needed for that phase.
   ================================================================ */
-  _SECTIONS: [
-    { key: 'documents',   label: 'Documents' },
-    { key: 'conditions',  label: 'Conditions' },
-    { key: 'compliance',  label: 'Compliance' },
-    { key: 'contacts',    label: 'Contacts' },
-    { key: 'uw_notes',    label: 'UW Notes' },
-  ],
-
-  _renderSectionJumpBar() {
-    return this._SECTIONS.map(s =>
-      `<a class="section-jump-link ${this._activeSection === s.key ? 'active' : ''}"
-          onclick="DataPlatformView._jumpToSection('${s.key}')">${s.label}</a>`
-    ).join('');
-  },
-
-  _jumpToSection(key) {
-    this._activeSection = this._activeSection === key ? null : key;
-    App.renderView('/data/applications');
-    Nav.refresh();
-  },
-
-  _renderSectionContent(sectionKey, loan) {
-    switch (sectionKey) {
-      case 'documents':
-        return this._renderDocumentsSection(loan);
-      case 'conditions':
-        return this._renderConditionsSection(loan);
-      case 'compliance':
-        return `<div class="app-step-section">
-          <div class="app-step-section-title">Compliance Check</div>
-          <div style="padding:24px;text-align:center;color:var(--color-text-muted)">
-            <div style="font-size:28px;margin-bottom:8px">◎</div>
-            <div style="font-size:13px">TRID, HMDA, and fair lending compliance checks will appear here.</div>
-          </div>
-        </div>`;
-      case 'contacts':
-        return `<div class="app-step-section">
-          <div class="app-step-section-title">Contacts & Parties</div>
-          <table class="app-detail-table" style="margin-top:12px">
-            <tbody>
-              <tr><td>Borrower</td><td><strong>${loan.borrowerName}</strong></td></tr>
-              <tr><td>Loan Officer</td><td><strong>${State.getUser(loan.loId) ? Display.fullName(State.getUser(loan.loId)) : '—'}</strong></td></tr>
-              <tr><td>Processor</td><td><strong>Kevin Park</strong></td></tr>
-              <tr><td>Title Company</td><td><strong>First American Title</strong></td></tr>
-              <tr><td>Appraiser</td><td><strong>Metro Appraisal Services</strong></td></tr>
-              <tr><td>Insurance Agent</td><td><strong>State Farm — J. Mitchell</strong></td></tr>
-            </tbody>
-          </table>
-        </div>`;
-      case 'uw_notes':
-        return `<div class="app-step-section">
-          <div class="app-step-section-title">Underwriting Notes</div>
-          <div style="padding:24px;text-align:center;color:var(--color-text-muted)">
-            <div style="font-size:28px;margin-bottom:8px">✎</div>
-            <div style="font-size:13px">Underwriting observations, stipulations, and sign-off notes will appear here.</div>
-          </div>
-        </div>`;
-      default:
-        return '';
-    }
-  },
-
-  _renderDocumentsSection(loan) {
-    const docs = [
-      { name: 'Uniform Residential Loan Application (1003)', status: 'received', party: 'Borrower', date: 'Mar 18, 2026' },
-      { name: 'W-2 Wage Statements (2 years)',                status: 'received', party: 'Borrower', date: 'Mar 20, 2026' },
-      { name: 'Federal Tax Returns (2 years)',                 status: 'pending',  party: 'Borrower', date: '' },
-      { name: 'Bank Statements (2 months)',                    status: 'received', party: 'Borrower', date: 'Mar 22, 2026' },
-      { name: 'Photo ID',                                      status: 'received', party: 'Borrower', date: 'Mar 18, 2026' },
-      { name: 'Loan Estimate',                                 status: 'sent',     party: 'LO',       date: 'Mar 20, 2026' },
-      { name: 'Credit Report',                                 status: 'received', party: 'System',   date: 'Mar 19, 2026' },
-      { name: 'Title Commitment',                              status: 'pending',  party: 'Title Co.', date: '' },
-      { name: 'Appraisal Report',                              status: loan.status === 'completed' ? 'received' : 'pending', party: 'Appraiser', date: loan.status === 'completed' ? 'Mar 8, 2026' : '' },
-      { name: 'Homeowner\'s Insurance Binder',                 status: 'pending',  party: 'Borrower', date: '' },
-    ];
+  _renderStepDocs(docs) {
     const statusBadge = { received: 'badge-active', pending: 'badge-pending', sent: 'badge-submitted' };
     const statusLabel = { received: 'Received', pending: 'Pending', sent: 'Sent' };
-
-    return `<div class="app-step-section">
-      <div class="app-step-section-title">Documents</div>
-      <div style="margin-top:12px">
-        ${docs.map(d => `
-          <div class="app-condition-row" style="justify-content:space-between">
-            <div style="flex:1;min-width:0">
-              <div style="font-size:13px;color:var(--color-text)">${d.name}</div>
-              <div style="font-size:11px;color:var(--color-text-muted);margin-top:2px">${d.date || 'Not yet received'}</div>
-            </div>
-            <div style="display:flex;align-items:center;gap:8px">
-              <span class="tag" style="font-size:10px">${d.party}</span>
-              <span class="badge ${statusBadge[d.status]}" style="font-size:10px">${statusLabel[d.status]}</span>
-            </div>
-          </div>`).join('')}
-      </div>
-    </div>`;
+    return docs.map(d => `
+      <div class="app-condition-row" style="justify-content:space-between">
+        <div style="flex:1;min-width:0">
+          <div style="font-size:13px;color:var(--color-text)">${d.name}</div>
+          <div style="font-size:11px;color:var(--color-text-muted);margin-top:2px">${d.date || 'Not yet received'}</div>
+        </div>
+        <div style="display:flex;align-items:center;gap:8px">
+          <span class="tag" style="font-size:10px">${d.party}</span>
+          <span class="badge ${statusBadge[d.status]}" style="font-size:10px">${statusLabel[d.status]}</span>
+        </div>
+      </div>`).join('');
   },
 
-  _renderConditionsSection(loan) {
-    const conditions = [
-      { label: 'Signed 1003 received',                  done: true,  party: 'Borrower',  status: 'Accepted',  doc: 'Form_1003_signed.pdf',  notes: 'Verified by processor on Mar 19' },
-      { label: 'Proof of income verified',              done: false, party: 'Borrower',  status: 'Pending',   doc: '',                       notes: 'W-2s received, awaiting most recent pay stub' },
-      { label: 'Credit report pulled',                  done: true,  party: 'System',    status: 'Accepted',  doc: 'credit_report_equifax.pdf', notes: `FICO: ${loan.ltv ? Math.round(680 + loan.ltv / 2) : '—'}` },
-      { label: 'Flood certification ordered',           done: false, party: 'Processor', status: 'In Review', doc: '',                       notes: 'Order submitted to CoreLogic Apr 1' },
-      { label: 'Property insurance verification',       done: false, party: 'Borrower',  status: 'Pending',   doc: '',                       notes: 'Borrower contacted, awaiting binder' },
-      { label: 'Title commitment received',             done: false, party: 'Title Co.', status: 'Pending',   doc: '',                       notes: 'First American engaged, ETA 5 business days' },
-      { label: 'Appraisal report reviewed',             done: loan.status === 'completed', party: 'Appraiser', status: loan.status === 'completed' ? 'Accepted' : 'Pending', doc: loan.status === 'completed' ? 'appraisal_final.pdf' : '', notes: '' },
-      { label: 'VOE — Verification of Employment',      done: false, party: 'LO',        status: 'In Review', doc: '',                       notes: 'Phone verification scheduled' },
-    ];
+  _renderStepConditions(conditions) {
     const statusClass = { Accepted: 'badge-active', Pending: 'badge-pending', 'In Review': 'badge-submitted' };
-
-    return `<div class="app-step-section">
-      <div class="app-step-section-title">Conditions</div>
-      <div style="font-size:12px;color:var(--color-text-muted);margin-bottom:16px">
-        ${conditions.filter(c => c.done).length} of ${conditions.length} conditions cleared
-      </div>
-      <div>
-        ${conditions.map((c, i) => `
-          <div class="condition-row-enhanced" onclick="this.querySelector('.condition-expand').classList.toggle('open')">
-            <div class="condition-row-main">
-              <input type="checkbox" ${c.done ? 'checked' : ''} onclick="return false" style="accent-color:var(--color-primary);flex-shrink:0" />
-              <span style="flex:1;font-size:13px;color:${c.done ? 'var(--color-text)' : 'var(--color-text-secondary)'}">${c.label}</span>
-              <span class="tag" style="font-size:10px">${c.party}</span>
-              <span class="badge ${statusClass[c.status] || 'badge-pending'}" style="font-size:10px">${c.status}</span>
-              <span style="font-size:11px;color:var(--color-text-muted);cursor:pointer">▾</span>
-            </div>
-            <div class="condition-expand">
-              ${c.doc ? `<div style="display:flex;align-items:center;gap:6px;margin-bottom:6px">
-                <span style="font-size:11px;color:var(--color-text-secondary)">📄 ${c.doc}</span>
-                <span class="badge badge-active" style="font-size:9px">Reviewed ✓</span>
-              </div>` : ''}
-              ${c.notes ? `<div style="font-size:11px;color:var(--color-text-muted)">${c.notes}</div>` : ''}
-            </div>
-          </div>`).join('')}
-      </div>
-    </div>`;
+    return conditions.map(c => `
+      <div class="condition-row-enhanced" onclick="this.querySelector('.condition-expand').classList.toggle('open')">
+        <div class="condition-row-main">
+          <input type="checkbox" ${c.done ? 'checked' : ''} onclick="return false" style="accent-color:var(--color-primary);flex-shrink:0" />
+          <span style="flex:1;font-size:13px;color:${c.done ? 'var(--color-text)' : 'var(--color-text-secondary)'}">${c.label}</span>
+          <span class="tag" style="font-size:10px">${c.party}</span>
+          <span class="badge ${statusClass[c.status] || 'badge-pending'}" style="font-size:10px">${c.status}</span>
+          <span style="font-size:11px;color:var(--color-text-muted);cursor:pointer">▾</span>
+        </div>
+        <div class="condition-expand">
+          ${c.doc ? `<div style="display:flex;align-items:center;gap:6px;margin-bottom:6px">
+            <span style="font-size:11px;color:var(--color-text-secondary)">📄 ${c.doc}</span>
+            <span class="badge badge-active" style="font-size:9px">Reviewed ✓</span>
+          </div>` : ''}
+          ${c.notes ? `<div style="font-size:11px;color:var(--color-text-muted)">${c.notes}</div>` : ''}
+        </div>
+      </div>`).join('');
   },
 
   /* ================================================================
@@ -890,55 +790,53 @@ const DataPlatformView = {
     const rateLockExpiring = loanId === 'DCDC000002';
 
     const activeStepLabel = STEPS[this._activeStep]?.short || STEPS[step]?.short || '';
-    const activeSectionLabel = this._activeSection
-      ? this._SECTIONS.find(s => s.key === this._activeSection)?.label
-      : null;
 
     return `
-      <div class="breadcrumb" style="margin-bottom:16px">
-        <a class="breadcrumb-link" onclick="DataPlatformView._backToApplications()">Applications</a>
-        <span class="breadcrumb-sep">›</span>
-        <a class="breadcrumb-link" onclick="DataPlatformView.selectStep(${step})">${loan.id}</a>
-        <span class="breadcrumb-sep">›</span>
-        <span class="breadcrumb-current">${activeSectionLabel || activeStepLabel}</span>
-      </div>
-
       <!-- Sticky Context Bar -->
       <div class="loan-context-bar">
-        <div style="min-width:0;flex-shrink:1">
-          <div class="context-address">${streetAddr}</div>
-          <div class="context-address-sub">${cityState}</div>
+        <div class="breadcrumb" style="margin:0;padding:0;font-size:11px">
+          <a class="breadcrumb-link" onclick="DataPlatformView._backToApplications()">Applications</a>
+          <span class="breadcrumb-sep">›</span>
+          <a class="breadcrumb-link" onclick="DataPlatformView.selectStep(${step})">${loan.id}</a>
+          <span class="breadcrumb-sep">›</span>
+          <span class="breadcrumb-current">${activeStepLabel}</span>
         </div>
-        <div class="context-divider"></div>
-        <div class="context-metrics">
-          <span class="tag">${loan.program}</span>
-          <div class="context-chip">
-            <span class="context-chip-label">Loan ID</span>
-            ${loan.id}
+        <div class="context-row">
+          <div style="min-width:0;flex-shrink:1">
+            <div class="context-address">${streetAddr}</div>
+            <div class="context-address-sub">${cityState}</div>
           </div>
-          <div class="context-chip">
-            <span class="context-chip-label">Amount</span>
-            ${Display.currency(loan.amount)}
-          </div>
-          <div class="context-chip">
-            <span class="context-chip-label">LTV / CLTV</span>
-            ${loan.ltv ?? '—'}% / ${loan.cltv ?? '—'}%
-          </div>
-          <div class="context-chip">
-            <span class="context-chip-label">DTI</span>
-            ${dti}%
-          </div>
-          <div class="context-chip">
-            <span class="context-chip-label">Rate</span>
-            ${rate}
-          </div>
-          <div class="context-chip${rateLockExpiring ? ' chip-danger' : ''}">
-            <span class="context-chip-label">Rate Lock</span>
-            ${rateLockDate}
-          </div>
-          <div class="context-chip">
-            <span class="context-chip-label">Est. Close</span>
-            ${estCloseDate}
+          <div class="context-divider"></div>
+          <div class="context-metrics">
+            <span class="tag">${loan.program}</span>
+            <div class="context-chip">
+              <span class="context-chip-label">Loan ID</span>
+              ${loan.id}
+            </div>
+            <div class="context-chip">
+              <span class="context-chip-label">Amount</span>
+              ${Display.currency(loan.amount)}
+            </div>
+            <div class="context-chip">
+              <span class="context-chip-label">LTV / CLTV</span>
+              ${loan.ltv ?? '—'}% / ${loan.cltv ?? '—'}%
+            </div>
+            <div class="context-chip">
+              <span class="context-chip-label">DTI</span>
+              ${dti}%
+            </div>
+            <div class="context-chip">
+              <span class="context-chip-label">Rate</span>
+              ${rate}
+            </div>
+            <div class="context-chip${rateLockExpiring ? ' chip-danger' : ''}">
+              <span class="context-chip-label">Rate Lock</span>
+              ${rateLockDate}
+            </div>
+            <div class="context-chip">
+              <span class="context-chip-label">Est. Close</span>
+              ${estCloseDate}
+            </div>
           </div>
         </div>
       </div>
@@ -946,17 +844,10 @@ const DataPlatformView = {
       <!-- Stepper -->
       <div class="app-stepper">${stepperHtml}</div>
 
-      <!-- Section jump bar -->
-      <div class="section-jump-bar">
-        ${this._renderSectionJumpBar()}
-      </div>
-
       <!-- Body -->
       <div class="app-detail-body">
         <div class="app-detail-content">
-          ${this._activeSection
-            ? this._renderSectionContent(this._activeSection, loan)
-            : this._renderStepContent(this._activeStep, loan, STEPS)}
+          ${this._renderStepContent(this._activeStep, loan, STEPS)}
         </div>
         <div>
           <!-- Warnings panel -->
@@ -988,9 +879,8 @@ const DataPlatformView = {
 
   _backToApplications() {
     this._selectedApplicationId = null;
-    this._activeSection = null;
+
     App.renderView('/data/applications');
-    Nav.refresh();
   },
 
   _renderStepContent(stepIdx, loan, STEPS) {
@@ -1099,6 +989,14 @@ const DataPlatformView = {
           <div style="margin-top:20px;padding:14px 16px;background:#FEF3C7;border-radius:var(--radius-lg);border:1px solid #FCD34D;font-size:13px;color:#92400E">
             <strong>Action Required:</strong> Appraisal report due by <strong>Apr 10, 2026</strong>. Upload the completed report to proceed.
           </div>
+          <div style="margin-top:20px">
+            <div class="app-step-subsection-title">Required for This Phase</div>
+            ${this._renderStepDocs([
+              { name: 'Appraisal Report', status: 'pending', party: 'Appraiser', date: '' },
+              { name: 'Homeowner\'s Insurance Binder', status: 'pending', party: 'Borrower', date: '' },
+              { name: 'Flood Certification', status: 'pending', party: 'Processor', date: '' },
+            ])}
+          </div>
           <div style="margin-top:12px">
             <button class="btn btn-primary btn-sm">Upload Appraisal Report</button>
           </div>
@@ -1173,6 +1071,27 @@ const DataPlatformView = {
             <button class="btn btn-primary btn-sm">Save Title Info</button>
             <button class="btn btn-secondary btn-sm">Order Title Search</button>
           </div>
+          <div style="margin-top:24px">
+            <div class="app-step-subsection-title">Final Review Conditions</div>
+            ${this._renderStepConditions([
+              { label: 'Title commitment received and reviewed', done: false, party: 'Title Co.', status: 'Pending', doc: '', notes: 'First American engaged, ETA 5 business days' },
+              { label: 'Final underwriting sign-off', done: false, party: 'Processor', status: 'Pending', doc: '', notes: '' },
+              { label: 'Closing Disclosure sent (3-day rule)', done: false, party: 'LO', status: 'Pending', doc: '', notes: 'Must be sent 3 business days before closing' },
+              { label: 'VOE — Verification of Employment', done: false, party: 'LO', status: 'In Review', doc: '', notes: 'Phone verification scheduled' },
+            ])}
+          </div>
+          <div style="margin-top:24px">
+            <div class="app-step-subsection-title">Parties & Contacts</div>
+            <table class="app-detail-table" style="margin-top:8px">
+              <tbody>
+                <tr><td>Borrower</td><td><strong>${loan.borrowerName}</strong></td></tr>
+                <tr><td>Loan Officer</td><td><strong>${State.getUser(loan.loId) ? Display.fullName(State.getUser(loan.loId)) : '—'}</strong></td></tr>
+                <tr><td>Processor</td><td><strong>Kevin Park</strong></td></tr>
+                <tr><td>Appraiser</td><td><strong>Metro Appraisal Services</strong></td></tr>
+                <tr><td>Insurance Agent</td><td><strong>State Farm — J. Mitchell</strong></td></tr>
+              </tbody>
+            </table>
+          </div>
         </div>`;
     }
 
@@ -1192,7 +1111,87 @@ const DataPlatformView = {
         </div>`;
     }
 
-    // Default for other steps
+    // Step 0: Upload Loan File
+    if (stepIdx === 0) {
+      const docs = [
+        { name: 'Loan File Package', status: step?.status === 'completed' ? 'received' : 'pending', party: 'LO', date: step?.status === 'completed' ? 'Mar 16, 2026' : '' },
+        { name: 'Borrower Photo ID', status: step?.status === 'completed' ? 'received' : 'pending', party: 'Borrower', date: step?.status === 'completed' ? 'Mar 16, 2026' : '' },
+        { name: 'Initial Borrower Authorization', status: step?.status === 'completed' ? 'received' : 'pending', party: 'Borrower', date: step?.status === 'completed' ? 'Mar 16, 2026' : '' },
+      ];
+      return `
+        <div class="app-step-section">
+          <div class="app-step-section-title">Upload Loan File</div>
+          <div style="font-size:13px;color:var(--color-text-secondary);margin-bottom:16px">Upload the initial loan package to begin the origination process.</div>
+          <div class="app-step-subsection-title">Required Documents</div>
+          <div style="margin-bottom:16px">${this._renderStepDocs(docs)}</div>
+          <button class="btn btn-primary btn-sm">Upload Loan File</button>
+        </div>`;
+    }
+
+    // Step 1: Prequalification
+    if (stepIdx === 1) {
+      const conditions = [
+        { label: 'Credit report pulled', done: step?.status === 'completed', party: 'System', status: step?.status === 'completed' ? 'Accepted' : 'Pending', doc: step?.status === 'completed' ? 'credit_report_equifax.pdf' : '', notes: `FICO: ${loan.ltv ? Math.round(680 + loan.ltv / 2) : '—'}` },
+        { label: 'Income documentation received', done: step?.status === 'completed', party: 'Borrower', status: step?.status === 'completed' ? 'Accepted' : 'Pending', doc: '', notes: 'W-2s and/or tax returns required' },
+        { label: 'Asset verification initiated', done: step?.status === 'completed', party: 'Borrower', status: step?.status === 'completed' ? 'Accepted' : 'Pending', doc: '', notes: 'Bank statements — 2 most recent months' },
+      ];
+      return `
+        <div class="app-step-section">
+          <div class="app-step-section-title">Prequalification</div>
+          <div style="font-size:13px;color:var(--color-text-secondary);margin-bottom:16px">Verify borrower eligibility before proceeding with the full application.</div>
+          <div class="app-step-subsection-title">Prequalification Conditions <span style="font-size:11px;font-weight:400;color:var(--color-text-muted)">${conditions.filter(c=>c.done).length}/${conditions.length}</span></div>
+          <div style="margin-bottom:16px">${this._renderStepConditions(conditions)}</div>
+          <button class="btn btn-primary btn-sm" ${step?.status === 'completed' ? 'disabled style="opacity:0.5"' : ''}>Mark Prequalification Complete</button>
+        </div>`;
+    }
+
+    // Step 3: Documents Approved
+    if (stepIdx === 3) {
+      const docs = [
+        { name: 'Signed 1003 — Uniform Residential Loan Application', status: 'received', party: 'Borrower', date: 'Mar 18, 2026' },
+        { name: 'W-2 Wage Statements (2 years)', status: 'received', party: 'Borrower', date: 'Mar 20, 2026' },
+        { name: 'Bank Statements (2 months)', status: 'received', party: 'Borrower', date: 'Mar 22, 2026' },
+        { name: 'Federal Tax Returns (2 years)', status: step?.status === 'completed' ? 'received' : 'pending', party: 'Borrower', date: step?.status === 'completed' ? 'Mar 25, 2026' : '' },
+        { name: 'Loan Estimate sent to borrower', status: 'sent', party: 'LO', date: 'Mar 20, 2026' },
+      ];
+      const conditions = [
+        { label: 'All income docs verified and cross-referenced', done: step?.status === 'completed', party: 'Processor', status: step?.status === 'completed' ? 'Accepted' : 'In Review', doc: '', notes: 'Processor must verify employment and income against 1003' },
+        { label: 'Loan Estimate acknowledged by borrower', done: step?.status === 'completed', party: 'Borrower', status: step?.status === 'completed' ? 'Accepted' : 'Pending', doc: '', notes: '' },
+      ];
+      return `
+        <div class="app-step-section">
+          <div class="app-step-section-title">Document Approval Review</div>
+          <div style="font-size:13px;color:var(--color-text-secondary);margin-bottom:16px">Review and approve all submitted documents before ordering the appraisal.</div>
+          <div class="app-step-subsection-title">Documents for This Phase</div>
+          <div style="margin-bottom:20px">${this._renderStepDocs(docs)}</div>
+          <div class="app-step-subsection-title">Approval Conditions <span style="font-size:11px;font-weight:400;color:var(--color-text-muted)">${conditions.filter(c=>c.done).length}/${conditions.length}</span></div>
+          <div style="margin-bottom:16px">${this._renderStepConditions(conditions)}</div>
+          <button class="btn btn-primary btn-sm" ${step?.status === 'completed' ? 'disabled style="opacity:0.5"' : ''}>Approve Documents</button>
+        </div>`;
+    }
+
+    // Step 5: DocuTech / Disclosures
+    if (stepIdx === 5) {
+      const conditions = [
+        { label: 'Initial disclosures sent within 3 business days', done: step?.status === 'completed', party: 'System', status: step?.status === 'completed' ? 'Accepted' : 'In Review', doc: '', notes: 'TRID compliance — Loan Estimate timing' },
+        { label: 'TRID Closing Disclosure prepared', done: false, party: 'Processor', status: 'Pending', doc: '', notes: 'Must be sent 3 business days before closing' },
+        { label: 'HMDA data fields verified', done: step?.status === 'completed', party: 'System', status: step?.status === 'completed' ? 'Accepted' : 'Pending', doc: '', notes: 'Race, ethnicity, sex, income — auto-checked' },
+        { label: 'Fair lending review cleared', done: step?.status === 'completed', party: 'System', status: step?.status === 'completed' ? 'Accepted' : 'Pending', doc: '', notes: '' },
+      ];
+      return `
+        <div class="app-step-section">
+          <div class="app-step-section-title">Disclosures & Compliance</div>
+          <div style="font-size:13px;color:var(--color-text-secondary);margin-bottom:16px">Prepare and send required disclosures. Verify TRID, HMDA, and fair lending compliance.</div>
+          <div class="app-step-subsection-title">Compliance Checklist <span style="font-size:11px;font-weight:400;color:var(--color-text-muted)">${conditions.filter(c=>c.done).length}/${conditions.length}</span></div>
+          <div style="margin-bottom:16px">${this._renderStepConditions(conditions)}</div>
+          <div style="display:flex;gap:10px">
+            <button class="btn btn-primary btn-sm">Send to DocuTech</button>
+            <button class="btn btn-secondary btn-sm">Preview Closing Disclosure</button>
+          </div>
+        </div>`;
+    }
+
+    // Default — completed or pending placeholder
     const isCompleted = step?.status === 'completed';
     return `
       <div class="app-step-section" style="text-align:center;padding:48px 20px">

@@ -140,35 +140,6 @@ const Nav = (() => {
                     onclick="Nav._goLOP('${item.path}')">${item.label}</span>`;
     }).join('');
 
-    // Contextual loan chip when inside a loan detail
-    const inLoanDetail = typeof DataPlatformView !== 'undefined' && DataPlatformView._selectedApplicationId;
-    let loanContextHtml = '';
-    if (inLoanDetail) {
-      const loanId = DataPlatformView._selectedApplicationId;
-      const loan = State.getLoans().find(l => l.id === loanId);
-      const statusLabel = loan ? Display.loanStatusLabel(loan.status) : '';
-      const sections = [
-        { key: 'documents', label: 'Docs' },
-        { key: 'conditions', label: 'Conditions' },
-        { key: 'compliance', label: 'Compliance' },
-        { key: 'contacts', label: 'Contacts' },
-      ];
-      const activeSection = DataPlatformView._activeSection;
-      const sectionLinks = sections.map(s =>
-        `<span class="topnav-section-link ${activeSection === s.key ? 'active' : ''}"
-               onclick="DataPlatformView._jumpToSection('${s.key}')">${s.label}</span>`
-      ).join('');
-
-      loanContextHtml = `
-        <div class="topnav-loan-context">
-          <span class="topnav-loan-chip" onclick="DataPlatformView.selectStep(DataPlatformView._loanStep(${JSON.stringify(loan || {})}))">
-            ${loanId}
-            ${statusLabel ? `<span class="topnav-loan-status">${statusLabel}</span>` : ''}
-          </span>
-          ${sectionLinks}
-        </div>`;
-    }
-
     const adminDropdown = adminItems.length ? `
       <div class="admin-nav-wrap" id="admin-nav-wrap">
         <button class="topnav-link admin-nav-btn ${isOnAdmin ? 'active' : ''}"
@@ -202,7 +173,6 @@ const Nav = (() => {
         <div class="topnav-links">
           ${navLinks}
           ${adminDropdown}
-          ${loanContextHtml}
         </div>
         <div class="topnav-right">
           <div class="topnav-notif" id="topnav-notif" onclick="Nav.toggleNotifications(event)">
