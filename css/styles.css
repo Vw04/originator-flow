@@ -2705,6 +2705,216 @@ label { font-size: 12px; font-weight: 600; color: var(--color-text); }
   color: var(--color-text-muted);
   line-height: 1.3;
 }
+.san-pool-stat-label .pool-info-icon {
+  display: inline-block;
+  width: 14px;
+  height: 14px;
+  border-radius: 50%;
+  border: 1px solid var(--color-border);
+  font-size: 9px;
+  text-align: center;
+  line-height: 13px;
+  color: var(--color-text-muted);
+  margin-left: 3px;
+  cursor: help;
+  vertical-align: middle;
+}
+
+/* ============================================================
+   LOP — Pool Summary Dashboard Section
+   ============================================================ */
+.pool-summary-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 20px;
+  flex-wrap: wrap;
+  gap: 10px;
+}
+.pool-summary-header .card-title { margin-bottom: 0; }
+.pool-summary-header-left {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+.pool-filter-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  background: var(--color-surface);
+  border: 1px solid var(--color-border);
+  border-radius: 16px;
+  padding: 4px 12px;
+  font-size: 11px;
+  color: var(--color-text-secondary);
+  white-space: nowrap;
+}
+.pool-filter-chip-x {
+  cursor: pointer;
+  font-size: 13px;
+  color: var(--color-text-muted);
+  line-height: 1;
+}
+.pool-filter-chip-x:hover { color: var(--color-danger); }
+.pool-filter-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  background: var(--color-card);
+  border: 1px solid var(--color-border);
+  border-radius: 6px;
+  padding: 5px 12px;
+  font-size: 12px;
+  color: var(--color-text-secondary);
+  cursor: pointer;
+  white-space: nowrap;
+}
+.pool-filter-btn:hover { border-color: var(--color-primary); color: var(--color-primary); }
+.pool-filter-btn svg { width: 14px; height: 14px; }
+
+/* ---- Map ---- */
+.pool-map-container {
+  background: var(--color-surface);
+  border: 1px solid var(--color-border-light);
+  border-radius: var(--radius, 8px);
+  overflow: hidden;
+  padding: 20px;
+  margin-top: 20px;
+  margin-bottom: 20px;
+}
+.pool-map-title {
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--color-text);
+  margin-bottom: 12px;
+}
+.pool-map-wrap {
+  display: flex;
+  gap: 16px;
+  align-items: flex-start;
+}
+.pool-map-svg-wrap { flex: 1; min-width: 0; }
+.pool-map-svg {
+  width: 100%;
+  height: auto;
+  display: block;
+}
+.pool-map-svg path {
+  stroke: #FFFFFF;
+  stroke-width: 0.8;
+  transition: opacity 0.15s;
+  cursor: default;
+}
+.pool-map-svg path:hover {
+  opacity: 0.75;
+  stroke-width: 1.4;
+}
+.pool-map-legend {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 0;
+  flex-shrink: 0;
+  padding-top: 24px;
+}
+.pool-map-legend-title {
+  font-size: 11px;
+  font-weight: 600;
+  color: var(--color-text-secondary);
+  margin-bottom: 8px;
+  white-space: nowrap;
+}
+.pool-map-legend-bar {
+  width: 14px;
+  height: 160px;
+  border-radius: 4px;
+  background: linear-gradient(to bottom, #1D3D2A, #2E7D32, #66BB6A, #A5D6A7, #E8F5E9);
+}
+.pool-map-legend-labels {
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  height: 160px;
+  font-size: 10px;
+  color: var(--color-text-muted);
+  text-align: right;
+  margin-right: 6px;
+}
+.pool-map-legend-row {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+.pool-map-legend-tick {
+  width: 6px;
+  border-top: 1px solid var(--color-text-muted);
+}
+
+/* ---- Charts 2x2 grid ---- */
+.pool-charts-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 20px;
+}
+.pool-chart-card {
+  background: var(--color-card);
+  border: 1px solid var(--color-border-light);
+  border-radius: var(--radius, 8px);
+  padding: 20px;
+}
+.pool-chart-title {
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--color-text);
+  margin-bottom: 16px;
+}
+.pool-bar-row {
+  display: grid;
+  grid-template-columns: 72px 1fr;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 10px;
+}
+.pool-bar-label {
+  font-size: 11px;
+  color: var(--color-text-secondary);
+  text-align: right;
+  white-space: nowrap;
+}
+.pool-bar-track {
+  height: 18px;
+  background: var(--color-surface);
+  border-radius: 3px;
+  overflow: hidden;
+  position: relative;
+  display: flex;
+}
+.pool-bar-fill {
+  height: 100%;
+  border-radius: 3px;
+  min-width: 2px;
+  transition: width 0.3s ease;
+}
+.pool-bar-fill-blue { background: #4A7B9D; }
+.pool-bar-fill-gold { background: #D4B896; }
+.pool-chart-xaxis {
+  display: flex;
+  justify-content: space-between;
+  margin-top: 6px;
+  padding-left: 80px;
+  font-size: 10px;
+  color: var(--color-text-muted);
+}
+
+/* ---- Responsive ---- */
+@media (max-width: 900px) {
+  .pool-charts-grid { grid-template-columns: 1fr; }
+  .san-pool-grid { grid-template-columns: repeat(2, 1fr); }
+  .pool-map-wrap { flex-direction: column; }
+  .pool-map-legend { flex-direction: row; align-items: center; }
+  .pool-map-legend-bar { width: 160px; height: 14px; background: linear-gradient(to right, #E8F5E9, #66BB6A, #2E7D32, #1D3D2A); }
+  .pool-map-legend-labels { flex-direction: row; width: 160px; height: auto; }
+}
 
 /* ============================================================
    LOP — Filter Tabs (Applications)

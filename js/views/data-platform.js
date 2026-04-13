@@ -380,11 +380,221 @@ const DataPlatformView = {
         </div>`;
     })();
 
+    const poolSummarySection = this._renderPoolSummary();
+
     return `
       ${kpiHtml}
-      ${attnSection}
+      ${poolSummarySection}
       ${pipelineSection}
+      ${attnSection}
       ${branchSection}`;
+  },
+
+  /* ================================================================
+     POOL SUMMARY & ANALYTICS
+  ================================================================ */
+  _renderPoolSummary() {
+    const pool = State.getPoolSummary();
+
+    /* ── Color interpolation for map ── */
+    const stateValues = Object.values(pool.stateData).map(s => s.totalValue);
+    const minVal = Math.min(...stateValues);
+    const maxVal = Math.max(...stateValues);
+    const stops = [[232,245,233],[165,214,167],[102,187,106],[46,125,50],[29,61,42]];
+    function getStateColor(value) {
+      const t = Math.max(0, Math.min(1, (value - minVal) / (maxVal - minVal)));
+      const idx = t * (stops.length - 1);
+      const lo = Math.floor(idx);
+      const hi = Math.min(lo + 1, stops.length - 1);
+      const f = idx - lo;
+      const r = Math.round(stops[lo][0] + (stops[hi][0] - stops[lo][0]) * f);
+      const g = Math.round(stops[lo][1] + (stops[hi][1] - stops[lo][1]) * f);
+      const b = Math.round(stops[lo][2] + (stops[hi][2] - stops[lo][2]) * f);
+      return `rgb(${r},${g},${b})`;
+    }
+
+    /* ── Header ── */
+    const headerHtml = `
+      <div class="pool-summary-header">
+        <div class="pool-summary-header-left">
+          <div class="card-title">Homium SAN Pool Summary</div>
+          <span class="pool-filter-chip">
+            <span class="pool-filter-chip-x">&times;</span>
+            In Progress Applications: Included
+          </span>
+        </div>
+        <button class="pool-filter-btn">
+          Filters (1)
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 3H2l8 9.46V19l4 2v-8.54L22 3z"/></svg>
+        </button>
+      </div>`;
+
+    /* ── Metrics grid ── */
+    const metrics = [
+      { label: 'Average Loan Size',                  value: Display.currency(pool.avgLoanSize) },
+      { label: 'Total Number of Loans',              value: pool.totalLoans.toLocaleString() },
+      { label: 'Total Loan Value (QV)',              value: Display.currency(pool.totalLoanValueQV) },
+      { label: 'Total Underlying Property Value (FMV)', value: Display.currency(pool.totalPropertyValueFMV) },
+      { label: 'Weighted Average Age (Months)',      value: pool.weightedAvgAgeMonths.toFixed(1) },
+      { label: 'Weighted Average Original FICO',     value: pool.weightedAvgFICO.toFixed(1) },
+      { label: 'Weighted Average Original LTV',      value: pool.weightedAvgLTV.toFixed(1) + '%' },
+      { label: 'Weighted Average Original CLTV',     value: pool.weightedAvgCLTV.toFixed(1) + '%' },
+    ];
+    const metricsHtml = `
+      <div class="san-pool-grid">
+        ${metrics.map(m => `
+          <div>
+            <div class="san-pool-stat-label">${m.label} <span class="pool-info-icon" title="${m.label}">?</span></div>
+            <div class="san-pool-stat-value">${m.value}</div>
+          </div>`).join('')}
+      </div>`;
+
+    /* ── US Map ── */
+    const statePathsHtml = Object.entries(US_STATE_PATHS).map(([abbr, path]) => {
+      const data = pool.stateData[abbr];
+      const fill = data ? getStateColor(data.totalValue) : '#F0EFE9';
+      const name = US_STATE_NAMES[abbr] || abbr;
+      const title = data
+        ? `${name}: ${data.loans} loan${data.loans !== 1 ? 's' : ''}, ${Display.currency(data.totalValue)}`
+        : name;
+      return `<path d="${path}" fill="${fill}"><title>${title}</title></path>`;
+    }).join('\n');
+
+    const legendSteps = 4;
+    const legendLabels = [];
+    for (let i = 0; i <= legendSteps; i++) {
+      const val = minVal + (maxVal - minVal) * (i / legendSteps);
+      legendLabels.push(val >= 1000000
+        ? '$' + (val / 1000000).toFixed(2) + 'M'
+        : '$' + (val / 1000).toFixed(2) + 'K');
+    }
+
+    const mapHtml = `
+      <div class="pool-map-container">
+        <div class="pool-map-title">Homium Loan By Location</div>
+        <div class="pool-map-wrap">
+          <div class="pool-map-svg-wrap">
+            <svg class="pool-map-svg" viewBox="0 0 960 620" preserveAspectRatio="xMidYMid meet">
+              ${statePathsHtml}
+            </svg>
+          </div>
+          <div class="pool-map-legend">
+            <div class="pool-map-legend-title">Total Loan Value (QV)</div>
+            <div style="display:flex;gap:4px;align-items:stretch">
+              <div class="pool-map-legend-labels">
+                ${legendLabels.reverse().map(l => `
+                  <div class="pool-map-legend-row">
+                    <span>${l}</span>
+                    <span class="pool-map-legend-tick"></span>
+                  </div>`).join('')}
+              </div>
+              <div class="pool-map-legend-bar"></div>
+            </div>
+          </div>
+        </div>
+      </div>`;
+
+    /* ── Helper: horizontal bar chart ── */
+    function renderBarChart(title, data, colors) {
+      const maxVal = Math.max(...data.map(d => d.value));
+      const xSteps = 5;
+      const xLabels = [];
+      for (let i = 0; i <= xSteps; i++) {
+        const v = (maxVal / xSteps) * i;
+        xLabels.push(v >= 1000000 ? '$' + (v / 1000000).toFixed(1) + 'M'
+                   : v >= 1000    ? '$' + Math.round(v / 1000).toLocaleString() + 'K'
+                   : '$' + Math.round(v));
+      }
+
+      const rows = data.map(d => {
+        const pct = maxVal > 0 ? (d.value / maxVal) * 100 : 0;
+        if (d.value2 !== undefined) {
+          const pct1 = maxVal > 0 ? (d.value / maxVal) * 100 : 0;
+          const pct2 = maxVal > 0 ? (d.value2 / maxVal) * 100 : 0;
+          return `
+            <div class="pool-bar-row">
+              <div class="pool-bar-label">${d.label}</div>
+              <div class="pool-bar-track">
+                <div class="pool-bar-fill pool-bar-fill-gold" style="width:${Math.max(pct1, 0.5)}%"></div>
+                <div class="pool-bar-fill pool-bar-fill-blue" style="width:${Math.max(pct2, 0.5)}%"></div>
+              </div>
+            </div>`;
+        }
+        const colorClass = colors || 'pool-bar-fill-blue';
+        return `
+          <div class="pool-bar-row">
+            <div class="pool-bar-label">${d.label}</div>
+            <div class="pool-bar-track">
+              <div class="pool-bar-fill ${colorClass}" style="width:${Math.max(pct, 1)}%"></div>
+            </div>
+          </div>`;
+      }).join('');
+
+      return `
+        <div class="pool-chart-card">
+          <div class="pool-chart-title">${title}</div>
+          ${rows}
+          <div class="pool-chart-xaxis">
+            ${xLabels.map(l => `<span>${l}</span>`).join('')}
+          </div>
+        </div>`;
+    }
+
+    /* ── Vintage chart (stacked gold + blue) ── */
+    const vintageData = pool.vintageData.map(d => ({
+      label: d.label,
+      value: Math.round(d.value * 0.15),
+      value2: Math.round(d.value * 0.85),
+    }));
+    const vintageMax = Math.max(...vintageData.map(d => d.value + d.value2));
+    const vintageRows = vintageData.map(d => {
+      const pct1 = vintageMax > 0 ? (d.value / vintageMax) * 100 : 0;
+      const pct2 = vintageMax > 0 ? (d.value2 / vintageMax) * 100 : 0;
+      return `
+        <div class="pool-bar-row">
+          <div class="pool-bar-label">${d.label}</div>
+          <div class="pool-bar-track">
+            <div class="pool-bar-fill pool-bar-fill-gold" style="width:${Math.max(pct1, 0.5)}%"></div>
+            <div class="pool-bar-fill pool-bar-fill-blue" style="width:${Math.max(pct2, 0.5)}%"></div>
+          </div>
+        </div>`;
+    }).join('');
+    const vintXSteps = 5;
+    const vintXLabels = [];
+    for (let i = 0; i <= vintXSteps; i++) {
+      const v = (vintageMax / vintXSteps) * i;
+      vintXLabels.push(v >= 1000000 ? '$' + (v / 1000000).toFixed(1) + 'M'
+                     : v >= 1000    ? '$' + Math.round(v / 1000).toLocaleString() + 'K'
+                     : '$' + Math.round(v));
+    }
+    const vintageChart = `
+      <div class="pool-chart-card">
+        <div class="pool-chart-title">Loan Vintage (Application Date)</div>
+        ${vintageRows}
+        <div class="pool-chart-xaxis">
+          ${vintXLabels.map(l => `<span>${l}</span>`).join('')}
+        </div>
+      </div>`;
+
+    const ltvChart    = renderBarChart('LTV Range', pool.ltvRangeData);
+    const ficoChart   = renderBarChart('FICO Range', pool.ficoRangeData);
+    const incomeChart = renderBarChart('Household Annual Income', pool.incomeRangeData);
+
+    const chartsHtml = `
+      <div class="pool-charts-grid">
+        ${vintageChart}
+        ${ltvChart}
+        ${ficoChart}
+        ${incomeChart}
+      </div>`;
+
+    return `
+      <div class="card" style="margin-bottom:20px">
+        ${headerHtml}
+        ${metricsHtml}
+        ${mapHtml}
+        ${chartsHtml}
+      </div>`;
   },
 
   /* ================================================================

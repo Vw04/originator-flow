@@ -17,6 +17,7 @@ const State = (() => {
   let _templates   = JSON.parse(JSON.stringify(DEMO_DATA.permissionTemplates));
   let _assignments = JSON.parse(JSON.stringify(DEMO_DATA.branchAssignments));
   let _auditLog    = JSON.parse(JSON.stringify(DEMO_DATA.auditLog));
+  let _poolSummary = JSON.parse(JSON.stringify(DEMO_DATA.poolSummary));
 
   let _currentRole = null;  // role key: 'sys_admin' | 'operator' | 'prog_admin' | 'lo' | 'lp' | 'investor'
   let _currentUser = null;  // user object (simulated logged-in user per role)
@@ -189,6 +190,9 @@ const State = (() => {
     getLoan:           (id) => _loans.find(l => l.id === id),
     getLoansByLO:      (uid) => _loans.filter(l => l.loId === uid),
     getLoansByCompany: (cid) => _loans.filter(l => l.companyId === cid),
+
+    /* ---- Pool Summary ---- */
+    getPoolSummary: () => _poolSummary,
 
     /* ---- Policies / Permissions ---- */
     getPolicies: () => [..._policies],
