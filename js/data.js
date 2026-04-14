@@ -103,16 +103,40 @@ const DEMO_DATA = {
   /* ---- Loans / Originations ---- */
   loans: [
     // Capital City Lending — DC Dream Fund
-    { id: 'DCDC000001', companyId: 'co-001', branchId: 'br-001', loId: 'user-004', borrowerName: 'Evelyn & Marcus Ross',      address: '3407 Wisconsin Ave NW, Washington, DC 20016',  amount: 195000, program: 'DC Dream Fund', status: 'initial_application_submitted',    ltv: 71, submittedAt: '2026-03-18', cltv: 75, fico: 742, householdIncome: 125000 },
-    { id: 'DCDC000002', companyId: 'co-001', branchId: 'br-001', loId: 'user-004', borrowerName: 'Carolyn Dupree',            address: '1244 U St NW, Washington, DC 20009',            amount: 220000, program: 'DC Dream Fund', status: 'application_documents_approved',    ltv: 64, submittedAt: '2026-03-10', cltv: 67, fico: 718, householdIncome: 88000 },
-    { id: 'DCDC000003', companyId: 'co-001', branchId: 'br-001', loId: 'user-004', borrowerName: 'Terrence & Faith Hill',     address: '509 G St NE, Washington, DC 20002',             amount: 155000, program: 'DC Dream Fund', status: 'completed',                         ltv: 69, submittedAt: '2026-02-21', cltv: 72, fico: 765, householdIncome: 145000 },
-    { id: 'DCDC000004', companyId: 'co-001', branchId: 'br-001', loId: 'user-004', borrowerName: 'Naomi Jefferson',           address: '744 Rittenhouse St NW, Washington, DC 20011',  amount: 105000, program: 'DC Dream Fund', status: 'prequalification_in_progress',      ltv: 66, submittedAt: null,         cltv: null, fico: 695, householdIncome: 62000 },
-    { id: 'DCDC000005', companyId: 'co-001', branchId: 'br-002', loId: 'user-005', borrowerName: 'Antoine & Carmen Watkins',  address: '2301 Pennsylvania Ave SE, Washington, DC 20020', amount: 230000, program: 'DC Dream Fund', status: 'sent_to_docutech',                  ltv: 73, submittedAt: '2026-03-21', cltv: 77, fico: 731, householdIncome: 110000 },
-    { id: 'DCDC000006', companyId: 'co-001', branchId: 'br-002', loId: 'user-005', borrowerName: 'Loretta Simmons',           address: '4829 Bending Creek Rd, Washington, DC 20019',  amount: 175000, program: 'DC Dream Fund', status: 'origination_created',               ltv: 68, submittedAt: '2026-03-12', cltv: 71, fico: 708, householdIncome: 78000 },
+    { id: 'DCDC000001', companyId: 'co-001', branchId: 'br-001', loId: 'user-004', borrowerName: 'Evelyn & Marcus Ross',      address: '3407 Wisconsin Ave NW, Washington, DC 20016',  amount: 195000, program: 'DC Dream Fund', status: 'initial_application_submitted',    ltv: 71, submittedAt: '2026-03-18', cltv: 75, fico: 742, householdIncome: 125000,
+      phase: 'origination', updatedAt: '2026-04-08', loanType: 'Purchase', minNumber: '1017511284103562', propertyUnit: '-',
+      appraisedHomeValue: 550000, firstMortgageBalance: 355000, closingDate: null, disbursementDate: null, closingFees: null, borrowerNet: null, hAtMinting: null, hToInvestor: null,
+      originatorCompany: 'Capital City Lending', originatorNmls: '2045871', appraiserCompany: 'TBD', appraiserName: '', appraiserLicense: 'TBD' },
+    { id: 'DCDC000002', companyId: 'co-001', branchId: 'br-001', loId: 'user-004', borrowerName: 'Carolyn Dupree',            address: '1244 U St NW, Washington, DC 20009',            amount: 220000, program: 'DC Dream Fund', status: 'application_documents_approved',    ltv: 64, submittedAt: '2026-03-10', cltv: 67, fico: 718, householdIncome: 88000,
+      phase: 'origination', updatedAt: '2026-04-09', loanType: 'Purchase', minNumber: '1017511285209841', propertyUnit: '-',
+      appraisedHomeValue: 685000, firstMortgageBalance: 465000, closingDate: null, disbursementDate: null, closingFees: null, borrowerNet: null, hAtMinting: null, hToInvestor: null,
+      originatorCompany: 'Capital City Lending', originatorNmls: '2045871', appraiserCompany: 'Metro Appraisal Services', appraiserName: 'David Kowalski', appraiserLicense: 'DC-APR-2847' },
+    { id: 'DCDC000003', companyId: 'co-001', branchId: 'br-001', loId: 'user-004', borrowerName: 'Terrence & Faith Hill',     address: '509 G St NE, Washington, DC 20002',             amount: 155000, program: 'DC Dream Fund', status: 'completed',                         ltv: 69, submittedAt: '2026-02-21', cltv: 72, fico: 765, householdIncome: 145000,
+      phase: 'origination', updatedAt: '2026-04-02', loanType: 'Purchase', minNumber: '1017511282047193', propertyUnit: '-',
+      appraisedHomeValue: 500000, firstMortgageBalance: 335000, closingDate: '2026-03-28', disbursementDate: '2026-03-29', closingFees: 977.25, borrowerNet: 149022.75, hAtMinting: 1.0, hToInvestor: 0.87,
+      originatorCompany: 'Capital City Lending', originatorNmls: '2045871', appraiserCompany: 'Pinnacle Valuation Group', appraiserName: 'Sharon Reeves', appraiserLicense: 'DC-APR-1193' },
+    { id: 'DCDC000004', companyId: 'co-001', branchId: 'br-001', loId: 'user-004', borrowerName: 'Naomi Jefferson',           address: '744 Rittenhouse St NW, Washington, DC 20011',  amount: 105000, program: 'DC Dream Fund', status: 'prequalification_in_progress',      ltv: 66, submittedAt: null,         cltv: null, fico: 695, householdIncome: 62000,
+      phase: 'prequalification', updatedAt: '2026-04-11', loanType: 'Purchase', minNumber: 'PREQUALIFICATION', propertyUnit: '-',
+      appraisedHomeValue: null, firstMortgageBalance: null, closingDate: null, disbursementDate: null, closingFees: null, borrowerNet: null, hAtMinting: null, hToInvestor: null,
+      originatorCompany: 'Capital City Lending', originatorNmls: '2045871', appraiserCompany: 'TBD', appraiserName: '', appraiserLicense: 'TBD' },
+    { id: 'DCDC000005', companyId: 'co-001', branchId: 'br-002', loId: 'user-005', borrowerName: 'Antoine & Carmen Watkins',  address: '2301 Pennsylvania Ave SE, Washington, DC 20020', amount: 230000, program: 'DC Dream Fund', status: 'sent_to_docutech',                  ltv: 73, submittedAt: '2026-03-21', cltv: 77, fico: 731, householdIncome: 110000,
+      phase: 'origination', updatedAt: '2026-04-10', loanType: 'Purchase', minNumber: '1017511286310478', propertyUnit: '-',
+      appraisedHomeValue: 630000, firstMortgageBalance: 400000, closingDate: null, disbursementDate: null, closingFees: 1245.00, borrowerNet: null, hAtMinting: null, hToInvestor: null,
+      originatorCompany: 'Capital City Lending', originatorNmls: '2045871', appraiserCompany: 'District Appraisals LLC', appraiserName: 'Marcus Chen', appraiserLicense: 'DC-APR-3501' },
+    { id: 'DCDC000006', companyId: 'co-001', branchId: 'br-002', loId: 'user-005', borrowerName: 'Loretta Simmons',           address: '4829 Bending Creek Rd, Washington, DC 20019',  amount: 175000, program: 'DC Dream Fund', status: 'origination_created',               ltv: 68, submittedAt: '2026-03-12', cltv: 71, fico: 708, householdIncome: 78000,
+      phase: 'origination', updatedAt: '2026-04-07', loanType: 'Purchase', minNumber: '1017511283158264', propertyUnit: '-',
+      appraisedHomeValue: 515000, firstMortgageBalance: 340000, closingDate: '2026-04-18', disbursementDate: '2026-04-19', closingFees: 1102.50, borrowerNet: 168897.50, hAtMinting: null, hToInvestor: null,
+      originatorCompany: 'Capital City Lending', originatorNmls: '2045871', appraiserCompany: 'Pinnacle Valuation Group', appraiserName: 'Thomas Grant', appraiserLicense: 'DC-APR-2210' },
 
     // Bluegrass Home Finance — Kentucky Dream Fund
-    { id: 'KDKY000001', companyId: 'co-002', branchId: 'br-004', loId: 'user-011', borrowerName: 'Floyd & Barbara Jennings', address: '1025 Bardstown Rd, Louisville, KY 40204',       amount: 160000, program: 'Kentucky Dream Fund', status: 'pending_origination_creation',  ltv: 67, submittedAt: '2026-03-17', cltv: 70, fico: 755, householdIncome: 95000 },
-    { id: 'KDKY000002', companyId: 'co-002', branchId: 'br-004', loId: 'user-011', borrowerName: 'Celeste Tanner',           address: '633 E Main St, Lexington, KY 40508',            amount: 145000, program: 'Kentucky Dream Fund', status: 'original_appraisal_submitted',  ltv: 72, submittedAt: '2026-03-05', cltv: 75, fico: 682, householdIncome: 54000 },
+    { id: 'KDKY000001', companyId: 'co-002', branchId: 'br-004', loId: 'user-011', borrowerName: 'Floyd & Barbara Jennings', address: '1025 Bardstown Rd, Louisville, KY 40204',       amount: 160000, program: 'Kentucky Dream Fund', status: 'pending_origination_creation',  ltv: 67, submittedAt: '2026-03-17', cltv: 70, fico: 755, householdIncome: 95000,
+      phase: 'origination', updatedAt: '2026-04-06', loanType: 'Purchase', minNumber: '1017511287421589', propertyUnit: '-',
+      appraisedHomeValue: 475000, firstMortgageBalance: 315000, closingDate: null, disbursementDate: null, closingFees: null, borrowerNet: null, hAtMinting: null, hToInvestor: null,
+      originatorCompany: 'Bluegrass Home Finance', originatorNmls: '3178904', appraiserCompany: 'Bluegrass Appraisals', appraiserName: 'Rachel Morrison', appraiserLicense: 'KY-APR-5582' },
+    { id: 'KDKY000002', companyId: 'co-002', branchId: 'br-004', loId: 'user-011', borrowerName: 'Celeste Tanner',           address: '633 E Main St, Lexington, KY 40508',            amount: 145000, program: 'Kentucky Dream Fund', status: 'original_appraisal_submitted',  ltv: 72, submittedAt: '2026-03-05', cltv: 75, fico: 682, householdIncome: 54000,
+      phase: 'origination', updatedAt: '2026-04-04', loanType: 'Purchase', minNumber: '1017511288532690', propertyUnit: '-',
+      appraisedHomeValue: 402000, firstMortgageBalance: 257000, closingDate: null, disbursementDate: null, closingFees: null, borrowerNet: null, hAtMinting: null, hToInvestor: null,
+      originatorCompany: 'Bluegrass Home Finance', originatorNmls: '3178904', appraiserCompany: 'Commonwealth Valuations', appraiserName: 'James Whitfield', appraiserLicense: 'KY-APR-4417' },
   ],
 
   /* ---- Permission Policies ---- */
@@ -469,10 +493,11 @@ const Display = {
   })[s] || 'badge-neutral',
 
   loanStatusLabel: (s) => ({
-    prequalification_in_progress:    'Prequalification In Progress',
+    draft:                           'Draft',
+    prequalification_in_progress:    'Prequalification In Review',
     initial_application_submitted:   'Initial Application Submitted',
     completed:                       'Completed',
-    sent_to_docutech:                'Sent to Docutech',
+    sent_to_docutech:                'Sent to DocuTech',
     origination_created:             'Origination Created',
     application_documents_approved:  'Application Docs Approved',
     pending_origination_creation:    'Pending Origination Creation',
@@ -481,6 +506,7 @@ const Display = {
   })[s] || s,
 
   loanStatusClass: (s) => ({
+    draft:                           'badge-neutral',
     prequalification_in_progress:    'badge-progress',
     initial_application_submitted:   'badge-submitted',
     completed:                       'badge-complete',
@@ -510,4 +536,92 @@ const Display = {
     const days = Math.floor(hrs / 24);
     return `${days}d ago`;
   },
+
+  originationPhaseLabel: (p) => ({
+    origination: 'Origination',
+    prequalification: 'Prequalification',
+  })[p] || p,
+
+  taskStatusIcon: (s) => ({
+    done: '<span class="orig-task-icon done">&#10003;</span>',
+    active: '<span class="orig-task-icon active">&#9679;</span>',
+    pending: '<span class="orig-task-icon pending">&#9675;</span>',
+  })[s] || '<span class="orig-task-icon pending">&#9675;</span>',
 };
+
+/* ---- Origination Process Factory ---- */
+/* Returns a 6-stage process array with task statuses derived from loan status */
+function generateOriginationProcess(status) {
+  /* Status-to-step mapping (0-based index into a flat 32-task sequence) */
+  const STATUS_STEP = {
+    draft: 0,
+    prequalification_in_progress: 2,
+    initial_application_submitted: 5,
+    application_documents_approved: 10,
+    original_appraisal_submitted: 13,
+    sent_to_docutech: 18,
+    pending_origination_creation: 22,
+    origination_created: 26,
+    completed: 32,
+  };
+  const currentStep = STATUS_STEP[status] ?? 0;
+
+  const STAGES = [
+    { id: 'prequalification', label: 'Prequalification', tasks: [
+      { id: 'pq_creation',  label: 'Prequalification Creation',  role: 'Loan Officer',     action: null },
+      { id: 'pq_submitted', label: 'Prequalification Submitted', role: 'Loan Officer',     action: null },
+      { id: 'pq_review',    label: 'Prequalification Review',    role: 'Account Manager',  action: 'Review' },
+      { id: 'pq_accepted',  label: 'Prequalification Accepted',  role: 'Loan Officer',     action: null },
+    ]},
+    { id: 'application_disclosures', label: 'Application & Disclosures', tasks: [
+      { id: 'ad_initial',       label: 'Initial Application Submission',                    role: 'Loan Officer',     action: null },
+      { id: 'ad_title',         label: 'Validate Title Information & Send Initial Disclosures', role: 'Account Manager', action: 'Validate' },
+      { id: 'ad_disclosures',   label: 'Initial Disclosures Signed',                        role: 'Borrower',         action: null },
+      { id: 'ad_borrower_docs', label: 'Borrower Qualification Documents',                  role: 'Loan Officer',     action: null },
+      { id: 'ad_app_docs',      label: 'Application Documents Uploaded',                    role: 'Loan Officer',     action: null },
+      { id: 'ad_final',         label: 'Final Application Submission',                      role: 'Loan Officer',     action: null },
+    ]},
+    { id: 'cda_appraisal', label: 'CDA & Appraisal', tasks: [
+      { id: 'ca_upload',   label: 'Upload Appraisal Documents',  role: 'Loan Officer',     action: 'Upload' },
+      { id: 'ca_approve',  label: 'Approve Appraisal Documents', role: 'Account Manager',  action: 'Review Documents' },
+      { id: 'ca_order',    label: 'Order CDA',                   role: 'Account Manager',  action: 'Order CDA' },
+      { id: 'ca_report',   label: 'CDA Report Generation',       role: 'Account Manager',  action: null },
+      { id: 'ca_review',   label: 'View and Approve CDA',        role: 'Account Manager',  action: 'Review CDA' },
+    ]},
+    { id: 'clear_close', label: 'Clear to Close & Closing', tasks: [
+      { id: 'cc_docs',      label: 'Application Documents Approved',               role: 'Account Manager',  action: null },
+      { id: 'cc_atr',       label: 'ATR / AMI Submitted',                          role: 'Account Manager',  action: 'ATR / AMI' },
+      { id: 'cc_ctc',       label: 'Clear to Close Submitted',                     role: 'Account Manager',  action: 'Clear to Close' },
+      { id: 'cc_prelim',    label: 'Upload and Approve Preliminary Closing Package', role: 'Account Manager', action: null },
+      { id: 'cc_san',       label: 'Upload and Approve SAN Note',                  role: 'Account Manager',  action: null },
+      { id: 'cc_dates',     label: 'Set Closing & Disbursement Dates',             role: 'Account Manager',  action: null },
+      { id: 'cc_fees',      label: 'Validate Fees',                                role: 'Account Manager',  action: null },
+      { id: 'cc_submit',    label: 'Submit Closing Package',                       role: 'Account Manager',  action: null },
+    ]},
+    { id: 'post_closing', label: 'Post-Closing & Funding', tasks: [
+      { id: 'pc_validate',  label: 'Validate Post-Closing Data',                   role: 'Account Manager',  action: 'Post Closing' },
+      { id: 'pc_files',     label: 'Generate Files (WAB, Disbursement, MERS)',     role: 'Account Manager',  action: 'Post Closing' },
+      { id: 'pc_package',   label: 'Loan Package Upload',                          role: 'Account Manager',  action: 'Loan Package Upload' },
+      { id: 'pc_funding',   label: 'Submit Funding Details',                       role: 'Account Manager',  action: 'Submit Funding Details' },
+    ]},
+    { id: 'transfer_minting', label: 'Transfer & Minting', tasks: [
+      { id: 'tm_securitize', label: 'Submit to Securitize for Batch Processing',   role: 'Account Manager',  action: null },
+      { id: 'tm_approval',   label: 'Approval Received',                           role: 'Account Manager',  action: null },
+      { id: 'tm_mers',       label: 'MERS Registration & TOB2 Transfer',           role: 'Account Manager',  action: null },
+      { id: 'tm_mint',       label: 'Mint',                                        role: 'Account Manager',  action: 'Mint' },
+      { id: 'tm_servicing',  label: 'Servicing Email with Loan Files',             role: 'Account Manager',  action: null },
+    ]},
+  ];
+
+  let taskIdx = 0;
+  return STAGES.map(stage => {
+    const tasks = stage.tasks.map(t => {
+      const s = taskIdx < currentStep ? 'done' : taskIdx === currentStep ? 'active' : 'pending';
+      taskIdx++;
+      return { ...t, status: s, action: s === 'pending' || s === 'active' ? t.action : null };
+    });
+    const doneCount = tasks.filter(t => t.status === 'done').length;
+    const stageStatus = doneCount === tasks.length ? 'completed' : doneCount > 0 || tasks.some(t => t.status === 'active') ? 'in_progress' : 'pending';
+    return { id: stage.id, label: stage.label, status: stageStatus, tasks };
+  });
+}
