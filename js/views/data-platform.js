@@ -394,6 +394,14 @@ const DataPlatformView = {
     const poolSummarySection = this._renderPoolSummary();
 
     return `
+      <div class="page-header">
+        <div class="page-header-inner">
+          <div class="page-header-left">
+            <div class="page-title">Dashboard</div>
+            <div class="page-subtitle">Pipeline overview and analytics</div>
+          </div>
+        </div>
+      </div>
       ${kpiHtml}
       ${poolSummarySection}
       ${pipelineSection}
@@ -712,20 +720,51 @@ const DataPlatformView = {
         </tr>`;
     }).join('');
 
+    // KPI metrics (originator-focused)
+    const active    = allLoans.filter(l => l.status !== 'draft' && l.status !== 'completed');
+    const activeVal = active.reduce((s, l) => s + l.amount, 0);
+    const avgDays   = active.length
+      ? Math.round(active.reduce((s, l) => s + this._daysInStage(l), 0) / active.length)
+      : 0;
+    const closeRate = allLoans.length ? Math.round((done.length / allLoans.length) * 100) : 0;
+
+    const kpis = [
+      { label: 'My Applications', value: allLoans.length, sub: Display.currency(allLoans.reduce((s,l)=>s+l.amount,0)) + ' total value' },
+      { label: 'Active Pipeline',  value: Display.currency(activeVal), sub: `${active.length} loan${active.length !== 1 ? 's' : ''} in progress` },
+      { label: 'Pending Actions',  value: needsAction.length, sub: needsAction.length ? 'Need attention' : 'All on track', accent: needsAction.length > 0 },
+      { label: 'In Review',        value: inReview.length, sub: 'With Homium team' },
+      { label: 'Avg Days in Stage', value: avgDays, sub: active.length ? 'Active loans' : 'No active loans' },
+      { label: 'Close Rate',       value: closeRate + '%', sub: `${done.length} of ${allLoans.length} completed` },
+    ];
+
+    const kpiHtml = `<div class="lop-kpi-cards" style="grid-template-columns:repeat(6,1fr);margin-bottom:20px">${
+      kpis.map(k => `
+        <div class="lop-kpi-card">
+          <div class="lop-kpi-value" ${k.accent ? 'style="color:var(--color-danger)"' : ''}>${k.value}</div>
+          <div class="lop-kpi-label">${k.label}</div>
+          <div class="lop-kpi-sub">${k.sub}</div>
+        </div>`).join('')
+    }</div>`;
+
+    const title = (role === 'lo' || role === 'lp') ? 'My Applications' : 'Applications';
+
     return `
-      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:12px">
-        <div style="display:flex;align-items:center;gap:12px">
-          <div style="font-size:20px;font-weight:700;color:var(--color-text)">Applications</div>
-          <span style="background:var(--color-surface);border:1px solid var(--color-border);border-radius:20px;padding:2px 10px;font-size:12px;font-weight:600;color:var(--color-text-secondary)">${allLoans.length}</span>
-        </div>
-        <div style="display:flex;align-items:center;gap:8px">
-          <input class="input" style="width:220px;padding:7px 12px;font-size:13px"
-                 placeholder="Search borrower or loan ID…"
-                 value="${this._appSearch}"
-                 oninput="DataPlatformView._setSearch(this.value)" />
-          ${canCreate ? `<button class="btn btn-primary btn-sm" onclick="DataPlatformView._openNewAppModal()">+ New Application</button>` : ''}
+      <div class="page-header">
+        <div class="page-header-inner">
+          <div class="page-header-left">
+            <div class="page-title">${title}</div>
+            <div class="page-subtitle">${allLoans.length} total application${allLoans.length !== 1 ? 's' : ''} in pipeline</div>
+          </div>
+          <div class="page-header-actions" style="display:flex;align-items:center;gap:8px">
+            <input class="input" style="width:220px;padding:7px 12px;font-size:13px"
+                   placeholder="Search borrower or loan ID…"
+                   value="${this._appSearch}"
+                   oninput="DataPlatformView._setSearch(this.value)" />
+            ${canCreate ? `<button class="btn btn-primary btn-sm" onclick="DataPlatformView._openNewAppModal()">+ New Application</button>` : ''}
+          </div>
         </div>
       </div>
+      ${kpiHtml}
       <div class="lop-filter-tabs">${filterTabsHtml}</div>
       ${someChecked ? `
       <div class="app-bulk-bar">
