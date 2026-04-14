@@ -398,14 +398,30 @@ const OriginationsView = {
       <div id="originations-modal"></div>`;
   },
 
-  /* ── Owner badge helper ── */
-  _ownerClass(role) {
+  /* ── Owner avatar helper — returns full HTML for compact circle with tooltip ── */
+  _ownerAvatar(role) {
     if (!role) return '';
     const r = role.toLowerCase();
-    if (r.includes('loan officer') || r.includes('lo')) return 'lo';
-    if (r.includes('account') || r.includes('am') || r.includes('processor')) return 'am';
-    if (r.includes('borrower')) return 'borrower';
-    return 'system';
+    let cls = 'system', initials = 'SY';
+    if (r.includes('loan officer') || r === 'lo') { cls = 'lo'; initials = 'LO'; }
+    else if (r.includes('account') || r.includes('am')) { cls = 'am'; initials = 'AM'; }
+    else if (r.includes('processor')) { cls = 'am'; initials = 'PR'; }
+    else if (r.includes('borrower')) { cls = 'borrower'; initials = 'BO'; }
+    else if (r.includes('appraiser')) { cls = 'system'; initials = 'AP'; }
+    return `<span class="ud-task-owner ${cls}" title="${role}">${initials}<span class="ud-task-owner-tip">${role}</span></span>`;
+  },
+
+  /* ── Stage icon SVGs ── */
+  _stageIcon(stageId) {
+    const icons = {
+      prequalification: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2"/><rect x="9" y="3" width="6" height="4" rx="1"/><path d="M9 14l2 2 4-4"/></svg>',
+      application_disclosures: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/></svg>',
+      cda_appraisal: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 9l9-7 9 7v11a2 2 0 01-2 2H5a2 2 0 01-2-2z"/><circle cx="15" cy="13" r="3"/><path d="M17.5 15.5L20 18"/></svg>',
+      clear_close: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 2l-2 2m-7.61 7.61a5.5 5.5 0 11-7.778 7.778 5.5 5.5 0 017.777-7.777zm0 0L15.5 7.5m0 0l3 3L22 7l-3-3m-3.5 3.5L19 4"/></svg>',
+      post_closing: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="1" x2="12" y2="23"/><path d="M17 5H9.5a3.5 3.5 0 000 7h5a3.5 3.5 0 010 7H6"/></svg>',
+      transfer_minting: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="17 1 21 5 17 9"/><path d="M3 11V9a4 4 0 014-4h14"/><polyline points="7 23 3 19 7 15"/><path d="M21 13v2a4 4 0 01-4 4H3"/></svg>',
+    };
+    return icons[stageId] || icons.prequalification;
   },
 
   /* ── Context Header ── */
@@ -442,18 +458,15 @@ const OriginationsView = {
       const total = stage.tasks.length;
       const isDone = stage.status === 'completed';
       const isCurrent = stage.status === 'in_progress';
-      const dotClass = isDone ? 'done' : isCurrent ? 'current' : 'pending';
-      const activeTask = stage.tasks.find(t => t.status === 'active');
-      const detailText = isDone ? `${total}/${total} complete` : isCurrent ? `${done}/${total}` + (activeTask ? ' \u00B7 ' + activeTask.label.substring(0, 25) : '') : `0/${total}`;
-      const detailClass = isCurrent && activeTask ? 'warn' : '';
+      const iconClass = isDone ? 'done' : isCurrent ? 'current' : 'pending';
+      const detailText = isDone ? `${done}/${total}` : isCurrent ? `${done}/${total}` : `0/${total}`;
+      const detailClass = isCurrent ? 'warn' : '';
       const line = idx < proc.length - 1 ? `<div class="ud-stage-line ${isDone ? 'done' : 'pending'}"></div>` : '';
       return `
         <div class="ud-stage ${isCurrent ? 'active' : ''}">
-          <div class="ud-stage-dot ${dotClass}">${isDone ? '&#10003;' : idx + 1}</div>
-          <div class="ud-stage-info">
-            <div class="ud-stage-name">${stage.label}</div>
-            <div class="ud-stage-detail ${detailClass}">${detailText}</div>
-          </div>
+          <span class="ud-stage-tooltip">${stage.label}</span>
+          <div class="ud-stage-icon ${iconClass}">${this._stageIcon(stage.id)}</div>
+          <div class="ud-stage-detail ${detailClass}">${detailText}</div>
         </div>${line}`;
     }).join('')}</div>`;
   },
@@ -501,7 +514,7 @@ const OriginationsView = {
             <div class="ud-task-row">
               <div class="ud-task-icon ${t.status === 'done' ? 'done' : t.status === 'active' ? 'active' : 'pending'}">${t.status === 'done' ? '&#10003;' : t.status === 'active' ? '&#9679;' : ''}</div>
               <span class="ud-task-label ${t.status === 'done' ? 'done' : ''}">${t.label}</span>
-              <span class="ud-task-owner ${this._ownerClass(t.role)}">${t.role}</span>
+              ${this._ownerAvatar(t.role)}
               ${t.action && t.status !== 'done' ? `<button class="ud-task-action ${t.status === 'active' ? 'primary' : ''}" onclick="event.stopPropagation()">${t.action}</button>` : ''}
             </div>`).join('')}
         </div>`;
@@ -584,7 +597,7 @@ const OriginationsView = {
             <div class="ud-task-row">
               <div class="ud-task-icon ${t.status === 'done' ? 'done' : t.status === 'active' ? 'active' : 'pending'}">${t.status === 'done' ? '&#10003;' : t.status === 'active' ? '&#9679;' : ''}</div>
               <span class="ud-task-label ${t.status === 'done' ? 'done' : ''}">${t.label}</span>
-              <span class="ud-task-owner ${this._ownerClass(t.role)}">${t.role}</span>
+              ${this._ownerAvatar(t.role)}
               ${t.action && t.status !== 'done' ? `<button class="ud-task-action ${t.status === 'active' ? 'primary' : ''}" onclick="event.stopPropagation()">${t.action}</button>` : ''}
             </div>`).join('') : ''}
         </div>`;
@@ -617,7 +630,7 @@ const OriginationsView = {
             <div class="ud-doc-icon">&#128196;</div>
             <div class="ud-doc-info"><div class="ud-doc-name">${d.name}</div><div class="ud-doc-meta">${d.meta}</div></div>
             <span class="ud-doc-badge ${d.status}">${d.status === 'approved' ? 'Approved' : d.status === 'missing' ? 'Not Uploaded' : 'Pending'}</span>
-            <span class="ud-task-owner ${this._ownerClass(d.owner)}">${d.owner}</span>
+            ${this._ownerAvatar(d.owner)}
             ${d.status === 'missing' ? '<button class="ud-task-action" onclick="event.stopPropagation()">Upload</button>' : ''}
           </div>`).join('')}
       </div>`;

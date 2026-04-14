@@ -5230,32 +5230,47 @@ label { font-size: 12px; font-weight: 600; color: var(--color-text); }
 .ud-chip-value.warn { color: var(--color-danger); }
 .ud-chip-value.tbd { color: var(--color-text-muted); }
 
-/* ── Stage Tracker ── */
+/* ── Stage Tracker (icon-based) ── */
 .ud-stage-tracker {
   background: #fff; border: 1px solid var(--color-border); border-radius: 12px;
-  padding: 16px 24px; margin-bottom: 16px; display: flex; align-items: center; gap: 0;
-  overflow-x: auto;
+  padding: 12px 20px; margin-bottom: 16px; display: flex; align-items: center;
+  justify-content: center; gap: 0;
 }
 .ud-stage {
-  display: flex; align-items: center; gap: 10px; flex: 1; min-width: 0;
-  cursor: pointer; padding: 8px 12px; border-radius: 8px; transition: background 0.1s;
+  display: flex; flex-direction: column; align-items: center; gap: 4px;
+  cursor: pointer; padding: 8px 14px; border-radius: 10px; transition: background 0.1s;
+  position: relative; min-width: 56px;
 }
 .ud-stage:hover { background: var(--color-surface); }
 .ud-stage.active { background: var(--color-info-bg); }
-.ud-stage-dot {
-  width: 28px; height: 28px; border-radius: 50%; display: flex; align-items: center; justify-content: center;
-  font-size: 11px; font-weight: 700; flex-shrink: 0;
+.ud-stage-icon {
+  width: 36px; height: 36px; border-radius: 10px; display: flex; align-items: center; justify-content: center;
+  flex-shrink: 0; transition: all 0.15s;
 }
-.ud-stage-dot.done { background: var(--color-success); color: #fff; }
-.ud-stage-dot.current { background: var(--color-info); color: #fff; }
-.ud-stage-dot.pending { background: var(--color-surface); color: var(--color-text-muted); border: 2px solid var(--color-border); }
-.ud-stage-info { min-width: 0; }
-.ud-stage-name { font-size: 12px; font-weight: 700; color: var(--color-text); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-.ud-stage-detail { font-size: 10px; color: var(--color-text-muted); white-space: nowrap; }
-.ud-stage-detail.warn { color: var(--color-warning); font-weight: 600; }
-.ud-stage-line { width: 24px; height: 2px; flex-shrink: 0; }
+.ud-stage-icon svg { width: 20px; height: 20px; }
+.ud-stage-icon.done { background: var(--color-success); color: #fff; }
+.ud-stage-icon.done svg { stroke: #fff; fill: none; }
+.ud-stage-icon.current { background: var(--color-info); color: #fff; }
+.ud-stage-icon.current svg { stroke: #fff; fill: none; }
+.ud-stage-icon.pending { background: var(--color-surface); color: var(--color-text-muted); border: 1.5px solid var(--color-border); }
+.ud-stage-icon.pending svg { stroke: var(--color-text-muted); fill: none; }
+.ud-stage-detail { font-size: 10px; color: var(--color-text-muted); white-space: nowrap; text-align: center; font-weight: 600; }
+.ud-stage-detail.warn { color: var(--color-warning); }
+.ud-stage-line { width: 28px; height: 2px; flex-shrink: 0; align-self: center; margin-bottom: 14px; }
 .ud-stage-line.done { background: var(--color-success); }
 .ud-stage-line.pending { background: var(--color-border); }
+/* Tooltip for stage name */
+.ud-stage-tooltip {
+  position: absolute; bottom: calc(100% + 6px); left: 50%; transform: translateX(-50%);
+  background: var(--color-text); color: #fff; font-size: 11px; font-weight: 600;
+  padding: 4px 10px; border-radius: 6px; white-space: nowrap; pointer-events: none;
+  opacity: 0; transition: opacity 0.15s; z-index: 10;
+}
+.ud-stage-tooltip::after {
+  content: ''; position: absolute; top: 100%; left: 50%; transform: translateX(-50%);
+  border: 4px solid transparent; border-top-color: var(--color-text);
+}
+.ud-stage:hover .ud-stage-tooltip { opacity: 1; }
 
 /* ── Content Grid (main + sidebar) ── */
 .ud-content-grid { display: grid; grid-template-columns: 1fr 320px; gap: 16px; align-items: start; }
@@ -5288,14 +5303,29 @@ label { font-size: 12px; font-weight: 600; color: var(--color-text); }
 .ud-task-icon.pending { border: 2px solid var(--color-border); background: #fff; }
 .ud-task-label { flex: 1; font-size: 13px; }
 .ud-task-label.done { color: var(--color-text-muted); }
+/* Owner avatar — compact circle with initials */
 .ud-task-owner {
-  display: inline-block; padding: 3px 10px; border-radius: 12px; font-size: 11px; font-weight: 600;
-  background: var(--color-surface); color: var(--color-text-muted); white-space: nowrap;
+  width: 26px; height: 26px; border-radius: 50%; display: inline-flex; align-items: center; justify-content: center;
+  font-size: 10px; font-weight: 700; letter-spacing: -0.02em; flex-shrink: 0;
+  background: var(--color-surface); color: var(--color-text-muted);
+  position: relative; cursor: default;
 }
 .ud-task-owner.lo { background: #EDE9FE; color: #6D28D9; }
 .ud-task-owner.am { background: #DBEAFE; color: #1E40AF; }
 .ud-task-owner.borrower { background: #FEF3C7; color: #92400E; }
 .ud-task-owner.system { background: var(--color-surface); color: var(--color-text-muted); }
+/* Tooltip for owner full name */
+.ud-task-owner-tip {
+  position: absolute; bottom: calc(100% + 6px); left: 50%; transform: translateX(-50%);
+  background: var(--color-text); color: #fff; font-size: 11px; font-weight: 600;
+  padding: 3px 8px; border-radius: 5px; white-space: nowrap; pointer-events: none;
+  opacity: 0; transition: opacity 0.12s; z-index: 10;
+}
+.ud-task-owner-tip::after {
+  content: ''; position: absolute; top: 100%; left: 50%; transform: translateX(-50%);
+  border: 3px solid transparent; border-top-color: var(--color-text);
+}
+.ud-task-owner:hover .ud-task-owner-tip { opacity: 1; }
 .ud-task-action {
   padding: 4px 12px; border-radius: 6px; font-size: 11px; font-weight: 700;
   border: 1px solid var(--color-primary); color: var(--color-primary); background: transparent;
