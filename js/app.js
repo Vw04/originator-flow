@@ -283,7 +283,7 @@ const OriginationsView = {
 
     const tableHtml = `
       <div class="card" style="padding:0;overflow:hidden">
-        <div style="display:flex;align-items:center;justify-content:space-between;padding:16px 20px;border-bottom:1px solid var(--color-border)">
+        <div style="display:flex;align-items:center;justify-content:space-between;padding:12px 20px">
           <div style="display:flex;align-items:center;gap:12px">
             ${filterHtml}
             <span style="font-size:12px;color:var(--color-text-muted)">${filtered.length} result${filtered.length !== 1 ? 's' : ''}</span>
@@ -298,16 +298,17 @@ const OriginationsView = {
           <table>
             <thead><tr>
               <th class="orig-col-sort" onclick="OriginationsView._setSort('id')">ID ${sortIcon('id')}</th>
-              <th class="orig-col-sort" onclick="OriginationsView._setSort('updatedAt')">Updated ${sortIcon('updatedAt')}</th>
               <th>Loan Identifier</th>
               <th class="orig-col-sort" onclick="OriginationsView._setSort('borrowerName')">Borrower Name ${sortIcon('borrowerName')}</th>
               <th>Address</th>
               <th>Phase</th>
               <th class="orig-col-sort" onclick="OriginationsView._setSort('amount')">Loan ($) ${sortIcon('amount')}</th>
               <th>Progress</th>
+              <th class="orig-col-sort" onclick="OriginationsView._setSort('updatedAt')">Updated ${sortIcon('updatedAt')}</th>
             </tr></thead>
             <tbody>
               ${pageLoans.length === 0 ? `<tr><td colspan="8" style="text-align:center;padding:32px;color:var(--color-text-muted)">No originations found</td></tr>` :
+
                 pageLoans.map(l => {
                   const proc = generateOriginationProcess(l.status);
                   const totalTasks = proc.reduce((s, st) => s + st.tasks.length, 0);
@@ -316,7 +317,6 @@ const OriginationsView = {
                   return `
                   <tr class="orig-table-row" onclick="OriginationsView.openLoan('${l.id}')">
                     <td style="font-size:12px;font-weight:700;color:var(--color-primary)">${l.id}</td>
-                    <td style="font-size:12px;color:var(--color-text-muted)">${l.updatedAt ? Display.date(l.updatedAt) : '—'}</td>
                     <td style="font-size:12px">${l.minNumber && l.minNumber !== 'PREQUALIFICATION' ? l.minNumber : l.id}</td>
                     <td>
                       <div style="font-size:13px;font-weight:600">${l.borrowerName}</div>
@@ -330,6 +330,7 @@ const OriginationsView = {
                         <div class="orig-progress-bar"><div class="orig-progress-bar-fill" style="width:${pct}%"></div></div>
                       </div>
                     </td>
+                    <td style="font-size:12px;color:var(--color-text-muted)">${l.updatedAt ? Display.date(l.updatedAt) : '—'}</td>
                   </tr>`;
                 }).join('')}
             </tbody>
