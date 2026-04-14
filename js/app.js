@@ -41,7 +41,7 @@ const App = {
     // Data Platform sub-routes
     Router.register('/data/analytics',    () => { DataPlatformView._activeTab = 'analytics';    this.renderShell(DataPlatformView.render()); });
     Router.register('/data/applications', () => { DataPlatformView._activeTab = 'applications'; this.renderShell(DataPlatformView.render()); });
-    Router.register('/data/originations', () => { DataPlatformView._activeTab = 'originations'; this.renderShell(DataPlatformView.render()); });
+    // /data/originations removed — originations now served by /originations (OriginationsView)
     Router.register('/data/batches',      () => { DataPlatformView._activeTab = 'batches';      this.renderShell(DataPlatformView.render()); });
     Router.register('/data/activations',  () => { DataPlatformView._activeTab = 'activations';  this.renderShell(DataPlatformView.render()); });
 
@@ -118,7 +118,7 @@ const App = {
       '/system-config':           () => SystemConfigView.render(path),
       '/data/analytics':          () => { DataPlatformView._activeTab = 'analytics';    return DataPlatformView.render(); },
       '/data/applications':       () => { DataPlatformView._activeTab = 'applications'; return DataPlatformView.render(); },
-      '/data/originations':       () => { DataPlatformView._activeTab = 'originations'; return DataPlatformView.render(); },
+      // /data/originations removed — originations now served by /originations
       '/data/batches':            () => { DataPlatformView._activeTab = 'batches';      return DataPlatformView.render(); },
       '/data/activations':        () => { DataPlatformView._activeTab = 'activations';  return DataPlatformView.render(); },
     };

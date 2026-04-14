@@ -73,12 +73,11 @@ const DataPlatformView = {
     const all = [
       { key: 'analytics',    label: 'Dashboard' },
       { key: 'applications', label: 'Applications' },
-      { key: 'originations', label: 'Originations' },
       { key: 'batches',      label: 'Batches' },
       { key: 'activations',  label: 'Activations' },
     ];
-    if (role === 'prog_admin') return all.slice(0, 3);
-    if (role === 'lo')         return [all[1], all[2]];
+    if (role === 'prog_admin') return all.slice(0, 2);
+    if (role === 'lo')         return [all[1]];
     if (role === 'lp')         return [all[1]];
     if (role === 'investor')   return [all[0]];
     return all;
