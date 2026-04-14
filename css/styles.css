@@ -5279,9 +5279,9 @@ label { font-size: 12px; font-weight: 600; color: var(--color-text); }
 .ud-seg-tip-progress { display: flex; align-items: center; gap: 8px; font-size: 11px; color: var(--color-text-muted); }
 .ud-seg-tip-bar { flex: 1; height: 3px; background: var(--color-border); border-radius: 2px; overflow: hidden; }
 .ud-seg-tip-bar-fill { height: 100%; border-radius: 2px; background: var(--color-success); }
-/* Deadline line in action banner */
-.ud-action-banner-deadline { display: flex; align-items: center; gap: 6px; font-size: 11px; color: var(--color-text-muted); margin-top: 3px; }
-.ud-action-banner-deadline .ud-deadline-icon { font-size: 13px; }
+/* Deadline in action banner — right-aligned next to button */
+.ud-action-banner-right { display: flex; flex-direction: column; align-items: flex-end; gap: 6px; flex-shrink: 0; }
+.ud-action-banner-deadline { font-size: 11px; color: var(--color-text-muted); white-space: nowrap; text-align: right; }
 .ud-action-banner-deadline.overdue { color: var(--color-danger); font-weight: 600; }
 .ud-action-banner-deadline.soon { color: var(--color-warning); font-weight: 600; }
 /* Stage label row below the bar */

@@ -100,9 +100,8 @@
   .seg-tip-progress { display: flex; align-items: center; gap: 8px; font-size: 11px; color: var(--gray-500); }
   .seg-tip-bar { flex: 1; height: 3px; background: var(--gray-300); border-radius: 2px; overflow: hidden; }
   .seg-tip-bar-fill { height: 100%; border-radius: 2px; background: #16A34A; }
-  /* Deadline line in action banner */
-  .action-banner-deadline { display: flex; align-items: center; gap: 6px; font-size: 11px; color: var(--gray-500); margin-top: 3px; }
-  .action-banner-deadline .deadline-icon { font-size: 13px; }
+  /* Deadline in action banner — right-aligned */
+  .action-banner-deadline { font-size: 11px; color: var(--gray-500); white-space: nowrap; text-align: right; }
   .action-banner-deadline.overdue { color: var(--red); font-weight: 600; }
   .action-banner-deadline.soon { color: var(--amber); font-weight: 600; }
   .progress-meta { display: flex; align-items: center; gap: 10px; font-size: 12px; }
@@ -376,10 +375,12 @@
     <div class="action-banner-label">Next Action Required</div>
     <div class="action-banner-text">Validate Title Information &amp; Send Initial Disclosures</div>
     <div class="action-banner-sub"><span class="task-owner am" style="width:20px;height:20px;font-size:9px;display:inline-flex;vertical-align:middle;margin-right:4px">AM</span> Account Manager &middot; Application &amp; Disclosures</div>
-    <div class="action-banner-deadline overdue"><span class="deadline-icon">&#128197;</span> Suggested deadline: Apr 1, 2026 &middot; 13d overdue</div>
     <div class="action-banner-sub">Up next: Initial Disclosures Signed &middot; Borrower</div>
   </div>
-  <button class="action-banner-btn">Validate</button>
+  <div style="display:flex;flex-direction:column;align-items:flex-end;gap:6px;flex-shrink:0">
+    <button class="action-banner-btn">Validate</button>
+    <div class="action-banner-deadline overdue">Suggested deadline: Apr 1, 2026<br>13d overdue</div>
+  </div>
 </div>
 
 <!-- ════════════════════════════════════════════

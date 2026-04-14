@@ -1279,7 +1279,7 @@ const DataPlatformView = {
     const deadline = this._taskDeadline(loan, activeTask.id);
     const dl = this._formatDeadline(deadline);
     const deadlineHtml = dl
-      ? `<div class="ud-action-banner-deadline ${dl.cls}"><span class="ud-deadline-icon">&#128197;</span> Suggested deadline: ${dl.dateStr} &middot; ${dl.urgency}</div>`
+      ? `<div class="ud-action-banner-deadline ${dl.cls}">Suggested deadline: ${dl.dateStr}<br>${dl.urgency}</div>`
       : '';
 
     return `<div class="ud-action-banner">
@@ -1288,10 +1288,12 @@ const DataPlatformView = {
         <div class="ud-action-banner-label">Next Action Required</div>
         <div class="ud-action-banner-text">${activeTask.label}</div>
         <div class="ud-action-banner-sub">${this._appOwnerAvatar(activeTask.role)} ${activeTask.role} &middot; ${currentStage.label}</div>
-        ${deadlineHtml}
         ${upNextHtml}
       </div>
-      ${activeTask.action ? `<button class="ud-action-banner-btn" onclick="event.stopPropagation()">${activeTask.action}</button>` : ''}
+      <div class="ud-action-banner-right">
+        ${activeTask.action ? `<button class="ud-action-banner-btn" onclick="event.stopPropagation()">${activeTask.action}</button>` : ''}
+        ${deadlineHtml}
+      </div>
     </div>`;
   },
 
