@@ -10,21 +10,21 @@ const Nav = (() => {
     sys_admin:  [
       { path: '/data/analytics',    label: 'Dashboard' },
       { path: '/data/applications', label: 'Applications' },
-      { path: '/data/originations', label: 'Originations' },
+      { path: '/originations',      label: 'Originations' },
       { path: '/data/batches',      label: 'Batches' },
       { path: '/data/activations',  label: 'Activations' },
     ],
     operator:   [
       { path: '/data/analytics',    label: 'Dashboard' },
       { path: '/data/applications', label: 'Applications' },
-      { path: '/data/originations', label: 'Originations' },
+      { path: '/originations',      label: 'Originations' },
       { path: '/data/batches',      label: 'Batches' },
       { path: '/data/activations',  label: 'Activations' },
     ],
     prog_admin: [
       { path: '/data/analytics',    label: 'Dashboard' },
       { path: '/data/applications', label: 'Applications' },
-      { path: '/data/originations', label: 'Originations' },
+      { path: '/originations',      label: 'Originations' },
     ],
     lo: [
       { path: '/data/applications', label: 'Applications' },
@@ -33,6 +33,7 @@ const Nav = (() => {
     ],
     lp: [
       { path: '/data/applications', label: 'Applications' },
+      { path: '/originations',      label: 'Originations' },
       { path: '/profile',           label: 'My Profile' },
     ],
     investor: [
