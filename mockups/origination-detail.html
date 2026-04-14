@@ -60,47 +60,57 @@
   .chip-value.warn { color: var(--red); }
 
   /* ══════════════════════════════════════════
-     SECTION 2: HORIZONTAL STAGE TRACKER (icon-based)
+     SECTION 2: INTEGRATED PROGRESS STRIP (inside context header)
      ══════════════════════════════════════════ */
-  .stage-tracker {
-    background: #fff; border: 1px solid var(--gray-300); border-radius: var(--radius-lg);
-    padding: 12px 20px; margin-bottom: 16px; display: flex; align-items: center;
-    justify-content: center; gap: 0;
-  }
-  .stage {
-    display: flex; flex-direction: column; align-items: center; gap: 4px;
-    cursor: pointer; padding: 8px 14px; border-radius: 10px; transition: background 0.1s;
-    position: relative; min-width: 56px;
-  }
-  .stage:hover { background: var(--gray-50); }
-  .stage.active { background: var(--blue-bg); }
-  .stage-icon {
-    width: 36px; height: 36px; border-radius: 10px; display: flex; align-items: center; justify-content: center;
-    flex-shrink: 0;
-  }
-  .stage-icon svg { width: 20px; height: 20px; }
-  .stage-icon.done { background: var(--green); color: #fff; }
-  .stage-icon.done svg { stroke: #fff; fill: none; }
-  .stage-icon.current { background: var(--blue); color: #fff; }
-  .stage-icon.current svg { stroke: #fff; fill: none; }
-  .stage-icon.pending { background: var(--gray-200); color: var(--gray-500); border: 1.5px solid var(--gray-300); }
-  .stage-icon.pending svg { stroke: var(--gray-500); fill: none; }
-  .stage-detail { font-size: 10px; color: var(--gray-500); white-space: nowrap; text-align: center; font-weight: 600; }
-  .stage-detail.warn { color: var(--amber); }
-  .stage-line { width: 28px; height: 2px; flex-shrink: 0; align-self: center; margin-bottom: 14px; }
-  .stage-line.done { background: var(--green); }
-  .stage-line.pending { background: var(--gray-300); }
-  .stage-tooltip {
-    position: absolute; bottom: calc(100% + 6px); left: 50%; transform: translateX(-50%);
+  .progress-strip { margin-top: 16px; }
+  .progress-bar-segmented { display: flex; height: 6px; border-radius: 3px; overflow: hidden; gap: 2px; margin-bottom: 10px; }
+  .progress-segment { height: 100%; border-radius: 3px; transition: all 0.2s; cursor: pointer; position: relative; }
+  .progress-segment.done { background: #16A34A; }
+  .progress-segment.current { background: var(--blue); animation: pulse-bar 2s ease-in-out infinite; }
+  .progress-segment.pending { background: var(--gray-300); }
+  @keyframes pulse-bar { 0%,100% { opacity: 1; } 50% { opacity: 0.6; } }
+  .progress-segment-tip {
+    position: absolute; bottom: calc(100% + 8px); left: 50%; transform: translateX(-50%);
     background: var(--gray-900); color: #fff; font-size: 11px; font-weight: 600;
     padding: 4px 10px; border-radius: 6px; white-space: nowrap; pointer-events: none;
-    opacity: 0; transition: opacity 0.15s; z-index: 10;
+    opacity: 0; transition: opacity 0.12s; z-index: 10;
   }
-  .stage-tooltip::after {
+  .progress-segment-tip::after {
     content: ''; position: absolute; top: 100%; left: 50%; transform: translateX(-50%);
     border: 4px solid transparent; border-top-color: var(--gray-900);
   }
-  .stage:hover .stage-tooltip { opacity: 1; }
+  .progress-segment:hover .progress-segment-tip { opacity: 1; }
+  .progress-segment:hover { filter: brightness(1.15); }
+  .progress-meta { display: flex; align-items: center; gap: 10px; font-size: 12px; }
+  .progress-stage-icon {
+    width: 24px; height: 24px; border-radius: 6px; display: inline-flex; align-items: center; justify-content: center;
+    background: var(--blue); flex-shrink: 0;
+  }
+  .progress-stage-icon svg { width: 14px; height: 14px; stroke: #fff; fill: none; }
+  .progress-stage-icon.done { background: #16A34A; }
+  .progress-stage-label { font-weight: 700; color: var(--gray-900); }
+  .progress-stage-count { color: var(--gray-500); font-weight: 600; }
+  .progress-overall { margin-left: auto; color: var(--gray-500); font-weight: 600; font-size: 11px; }
+
+  /* ── Action Banner ── */
+  .action-banner {
+    display: flex; align-items: center; gap: 14px;
+    background: #fff; border: 1.5px solid var(--amber); border-left: 4px solid var(--amber);
+    border-radius: var(--radius-lg); padding: 12px 18px; margin-bottom: 16px;
+  }
+  .action-banner-icon {
+    width: 32px; height: 32px; border-radius: 8px; display: flex; align-items: center; justify-content: center;
+    background: var(--amber-bg); color: var(--amber); font-size: 16px; flex-shrink: 0;
+  }
+  .action-banner-body { flex: 1; min-width: 0; }
+  .action-banner-label { font-size: 10px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.05em; color: var(--amber); margin-bottom: 1px; }
+  .action-banner-text { font-size: 14px; font-weight: 700; color: var(--gray-900); }
+  .action-banner-sub { font-size: 11px; color: var(--gray-500); margin-top: 1px; }
+  .action-banner-btn {
+    padding: 7px 18px; border-radius: 8px; font-size: 12px; font-weight: 700;
+    border: none; background: var(--green); color: #fff; cursor: pointer; white-space: nowrap;
+  }
+  .action-banner-btn:hover { filter: brightness(1.1); }
 
   /* ══════════════════════════════════════════
      SECTION 3: CONTENT AREA (2 columns)
@@ -289,53 +299,38 @@
     <div class="chip"><span class="chip-label">Loan Officer</span><span class="chip-value">James Okafor</span></div>
     <div class="chip"><span class="chip-label">Est. Close</span><span class="chip-value warn">TBD</span></div>
   </div>
+  <!-- Integrated Progress Strip -->
+  <div class="progress-strip">
+    <div class="progress-bar-segmented">
+      <div class="progress-segment done" style="flex:4"><span class="progress-segment-tip">Prequalification (4/4)</span></div>
+      <div class="progress-segment current" style="flex:6"><span class="progress-segment-tip">Application &amp; Disclosures (1/6)</span></div>
+      <div class="progress-segment pending" style="flex:5"><span class="progress-segment-tip">CDA &amp; Appraisal (0/5)</span></div>
+      <div class="progress-segment pending" style="flex:8"><span class="progress-segment-tip">Closing (0/8)</span></div>
+      <div class="progress-segment pending" style="flex:4"><span class="progress-segment-tip">Post-Close &amp; Funding (0/4)</span></div>
+      <div class="progress-segment pending" style="flex:5"><span class="progress-segment-tip">Transfer &amp; Minting (0/5)</span></div>
+    </div>
+    <div class="progress-meta">
+      <div class="progress-stage-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/></svg></div>
+      <span class="progress-stage-label">Application &amp; Disclosures</span>
+      <span class="progress-stage-count">1/6 tasks</span>
+      <span class="progress-overall">Stage 2 of 6 &middot; 16% complete</span>
+    </div>
+  </div>
 </div>
 
 <!-- ════════════════════════════════════════════
-     2. HORIZONTAL STAGE TRACKER
+     2. ACTION BANNER
      ════════════════════════════════════════════ -->
-<div class="mockup-label">2. Stage Tracker — Icon-based, hover for full name, stage name shown in content area</div>
-<div class="stage-tracker">
-  <div class="stage">
-    <span class="stage-tooltip">Prequalification</span>
-    <div class="stage-icon done"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2"/><rect x="9" y="3" width="6" height="4" rx="1"/><path d="M9 14l2 2 4-4"/></svg></div>
-    <div class="stage-detail">4/4</div>
+<div class="mockup-label">2. Action Banner — Next required action, always visible</div>
+<div class="action-banner">
+  <div class="action-banner-icon">&#9888;</div>
+  <div class="action-banner-body">
+    <div class="action-banner-label">Next Action Required</div>
+    <div class="action-banner-text">Validate Title Information &amp; Send Initial Disclosures</div>
+    <div class="action-banner-sub"><span class="task-owner am" style="width:20px;height:20px;font-size:9px;display:inline-flex;vertical-align:middle;margin-right:4px">AM</span> Account Manager &middot; Application &amp; Disclosures</div>
+    <div class="action-banner-sub">Up next: Initial Disclosures Signed &middot; Borrower</div>
   </div>
-  <div class="stage-line done"></div>
-
-  <div class="stage active">
-    <span class="stage-tooltip">Application &amp; Disclosures</span>
-    <div class="stage-icon current"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/></svg></div>
-    <div class="stage-detail warn">1/6</div>
-  </div>
-  <div class="stage-line pending"></div>
-
-  <div class="stage">
-    <span class="stage-tooltip">CDA &amp; Appraisal</span>
-    <div class="stage-icon pending"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 9l9-7 9 7v11a2 2 0 01-2 2H5a2 2 0 01-2-2z"/><circle cx="15" cy="13" r="3"/><path d="M17.5 15.5L20 18"/></svg></div>
-    <div class="stage-detail">0/5</div>
-  </div>
-  <div class="stage-line pending"></div>
-
-  <div class="stage">
-    <span class="stage-tooltip">Closing</span>
-    <div class="stage-icon pending"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 2l-2 2m-7.61 7.61a5.5 5.5 0 11-7.778 7.778 5.5 5.5 0 017.777-7.777zm0 0L15.5 7.5m0 0l3 3L22 7l-3-3m-3.5 3.5L19 4"/></svg></div>
-    <div class="stage-detail">0/8</div>
-  </div>
-  <div class="stage-line pending"></div>
-
-  <div class="stage">
-    <span class="stage-tooltip">Post-Close &amp; Funding</span>
-    <div class="stage-icon pending"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="1" x2="12" y2="23"/><path d="M17 5H9.5a3.5 3.5 0 000 7h5a3.5 3.5 0 010 7H6"/></svg></div>
-    <div class="stage-detail">0/4</div>
-  </div>
-  <div class="stage-line pending"></div>
-
-  <div class="stage">
-    <span class="stage-tooltip">Transfer &amp; Minting</span>
-    <div class="stage-icon pending"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="17 1 21 5 17 9"/><path d="M3 11V9a4 4 0 014-4h14"/><polyline points="7 23 3 19 7 15"/><path d="M21 13v2a4 4 0 01-4 4H3"/></svg></div>
-    <div class="stage-detail">0/5</div>
-  </div>
+  <button class="action-banner-btn">Validate</button>
 </div>
 
 <!-- ════════════════════════════════════════════
@@ -443,25 +438,6 @@
 
   <!-- ── RIGHT SIDEBAR ── -->
   <div>
-
-    <!-- Next Actions -->
-    <div class="sidebar-panel">
-      <div class="sidebar-panel-title">Next Actions</div>
-      <div class="sidebar-item">
-        <span class="sidebar-dot amber"></span>
-        <div class="sidebar-item-text">
-          <div>Validate Title Information</div>
-          <div class="sidebar-item-sub">Account Manager &middot; Application &amp; Disclosures</div>
-        </div>
-      </div>
-      <div class="sidebar-item">
-        <span class="sidebar-dot blue"></span>
-        <div class="sidebar-item-text">
-          <div>Awaiting Borrower Disclosures</div>
-          <div class="sidebar-item-sub">Borrower &middot; Expected by Apr 18</div>
-        </div>
-      </div>
-    </div>
 
     <!-- Warnings -->
     <div class="sidebar-panel">

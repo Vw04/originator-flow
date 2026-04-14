@@ -1109,14 +1109,14 @@ const DataPlatformView = {
 
     return `
       <button class="ud-back-btn" onclick="DataPlatformView._backToApplications()">&#8592; Back to Applications</button>
-      ${this._appContextHeader(loan, loName, rateLockDate, estCloseDate)}
-      ${this._appStageTracker(proc)}
+      ${this._appContextHeader(loan, loName, proc, rateLockDate, estCloseDate)}
+      ${this._appActionBanner(loan, proc)}
       <div class="ud-content-grid">
         <div>
           ${this._appContentTabs()}
           <div class="ud-content-main">${this._appTabContent(loan, proc, loName)}</div>
         </div>
-        <div>${this._appSidebar(loan, proc, loName, days, rateLockDate, estCloseDate)}</div>
+        <div>${this._appSidebar(loan, loName, days, rateLockDate, estCloseDate)}</div>
       </div>
       <div id="dp-modal"></div>`;
   },
@@ -1147,13 +1147,34 @@ const DataPlatformView = {
     return icons[stageId] || icons.prequalification;
   },
 
-  /* ── App Detail: Context Header ── */
-  _appContextHeader(loan, loName, rateLockDate, estCloseDate) {
+  /* ── App Detail: Context Header (with integrated progress strip) ── */
+  _appContextHeader(loan, loName, proc, rateLockDate, estCloseDate) {
     const isCompleted = loan.status === 'completed';
     const addr = loan.phase === 'prequalification' ? 'PREQUALIFICATION' : loan.address.split(',')[0].trim();
     const sub = loan.address.split(',').slice(1).join(',').trim();
     const dti = loan.id === 'DCDC000003' ? 38 : Math.round(28 + (loan.ltv || 70) / 5);
     const rateLockExpiring = loan.id === 'DCDC000002';
+
+    // Progress strip data
+    const totalTasks = proc.reduce((s, st) => s + st.tasks.length, 0);
+    const doneTasks = proc.reduce((s, st) => s + st.tasks.filter(t => t.status === 'done').length, 0);
+    const overallPct = totalTasks ? Math.round((doneTasks / totalTasks) * 100) : 0;
+    const currentStage = proc.find(s => s.status === 'in_progress');
+    const currentIdx = currentStage ? proc.indexOf(currentStage) : (isCompleted ? proc.length : 0);
+
+    const segments = proc.map((stage) => {
+      const cls = stage.status === 'completed' ? 'done' : stage.status === 'in_progress' ? 'current' : 'pending';
+      const sDone = stage.tasks.filter(t => t.status === 'done').length;
+      return `<div class="ud-progress-segment ${cls}" style="flex:${stage.tasks.length}" title="${stage.label}"><span class="ud-progress-segment-tip">${stage.label} (${sDone}/${stage.tasks.length})</span></div>`;
+    }).join('');
+
+    const stageLabel = currentStage ? currentStage.label : (isCompleted ? 'Completed' : 'Not Started');
+    const stageIconCls = isCompleted ? 'done' : '';
+    const stageIconSvg = currentStage ? this._appStageIcon(currentStage.id) : this._appStageIcon('transfer_minting');
+    const stageDone = currentStage ? currentStage.tasks.filter(t => t.status === 'done').length : 0;
+    const stageTotal = currentStage ? currentStage.tasks.length : 0;
+    const stageCount = currentStage ? `${stageDone}/${stageTotal} tasks` : '';
+
     return `
       <div class="ud-context-header">
         <div class="ud-context-top">
@@ -1175,27 +1196,44 @@ const DataPlatformView = {
           <div class="ud-chip"><span class="ud-chip-label">Rate Lock</span><span class="ud-chip-value ${rateLockExpiring ? 'warn' : ''}">${rateLockDate}</span></div>
           <div class="ud-chip"><span class="ud-chip-label">Est. Close</span><span class="ud-chip-value">${estCloseDate}</span></div>
         </div>
+        <div class="ud-progress-strip">
+          <div class="ud-progress-bar-segmented">${segments}</div>
+          <div class="ud-progress-meta">
+            <div class="ud-progress-stage-icon ${stageIconCls}">${stageIconSvg}</div>
+            <span class="ud-progress-stage-label">${stageLabel}</span>
+            ${stageCount ? `<span class="ud-progress-stage-count">${stageCount}</span>` : ''}
+            <span class="ud-progress-overall">Stage ${currentIdx + 1} of ${proc.length} &middot; ${overallPct}% complete</span>
+          </div>
+        </div>
       </div>`;
   },
 
-  /* ── App Detail: Stage Tracker ── */
-  _appStageTracker(proc) {
-    return `<div class="ud-stage-tracker">${proc.map((stage, idx) => {
-      const done = stage.tasks.filter(t => t.status === 'done').length;
-      const total = stage.tasks.length;
-      const isDone = stage.status === 'completed';
-      const isCurrent = stage.status === 'in_progress';
-      const iconClass = isDone ? 'done' : isCurrent ? 'current' : 'pending';
-      const detailText = isDone ? `${done}/${total}` : isCurrent ? `${done}/${total}` : `0/${total}`;
-      const detailClass = isCurrent ? 'warn' : '';
-      const line = idx < proc.length - 1 ? `<div class="ud-stage-line ${isDone ? 'done' : 'pending'}"></div>` : '';
-      return `
-        <div class="ud-stage ${isCurrent ? 'active' : ''}">
-          <span class="ud-stage-tooltip">${stage.label}</span>
-          <div class="ud-stage-icon ${iconClass}">${this._appStageIcon(stage.id)}</div>
-          <div class="ud-stage-detail ${detailClass}">${detailText}</div>
-        </div>${line}`;
-    }).join('')}</div>`;
+  /* ── App Detail: Action Banner (next required action) ── */
+  _appActionBanner(loan, proc) {
+    const currentStage = proc.find(s => s.status === 'in_progress');
+    const activeTask = currentStage?.tasks.find(t => t.status === 'active');
+    if (!activeTask && loan.status === 'completed') {
+      return `<div class="ud-action-banner complete">
+        <div class="ud-action-banner-icon">&#10003;</div>
+        <div class="ud-action-banner-body">
+          <div class="ud-action-banner-label">Completed</div>
+          <div class="ud-action-banner-text">All stages and tasks are complete</div>
+        </div>
+      </div>`;
+    }
+    if (!activeTask) return '';
+    const nextPending = currentStage?.tasks.find(t => t.status === 'pending');
+    const upNextHtml = nextPending ? `<div class="ud-action-banner-sub">Up next: ${nextPending.label} &middot; ${nextPending.role}</div>` : '';
+    return `<div class="ud-action-banner">
+      <div class="ud-action-banner-icon">&#9888;</div>
+      <div class="ud-action-banner-body">
+        <div class="ud-action-banner-label">Next Action Required</div>
+        <div class="ud-action-banner-text">${activeTask.label}</div>
+        <div class="ud-action-banner-sub">${this._appOwnerAvatar(activeTask.role)} ${activeTask.role} &middot; ${currentStage.label}</div>
+        ${upNextHtml}
+      </div>
+      ${activeTask.action ? `<button class="ud-action-banner-btn" onclick="event.stopPropagation()">${activeTask.action}</button>` : ''}
+    </div>`;
   },
 
   /* ── App Detail: Content Tabs ── */
@@ -1442,22 +1480,9 @@ const DataPlatformView = {
       </div>`;
   },
 
-  /* ── App Detail: Right Sidebar ── */
-  _appSidebar(loan, proc, loName, days, rateLockDate, estCloseDate) {
-    const currentStage = proc.find(s => s.status === 'in_progress');
-    const activeTask = currentStage?.tasks.find(t => t.status === 'active');
+  /* ── App Detail: Right Sidebar (Next Actions moved to banner) ── */
+  _appSidebar(loan, loName, days, rateLockDate, estCloseDate) {
     const rateLockExpiring = loan.id === 'DCDC000002';
-
-    // Next Actions
-    let actionsHtml = '';
-    if (activeTask) {
-      actionsHtml += `<div class="ud-sidebar-item"><span class="ud-sidebar-dot amber"></span><div class="ud-sidebar-item-text"><div>${activeTask.label}</div><div class="ud-sidebar-item-sub">${activeTask.role} \u00B7 ${currentStage.label}</div></div></div>`;
-    }
-    const nextPending = currentStage?.tasks.find(t => t.status === 'pending');
-    if (nextPending) {
-      actionsHtml += `<div class="ud-sidebar-item"><span class="ud-sidebar-dot blue"></span><div class="ud-sidebar-item-text"><div>${nextPending.label}</div><div class="ud-sidebar-item-sub">${nextPending.role}</div></div></div>`;
-    }
-    if (!actionsHtml) actionsHtml = '<div class="ud-sidebar-item"><span class="ud-sidebar-dot green"></span><div class="ud-sidebar-item-text"><div>All tasks complete</div></div></div>';
 
     // Warnings
     let warningsHtml = '';
@@ -1473,10 +1498,6 @@ const DataPlatformView = {
     if (!warningsHtml) warningsHtml = '<div class="ud-sidebar-item" style="color:var(--color-text-muted);font-size:12px;padding:12px 16px">No warnings</div>';
 
     return `
-      <div class="ud-sidebar-panel">
-        <div class="ud-sidebar-panel-title">Next Actions</div>
-        ${actionsHtml}
-      </div>
       <div class="ud-sidebar-panel">
         <div class="ud-sidebar-panel-title">Warnings</div>
         ${warningsHtml}

@@ -385,8 +385,8 @@ const OriginationsView = {
     return `
       <div class="page-body">
         <button class="ud-back-btn" onclick="OriginationsView.backToList()">&#8592; Back to Originations</button>
-        ${this._udContextHeader(loan, loName)}
-        ${this._udStageTracker(proc)}
+        ${this._udContextHeader(loan, loName, proc)}
+        ${this._udActionBanner(loan, proc)}
         <div class="ud-content-grid">
           <div>
             ${this._udContentTabs()}
@@ -424,11 +424,32 @@ const OriginationsView = {
     return icons[stageId] || icons.prequalification;
   },
 
-  /* ── Context Header ── */
-  _udContextHeader(loan, loName) {
+  /* ── Context Header (with integrated progress strip) ── */
+  _udContextHeader(loan, loName, proc) {
     const isCompleted = loan.status === 'completed';
     const addr = loan.phase === 'prequalification' ? 'PREQUALIFICATION' : loan.address.split(',')[0].trim();
     const sub = loan.address.split(',').slice(1).join(',').trim();
+
+    // Progress strip data
+    const totalTasks = proc.reduce((s, st) => s + st.tasks.length, 0);
+    const doneTasks = proc.reduce((s, st) => s + st.tasks.filter(t => t.status === 'done').length, 0);
+    const overallPct = totalTasks ? Math.round((doneTasks / totalTasks) * 100) : 0;
+    const currentStage = proc.find(s => s.status === 'in_progress');
+    const currentIdx = currentStage ? proc.indexOf(currentStage) : (isCompleted ? proc.length : 0);
+
+    const segments = proc.map((stage) => {
+      const cls = stage.status === 'completed' ? 'done' : stage.status === 'in_progress' ? 'current' : 'pending';
+      const sDone = stage.tasks.filter(t => t.status === 'done').length;
+      return `<div class="ud-progress-segment ${cls}" style="flex:${stage.tasks.length}" title="${stage.label}"><span class="ud-progress-segment-tip">${stage.label} (${sDone}/${stage.tasks.length})</span></div>`;
+    }).join('');
+
+    const stageLabel = currentStage ? currentStage.label : (isCompleted ? 'Completed' : 'Not Started');
+    const stageIconCls = isCompleted ? 'done' : '';
+    const stageIconSvg = currentStage ? this._stageIcon(currentStage.id) : this._stageIcon('transfer_minting');
+    const stageDone = currentStage ? currentStage.tasks.filter(t => t.status === 'done').length : 0;
+    const stageTotal = currentStage ? currentStage.tasks.length : 0;
+    const stageCount = currentStage ? `${stageDone}/${stageTotal} tasks` : '';
+
     return `
       <div class="ud-context-header">
         <div class="ud-context-top">
@@ -448,27 +469,44 @@ const OriginationsView = {
           <div class="ud-chip"><span class="ud-chip-label">Loan Officer</span><span class="ud-chip-value">${loName}</span></div>
           <div class="ud-chip"><span class="ud-chip-label">Est. Close</span><span class="ud-chip-value ${loan.closingDate ? '' : 'warn'}">${loan.closingDate ? Display.date(loan.closingDate) : 'TBD'}</span></div>
         </div>
+        <div class="ud-progress-strip">
+          <div class="ud-progress-bar-segmented">${segments}</div>
+          <div class="ud-progress-meta">
+            <div class="ud-progress-stage-icon ${stageIconCls}">${stageIconSvg}</div>
+            <span class="ud-progress-stage-label">${stageLabel}</span>
+            ${stageCount ? `<span class="ud-progress-stage-count">${stageCount}</span>` : ''}
+            <span class="ud-progress-overall">Stage ${currentIdx + 1} of ${proc.length} &middot; ${overallPct}% complete</span>
+          </div>
+        </div>
       </div>`;
   },
 
-  /* ── Stage Tracker ── */
-  _udStageTracker(proc) {
-    return `<div class="ud-stage-tracker">${proc.map((stage, idx) => {
-      const done = stage.tasks.filter(t => t.status === 'done').length;
-      const total = stage.tasks.length;
-      const isDone = stage.status === 'completed';
-      const isCurrent = stage.status === 'in_progress';
-      const iconClass = isDone ? 'done' : isCurrent ? 'current' : 'pending';
-      const detailText = isDone ? `${done}/${total}` : isCurrent ? `${done}/${total}` : `0/${total}`;
-      const detailClass = isCurrent ? 'warn' : '';
-      const line = idx < proc.length - 1 ? `<div class="ud-stage-line ${isDone ? 'done' : 'pending'}"></div>` : '';
-      return `
-        <div class="ud-stage ${isCurrent ? 'active' : ''}">
-          <span class="ud-stage-tooltip">${stage.label}</span>
-          <div class="ud-stage-icon ${iconClass}">${this._stageIcon(stage.id)}</div>
-          <div class="ud-stage-detail ${detailClass}">${detailText}</div>
-        </div>${line}`;
-    }).join('')}</div>`;
+  /* ── Action Banner (next required action, promoted from sidebar) ── */
+  _udActionBanner(loan, proc) {
+    const currentStage = proc.find(s => s.status === 'in_progress');
+    const activeTask = currentStage?.tasks.find(t => t.status === 'active');
+    if (!activeTask && loan.status === 'completed') {
+      return `<div class="ud-action-banner complete">
+        <div class="ud-action-banner-icon">&#10003;</div>
+        <div class="ud-action-banner-body">
+          <div class="ud-action-banner-label">Completed</div>
+          <div class="ud-action-banner-text">All stages and tasks are complete</div>
+        </div>
+      </div>`;
+    }
+    if (!activeTask) return '';
+    const nextPending = currentStage?.tasks.find(t => t.status === 'pending');
+    const upNextHtml = nextPending ? `<div class="ud-action-banner-sub">Up next: ${nextPending.label} &middot; ${nextPending.role}</div>` : '';
+    return `<div class="ud-action-banner">
+      <div class="ud-action-banner-icon">&#9888;</div>
+      <div class="ud-action-banner-body">
+        <div class="ud-action-banner-label">Next Action Required</div>
+        <div class="ud-action-banner-text">${activeTask.label}</div>
+        <div class="ud-action-banner-sub">${this._ownerAvatar(activeTask.role)} ${activeTask.role} &middot; ${currentStage.label}${upNextHtml ? ' &middot; ' : ''}</div>
+        ${upNextHtml}
+      </div>
+      ${activeTask.action ? `<button class="ud-action-banner-btn" onclick="event.stopPropagation()">${activeTask.action}</button>` : ''}
+    </div>`;
   },
 
   /* ── Content Tabs ── */
@@ -698,22 +736,9 @@ const OriginationsView = {
       </div>`;
   },
 
-  /* ── Right Sidebar ── */
-  _udSidebar(loan, proc, loName) {
+  /* ── Right Sidebar (Next Actions moved to banner) ── */
+  _udSidebar(loan, _proc, loName) {
     const days = this._daysInStage(loan);
-    const currentStage = proc.find(s => s.status === 'in_progress');
-    const activeTask = currentStage?.tasks.find(t => t.status === 'active');
-
-    // Next Actions
-    let actionsHtml = '';
-    if (activeTask) {
-      actionsHtml += `<div class="ud-sidebar-item"><span class="ud-sidebar-dot amber"></span><div class="ud-sidebar-item-text"><div>${activeTask.label}</div><div class="ud-sidebar-item-sub">${activeTask.role} \u00B7 ${currentStage.label}</div></div></div>`;
-    }
-    const nextPending = currentStage?.tasks.find(t => t.status === 'pending');
-    if (nextPending) {
-      actionsHtml += `<div class="ud-sidebar-item"><span class="ud-sidebar-dot blue"></span><div class="ud-sidebar-item-text"><div>${nextPending.label}</div><div class="ud-sidebar-item-sub">${nextPending.role}</div></div></div>`;
-    }
-    if (!actionsHtml) actionsHtml = '<div class="ud-sidebar-item"><span class="ud-sidebar-dot green"></span><div class="ud-sidebar-item-text"><div>All tasks complete</div></div></div>';
 
     // Warnings
     let warningsHtml = '';
@@ -726,10 +751,6 @@ const OriginationsView = {
     if (!warningsHtml) warningsHtml = '<div class="ud-sidebar-item" style="color:var(--color-text-muted);font-size:12px;padding:12px 16px">No warnings</div>';
 
     return `
-      <div class="ud-sidebar-panel">
-        <div class="ud-sidebar-panel-title">Next Actions</div>
-        ${actionsHtml}
-      </div>
       <div class="ud-sidebar-panel">
         <div class="ud-sidebar-panel-title">Warnings</div>
         ${warningsHtml}
