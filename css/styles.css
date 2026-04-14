@@ -5233,12 +5233,12 @@ label { font-size: 12px; font-weight: 600; color: var(--color-text); }
 /* ── Integrated Progress Bar (inside context header) ── */
 .ud-progress-strip { margin-top: 16px; }
 .ud-progress-bar-segmented {
-  display: flex; height: 6px; border-radius: 3px; overflow: hidden; gap: 2px;
-  margin-bottom: 10px;
+  display: flex; height: 6px; border-radius: 3px; gap: 2px;
+  margin-bottom: 10px; position: relative;
 }
 .ud-progress-segment {
   height: 100%; border-radius: 3px; transition: all 0.2s; cursor: pointer;
-  position: relative;
+  position: relative; overflow: visible;
 }
 .ud-progress-segment.done { background: var(--color-success); }
 .ud-progress-segment.current { background: var(--color-info); animation: ud-pulse 2s ease-in-out infinite; }
@@ -5260,7 +5260,7 @@ label { font-size: 12px; font-weight: 600; color: var(--color-text); }
   filter: drop-shadow(0 1px 1px rgba(0,0,0,0.08));
 }
 .ud-progress-segment:hover .ud-progress-segment-tip { opacity: 1; }
-.ud-progress-segment:hover { filter: brightness(1.15); transform: scaleY(1.6); }
+.ud-progress-segment:hover { filter: brightness(1.15); height: 10px; margin-top: -2px; z-index: 21; }
 /* Tooltip inner layout */
 .ud-seg-tip-header { display: flex; align-items: center; gap: 8px; margin-bottom: 6px; }
 .ud-seg-tip-icon {
@@ -5404,6 +5404,21 @@ label { font-size: 12px; font-weight: 600; color: var(--color-text); }
 .ud-doc-badge.approved { background: var(--color-success-bg); color: #065F46; }
 .ud-doc-badge.pending { background: var(--color-warning-bg); color: #92400E; }
 .ud-doc-badge.missing { background: var(--color-danger-bg); color: #991B1B; }
+
+/* ── File Drop Zone ── */
+.ud-dropzone {
+  border: 2px dashed var(--color-border); border-radius: 10px; padding: 24px;
+  text-align: center; margin-bottom: 16px; transition: all 0.15s;
+  background: var(--color-surface); cursor: pointer;
+}
+.ud-dropzone:hover, .ud-dropzone.dragover {
+  border-color: var(--color-primary); background: rgba(29,61,42,0.04);
+}
+.ud-dropzone-icon { font-size: 28px; color: var(--color-text-muted); margin-bottom: 6px; }
+.ud-dropzone.dragover .ud-dropzone-icon { color: var(--color-primary); }
+.ud-dropzone-text { font-size: 13px; font-weight: 600; color: var(--color-text-secondary); }
+.ud-dropzone-text span { color: var(--color-primary); text-decoration: underline; cursor: pointer; }
+.ud-dropzone-hint { font-size: 11px; color: var(--color-text-muted); margin-top: 4px; }
 
 /* ── Right Sidebar Panels ── */
 .ud-sidebar-panel {

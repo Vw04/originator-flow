@@ -724,6 +724,18 @@ const OriginationsView = {
 
     return `
       <div class="ud-content-section">
+        <div class="ud-dropzone" id="orig-dropzone"
+             ondragover="event.preventDefault();this.classList.add('dragover')"
+             ondragleave="this.classList.remove('dragover')"
+             ondrop="event.preventDefault();this.classList.remove('dragover');OriginationsView._handleFileDrop(event)"
+             onclick="document.getElementById('orig-file-input').click()">
+          <div class="ud-dropzone-icon">&#128449;</div>
+          <div class="ud-dropzone-text">Drag &amp; drop files here or <span>browse</span></div>
+          <div class="ud-dropzone-hint">Upload documents before they are formally requested. PDF, DOC, JPG up to 25 MB.</div>
+          <input type="file" id="orig-file-input" multiple style="display:none" onchange="OriginationsView._handleFileSelect(event)">
+        </div>
+      </div>
+      <div class="ud-content-section">
         <div class="ud-section-title">Documents <span class="ud-section-count">${approvedCount} of ${docs.length} approved</span></div>
         ${docs.map(d => `
           <div class="ud-doc-row">
@@ -734,6 +746,27 @@ const OriginationsView = {
             ${d.status === 'missing' ? '<button class="ud-task-action" onclick="event.stopPropagation()">Upload</button>' : ''}
           </div>`).join('')}
       </div>`;
+  },
+
+  /* ── File drop handlers ── */
+  _handleFileDrop(event) {
+    const files = event.dataTransfer?.files;
+    if (files?.length) this._showUploadToast('orig-dropzone', files);
+  },
+
+  _handleFileSelect(event) {
+    const files = event.target?.files;
+    if (files?.length) this._showUploadToast('orig-dropzone', files);
+  },
+
+  _showUploadToast(zoneId, files) {
+    const names = Array.from(files).map(f => f.name).join(', ');
+    const zone = document.getElementById(zoneId);
+    if (zone) {
+      const orig = zone.innerHTML;
+      zone.innerHTML = `<div class="ud-dropzone-icon" style="color:var(--color-success)">&#10003;</div><div class="ud-dropzone-text">${files.length} file${files.length > 1 ? 's' : ''} received</div><div class="ud-dropzone-hint">${names}</div>`;
+      setTimeout(() => { zone.innerHTML = orig; }, 3000);
+    }
   },
 
   /* ── Parties Tab ── */

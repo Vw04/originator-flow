@@ -63,7 +63,7 @@
      SECTION 2: INTEGRATED PROGRESS STRIP (inside context header)
      ══════════════════════════════════════════ */
   .progress-strip { margin-top: 16px; }
-  .progress-bar-segmented { display: flex; height: 6px; border-radius: 3px; overflow: hidden; gap: 2px; margin-bottom: 10px; }
+  .progress-bar-segmented { display: flex; height: 6px; border-radius: 3px; gap: 2px; margin-bottom: 10px; position: relative; }
   .progress-segment { height: 100%; border-radius: 3px; transition: all 0.2s; cursor: pointer; position: relative; }
   .progress-segment.done { background: #16A34A; }
   .progress-segment.current { background: var(--blue); animation: pulse-bar 2s ease-in-out infinite; }
@@ -83,7 +83,7 @@
     filter: drop-shadow(0 1px 1px rgba(0,0,0,0.08));
   }
   .progress-segment:hover .progress-segment-tip { opacity: 1; }
-  .progress-segment:hover { filter: brightness(1.15); transform: scaleY(1.6); }
+  .progress-segment:hover { filter: brightness(1.15); height: 10px; margin-top: -2px; z-index: 21; }
   /* Tooltip inner layout */
   .seg-tip-header { display: flex; align-items: center; gap: 8px; margin-bottom: 6px; }
   .seg-tip-icon { width: 22px; height: 22px; border-radius: 5px; display: flex; align-items: center; justify-content: center; flex-shrink: 0; }
