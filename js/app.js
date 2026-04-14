@@ -440,7 +440,24 @@ const OriginationsView = {
     const segments = proc.map((stage) => {
       const cls = stage.status === 'completed' ? 'done' : stage.status === 'in_progress' ? 'current' : 'pending';
       const sDone = stage.tasks.filter(t => t.status === 'done').length;
-      return `<div class="ud-progress-segment ${cls}" style="flex:${stage.tasks.length}" title="${stage.label}"><span class="ud-progress-segment-tip">${stage.label} (${sDone}/${stage.tasks.length})</span></div>`;
+      const sTotal = stage.tasks.length;
+      const pct = sTotal ? Math.round((sDone / sTotal) * 100) : 0;
+      const statusLabel = cls === 'done' ? 'Complete' : cls === 'current' ? 'In Progress' : 'Pending';
+      return `<div class="ud-progress-segment ${cls}" style="flex:${sTotal}">
+        <span class="ud-progress-segment-tip">
+          <div class="ud-seg-tip-header">
+            <div class="ud-seg-tip-icon ${cls}">${this._stageIcon(stage.id)}</div>
+            <span class="ud-seg-tip-name">${stage.label}</span>
+          </div>
+          <div style="display:flex;align-items:center;justify-content:space-between;gap:8px;margin-bottom:4px">
+            <span class="ud-seg-tip-status ${cls}">${statusLabel}</span>
+          </div>
+          <div class="ud-seg-tip-progress">
+            <div class="ud-seg-tip-bar"><div class="ud-seg-tip-bar-fill" style="width:${pct}%"></div></div>
+            <span>${sDone}/${sTotal} tasks</span>
+          </div>
+        </span>
+      </div>`;
     }).join('');
 
     const stageLabel = currentStage ? currentStage.label : (isCompleted ? 'Completed' : 'Not Started');
@@ -481,6 +498,40 @@ const OriginationsView = {
       </div>`;
   },
 
+  /* ── SLA deadlines per task (business days from submission) ── */
+  _TASK_SLA: {
+    pq_creation: 0, pq_submitted: 1, pq_review: 3, pq_accepted: 5,
+    ad_initial: 7, ad_title: 10, ad_disclosures: 14, ad_borrower_docs: 18, ad_app_docs: 21, ad_final: 24,
+    ca_upload: 26, ca_approve: 28, ca_order: 30, ca_report: 33, ca_review: 35,
+    cc_docs: 37, cc_atr: 39, cc_ctc: 42, cc_prelim: 44, cc_san: 46, cc_dates: 48, cc_fees: 50, cc_submit: 52,
+    pc_validate: 54, pc_files: 56, pc_package: 58, pc_funding: 60,
+    tm_securitize: 62, tm_approval: 64, tm_mers: 66, tm_mint: 68, tm_servicing: 70,
+  },
+
+  _taskDeadline(loan, taskId) {
+    if (!loan.submittedAt) return null;
+    const sla = this._TASK_SLA[taskId];
+    if (sla == null) return null;
+    const base = new Date(loan.submittedAt + 'T00:00:00');
+    // Add business days
+    let added = 0, d = new Date(base);
+    while (added < sla) { d.setDate(d.getDate() + 1); if (d.getDay() !== 0 && d.getDay() !== 6) added++; }
+    return d;
+  },
+
+  _formatDeadline(deadline) {
+    if (!deadline) return null;
+    const now = new Date();
+    const diffMs = deadline - now;
+    const diffDays = Math.ceil(diffMs / (1000 * 60 * 60 * 24));
+    const dateStr = deadline.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
+    let cls = '', urgency = '';
+    if (diffDays < 0) { cls = 'overdue'; urgency = `${Math.abs(diffDays)}d overdue`; }
+    else if (diffDays <= 3) { cls = 'soon'; urgency = diffDays === 0 ? 'Due today' : `${diffDays}d remaining`; }
+    else { urgency = `${diffDays}d remaining`; }
+    return { dateStr, urgency, cls };
+  },
+
   /* ── Action Banner (next required action, promoted from sidebar) ── */
   _udActionBanner(loan, proc) {
     const currentStage = proc.find(s => s.status === 'in_progress');
@@ -497,12 +548,21 @@ const OriginationsView = {
     if (!activeTask) return '';
     const nextPending = currentStage?.tasks.find(t => t.status === 'pending');
     const upNextHtml = nextPending ? `<div class="ud-action-banner-sub">Up next: ${nextPending.label} &middot; ${nextPending.role}</div>` : '';
+
+    // Deadline
+    const deadline = this._taskDeadline(loan, activeTask.id);
+    const dl = this._formatDeadline(deadline);
+    const deadlineHtml = dl
+      ? `<div class="ud-action-banner-deadline ${dl.cls}"><span class="ud-deadline-icon">&#128197;</span> Suggested deadline: ${dl.dateStr} &middot; ${dl.urgency}</div>`
+      : '';
+
     return `<div class="ud-action-banner">
       <div class="ud-action-banner-icon">&#9888;</div>
       <div class="ud-action-banner-body">
         <div class="ud-action-banner-label">Next Action Required</div>
         <div class="ud-action-banner-text">${activeTask.label}</div>
-        <div class="ud-action-banner-sub">${this._ownerAvatar(activeTask.role)} ${activeTask.role} &middot; ${currentStage.label}${upNextHtml ? ' &middot; ' : ''}</div>
+        <div class="ud-action-banner-sub">${this._ownerAvatar(activeTask.role)} ${activeTask.role} &middot; ${currentStage.label}</div>
+        ${deadlineHtml}
         ${upNextHtml}
       </div>
       ${activeTask.action ? `<button class="ud-action-banner-btn" onclick="event.stopPropagation()">${activeTask.action}</button>` : ''}
