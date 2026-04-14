@@ -1,0 +1,672 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Origination Detail — Layout Mockup</title>
+<style>
+  /* ── Reset & Base ── */
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+  body { font-family: 'Ubuntu', 'Inter', system-ui, -apple-system, sans-serif; background: #F3F2EC; color: #1A1A18; font-size: 14px; line-height: 1.5; }
+
+  /* ── Brand Tokens ── */
+  :root {
+    --green: #1D3D2A; --green-light: #2D6048; --green-bg: #D1FAE5;
+    --blue: #2563EB; --blue-bg: #DBEAFE;
+    --amber: #D97706; --amber-bg: #FEF3C7;
+    --red: #DC2626; --red-bg: #FEE2E2;
+    --gray-50: #FAFAF8; --gray-100: #F3F2EC; --gray-200: #EDECEA; --gray-300: #D8D6CD; --gray-400: #B0AEA4; --gray-500: #7B7A73; --gray-700: #3D3D38; --gray-900: #1A1A18;
+    --radius: 8px; --radius-lg: 12px;
+  }
+
+  /* ── Top Nav (static mockup) ── */
+  .topnav { background: var(--green); color: #fff; padding: 0 24px; display: flex; align-items: center; height: 48px; gap: 32px; font-size: 13px; font-weight: 600; }
+  .topnav-logo { height: 20px; opacity: 0.9; }
+  .topnav a { color: rgba(255,255,255,0.7); text-decoration: none; padding: 14px 0; border-bottom: 2px solid transparent; }
+  .topnav a.active { color: #fff; border-bottom-color: #fff; }
+
+  /* ── Page Shell ── */
+  .page { max-width: 1320px; margin: 0 auto; padding: 20px 24px 60px; }
+
+  /* ── Breadcrumb ── */
+  .breadcrumb { font-size: 12px; color: var(--gray-500); margin-bottom: 16px; }
+  .breadcrumb a { color: var(--green); text-decoration: none; font-weight: 600; }
+  .breadcrumb a:hover { text-decoration: underline; }
+
+  /* ══════════════════════════════════════════
+     SECTION 1: CONTEXT HEADER (always visible)
+     ══════════════════════════════════════════ */
+  .context-header {
+    background: #fff; border: 1px solid var(--gray-300); border-radius: var(--radius-lg);
+    padding: 20px 24px; margin-bottom: 16px;
+  }
+  .context-top { display: flex; align-items: flex-start; justify-content: space-between; margin-bottom: 14px; }
+  .context-address { font-size: 20px; font-weight: 700; color: var(--gray-900); }
+  .context-sub { font-size: 13px; color: var(--gray-500); margin-top: 2px; }
+  .status-pill {
+    display: inline-flex; align-items: center; gap: 6px;
+    padding: 5px 14px; border-radius: 20px; font-size: 12px; font-weight: 700;
+    border: 1.5px solid var(--blue); color: var(--blue); background: var(--blue-bg);
+  }
+  .status-pill.completed { border-color: #16A34A; color: #065F46; background: var(--green-bg); }
+  .status-pill-dot { width: 6px; height: 6px; border-radius: 50%; background: currentColor; }
+
+  .context-chips {
+    display: flex; flex-wrap: wrap; gap: 6px 16px; padding-top: 14px; border-top: 1px solid var(--gray-300);
+  }
+  .chip { display: flex; flex-direction: column; min-width: 100px; }
+  .chip-label { font-size: 11px; font-weight: 600; color: var(--gray-500); text-transform: uppercase; letter-spacing: 0.03em; }
+  .chip-value { font-size: 14px; font-weight: 700; color: var(--gray-900); }
+  .chip-value.warn { color: var(--red); }
+
+  /* ══════════════════════════════════════════
+     SECTION 2: HORIZONTAL STAGE TRACKER
+     ══════════════════════════════════════════ */
+  .stage-tracker {
+    background: #fff; border: 1px solid var(--gray-300); border-radius: var(--radius-lg);
+    padding: 16px 24px; margin-bottom: 16px; display: flex; align-items: center; gap: 0;
+    overflow-x: auto;
+  }
+  .stage {
+    display: flex; align-items: center; gap: 10px; flex: 1; min-width: 0;
+    cursor: pointer; padding: 8px 12px; border-radius: var(--radius); transition: background 0.1s;
+  }
+  .stage:hover { background: var(--gray-50); }
+  .stage.active { background: var(--blue-bg); }
+  .stage-dot {
+    width: 28px; height: 28px; border-radius: 50%; display: flex; align-items: center; justify-content: center;
+    font-size: 11px; font-weight: 700; flex-shrink: 0;
+  }
+  .stage-dot.done { background: var(--green); color: #fff; }
+  .stage-dot.current { background: var(--blue); color: #fff; }
+  .stage-dot.pending { background: var(--gray-200); color: var(--gray-500); border: 2px solid var(--gray-300); }
+  .stage-info { min-width: 0; }
+  .stage-name { font-size: 12px; font-weight: 700; color: var(--gray-900); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .stage-detail { font-size: 10px; color: var(--gray-500); white-space: nowrap; }
+  .stage-detail.warn { color: var(--amber); font-weight: 600; }
+  .stage-line { width: 24px; height: 2px; flex-shrink: 0; }
+  .stage-line.done { background: var(--green); }
+  .stage-line.pending { background: var(--gray-300); }
+
+  /* ══════════════════════════════════════════
+     SECTION 3: CONTENT AREA (2 columns)
+     ══════════════════════════════════════════ */
+  .content-grid { display: grid; grid-template-columns: 1fr 320px; gap: 16px; align-items: start; }
+
+  /* ── Left: Tab-based content ── */
+  .content-tabs { display: flex; gap: 2px; background: var(--gray-200); border-radius: var(--radius); padding: 3px; margin-bottom: 16px; width: fit-content; }
+  .content-tab {
+    padding: 7px 16px; border-radius: 6px; font-size: 13px; font-weight: 600;
+    border: none; background: transparent; color: var(--gray-500); cursor: pointer;
+  }
+  .content-tab.active { background: #fff; color: var(--green); box-shadow: 0 1px 3px rgba(0,0,0,0.08); }
+
+  .content-main { background: #fff; border: 1px solid var(--gray-300); border-radius: var(--radius-lg); overflow: hidden; }
+  .content-section { padding: 20px 24px; }
+  .content-section + .content-section { border-top: 1px solid var(--gray-200); }
+  .section-title { font-size: 15px; font-weight: 700; color: var(--gray-900); margin-bottom: 12px; display: flex; align-items: center; gap: 8px; }
+  .section-count { font-size: 11px; font-weight: 600; color: var(--gray-500); background: var(--gray-200); padding: 2px 8px; border-radius: 10px; }
+
+  /* ── Task Rows ── */
+  .task-row {
+    display: flex; align-items: center; gap: 12px; padding: 10px 0;
+    border-bottom: 1px solid var(--gray-100);
+  }
+  .task-row:last-child { border-bottom: none; }
+  .task-icon { width: 22px; height: 22px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 11px; flex-shrink: 0; }
+  .task-icon.done { background: #16A34A; color: #fff; }
+  .task-icon.active { background: var(--blue); color: #fff; font-size: 8px; }
+  .task-icon.pending { border: 2px solid var(--gray-300); background: #fff; }
+  .task-label { flex: 1; font-size: 13px; }
+  .task-label.done { color: var(--gray-400); }
+  .task-owner {
+    display: inline-block; padding: 3px 10px; border-radius: 12px; font-size: 11px; font-weight: 600;
+    background: var(--gray-100); color: var(--gray-500); white-space: nowrap;
+  }
+  .task-owner.lo { background: #EDE9FE; color: #6D28D9; }
+  .task-owner.am { background: #DBEAFE; color: #1E40AF; }
+  .task-owner.borrower { background: var(--amber-bg); color: #92400E; }
+  .task-owner.system { background: var(--gray-200); color: var(--gray-500); }
+  .task-action {
+    padding: 4px 12px; border-radius: 6px; font-size: 11px; font-weight: 700;
+    border: 1px solid var(--green); color: var(--green); background: transparent;
+    cursor: pointer; white-space: nowrap;
+  }
+  .task-action:hover { background: var(--green); color: #fff; }
+  .task-action.primary { background: var(--green); color: #fff; border-color: var(--green); }
+  .task-stage-tag { font-size: 10px; color: var(--gray-400); white-space: nowrap; }
+
+  /* ── Info Grid (Loan Overview, Borrower, etc.) ── */
+  .info-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 12px 32px; }
+  .info-item { padding: 6px 0; }
+  .info-label { font-size: 11px; font-weight: 600; color: var(--gray-500); text-transform: uppercase; letter-spacing: 0.03em; }
+  .info-value { font-size: 14px; font-weight: 600; color: var(--gray-900); margin-top: 1px; }
+  .info-value.tbd { color: var(--gray-400); }
+
+  /* ── Document Rows ── */
+  .doc-row { display: flex; align-items: center; gap: 12px; padding: 10px 0; border-bottom: 1px solid var(--gray-100); }
+  .doc-row:last-child { border-bottom: none; }
+  .doc-icon { width: 32px; height: 32px; border-radius: 6px; background: var(--gray-100); display: flex; align-items: center; justify-content: center; font-size: 14px; flex-shrink: 0; color: var(--gray-500); }
+  .doc-info { flex: 1; }
+  .doc-name { font-size: 13px; font-weight: 600; }
+  .doc-meta { font-size: 11px; color: var(--gray-400); margin-top: 1px; }
+  .doc-badge { font-size: 10px; font-weight: 700; padding: 2px 8px; border-radius: 8px; }
+  .doc-badge.approved { background: var(--green-bg); color: #065F46; }
+  .doc-badge.pending { background: var(--amber-bg); color: #92400E; }
+  .doc-badge.missing { background: var(--red-bg); color: #991B1B; }
+
+  /* ── Right Sidebar Panels ── */
+  .sidebar-panel {
+    background: #fff; border: 1px solid var(--gray-300); border-radius: var(--radius-lg);
+    margin-bottom: 12px; overflow: hidden;
+  }
+  .sidebar-panel-title {
+    font-size: 12px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.05em;
+    color: var(--gray-500); padding: 14px 16px 8px;
+  }
+  .sidebar-item { padding: 8px 16px; font-size: 13px; display: flex; align-items: flex-start; gap: 8px; }
+  .sidebar-item + .sidebar-item { border-top: 1px solid var(--gray-100); }
+  .sidebar-dot { width: 8px; height: 8px; border-radius: 50%; flex-shrink: 0; margin-top: 5px; }
+  .sidebar-dot.red { background: var(--red); }
+  .sidebar-dot.amber { background: var(--amber); }
+  .sidebar-dot.green { background: #16A34A; }
+  .sidebar-dot.blue { background: var(--blue); }
+  .sidebar-item-text { flex: 1; }
+  .sidebar-item-sub { font-size: 11px; color: var(--gray-400); margin-top: 1px; }
+  .sidebar-kv { padding: 8px 16px; display: flex; justify-content: space-between; font-size: 13px; }
+  .sidebar-kv + .sidebar-kv { border-top: 1px solid var(--gray-100); }
+  .sidebar-kv-label { color: var(--gray-500); }
+  .sidebar-kv-value { font-weight: 600; color: var(--gray-900); }
+  .sidebar-kv-value.warn { color: var(--red); }
+
+  /* ── Progress bar ── */
+  .progress-bar { height: 4px; background: var(--gray-200); border-radius: 2px; overflow: hidden; }
+  .progress-fill { height: 100%; background: var(--green); border-radius: 2px; }
+
+  /* ── Annotations / Legend ── */
+  .mockup-note {
+    background: #FFFBEB; border: 1px dashed var(--amber); border-radius: var(--radius);
+    padding: 12px 16px; margin-bottom: 20px; font-size: 12px; color: #92400E;
+  }
+  .mockup-note strong { color: #78350F; }
+
+  /* ── Section Label (for mockup) ── */
+  .mockup-label {
+    font-size: 10px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.1em;
+    color: var(--blue); margin-bottom: 6px;
+  }
+
+  /* ── Filter bar fix mockup ── */
+  .filter-bar {
+    display: flex; align-items: center; justify-content: space-between;
+    padding: 10px 20px;
+  }
+  .filter-tabs { display: flex; gap: 2px; background: var(--gray-200); border-radius: var(--radius); padding: 3px; }
+  .filter-tab { padding: 6px 16px; border-radius: 6px; font-size: 13px; font-weight: 600; border: none; background: transparent; color: var(--gray-500); cursor: pointer; }
+  .filter-tab.active { background: #fff; color: var(--green); box-shadow: 0 1px 3px rgba(0,0,0,0.08); }
+  .result-count { font-size: 12px; color: var(--gray-400); margin-left: 12px; }
+  .search-input { padding: 6px 12px; font-size: 12px; border: 1px solid var(--gray-300); border-radius: var(--radius); background: var(--gray-50); width: 220px; }
+</style>
+</head>
+<body>
+
+<!-- ════════════════════════════════════════════
+     TOP NAV (static mockup)
+     ════════════════════════════════════════════ -->
+<div class="topnav">
+  <span style="font-weight:700;font-size:15px;letter-spacing:0.02em">Homium</span>
+  <a href="#">Dashboard</a>
+  <a href="#">Applications</a>
+  <a href="#" class="active">Originations</a>
+  <a href="#">Batches</a>
+  <a href="#">Activations</a>
+</div>
+
+<div class="page">
+
+<!-- ════════════════════════════════════════════
+     MOCKUP NOTES
+     ════════════════════════════════════════════ -->
+<div class="mockup-note">
+  <strong>Layout Mockup</strong> — This is a static visual mockup for the redesigned Origination/Application detail view.
+  No functionality. The same unified layout would be used for both the <strong>Applications</strong> and <strong>Originations</strong> tabs, with content adapting to context.
+</div>
+
+<!-- ════════════════════════════════════════════
+     BREADCRUMB
+     ════════════════════════════════════════════ -->
+<div class="breadcrumb">
+  <a href="#">Originations</a> &rsaquo; DCDC000001 &rsaquo; Evelyn &amp; Marcus Ross
+</div>
+
+<!-- ════════════════════════════════════════════
+     1. CONTEXT HEADER
+     ════════════════════════════════════════════ -->
+<div class="mockup-label">1. Context Header — Key loan info always visible</div>
+<div class="context-header">
+  <div class="context-top">
+    <div>
+      <div class="context-address">3407 Wisconsin Ave NW</div>
+      <div class="context-sub">Washington, DC 20016</div>
+    </div>
+    <span class="status-pill"><span class="status-pill-dot"></span> Initial Application Submitted</span>
+  </div>
+  <div class="context-chips">
+    <div class="chip"><span class="chip-label">Loan ID</span><span class="chip-value">DCDC000001</span></div>
+    <div class="chip"><span class="chip-label">Program</span><span class="chip-value">DC Dream Fund</span></div>
+    <div class="chip"><span class="chip-label">Amount</span><span class="chip-value">$195,000</span></div>
+    <div class="chip"><span class="chip-label">LTV / CLTV</span><span class="chip-value">71% / 75%</span></div>
+    <div class="chip"><span class="chip-label">FICO</span><span class="chip-value">742</span></div>
+    <div class="chip"><span class="chip-label">Borrower</span><span class="chip-value">Evelyn &amp; Marcus Ross</span></div>
+    <div class="chip"><span class="chip-label">Loan Officer</span><span class="chip-value">James Okafor</span></div>
+    <div class="chip"><span class="chip-label">Est. Close</span><span class="chip-value warn">TBD</span></div>
+  </div>
+</div>
+
+<!-- ════════════════════════════════════════════
+     2. HORIZONTAL STAGE TRACKER
+     ════════════════════════════════════════════ -->
+<div class="mockup-label">2. Stage Tracker — Consolidated 6-stage pipeline (replaces both 9-step stepper and 11-tab sidebar)</div>
+<div class="stage-tracker">
+  <div class="stage">
+    <div class="stage-dot done">&#10003;</div>
+    <div class="stage-info"><div class="stage-name">Prequalification</div><div class="stage-detail">4/4 complete</div></div>
+  </div>
+  <div class="stage-line done"></div>
+
+  <div class="stage active">
+    <div class="stage-dot current">2</div>
+    <div class="stage-info"><div class="stage-name">Application &amp; Disclosures</div><div class="stage-detail warn">1/6 &middot; Title validation due</div></div>
+  </div>
+  <div class="stage-line pending"></div>
+
+  <div class="stage">
+    <div class="stage-dot pending">3</div>
+    <div class="stage-info"><div class="stage-name">CDA &amp; Appraisal</div><div class="stage-detail">0/5</div></div>
+  </div>
+  <div class="stage-line pending"></div>
+
+  <div class="stage">
+    <div class="stage-dot pending">4</div>
+    <div class="stage-info"><div class="stage-name">Closing</div><div class="stage-detail">0/8</div></div>
+  </div>
+  <div class="stage-line pending"></div>
+
+  <div class="stage">
+    <div class="stage-dot pending">5</div>
+    <div class="stage-info"><div class="stage-name">Post-Close &amp; Funding</div><div class="stage-detail">0/4</div></div>
+  </div>
+  <div class="stage-line pending"></div>
+
+  <div class="stage">
+    <div class="stage-dot pending">6</div>
+    <div class="stage-info"><div class="stage-name">Transfer &amp; Minting</div><div class="stage-detail">0/5</div></div>
+  </div>
+</div>
+
+<!-- ════════════════════════════════════════════
+     3. MAIN CONTENT AREA
+     ════════════════════════════════════════════ -->
+<div class="mockup-label">3. Content Area — Tabs for content, sidebar for at-a-glance info</div>
+<div class="content-grid">
+
+  <!-- ── LEFT COLUMN ── -->
+  <div>
+    <div class="content-tabs">
+      <button class="content-tab active">Overview</button>
+      <button class="content-tab">Tasks</button>
+      <button class="content-tab">Documents</button>
+      <button class="content-tab">Parties</button>
+      <button class="content-tab">History</button>
+    </div>
+
+    <div class="content-main">
+
+      <!-- OVERVIEW TAB — shows current stage tasks + loan overview -->
+
+      <!-- Current Stage: Tasks -->
+      <div class="content-section">
+        <div class="section-title">
+          Application &amp; Disclosures
+          <span class="section-count">1 of 6 tasks</span>
+          <div style="flex:1"></div>
+          <div style="width:100px"><div class="progress-bar"><div class="progress-fill" style="width:17%"></div></div></div>
+        </div>
+
+        <div class="task-row">
+          <div class="task-icon done">&#10003;</div>
+          <span class="task-label done">Initial Application Submission</span>
+          <span class="task-owner lo">Loan Officer</span>
+        </div>
+        <div class="task-row">
+          <div class="task-icon active">&#9679;</div>
+          <span class="task-label">Validate Title Information &amp; Send Initial Disclosures</span>
+          <span class="task-owner am">Account Manager</span>
+          <button class="task-action primary">Validate</button>
+        </div>
+        <div class="task-row">
+          <div class="task-icon pending"></div>
+          <span class="task-label">Initial Disclosures Signed</span>
+          <span class="task-owner borrower">Borrower</span>
+        </div>
+        <div class="task-row">
+          <div class="task-icon pending"></div>
+          <span class="task-label">Borrower Qualification Documents</span>
+          <span class="task-owner lo">Loan Officer</span>
+        </div>
+        <div class="task-row">
+          <div class="task-icon pending"></div>
+          <span class="task-label">Application Documents Uploaded</span>
+          <span class="task-owner lo">Loan Officer</span>
+        </div>
+        <div class="task-row">
+          <div class="task-icon pending"></div>
+          <span class="task-label">Final Application Submission</span>
+          <span class="task-owner lo">Loan Officer</span>
+        </div>
+      </div>
+
+      <!-- Completed Stage: Prequalification (collapsed summary) -->
+      <div class="content-section">
+        <div class="section-title" style="cursor:pointer">
+          <span style="color:#16A34A;font-size:16px;margin-right:4px">&#10003;</span>
+          Prequalification
+          <span class="section-count">4/4 complete</span>
+          <span style="flex:1"></span>
+          <span style="font-size:12px;color:var(--gray-400)">&#9660;</span>
+        </div>
+        <div style="font-size:12px;color:var(--gray-400);margin-top:-4px">Completed &middot; All tasks done</div>
+      </div>
+
+      <!-- Loan Overview -->
+      <div class="content-section">
+        <div class="section-title">Loan Overview</div>
+        <div class="info-grid">
+          <div class="info-item"><div class="info-label">Loan Amount</div><div class="info-value">$195,000</div></div>
+          <div class="info-item"><div class="info-label">Appraised Value</div><div class="info-value tbd">TBD</div></div>
+          <div class="info-item"><div class="info-label">First Mortgage Balance</div><div class="info-value tbd">TBD</div></div>
+          <div class="info-item"><div class="info-label">LTV / CLTV</div><div class="info-value">71% / 75%</div></div>
+          <div class="info-item"><div class="info-label">Closing Date</div><div class="info-value tbd">TBD</div></div>
+          <div class="info-item"><div class="info-label">Disbursement Date</div><div class="info-value tbd">TBD</div></div>
+          <div class="info-item"><div class="info-label">Closing Fees</div><div class="info-value tbd">TBD</div></div>
+          <div class="info-item"><div class="info-label">Borrower Net</div><div class="info-value tbd">TBD</div></div>
+        </div>
+      </div>
+
+      <!-- Originator & Appraisal -->
+      <div class="content-section">
+        <div class="section-title">Originator &amp; Appraisal</div>
+        <div class="info-grid">
+          <div class="info-item"><div class="info-label">Company</div><div class="info-value">Capital City Lending</div></div>
+          <div class="info-item"><div class="info-label">Appraiser Company</div><div class="info-value tbd">TBD</div></div>
+          <div class="info-item"><div class="info-label">Company NMLS #</div><div class="info-value">2045871</div></div>
+          <div class="info-item"><div class="info-label">Appraiser Name</div><div class="info-value tbd">TBD</div></div>
+        </div>
+      </div>
+
+    </div><!-- /content-main -->
+  </div><!-- /left column -->
+
+  <!-- ── RIGHT SIDEBAR ── -->
+  <div>
+
+    <!-- Next Actions -->
+    <div class="sidebar-panel">
+      <div class="sidebar-panel-title">Next Actions</div>
+      <div class="sidebar-item">
+        <span class="sidebar-dot amber"></span>
+        <div class="sidebar-item-text">
+          <div>Validate Title Information</div>
+          <div class="sidebar-item-sub">Account Manager &middot; Application &amp; Disclosures</div>
+        </div>
+      </div>
+      <div class="sidebar-item">
+        <span class="sidebar-dot blue"></span>
+        <div class="sidebar-item-text">
+          <div>Awaiting Borrower Disclosures</div>
+          <div class="sidebar-item-sub">Borrower &middot; Expected by Apr 18</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Warnings -->
+    <div class="sidebar-panel">
+      <div class="sidebar-panel-title">Warnings</div>
+      <div class="sidebar-item">
+        <span class="sidebar-dot red"></span>
+        <div class="sidebar-item-text">
+          <div>21 days in current stage</div>
+          <div class="sidebar-item-sub">Avg for this stage: 10 days</div>
+        </div>
+      </div>
+      <div class="sidebar-item">
+        <span class="sidebar-dot amber"></span>
+        <div class="sidebar-item-text">
+          <div>Closing date not set</div>
+          <div class="sidebar-item-sub">Set closing date to proceed</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Key Dates -->
+    <div class="sidebar-panel">
+      <div class="sidebar-panel-title">Key Dates</div>
+      <div class="sidebar-kv"><span class="sidebar-kv-label">Submitted</span><span class="sidebar-kv-value">Mar 18, 2026</span></div>
+      <div class="sidebar-kv"><span class="sidebar-kv-label">Rate Lock</span><span class="sidebar-kv-value tbd">TBD</span></div>
+      <div class="sidebar-kv"><span class="sidebar-kv-label">Est. Close</span><span class="sidebar-kv-value warn">TBD</span></div>
+      <div class="sidebar-kv"><span class="sidebar-kv-label">Days in Stage</span><span class="sidebar-kv-value" style="color:var(--red)">21d</span></div>
+    </div>
+
+    <!-- Parties -->
+    <div class="sidebar-panel">
+      <div class="sidebar-panel-title">Parties</div>
+      <div class="sidebar-kv"><span class="sidebar-kv-label">Borrower</span><span class="sidebar-kv-value">Evelyn &amp; Marcus Ross</span></div>
+      <div class="sidebar-kv"><span class="sidebar-kv-label">Loan Officer</span><span class="sidebar-kv-value">James Okafor</span></div>
+      <div class="sidebar-kv"><span class="sidebar-kv-label">Processor</span><span class="sidebar-kv-value">Kevin Park</span></div>
+      <div class="sidebar-kv"><span class="sidebar-kv-label">Title Co.</span><span class="sidebar-kv-value tbd">TBD</span></div>
+    </div>
+
+  </div><!-- /right sidebar -->
+
+</div><!-- /content-grid -->
+
+<!-- ════════════════════════════════════════════
+     MOCKUP: TASKS TAB (what it would look like)
+     ════════════════════════════════════════════ -->
+<div style="margin-top:40px">
+<div class="mockup-label">Alternate tab view: "Tasks" — Full pipeline view across all stages</div>
+<div class="mockup-note">When the user clicks the <strong>Tasks</strong> tab, they see ALL stages expanded (not just the current one). This replaces the old 11-tab sidebar approach with a single scrollable view.</div>
+
+<div class="content-main">
+  <!-- Stage 1: Prequalification (completed) -->
+  <div class="content-section">
+    <div class="section-title">
+      <span style="color:#16A34A;font-size:16px">&#10003;</span>
+      Prequalification
+      <span class="section-count">4/4</span>
+    </div>
+    <div class="task-row">
+      <div class="task-icon done">&#10003;</div>
+      <span class="task-label done">Prequalification Creation</span>
+      <span class="task-owner lo">Loan Officer</span>
+    </div>
+    <div class="task-row">
+      <div class="task-icon done">&#10003;</div>
+      <span class="task-label done">Prequalification Submitted</span>
+      <span class="task-owner lo">Loan Officer</span>
+    </div>
+    <div class="task-row">
+      <div class="task-icon done">&#10003;</div>
+      <span class="task-label done">Prequalification Review</span>
+      <span class="task-owner am">Account Manager</span>
+    </div>
+    <div class="task-row">
+      <div class="task-icon done">&#10003;</div>
+      <span class="task-label done">Prequalification Accepted</span>
+      <span class="task-owner lo">Loan Officer</span>
+    </div>
+  </div>
+
+  <!-- Stage 2: Application & Disclosures (in progress) -->
+  <div class="content-section" style="border-left: 3px solid var(--blue);">
+    <div class="section-title">
+      Application &amp; Disclosures
+      <span class="section-count">1/6 &middot; In Progress</span>
+    </div>
+    <div class="task-row">
+      <div class="task-icon done">&#10003;</div>
+      <span class="task-label done">Initial Application Submission</span>
+      <span class="task-owner lo">Loan Officer</span>
+    </div>
+    <div class="task-row">
+      <div class="task-icon active">&#9679;</div>
+      <span class="task-label">Validate Title Information &amp; Send Initial Disclosures</span>
+      <span class="task-owner am">Account Manager</span>
+      <button class="task-action primary">Validate</button>
+    </div>
+    <div class="task-row">
+      <div class="task-icon pending"></div>
+      <span class="task-label">Initial Disclosures Signed</span>
+      <span class="task-owner borrower">Borrower</span>
+    </div>
+    <div class="task-row">
+      <div class="task-icon pending"></div>
+      <span class="task-label">Borrower Qualification Documents</span>
+      <span class="task-owner lo">Loan Officer</span>
+    </div>
+    <div class="task-row">
+      <div class="task-icon pending"></div>
+      <span class="task-label">Application Documents Uploaded</span>
+      <span class="task-owner lo">Loan Officer</span>
+    </div>
+    <div class="task-row">
+      <div class="task-icon pending"></div>
+      <span class="task-label">Final Application Submission</span>
+      <span class="task-owner lo">Loan Officer</span>
+    </div>
+  </div>
+
+  <!-- Stage 3-6: Pending (collapsed) -->
+  <div class="content-section">
+    <div class="section-title" style="color:var(--gray-400)">
+      CDA &amp; Appraisal <span class="section-count">0/5 &middot; Pending</span>
+      <span style="flex:1"></span><span style="font-size:12px">&#9654;</span>
+    </div>
+  </div>
+  <div class="content-section">
+    <div class="section-title" style="color:var(--gray-400)">
+      Closing <span class="section-count">0/8 &middot; Pending</span>
+      <span style="flex:1"></span><span style="font-size:12px">&#9654;</span>
+    </div>
+  </div>
+  <div class="content-section">
+    <div class="section-title" style="color:var(--gray-400)">
+      Post-Close &amp; Funding <span class="section-count">0/4 &middot; Pending</span>
+      <span style="flex:1"></span><span style="font-size:12px">&#9654;</span>
+    </div>
+  </div>
+  <div class="content-section">
+    <div class="section-title" style="color:var(--gray-400)">
+      Transfer &amp; Minting <span class="section-count">0/5 &middot; Pending</span>
+      <span style="flex:1"></span><span style="font-size:12px">&#9654;</span>
+    </div>
+  </div>
+</div>
+</div>
+
+<!-- ════════════════════════════════════════════
+     MOCKUP: DOCUMENTS TAB
+     ════════════════════════════════════════════ -->
+<div style="margin-top:40px">
+<div class="mockup-label">Alternate tab view: "Documents" — All documents across stages</div>
+
+<div class="content-main">
+  <div class="content-section">
+    <div class="section-title">Documents <span class="section-count">3 of 6 approved</span></div>
+
+    <div class="doc-row">
+      <div class="doc-icon">&#128196;</div>
+      <div class="doc-info"><div class="doc-name">Initial Disclosure Package</div><div class="doc-meta">PDF &middot; 2.4 MB &middot; Uploaded Mar 18</div></div>
+      <span class="doc-badge approved">Approved</span>
+      <span class="task-owner am">Account Manager</span>
+    </div>
+    <div class="doc-row">
+      <div class="doc-icon">&#128196;</div>
+      <div class="doc-info"><div class="doc-name">Borrower Authorization</div><div class="doc-meta">PDF &middot; 156 KB &middot; Uploaded Mar 18</div></div>
+      <span class="doc-badge approved">Approved</span>
+      <span class="task-owner am">Account Manager</span>
+    </div>
+    <div class="doc-row">
+      <div class="doc-icon">&#128196;</div>
+      <div class="doc-info"><div class="doc-name">Appraisal Report</div><div class="doc-meta">Required for CDA &amp; Appraisal stage</div></div>
+      <span class="doc-badge missing">Not Uploaded</span>
+      <span class="task-owner lo">Loan Officer</span>
+      <button class="task-action">Upload</button>
+    </div>
+    <div class="doc-row">
+      <div class="doc-icon">&#128196;</div>
+      <div class="doc-info"><div class="doc-name">Title Commitment</div><div class="doc-meta">Required for Closing stage</div></div>
+      <span class="doc-badge pending">Pending</span>
+      <span class="task-owner am">Account Manager</span>
+    </div>
+    <div class="doc-row">
+      <div class="doc-icon">&#128196;</div>
+      <div class="doc-info"><div class="doc-name">Closing Disclosure</div><div class="doc-meta">Required for Closing stage</div></div>
+      <span class="doc-badge pending">Pending</span>
+      <span class="task-owner system">System</span>
+    </div>
+    <div class="doc-row">
+      <div class="doc-icon">&#128196;</div>
+      <div class="doc-info"><div class="doc-name">SAN Note</div><div class="doc-meta">Required for Closing stage</div></div>
+      <span class="doc-badge pending">Pending</span>
+      <span class="task-owner am">Account Manager</span>
+    </div>
+  </div>
+</div>
+</div>
+
+<!-- ════════════════════════════════════════════
+     DESIGN NOTES
+     ════════════════════════════════════════════ -->
+<div style="margin-top:48px; padding: 24px; background: #fff; border: 1px solid var(--gray-300); border-radius: var(--radius-lg);">
+  <h3 style="font-size:16px;margin-bottom:16px;color:var(--green)">Design Rationale</h3>
+
+  <div style="display:grid;grid-template-columns:1fr 1fr;gap:24px;font-size:13px;line-height:1.6">
+    <div>
+      <strong>What changed from current:</strong>
+      <ul style="margin-top:8px;padding-left:18px;color:var(--gray-700)">
+        <li><strong>Eliminated 11-tab left sidebar</strong> &rarr; 5 content tabs (Overview, Tasks, Documents, Parties, History)</li>
+        <li><strong>Horizontal stage tracker</strong> replaces both the 9-step stepper (Applications) and the accordion pipeline (Originations)</li>
+        <li><strong>Right sidebar</strong> for at-a-glance panels (Next Actions, Warnings, Key Dates, Parties) — always visible while scrolling content</li>
+        <li><strong>Context header</strong> with key loan chips — no need to hunt for FICO, LTV, program info</li>
+        <li><strong>Color-coded owner badges</strong> — instantly see who owns each task (LO = purple, AM = blue, Borrower = amber, System = gray)</li>
+      </ul>
+    </div>
+    <div>
+      <strong>Consistency between Applications &amp; Originations:</strong>
+      <ul style="margin-top:8px;padding-left:18px;color:var(--gray-700)">
+        <li>Same layout structure for both views</li>
+        <li>Same stage tracker (Applications maps its 9 steps into the same 6 stages)</li>
+        <li>Same content tabs and sidebar panels</li>
+        <li>Same owner badge colors and task row patterns</li>
+        <li>Originations detail = full pipeline with all 6 stages</li>
+        <li>Applications detail = same view, with step-specific content highlighted in the active stage</li>
+      </ul>
+    </div>
+  </div>
+
+  <div style="margin-top:20px;font-size:13px;line-height:1.6">
+    <strong>For someone new to originations:</strong>
+    <ul style="margin-top:8px;padding-left:18px;color:var(--gray-700)">
+      <li>The stage tracker tells you exactly where this loan is in the process at a glance</li>
+      <li>"Next Actions" panel immediately shows what needs to happen and who should do it</li>
+      <li>Warnings panel flags problems proactively (stalled, missing dates, expiring locks)</li>
+      <li>Owner badges answer "whose turn is it?" without needing to understand the full workflow</li>
+      <li>Overview tab shows current stage tasks + loan summary — the most common view — without any navigation clicks</li>
+    </ul>
+  </div>
+</div>
+
+</div><!-- /page -->
+</body>
+</html>

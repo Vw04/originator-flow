@@ -175,9 +175,8 @@ const OriginationsView = {
   _sortDir: 'asc',
   _page: 0,
   _pageSize: 15,
-  _activeSidebarTab: 'details',
-  _expandedStages: new Set(),
-  _collapsedSections: new Set(),
+  _activeTab: 'overview',       // 'overview' | 'tasks' | 'documents' | 'parties' | 'history'
+  _expandedTaskStages: new Set(),
 
   /* ── Days-in-stage (demo approximations) ── */
   _LOAN_DAYS: {
@@ -283,7 +282,7 @@ const OriginationsView = {
 
     const tableHtml = `
       <div class="card" style="padding:0;overflow:hidden">
-        <div style="display:flex;align-items:center;justify-content:space-between;padding:12px 20px">
+        <div style="display:flex;align-items:center;justify-content:space-between;padding:16px 20px">
           <div style="display:flex;align-items:center;gap:12px">
             ${filterHtml}
             <span style="font-size:12px;color:var(--color-text-muted)">${filtered.length} result${filtered.length !== 1 ? 's' : ''}</span>
@@ -373,427 +372,297 @@ const OriginationsView = {
   _setPage(p)    { this._page = Math.max(0, p); App.renderView('/originations'); },
 
   /* ================================================================
-     DETAIL VIEW
+     DETAIL VIEW — Unified layout (context header + stage tracker + tabs + sidebar)
   ================================================================ */
   _renderDetail() {
     const loan = State.getLoan(this._selectedLoanId);
-    if (!loan) {
-      this._viewMode = 'list';
-      return this._renderList();
-    }
+    if (!loan) { this._viewMode = 'list'; return this._renderList(); }
 
     const proc = generateOriginationProcess(loan.status);
-    const isCompleted = loan.status === 'completed';
-    const statusPillClass = isCompleted ? 'completed' : '';
-    const addressDisplay = loan.phase === 'prequalification' ? 'PREQUALIFICATION' : loan.address.split(',')[0].trim().toUpperCase();
-    const stateDisplay = loan.address.split(',').slice(-2).join(',').trim();
-
-    /* ── Header card ── */
-    const headerHtml = `
-      <div class="orig-header-card">
-        <div class="orig-header-top">
-          <div>
-            <div class="orig-header-title">${addressDisplay}</div>
-            <div class="orig-header-subtitle">${stateDisplay}</div>
-          </div>
-          <span class="orig-status-pill ${statusPillClass}">${Display.loanStatusLabel(loan.status)}</span>
-        </div>
-        <hr class="orig-header-divider" />
-        <div class="orig-header-info-grid">
-          <div><div class="orig-header-info-label">Type:</div><div class="orig-header-info-value">${loan.loanType || 'Purchase'}</div></div>
-          <div><div class="orig-header-info-label">Loan Amount:</div><div class="orig-header-info-value">${Display.currency(loan.amount)}</div></div>
-          <div><div class="orig-header-info-label">Loan ID:</div><div class="orig-header-info-value">${loan.minNumber === 'PREQUALIFICATION' ? 'PREQUALIFICATION' : loan.id}</div></div>
-          <div><div class="orig-header-info-label">MIN #:</div><div class="orig-header-info-value">${loan.minNumber || '—'}</div></div>
-          <div><div class="orig-header-info-label">Borrower Name(s):</div><div class="orig-header-info-value">${loan.borrowerName.toUpperCase()}</div></div>
-          <div><div class="orig-header-info-label">Property Unit:</div><div class="orig-header-info-value">${loan.propertyUnit || '—'}</div></div>
-          <div><div class="orig-header-info-label">Program:</div><div class="orig-header-info-value">${loan.program}</div></div>
-          <div><div class="orig-header-info-label">FICO:</div><div class="orig-header-info-value">${loan.fico || '—'}</div></div>
-        </div>
-      </div>`;
-
-    /* ── Sidebar ── */
-    const TABS = [
-      { key: 'details',          label: 'Details',                  hasContent: true },
-      { key: 'documents',        label: 'Documents',                hasContent: true },
-      { key: 'prequalification', label: 'Prequalification',         hasContent: true },
-      { key: 'borrower',         label: 'Borrower Qualifications',  hasContent: true },
-      { key: 'appraisal',        label: 'Appraisal',                hasContent: true },
-      { key: 'title',            label: 'Title Information',        hasContent: false },
-      { key: 'closing',          label: 'Closing',                  hasContent: true },
-      { key: 'post_closing',     label: 'Post-Closing',             hasContent: true },
-      { key: 'payment',          label: 'Payment',                  hasContent: false },
-      { key: 'history',          label: 'History',                  hasContent: true },
-      { key: 'contracts',        label: 'Contracts',                hasContent: false },
-    ];
-
-    const sidebarHtml = `<div class="orig-sidebar">${TABS.map(t =>
-      `<button class="orig-sidebar-item ${this._activeSidebarTab === t.key ? 'active' : ''} ${t.hasContent ? 'has-content' : ''}" onclick="OriginationsView.switchSidebarTab('${t.key}')">${t.label}</button>`
-    ).join('')}</div>`;
-
-    /* ── Content ── */
-    let contentHtml = '';
-    switch (this._activeSidebarTab) {
-      case 'details':          contentHtml = this._renderDetailsTab(loan, proc); break;
-      case 'documents':        contentHtml = this._renderDocumentsTab(loan); break;
-      case 'prequalification': contentHtml = this._renderPrequalificationTab(loan, proc); break;
-      case 'borrower':         contentHtml = this._renderBorrowerTab(loan); break;
-      case 'appraisal':        contentHtml = this._renderAppraisalTab(loan); break;
-      case 'title':            contentHtml = this._renderTitleTab(loan); break;
-      case 'closing':          contentHtml = this._renderClosingTab(loan, proc); break;
-      case 'post_closing':     contentHtml = this._renderPostClosingTab(loan, proc); break;
-      case 'payment':          contentHtml = this._renderPaymentTab(loan); break;
-      case 'history':          contentHtml = this._renderHistoryTab(loan); break;
-      case 'contracts':        contentHtml = this._renderContractsTab(loan); break;
-      default:                 contentHtml = this._renderDetailsTab(loan, proc);
-    }
+    const lo = State.getUser(loan.loId);
+    const loName = lo ? Display.fullName(lo) : '—';
 
     return `
       <div class="page-body">
-        <div class="orig-detail-header">
-          <button class="orig-back-btn" onclick="OriginationsView.backToList()">&#8592; Back to Originations</button>
-          ${headerHtml}
+        <button class="ud-back-btn" onclick="OriginationsView.backToList()">&#8592; Back to Originations</button>
+        ${this._udContextHeader(loan, loName)}
+        ${this._udStageTracker(proc)}
+        <div class="ud-content-grid">
+          <div>
+            ${this._udContentTabs()}
+            <div class="ud-content-main">${this._udTabContent(loan, proc, loName)}</div>
+          </div>
+          <div>${this._udSidebar(loan, proc, loName)}</div>
         </div>
-        <div class="orig-detail-layout">
-          ${sidebarHtml}
-          <div class="orig-main-content">${contentHtml}</div>
+      </div>
+      <div id="originations-modal"></div>`;
+  },
+
+  /* ── Owner badge helper ── */
+  _ownerClass(role) {
+    if (!role) return '';
+    const r = role.toLowerCase();
+    if (r.includes('loan officer') || r.includes('lo')) return 'lo';
+    if (r.includes('account') || r.includes('am') || r.includes('processor')) return 'am';
+    if (r.includes('borrower')) return 'borrower';
+    return 'system';
+  },
+
+  /* ── Context Header ── */
+  _udContextHeader(loan, loName) {
+    const isCompleted = loan.status === 'completed';
+    const addr = loan.phase === 'prequalification' ? 'PREQUALIFICATION' : loan.address.split(',')[0].trim();
+    const sub = loan.address.split(',').slice(1).join(',').trim();
+    return `
+      <div class="ud-context-header">
+        <div class="ud-context-top">
+          <div>
+            <div class="ud-context-address">${addr}</div>
+            <div class="ud-context-sub">${sub}</div>
+          </div>
+          <span class="ud-status-pill ${isCompleted ? 'completed' : ''}"><span class="ud-status-pill-dot"></span> ${Display.loanStatusLabel(loan.status)}</span>
+        </div>
+        <div class="ud-context-chips">
+          <div class="ud-chip"><span class="ud-chip-label">Loan ID</span><span class="ud-chip-value">${loan.id}</span></div>
+          <div class="ud-chip"><span class="ud-chip-label">Program</span><span class="ud-chip-value">${loan.program}</span></div>
+          <div class="ud-chip"><span class="ud-chip-label">Amount</span><span class="ud-chip-value">${Display.currency(loan.amount)}</span></div>
+          <div class="ud-chip"><span class="ud-chip-label">LTV / CLTV</span><span class="ud-chip-value">${loan.ltv ?? '—'}% / ${loan.cltv ?? '—'}%</span></div>
+          <div class="ud-chip"><span class="ud-chip-label">FICO</span><span class="ud-chip-value">${loan.fico || '—'}</span></div>
+          <div class="ud-chip"><span class="ud-chip-label">Borrower</span><span class="ud-chip-value">${loan.borrowerName}</span></div>
+          <div class="ud-chip"><span class="ud-chip-label">Loan Officer</span><span class="ud-chip-value">${loName}</span></div>
+          <div class="ud-chip"><span class="ud-chip-label">Est. Close</span><span class="ud-chip-value ${loan.closingDate ? '' : 'warn'}">${loan.closingDate ? Display.date(loan.closingDate) : 'TBD'}</span></div>
         </div>
       </div>`;
   },
 
-  /* ── Details Tab (Pipeline + Overview + Originator) ── */
-  _renderDetailsTab(loan, proc) {
-    return this._renderPipeline(loan, proc) + this._renderLoanOverview(loan) + this._renderOriginatorDetails(loan);
+  /* ── Stage Tracker ── */
+  _udStageTracker(proc) {
+    return `<div class="ud-stage-tracker">${proc.map((stage, idx) => {
+      const done = stage.tasks.filter(t => t.status === 'done').length;
+      const total = stage.tasks.length;
+      const isDone = stage.status === 'completed';
+      const isCurrent = stage.status === 'in_progress';
+      const dotClass = isDone ? 'done' : isCurrent ? 'current' : 'pending';
+      const activeTask = stage.tasks.find(t => t.status === 'active');
+      const detailText = isDone ? `${total}/${total} complete` : isCurrent ? `${done}/${total}` + (activeTask ? ' \u00B7 ' + activeTask.label.substring(0, 25) : '') : `0/${total}`;
+      const detailClass = isCurrent && activeTask ? 'warn' : '';
+      const line = idx < proc.length - 1 ? `<div class="ud-stage-line ${isDone ? 'done' : 'pending'}"></div>` : '';
+      return `
+        <div class="ud-stage ${isCurrent ? 'active' : ''}">
+          <div class="ud-stage-dot ${dotClass}">${isDone ? '&#10003;' : idx + 1}</div>
+          <div class="ud-stage-info">
+            <div class="ud-stage-name">${stage.label}</div>
+            <div class="ud-stage-detail ${detailClass}">${detailText}</div>
+          </div>
+        </div>${line}`;
+    }).join('')}</div>`;
   },
 
-  /* ── Pipeline ── */
-  _renderPipeline(loan, proc) {
-    const totalTasks = proc.reduce((s, st) => s + st.tasks.length, 0);
-    const doneTasks  = proc.reduce((s, st) => s + st.tasks.filter(t => t.status === 'done').length, 0);
-    const pct = Math.round((doneTasks / totalTasks) * 100);
+  /* ── Content Tabs ── */
+  _udContentTabs() {
+    const tabs = ['Overview', 'Tasks', 'Documents', 'Parties', 'History'];
+    const keys = ['overview', 'tasks', 'documents', 'parties', 'history'];
+    return `<div class="ud-content-tabs">${tabs.map((t, i) =>
+      `<button class="ud-content-tab ${this._activeTab === keys[i] ? 'active' : ''}" onclick="OriginationsView.switchTab('${keys[i]}')">${t}</button>`
+    ).join('')}</div>`;
+  },
 
-    const stagesHtml = proc.map((stage, idx) => {
-      const isExpanded = this._expandedStages.has(stage.id);
-      const doneInStage = stage.tasks.filter(t => t.status === 'done').length;
-      const indicatorIcon = stage.status === 'completed' ? '&#10003;' : (idx + 1);
+  /* ── Tab Content Dispatcher ── */
+  _udTabContent(loan, proc, loName) {
+    switch (this._activeTab) {
+      case 'tasks':     return this._udTasksTab(proc);
+      case 'documents': return this._udDocumentsTab(loan);
+      case 'parties':   return this._udPartiesTab(loan, loName);
+      case 'history':   return this._udHistoryTab(loan);
+      default:          return this._udOverviewTab(loan, proc);
+    }
+  },
 
-      const tasksHtml = !isExpanded ? '' : `
-        <div class="orig-tasks">
-          ${stage.tasks.map(t => `
-            <div class="orig-task">
-              ${Display.taskStatusIcon(t.status)}
-              <span class="orig-task-label ${t.status === 'done' ? 'done' : ''}">${t.label}</span>
-              <span class="orig-task-role">${t.role}</span>
-              ${t.action && t.status !== 'done' ? `<button class="orig-task-action" onclick="event.stopPropagation()">${t.action}</button>` : ''}
+  /* ── Overview Tab ── */
+  _udOverviewTab(loan, proc) {
+    const currentStage = proc.find(s => s.status === 'in_progress');
+    const lastCompleted = proc.filter(s => s.status === 'completed').pop();
+    const activeStage = currentStage || lastCompleted;
+
+    let currentSectionHtml = '';
+    if (activeStage) {
+      const done = activeStage.tasks.filter(t => t.status === 'done').length;
+      const total = activeStage.tasks.length;
+      const pct = Math.round((done / total) * 100);
+      currentSectionHtml = `
+        <div class="ud-content-section">
+          <div class="ud-section-title">
+            ${activeStage.label}
+            <span class="ud-section-count">${done} of ${total} tasks</span>
+            <div style="flex:1"></div>
+            <div style="width:100px"><div class="ud-progress-bar"><div class="ud-progress-fill" style="width:${pct}%"></div></div></div>
+          </div>
+          ${activeStage.tasks.map(t => `
+            <div class="ud-task-row">
+              <div class="ud-task-icon ${t.status === 'done' ? 'done' : t.status === 'active' ? 'active' : 'pending'}">${t.status === 'done' ? '&#10003;' : t.status === 'active' ? '&#9679;' : ''}</div>
+              <span class="ud-task-label ${t.status === 'done' ? 'done' : ''}">${t.label}</span>
+              <span class="ud-task-owner ${this._ownerClass(t.role)}">${t.role}</span>
+              ${t.action && t.status !== 'done' ? `<button class="ud-task-action ${t.status === 'active' ? 'primary' : ''}" onclick="event.stopPropagation()">${t.action}</button>` : ''}
             </div>`).join('')}
         </div>`;
+    }
 
-      return `
-        <div class="orig-stage">
-          <div class="orig-stage-header" onclick="OriginationsView.toggleStage('${stage.id}')">
-            <div class="orig-stage-indicator ${stage.status}">${indicatorIcon}</div>
-            <div class="orig-stage-info">
-              <div class="orig-stage-label">${stage.label}</div>
-            </div>
-            <div class="orig-stage-meta">
-              <span class="orig-stage-status-pill ${stage.status}">${stage.status === 'completed' ? 'Completed' : stage.status === 'in_progress' ? 'In Progress' : 'Pending'}</span>
-              <span class="orig-stage-count">${doneInStage}/${stage.tasks.length} tasks</span>
-              <span class="orig-stage-chevron ${isExpanded ? 'open' : ''}">&#9660;</span>
-            </div>
-          </div>
-          ${tasksHtml}
-        </div>`;
-    }).join('');
+    // Completed stages summary
+    const completedStages = proc.filter(s => s.status === 'completed' && s !== activeStage);
+    const completedHtml = completedStages.map(s => `
+      <div class="ud-content-section">
+        <div class="ud-section-title" style="color:#16A34A"><span style="font-size:16px;margin-right:4px">&#10003;</span> ${s.label} <span class="ud-section-count">${s.tasks.length}/${s.tasks.length} complete</span></div>
+      </div>`).join('');
 
-    return `
-      <div class="orig-pipeline">
-        <div class="orig-pipeline-header">
-          <div class="orig-pipeline-title">Your Origination Process</div>
-          <div class="orig-pipeline-progress">Application Progress ${doneTasks}/${totalTasks}</div>
-        </div>
-        <div class="orig-pipeline-bar">
-          <div class="orig-pipeline-bar-fill" style="width:${pct}%"></div>
-        </div>
-        ${stagesHtml}
-      </div>`;
-  },
-
-  /* ── Loan Overview (collapsible) ── */
-  _renderLoanOverview(loan) {
-    const collapsed = this._collapsedSections.has('overview');
-    const items = [
+    // Loan overview
+    const overviewItems = [
       ['Loan Amount', Display.currency(loan.amount)],
-      ['Closing Date', loan.closingDate ? Display.date(loan.closingDate) : 'TBD'],
-      ['Appraised Home Value', loan.appraisedHomeValue ? Display.currency(loan.appraisedHomeValue) : 'TBD'],
-      ['Disbursement Date', loan.disbursementDate ? Display.date(loan.disbursementDate) : 'TBD'],
+      ['Appraised Value', loan.appraisedHomeValue ? Display.currency(loan.appraisedHomeValue) : 'TBD'],
       ['First Mortgage Balance', loan.firstMortgageBalance ? Display.currency(loan.firstMortgageBalance) : 'TBD'],
-      ['LTV', loan.ltv ? loan.ltv + '%' : 'TBD'],
-      ['CLTV', loan.cltv ? loan.cltv + '%' : 'TBD'],
+      ['LTV / CLTV', `${loan.ltv ?? '—'}% / ${loan.cltv ?? '—'}%`],
+      ['Closing Date', loan.closingDate ? Display.date(loan.closingDate) : 'TBD'],
+      ['Disbursement Date', loan.disbursementDate ? Display.date(loan.disbursementDate) : 'TBD'],
       ['Closing Fees', loan.closingFees ? Display.currency(loan.closingFees) : 'TBD'],
-      ['h at Minting', loan.hAtMinting != null ? 'h ' + loan.hAtMinting.toFixed(5) : '—'],
-      ['Borrower Net', loan.borrowerNet ? Display.currency(loan.borrowerNet) : '—'],
-      ['H to Investor', loan.hToInvestor != null ? loan.hToInvestor.toFixed(2) : '—'],
-      ['Household Income', loan.householdIncome ? Display.currency(loan.householdIncome) : '—'],
+      ['Borrower Net', loan.borrowerNet ? Display.currency(loan.borrowerNet) : 'TBD'],
     ];
 
-    return `
-      <div class="orig-section">
-        <div class="orig-section-header" onclick="OriginationsView.toggleSection('overview')">
-          <span class="orig-section-title">Loan Overview</span>
-          <span class="orig-section-chevron ${collapsed ? 'collapsed' : ''}">&#9660;</span>
-        </div>
-        ${!collapsed ? `<div class="orig-section-body">
-          <div class="orig-overview-grid">
-            ${items.map(([label, val]) => `
-              <div class="orig-overview-item">
-                <div class="orig-overview-label">${label}</div>
-                <div class="orig-overview-value">${val}</div>
-              </div>`).join('')}
-          </div>
-        </div>` : ''}
-      </div>`;
-  },
-
-  /* ── Originator & Appraisal Details (collapsible) ── */
-  _renderOriginatorDetails(loan) {
-    const collapsed = this._collapsedSections.has('originator');
-    const items = [
+    const originatorItems = [
       ['Company', loan.originatorCompany || '—'],
       ['Appraiser Company', loan.appraiserCompany || 'TBD'],
       ['Company NMLS #', loan.originatorNmls || '—'],
-      ['Appraiser Name', loan.appraiserName || '—'],
-      ['', ''],
-      ['Appraiser License #', loan.appraiserLicense || 'TBD'],
+      ['Appraiser Name', loan.appraiserName || 'TBD'],
     ];
 
     return `
-      <div class="orig-section">
-        <div class="orig-section-header" onclick="OriginationsView.toggleSection('originator')">
-          <span class="orig-section-title">Originator and Appraisal Details</span>
-          <span class="orig-section-chevron ${collapsed ? 'collapsed' : ''}">&#9660;</span>
-        </div>
-        ${!collapsed ? `<div class="orig-section-body">
-          <div class="orig-overview-grid">
-            ${items.filter(([l]) => l).map(([label, val]) => `
-              <div class="orig-overview-item">
-                <div class="orig-overview-label">${label}</div>
-                <div class="orig-overview-value">${val}</div>
-              </div>`).join('')}
-          </div>
-        </div>` : ''}
+      ${currentSectionHtml}
+      ${completedHtml}
+      <div class="ud-content-section">
+        <div class="ud-section-title">Loan Overview</div>
+        <div class="ud-info-grid">${overviewItems.map(([l, v]) =>
+          `<div class="ud-info-item"><div class="ud-info-label">${l}</div><div class="ud-info-value ${v === 'TBD' ? 'tbd' : ''}">${v}</div></div>`
+        ).join('')}</div>
+      </div>
+      <div class="ud-content-section">
+        <div class="ud-section-title">Originator &amp; Appraisal</div>
+        <div class="ud-info-grid">${originatorItems.map(([l, v]) =>
+          `<div class="ud-info-item"><div class="ud-info-label">${l}</div><div class="ud-info-value ${v === 'TBD' ? 'tbd' : ''}">${v}</div></div>`
+        ).join('')}</div>
       </div>`;
+  },
+
+  /* ── Tasks Tab (full pipeline) ── */
+  _udTasksTab(proc) {
+    return proc.map(stage => {
+      const done = stage.tasks.filter(t => t.status === 'done').length;
+      const total = stage.tasks.length;
+      const isDone = stage.status === 'completed';
+      const isCurrent = stage.status === 'in_progress';
+      const isPending = stage.status === 'pending';
+      const isExpanded = this._expandedTaskStages.has(stage.id) || isCurrent;
+
+      if (isPending && !this._expandedTaskStages.has(stage.id)) {
+        return `
+          <div class="ud-content-section">
+            <div class="ud-stage-section-header" onclick="OriginationsView.toggleTaskStage('${stage.id}')">
+              <div class="ud-section-title" style="color:var(--color-text-muted);margin:0">${stage.label} <span class="ud-section-count">0/${total} &middot; Pending</span></div>
+              <span class="ud-stage-section-toggle">&#9654;</span>
+            </div>
+          </div>`;
+      }
+
+      return `
+        <div class="ud-content-section ud-stage-section ${isCurrent ? 'in-progress' : ''}">
+          <div class="ud-stage-section-header" onclick="OriginationsView.toggleTaskStage('${stage.id}')">
+            <div class="ud-section-title" style="margin:0">
+              ${isDone ? '<span style="color:#16A34A;font-size:16px;margin-right:4px">&#10003;</span>' : ''}
+              ${stage.label}
+              <span class="ud-section-count">${done}/${total}${isCurrent ? ' \u00B7 In Progress' : isDone ? ' complete' : ''}</span>
+            </div>
+            <span class="ud-stage-section-toggle ${isExpanded ? 'open' : ''}">&#9654;</span>
+          </div>
+          ${isExpanded ? stage.tasks.map(t => `
+            <div class="ud-task-row">
+              <div class="ud-task-icon ${t.status === 'done' ? 'done' : t.status === 'active' ? 'active' : 'pending'}">${t.status === 'done' ? '&#10003;' : t.status === 'active' ? '&#9679;' : ''}</div>
+              <span class="ud-task-label ${t.status === 'done' ? 'done' : ''}">${t.label}</span>
+              <span class="ud-task-owner ${this._ownerClass(t.role)}">${t.role}</span>
+              ${t.action && t.status !== 'done' ? `<button class="ud-task-action ${t.status === 'active' ? 'primary' : ''}" onclick="event.stopPropagation()">${t.action}</button>` : ''}
+            </div>`).join('') : ''}
+        </div>`;
+    }).join('');
   },
 
   /* ── Documents Tab ── */
-  _renderDocumentsTab(loan) {
+  _udDocumentsTab(loan) {
+    const hasAppraisal = ['application_documents_approved','original_appraisal_submitted','sent_to_docutech','pending_origination_creation','origination_created','completed'].includes(loan.status);
+    const hasTitle = ['sent_to_docutech','pending_origination_creation','origination_created','completed'].includes(loan.status);
+    const isComplete = loan.status === 'completed';
+    const hasOrigination = isComplete || loan.status === 'origination_created';
+    const hasDocs = loan.status !== 'draft' && loan.status !== 'prequalification_in_progress';
+
     const docs = [
-      { name: 'Initial Disclosure Package', type: 'PDF', size: '2.4 MB', date: loan.submittedAt || '2026-03-15', status: loan.status !== 'draft' && loan.status !== 'prequalification_in_progress' ? 'approved' : 'pending' },
-      { name: 'Borrower Authorization', type: 'PDF', size: '156 KB', date: loan.submittedAt || '2026-03-15', status: loan.status !== 'draft' && loan.status !== 'prequalification_in_progress' ? 'approved' : 'pending' },
-      { name: 'Appraisal Report', type: 'PDF', size: '8.1 MB', date: '2026-03-22', status: ['application_documents_approved','original_appraisal_submitted','sent_to_docutech','pending_origination_creation','origination_created','completed'].includes(loan.status) ? 'approved' : 'pending' },
-      { name: 'Title Commitment', type: 'PDF', size: '1.8 MB', date: '2026-03-25', status: ['sent_to_docutech','pending_origination_creation','origination_created','completed'].includes(loan.status) ? 'approved' : 'pending' },
-      { name: 'Closing Disclosure', type: 'PDF', size: '3.2 MB', date: '2026-04-01', status: loan.status === 'completed' ? 'approved' : 'pending' },
-      { name: 'SAN Note', type: 'PDF', size: '412 KB', date: '2026-04-02', status: loan.status === 'completed' || loan.status === 'origination_created' ? 'approved' : 'pending' },
+      { name: 'Initial Disclosure Package', meta: 'PDF \u00B7 2.4 MB \u00B7 Uploaded Mar 18', status: hasDocs ? 'approved' : 'missing', owner: 'Account Manager' },
+      { name: 'Borrower Authorization',     meta: 'PDF \u00B7 156 KB \u00B7 Uploaded Mar 18', status: hasDocs ? 'approved' : 'missing', owner: 'Account Manager' },
+      { name: 'Appraisal Report',            meta: hasAppraisal ? 'PDF \u00B7 8.1 MB \u00B7 Uploaded Mar 22' : 'Required for CDA & Appraisal stage', status: hasAppraisal ? 'approved' : 'missing', owner: 'Loan Officer' },
+      { name: 'Title Commitment',            meta: hasTitle ? 'PDF \u00B7 1.8 MB \u00B7 Uploaded Mar 25' : 'Required for Closing stage', status: hasTitle ? 'approved' : 'pending', owner: 'Account Manager' },
+      { name: 'Closing Disclosure',          meta: isComplete ? 'PDF \u00B7 3.2 MB \u00B7 Uploaded Apr 1' : 'Required for Closing stage', status: isComplete ? 'approved' : 'pending', owner: 'System' },
+      { name: 'SAN Note',                    meta: hasOrigination ? 'PDF \u00B7 412 KB \u00B7 Uploaded Apr 2' : 'Required for Closing stage', status: hasOrigination ? 'approved' : 'pending', owner: 'Account Manager' },
     ];
+    const approvedCount = docs.filter(d => d.status === 'approved').length;
 
     return `
-      <div class="card" style="margin-bottom:20px">
-        <div class="card-title" style="margin-bottom:16px">Documents</div>
-        <div class="orig-doc-zone">
-          <div class="orig-doc-zone-icon">&#128196;</div>
-          <div class="orig-doc-zone-text">Drag & drop files here, or click to browse</div>
-        </div>
-        <ul class="orig-doc-list">
-          ${docs.map(d => `
-            <li class="orig-doc-item">
-              <div class="orig-doc-icon">&#128196;</div>
-              <div class="orig-doc-info">
-                <div class="orig-doc-name">${d.name}</div>
-                <div class="orig-doc-meta">${d.type} &middot; ${d.size} &middot; ${Display.date(d.date)}</div>
-              </div>
-              <span class="orig-doc-status ${d.status}">${d.status === 'approved' ? 'Approved' : 'Pending'}</span>
-            </li>`).join('')}
-        </ul>
-      </div>`;
-  },
-
-  /* ── Prequalification Tab ── */
-  _renderPrequalificationTab(loan, proc) {
-    const pqStage = (proc || generateOriginationProcess(loan.status))[0];
-    const items = [
-      ['Reservation (Loan) Amount', Display.currency(loan.amount)],
-      ['Prequalification Reservation Length', '30 days'],
-      ['Select Investor', '—'],
-      ['Select Activation', '—'],
-    ];
-
-    return `
-      <div class="card" style="margin-bottom:20px">
-        <div class="card-title" style="margin-bottom:16px">Prequalification Review</div>
-        <div class="orig-info-grid">
-          ${items.map(([label, val]) => `
-            <div class="orig-info-item">
-              <div class="orig-info-label">${label}</div>
-              <div class="orig-info-value">${val}</div>
-            </div>`).join('')}
-        </div>
-        <div style="margin-top:16px;display:flex;gap:10px">
-          ${pqStage.status !== 'completed' ? `
-            <button class="btn btn-primary btn-sm" onclick="event.stopPropagation()">Approve</button>
-            <button class="btn btn-sm" style="background:var(--color-danger);color:#fff;border:none" onclick="event.stopPropagation()">Reject</button>
-          ` : `<span class="badge badge-complete">Prequalification Complete</span>`}
-        </div>
-      </div>
-      <div class="card">
-        <div class="card-title" style="margin-bottom:16px">Prequalification Tasks</div>
-        ${pqStage.tasks.map(t => `
-          <div class="orig-task" style="padding-left:0">
-            ${Display.taskStatusIcon(t.status)}
-            <span class="orig-task-label ${t.status === 'done' ? 'done' : ''}">${t.label}</span>
-            <span class="orig-task-role">${t.role}</span>
+      <div class="ud-content-section">
+        <div class="ud-section-title">Documents <span class="ud-section-count">${approvedCount} of ${docs.length} approved</span></div>
+        ${docs.map(d => `
+          <div class="ud-doc-row">
+            <div class="ud-doc-icon">&#128196;</div>
+            <div class="ud-doc-info"><div class="ud-doc-name">${d.name}</div><div class="ud-doc-meta">${d.meta}</div></div>
+            <span class="ud-doc-badge ${d.status}">${d.status === 'approved' ? 'Approved' : d.status === 'missing' ? 'Not Uploaded' : 'Pending'}</span>
+            <span class="ud-task-owner ${this._ownerClass(d.owner)}">${d.owner}</span>
+            ${d.status === 'missing' ? '<button class="ud-task-action" onclick="event.stopPropagation()">Upload</button>' : ''}
           </div>`).join('')}
       </div>`;
   },
 
-  /* ── Borrower Qualifications Tab ── */
-  _renderBorrowerTab(loan) {
-    const items = [
+  /* ── Parties Tab ── */
+  _udPartiesTab(loan, loName) {
+    const borrowerItems = [
       ['Borrower Name(s)', loan.borrowerName],
       ['FICO Score', loan.fico || '—'],
       ['Household Income', loan.householdIncome ? Display.currency(loan.householdIncome) : '—'],
-      ['LTV', loan.ltv ? loan.ltv + '%' : '—'],
-      ['CLTV', loan.cltv ? loan.cltv + '%' : '—'],
       ['Employment Status', 'Verified'],
       ['Debt-to-Income Ratio', '38%'],
       ['Credit History', 'Good standing'],
     ];
-
-    return `
-      <div class="card">
-        <div class="card-title" style="margin-bottom:16px">Borrower Qualifications</div>
-        <div class="orig-info-grid">
-          ${items.map(([label, val]) => `
-            <div class="orig-info-item">
-              <div class="orig-info-label">${label}</div>
-              <div class="orig-info-value">${val}</div>
-            </div>`).join('')}
-        </div>
-      </div>`;
-  },
-
-  /* ── Appraisal Tab ── */
-  _renderAppraisalTab(loan) {
-    const items = [
-      ['Appraised Home Value', loan.appraisedHomeValue ? Display.currency(loan.appraisedHomeValue) : 'TBD'],
-      ['Appraiser Company', loan.appraiserCompany || 'TBD'],
-      ['Appraisal Date', loan.submittedAt ? Display.date(loan.submittedAt) : 'TBD'],
-      ['Appraiser Name', loan.appraiserName || '—'],
-      ['Property Type', 'Single Family Residence'],
-      ['Appraiser License #', loan.appraiserLicense || 'TBD'],
-      ['Year Built', '2004'],
-      ['Appraisal Status', ['application_documents_approved','original_appraisal_submitted','sent_to_docutech','pending_origination_creation','origination_created','completed'].includes(loan.status) ? 'Completed' : 'Pending'],
-      ['Lot Size', '0.18 acres'],
-      ['', ''],
-      ['Living Area', '2,150 sq ft'],
-      ['', ''],
+    const originatorItems = [
+      ['Loan Officer', loName],
+      ['Company', loan.originatorCompany || '—'],
+      ['Company NMLS #', loan.originatorNmls || '—'],
+      ['Processor', 'Kevin Park'],
     ];
-
-    return `
-      <div class="card">
-        <div class="card-title" style="margin-bottom:16px">Appraisal Details</div>
-        <div class="orig-info-grid">
-          ${items.filter(([l]) => l).map(([label, val]) => `
-            <div class="orig-info-item">
-              <div class="orig-info-label">${label}</div>
-              <div class="orig-info-value">${val}</div>
-            </div>`).join('')}
-        </div>
-      </div>`;
-  },
-
-  /* ── Title Information Tab ── */
-  _renderTitleTab(loan) {
-    const items = [
+    const appraisalItems = [
+      ['Appraiser Company', loan.appraiserCompany || 'TBD'],
+      ['Appraiser Name', loan.appraiserName || 'TBD'],
+      ['Appraiser License #', loan.appraiserLicense || 'TBD'],
+    ];
+    const titleItems = [
       ['Title Company', 'First American Title'],
       ['Title Officer', 'Karen Mitchell'],
       ['Title Number', 'FA-2026-' + loan.id.slice(-4)],
-      ['Effective Date', loan.submittedAt ? Display.date(loan.submittedAt) : 'TBD'],
-      ['Commitment Status', ['sent_to_docutech','pending_origination_creation','origination_created','completed'].includes(loan.status) ? 'Received' : 'Pending'],
-      ['Exceptions', 'Standard'],
     ];
 
-    return `
-      <div class="card">
-        <div class="card-title" style="margin-bottom:16px">Title Information</div>
-        <div class="orig-info-grid">
-          ${items.map(([label, val]) => `
-            <div class="orig-info-item">
-              <div class="orig-info-label">${label}</div>
-              <div class="orig-info-value">${val}</div>
-            </div>`).join('')}
-        </div>
-      </div>`;
-  },
+    const renderGrid = (items) => `<div class="ud-info-grid">${items.map(([l, v]) =>
+      `<div class="ud-info-item"><div class="ud-info-label">${l}</div><div class="ud-info-value ${v === 'TBD' ? 'tbd' : ''}">${v}</div></div>`
+    ).join('')}</div>`;
 
-  /* ── Closing Tab ── */
-  _renderClosingTab(loan, proc) {
-    const closingStage = (proc || generateOriginationProcess(loan.status))[3];
     return `
-      <div class="card" style="margin-bottom:20px">
-        <div class="card-title" style="margin-bottom:16px">Clear to Close & Closing</div>
-        <ul class="orig-checklist">
-          ${closingStage.tasks.map(t => `
-            <li class="orig-checklist-item">
-              <div class="orig-checklist-check ${t.status === 'done' ? 'done' : ''}">${t.status === 'done' ? '&#10003;' : ''}</div>
-              <span class="orig-checklist-label ${t.status === 'done' ? 'done' : ''}">${t.label}</span>
-              <span class="orig-task-role">${t.role}</span>
-              ${t.action && t.status !== 'done' ? `<button class="orig-task-action" onclick="event.stopPropagation()">${t.action}</button>` : ''}
-            </li>`).join('')}
-        </ul>
-      </div>
-      <div class="card">
-        <div class="card-title" style="margin-bottom:16px">Closing Details</div>
-        <div class="orig-info-grid">
-          <div class="orig-info-item"><div class="orig-info-label">Closing Date</div><div class="orig-info-value">${loan.closingDate ? Display.date(loan.closingDate) : 'TBD'}</div></div>
-          <div class="orig-info-item"><div class="orig-info-label">Disbursement Date</div><div class="orig-info-value">${loan.disbursementDate ? Display.date(loan.disbursementDate) : 'TBD'}</div></div>
-          <div class="orig-info-item"><div class="orig-info-label">Closing Fees</div><div class="orig-info-value">${loan.closingFees ? Display.currency(loan.closingFees) : 'TBD'}</div></div>
-          <div class="orig-info-item"><div class="orig-info-label">Borrower Net</div><div class="orig-info-value">${loan.borrowerNet ? Display.currency(loan.borrowerNet) : 'TBD'}</div></div>
-        </div>
-      </div>`;
-  },
-
-  /* ── Post-Closing Tab ── */
-  _renderPostClosingTab(loan, proc) {
-    const pcStage = (proc || generateOriginationProcess(loan.status))[4];
-    return `
-      <div class="card">
-        <div class="card-title" style="margin-bottom:16px">Post-Closing & Funding</div>
-        <ul class="orig-checklist">
-          ${pcStage.tasks.map(t => `
-            <li class="orig-checklist-item">
-              <div class="orig-checklist-check ${t.status === 'done' ? 'done' : ''}">${t.status === 'done' ? '&#10003;' : ''}</div>
-              <span class="orig-checklist-label ${t.status === 'done' ? 'done' : ''}">${t.label}</span>
-              <span class="orig-task-role">${t.role}</span>
-              ${t.action && t.status !== 'done' ? `<button class="orig-task-action" onclick="event.stopPropagation()">${t.action}</button>` : ''}
-            </li>`).join('')}
-        </ul>
-      </div>`;
-  },
-
-  /* ── Payment Tab ── */
-  _renderPaymentTab(loan) {
-    return `
-      <div class="card">
-        <div class="card-title" style="margin-bottom:16px">Payment Information</div>
-        <div class="orig-info-grid">
-          <div class="orig-info-item"><div class="orig-info-label">Payment Status</div><div class="orig-info-value">${loan.status === 'completed' ? 'Disbursed' : 'Pending'}</div></div>
-          <div class="orig-info-item"><div class="orig-info-label">Disbursement Amount</div><div class="orig-info-value">${loan.borrowerNet ? Display.currency(loan.borrowerNet) : 'TBD'}</div></div>
-          <div class="orig-info-item"><div class="orig-info-label">Disbursement Date</div><div class="orig-info-value">${loan.disbursementDate ? Display.date(loan.disbursementDate) : 'TBD'}</div></div>
-          <div class="orig-info-item"><div class="orig-info-label">Funding Method</div><div class="orig-info-value">Wire Transfer</div></div>
-        </div>
-      </div>`;
+      <div class="ud-content-section"><div class="ud-section-title">Borrower</div>${renderGrid(borrowerItems)}</div>
+      <div class="ud-content-section"><div class="ud-section-title">Originator</div>${renderGrid(originatorItems)}</div>
+      <div class="ud-content-section"><div class="ud-section-title">Appraiser</div>${renderGrid(appraisalItems)}</div>
+      <div class="ud-content-section"><div class="ud-section-title">Title Company</div>${renderGrid(titleItems)}</div>`;
   },
 
   /* ── History Tab ── */
-  _renderHistoryTab(loan) {
+  _udHistoryTab(loan) {
     const events = [
       { action: 'Loan created', actor: 'System', time: loan.submittedAt || '2026-03-10' },
       { action: 'Prequalification submitted', actor: 'Loan Officer', time: loan.submittedAt || '2026-03-10' },
@@ -802,33 +671,69 @@ const OriginationsView = {
       { action: 'Documents uploaded', actor: 'Loan Officer', time: loan.submittedAt || '2026-03-16' },
       { action: 'Status updated to: ' + Display.loanStatusLabel(loan.status), actor: 'System', time: loan.updatedAt || '2026-04-01' },
     ];
-
     return `
-      <div class="card">
-        <div class="card-title" style="margin-bottom:16px">Activity History</div>
-        <div class="orig-timeline">
+      <div class="ud-content-section">
+        <div class="ud-section-title">Activity History</div>
+        <div class="ud-timeline">
           ${events.map(e => `
-            <div class="orig-timeline-item">
-              <div class="orig-timeline-dot"></div>
-              <div class="orig-timeline-content">
-                <strong>${e.action}</strong> &mdash; ${e.actor}
-              </div>
-              <div class="orig-timeline-time">${Display.date(e.time)}</div>
+            <div class="ud-timeline-item">
+              <div class="ud-timeline-dot"></div>
+              <div class="ud-timeline-content"><strong>${e.action}</strong> &mdash; ${e.actor}</div>
+              <div class="ud-timeline-time">${Display.date(e.time)}</div>
             </div>`).join('')}
         </div>
       </div>`;
   },
 
-  /* ── Contracts Tab ── */
-  _renderContractsTab(loan) {
+  /* ── Right Sidebar ── */
+  _udSidebar(loan, proc, loName) {
+    const days = this._daysInStage(loan);
+    const currentStage = proc.find(s => s.status === 'in_progress');
+    const activeTask = currentStage?.tasks.find(t => t.status === 'active');
+
+    // Next Actions
+    let actionsHtml = '';
+    if (activeTask) {
+      actionsHtml += `<div class="ud-sidebar-item"><span class="ud-sidebar-dot amber"></span><div class="ud-sidebar-item-text"><div>${activeTask.label}</div><div class="ud-sidebar-item-sub">${activeTask.role} \u00B7 ${currentStage.label}</div></div></div>`;
+    }
+    const nextPending = currentStage?.tasks.find(t => t.status === 'pending');
+    if (nextPending) {
+      actionsHtml += `<div class="ud-sidebar-item"><span class="ud-sidebar-dot blue"></span><div class="ud-sidebar-item-text"><div>${nextPending.label}</div><div class="ud-sidebar-item-sub">${nextPending.role}</div></div></div>`;
+    }
+    if (!actionsHtml) actionsHtml = '<div class="ud-sidebar-item"><span class="ud-sidebar-dot green"></span><div class="ud-sidebar-item-text"><div>All tasks complete</div></div></div>';
+
+    // Warnings
+    let warningsHtml = '';
+    if (days > 14 && loan.status !== 'completed') {
+      warningsHtml += `<div class="ud-sidebar-item"><span class="ud-sidebar-dot red"></span><div class="ud-sidebar-item-text"><div>${days} days in current stage</div><div class="ud-sidebar-item-sub">Avg for this stage: 10 days</div></div></div>`;
+    }
+    if (!loan.closingDate) {
+      warningsHtml += `<div class="ud-sidebar-item"><span class="ud-sidebar-dot amber"></span><div class="ud-sidebar-item-text"><div>Closing date not set</div><div class="ud-sidebar-item-sub">Set closing date to proceed</div></div></div>`;
+    }
+    if (!warningsHtml) warningsHtml = '<div class="ud-sidebar-item" style="color:var(--color-text-muted);font-size:12px;padding:12px 16px">No warnings</div>';
+
     return `
-      <div class="card">
-        <div class="card-title" style="margin-bottom:16px">Contracts</div>
-        <div style="text-align:center;padding:32px;color:var(--color-text-muted)">
-          <div style="font-size:24px;margin-bottom:8px">&#128196;</div>
-          <div style="font-size:13px;font-weight:600">${loan.status === 'completed' ? 'Contract documents available for download' : 'Contracts will be generated at closing'}</div>
-          ${loan.status === 'completed' ? `<button class="btn btn-primary btn-sm" style="margin-top:12px" onclick="event.stopPropagation()">Download Contract Package</button>` : ''}
-        </div>
+      <div class="ud-sidebar-panel">
+        <div class="ud-sidebar-panel-title">Next Actions</div>
+        ${actionsHtml}
+      </div>
+      <div class="ud-sidebar-panel">
+        <div class="ud-sidebar-panel-title">Warnings</div>
+        ${warningsHtml}
+      </div>
+      <div class="ud-sidebar-panel">
+        <div class="ud-sidebar-panel-title">Key Dates</div>
+        <div class="ud-sidebar-kv"><span class="ud-sidebar-kv-label">Submitted</span><span class="ud-sidebar-kv-value">${loan.submittedAt ? Display.date(loan.submittedAt) : '—'}</span></div>
+        <div class="ud-sidebar-kv"><span class="ud-sidebar-kv-label">Rate Lock</span><span class="ud-sidebar-kv-value tbd">TBD</span></div>
+        <div class="ud-sidebar-kv"><span class="ud-sidebar-kv-label">Est. Close</span><span class="ud-sidebar-kv-value ${loan.closingDate ? '' : 'warn'}">${loan.closingDate ? Display.date(loan.closingDate) : 'TBD'}</span></div>
+        <div class="ud-sidebar-kv"><span class="ud-sidebar-kv-label">Days in Stage</span><span class="ud-sidebar-kv-value" ${days > 14 ? 'style="color:var(--color-danger)"' : ''}>${days}d</span></div>
+      </div>
+      <div class="ud-sidebar-panel">
+        <div class="ud-sidebar-panel-title">Parties</div>
+        <div class="ud-sidebar-kv"><span class="ud-sidebar-kv-label">Borrower</span><span class="ud-sidebar-kv-value">${loan.borrowerName}</span></div>
+        <div class="ud-sidebar-kv"><span class="ud-sidebar-kv-label">Loan Officer</span><span class="ud-sidebar-kv-value">${loName}</span></div>
+        <div class="ud-sidebar-kv"><span class="ud-sidebar-kv-label">Processor</span><span class="ud-sidebar-kv-value">Kevin Park</span></div>
+        <div class="ud-sidebar-kv"><span class="ud-sidebar-kv-label">Title Co.</span><span class="ud-sidebar-kv-value">First American Title</span></div>
       </div>`;
   },
 
@@ -836,13 +741,8 @@ const OriginationsView = {
   openLoan(id) {
     this._viewMode = 'detail';
     this._selectedLoanId = id;
-    this._activeSidebarTab = 'details';
-    this._collapsedSections = new Set();
-    // Auto-expand the current in-progress stage (or last completed if all done)
-    const loan = State.getLoan(id);
-    const proc = loan ? generateOriginationProcess(loan.status) : [];
-    const activeStage = proc.find(s => s.status === 'in_progress') || proc.filter(s => s.status === 'completed').pop();
-    this._expandedStages = new Set(activeStage ? [activeStage.id] : []);
+    this._activeTab = 'overview';
+    this._expandedTaskStages = new Set();
     Router.navigate('/originations/' + id);
   },
 
@@ -852,20 +752,14 @@ const OriginationsView = {
     Router.navigate('/originations');
   },
 
-  switchSidebarTab(tab) {
-    this._activeSidebarTab = tab;
+  switchTab(tab) {
+    this._activeTab = tab;
     App.renderView('/originations/' + this._selectedLoanId);
   },
 
-  toggleStage(stageId) {
-    if (this._expandedStages.has(stageId)) this._expandedStages.delete(stageId);
-    else this._expandedStages.add(stageId);
-    App.renderView('/originations/' + this._selectedLoanId);
-  },
-
-  toggleSection(sectionId) {
-    if (this._collapsedSections.has(sectionId)) this._collapsedSections.delete(sectionId);
-    else this._collapsedSections.add(sectionId);
+  toggleTaskStage(stageId) {
+    if (this._expandedTaskStages.has(stageId)) this._expandedTaskStages.delete(stageId);
+    else this._expandedTaskStages.add(stageId);
     App.renderView('/originations/' + this._selectedLoanId);
   },
 

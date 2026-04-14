@@ -8,6 +8,8 @@ const DataPlatformView = {
   _activeTab: 'analytics',
   _selectedApplicationId: null,
   _activeStep: 4,
+  _activeAppTab: 'overview',
+  _expandedAppStages: new Set(),
   _appFilter: 'all',
   _appSearch: '',
   _appSortField: null,
@@ -111,14 +113,24 @@ const DataPlatformView = {
 
   openApplication(loanId) {
     this._selectedApplicationId = loanId;
-    this._activeStep = 4;
-
+    this._activeAppTab = 'overview';
+    this._expandedAppStages = new Set();
     App.renderView('/data/applications');
   },
 
   selectStep(idx) {
     this._activeStep = idx;
+    App.renderView('/data/applications');
+  },
 
+  switchAppTab(tab) {
+    this._activeAppTab = tab;
+    App.renderView('/data/applications');
+  },
+
+  toggleAppStage(stageId) {
+    if (this._expandedAppStages.has(stageId)) this._expandedAppStages.delete(stageId);
+    else this._expandedAppStages.add(stageId);
     App.renderView('/data/applications');
   },
 
@@ -1090,190 +1102,386 @@ const DataPlatformView = {
 
     const lo = State.getUser(loan.loId);
     const loName = lo ? Display.fullName(lo) : '—';
-    const addrParts = loan.address.split(',');
-    const streetAddr = addrParts[0]?.trim() || loan.address;
-    const cityState  = addrParts.slice(1).join(',').trim();
-    const step = this._loanStep(loan);
-
-    // Workstream detail per step (contextual status beneath each stepper dot)
-    const stepDetails = {
-      0: step === 0 ? 'Awaiting file' : step > 0 ? 'Received' : '',
-      1: step === 1 ? 'In progress' : step > 1 ? 'Qualified' : '',
-      2: step === 2 ? 'Conditions due' : step > 2 ? 'Submitted' : '',
-      3: step === 3 ? 'Under review' : step > 3 ? 'Approved' : '',
-      4: step === 4 ? (loanId === 'DCDC000001' ? 'Ordered Apr 2' : 'Pending order') : step > 4 ? 'Complete' : '',
-      5: step >= 5 ? (loanId === 'DCDC000002' ? 'TRID Triggered' : step > 5 ? 'Sent' : 'Preparing') : '',
-      6: step === 6 ? 'Pending creation' : step > 6 ? 'Created' : '',
-      7: step === 7 ? 'UW review' : step > 7 ? 'Cleared' : '',
-      8: step === 8 ? 'Funded' : '',
-    };
-    const detailSeverity = {
-      'Conditions due': 'warning', 'Under review': 'info', 'Pending order': 'warning',
-      'TRID Triggered': 'warning', 'Awaiting file': 'info', 'UW review': 'info', 'Preparing': 'info',
-    };
-
-    const STEPS = [
-      { label: 'Upload\nLoan File',               short: 'Upload',        status: step > 0 ? 'completed' : step === 0 ? 'in_progress' : 'pending', detail: stepDetails[0] },
-      { label: 'Prequalification',                 short: 'Prequalify',    status: step > 1 ? 'completed' : step === 1 ? 'in_progress' : 'pending', detail: stepDetails[1] },
-      { label: 'Application\nSubmitted',           short: 'App Submitted', status: step > 2 ? 'completed' : step === 2 ? 'in_progress' : 'pending', detail: stepDetails[2] },
-      { label: 'Docs\nApproved',                   short: 'Docs Approved', status: step > 3 ? 'completed' : step === 3 ? 'in_progress' : 'pending', detail: stepDetails[3] },
-      { label: 'Appraisal',                        short: 'Appraisal',     status: step > 4 ? 'completed' : step === 4 ? 'in_progress' : 'pending', detail: stepDetails[4] },
-      { label: 'Sent to\nDocuTech',                short: 'DocuTech',      status: step > 5 ? 'completed' : step === 5 ? 'in_progress' : 'pending', detail: stepDetails[5] },
-      { label: 'Origination\nCreated',             short: 'Origination',   status: step > 6 ? 'completed' : step === 6 ? 'in_progress' : 'pending', detail: stepDetails[6] },
-      { label: 'Final\nReview',                    short: 'Final Review',  status: step > 7 ? 'completed' : step === 7 ? 'in_progress' : 'pending', detail: stepDetails[7] },
-      { label: 'Closed',                           short: 'Closed',        status: step === 8 ? 'completed' : 'pending', detail: stepDetails[8] },
-    ];
-
-    // Horizontal stepper with workstream details
-    const stepperHtml = STEPS.map((s, i) => {
-      const isCurrent   = i === step;
-      const isCompleted = s.status === 'completed';
-      const severity = detailSeverity[s.detail] || (isCompleted ? 'done' : 'muted');
-      const detailColor = { warning: 'var(--color-warning)', info: 'var(--color-info)', done: 'var(--color-success)', muted: 'var(--color-text-muted)' }[severity];
-      return `
-        <div class="app-stepper-step ${isCurrent ? 'current' : ''} ${isCompleted ? 'done' : ''}"
-             onclick="DataPlatformView.selectStep(${i})" style="cursor:pointer">
-          <div class="app-stepper-dot ${isCompleted ? 'done' : isCurrent ? 'current' : 'pending'}">
-            ${isCompleted ? '✓' : i + 1}
-          </div>
-          <div class="app-stepper-label">${s.short}</div>
-          ${s.detail ? `<div class="app-stepper-detail" style="color:${detailColor}">${s.detail}</div>` : ''}
-          ${i < STEPS.length - 1 ? `<div class="app-stepper-line ${isCompleted ? 'done' : ''}"></div>` : ''}
-        </div>`;
-    }).join('');
-
-    // Per-loan comms data
-    const COMMS = {
-      'DCDC000001': [
-        { msg: 'Loan Estimate sent to borrower',         tag: 'sent',     date: 'Mar 20, 2026' },
-        { msg: 'Application submitted',                   tag: 'done',     date: 'Mar 18, 2026' },
-        { msg: 'Appraisal report due',                    tag: 'due',      date: 'Apr 10, 2026' },
-        { msg: 'Rate lock expiry',                        tag: 'due',      date: 'Apr 30, 2026' },
-      ],
-      'DCDC000002': [
-        { msg: 'Closing Disclosure sent to borrower',    tag: 'sent',     date: 'Apr 1, 2026' },
-        { msg: 'Documents approved by underwriter',      tag: 'done',     date: 'Mar 28, 2026' },
-        { msg: 'Loan Estimate sent to borrower',         tag: 'sent',     date: 'Mar 12, 2026' },
-        { msg: 'Rate lock expires',                       tag: 'due',      date: 'Apr 12, 2026' },
-      ],
-      'DCDC000003': [
-        { msg: 'Closing completed — loan funded',        tag: 'done',     date: 'Mar 15, 2026' },
-        { msg: 'Final CD sent to borrower',              tag: 'sent',     date: 'Mar 10, 2026' },
-        { msg: 'Title insurance confirmed',              tag: 'done',     date: 'Mar 5, 2026' },
-      ],
-    };
-    const comms = COMMS[loanId] || [
-      { msg: 'Application created', tag: 'done', date: loan.submittedAt ? Display.date(loan.submittedAt) : 'Pending' },
-    ];
-
-    const commsHtml = comms.map(c => {
-      const tagClass = { sent: 'comms-tag-sent', done: 'comms-tag-done', due: 'comms-tag-due' }[c.tag] || 'comms-tag-done';
-      const tagLabel = { sent: 'Sent', done: 'Done', due: 'Due' }[c.tag] || c.tag;
-      const dotClass = { sent: 'notif-dot-sent', done: 'notif-dot-complete', due: 'notif-dot-action' }[c.tag] || 'notif-dot-info';
-      return `
-        <div class="app-comms-item">
-          <span class="notif-dot ${dotClass}" style="margin-top:3px;flex-shrink:0"></span>
-          <div style="flex:1;min-width:0">
-            <div style="font-size:12px;color:var(--color-text)">${c.msg}</div>
-            <div style="font-size:11px;color:var(--color-text-muted);margin-top:2px">${c.date}</div>
-          </div>
-          <span class="comms-tag ${tagClass}">${tagLabel}</span>
-        </div>`;
-    }).join('');
-
-    const submittedDate = loan.submittedAt ? Display.date(loan.submittedAt) : '—';
-    const rateLockDate  = loanId === 'DCDC000002' ? 'Apr 12, 2026' : 'Apr 30, 2026';
-    const estCloseDate  = loanId === 'DCDC000003' ? 'Mar 15, 2026' : 'May 15, 2026';
-    const dti = loanId === 'DCDC000003' ? 38 : Math.round(28 + (loan.ltv || 70) / 5);
-    const rate = loanId === 'DCDC000003' ? '6.125%' : loanId === 'DCDC000002' ? '5.875%' : '6.250%';
-    const rateLockExpiring = loanId === 'DCDC000002';
-
-    const activeStepLabel = STEPS[this._activeStep]?.short || STEPS[step]?.short || '';
+    const proc = generateOriginationProcess(loan.status);
+    const days = this._daysInStage(loan);
+    const rateLockDate = loanId === 'DCDC000002' ? 'Apr 12, 2026' : 'Apr 30, 2026';
+    const estCloseDate = loanId === 'DCDC000003' ? 'Mar 15, 2026' : 'May 15, 2026';
 
     return `
-      <!-- Sticky Context Bar -->
-      <div class="loan-context-bar">
-        <div class="breadcrumb" style="margin:0;padding:0;font-size:11px">
-          <a class="breadcrumb-link" onclick="DataPlatformView._backToApplications()">Applications</a>
-          <span class="breadcrumb-sep">›</span>
-          <a class="breadcrumb-link" onclick="DataPlatformView.selectStep(${step})">${loan.id}</a>
-          <span class="breadcrumb-sep">›</span>
-          <span class="breadcrumb-current">${activeStepLabel}</span>
-        </div>
-        <div class="context-row">
-          <div style="min-width:0;flex-shrink:1">
-            <div class="context-address">${streetAddr}</div>
-            <div class="context-address-sub">${cityState}</div>
-          </div>
-          <div class="context-divider"></div>
-          <div class="context-metrics">
-            <span class="tag">${loan.program}</span>
-            <div class="context-chip">
-              <span class="context-chip-label">Loan ID</span>
-              ${loan.id}
-            </div>
-            <div class="context-chip">
-              <span class="context-chip-label">Amount</span>
-              ${Display.currency(loan.amount)}
-            </div>
-            <div class="context-chip">
-              <span class="context-chip-label">LTV / CLTV</span>
-              ${loan.ltv ?? '—'}% / ${loan.cltv ?? '—'}%
-            </div>
-            <div class="context-chip">
-              <span class="context-chip-label">DTI</span>
-              ${dti}%
-            </div>
-            <div class="context-chip">
-              <span class="context-chip-label">Rate</span>
-              ${rate}
-            </div>
-            <div class="context-chip${rateLockExpiring ? ' chip-danger' : ''}">
-              <span class="context-chip-label">Rate Lock</span>
-              ${rateLockDate}
-            </div>
-            <div class="context-chip">
-              <span class="context-chip-label">Est. Close</span>
-              ${estCloseDate}
-            </div>
-          </div>
-        </div>
-      </div>
-
-      <!-- Stepper -->
-      <div class="app-stepper">${stepperHtml}</div>
-
-      <!-- Body -->
-      <div class="app-detail-body">
-        <div class="app-detail-content">
-          ${this._renderStepContent(this._activeStep, loan, STEPS)}
-        </div>
+      <button class="ud-back-btn" onclick="DataPlatformView._backToApplications()">&#8592; Back to Applications</button>
+      ${this._appContextHeader(loan, loName, rateLockDate, estCloseDate)}
+      ${this._appStageTracker(proc)}
+      <div class="ud-content-grid">
         <div>
-          <!-- Warnings panel -->
-          ${this._renderWarningsPanel(this._deriveLoanWarnings(loan, rateLockDate, estCloseDate))}
-          <!-- Communications panel -->
-          <div class="app-comms-panel" style="margin-bottom:16px">
-            <div class="app-comms-section-title">Activity & Communications</div>
-            ${commsHtml}
-          </div>
-          <!-- Key dates -->
-          <div class="app-comms-panel" style="margin-bottom:16px">
-            <div class="app-comms-section-title">Key Dates</div>
-            <div class="app-key-date-row"><span>Submitted</span><strong>${submittedDate}</strong></div>
-            <div class="app-key-date-row"><span>Rate Lock</span><strong style="color:${loanId === 'DCDC000002' ? 'var(--color-danger)' : 'inherit'}">${rateLockDate}</strong></div>
-            <div class="app-key-date-row"><span>Est. Close</span><strong>${estCloseDate}</strong></div>
-          </div>
-          <!-- Parties -->
-          <div class="app-comms-panel">
-            <div class="app-comms-section-title">Parties</div>
-            <div class="app-key-date-row"><span>Borrower</span><strong>${loan.borrowerName}</strong></div>
-            <div class="app-key-date-row"><span>Loan Officer</span><strong>${loName}</strong></div>
-            <div class="app-key-date-row"><span>Title Co.</span><strong>First American Title</strong></div>
-            <div class="app-key-date-row"><span>Processor</span><strong>Kevin Park</strong></div>
-          </div>
+          ${this._appContentTabs()}
+          <div class="ud-content-main">${this._appTabContent(loan, proc, loName)}</div>
         </div>
+        <div>${this._appSidebar(loan, proc, loName, days, rateLockDate, estCloseDate)}</div>
       </div>
       <div id="dp-modal"></div>`;
+  },
+
+  /* ── App Detail: Owner class helper ── */
+  _appOwnerClass(role) {
+    if (!role) return '';
+    const r = role.toLowerCase();
+    if (r.includes('loan officer') || r.includes('lo')) return 'lo';
+    if (r.includes('account') || r.includes('am') || r.includes('processor')) return 'am';
+    if (r.includes('borrower')) return 'borrower';
+    return 'system';
+  },
+
+  /* ── App Detail: Context Header ── */
+  _appContextHeader(loan, loName, rateLockDate, estCloseDate) {
+    const isCompleted = loan.status === 'completed';
+    const addr = loan.phase === 'prequalification' ? 'PREQUALIFICATION' : loan.address.split(',')[0].trim();
+    const sub = loan.address.split(',').slice(1).join(',').trim();
+    const dti = loan.id === 'DCDC000003' ? 38 : Math.round(28 + (loan.ltv || 70) / 5);
+    const rateLockExpiring = loan.id === 'DCDC000002';
+    return `
+      <div class="ud-context-header">
+        <div class="ud-context-top">
+          <div>
+            <div class="ud-context-address">${addr}</div>
+            <div class="ud-context-sub">${sub}</div>
+          </div>
+          <span class="ud-status-pill ${isCompleted ? 'completed' : ''}"><span class="ud-status-pill-dot"></span> ${Display.loanStatusLabel(loan.status)}</span>
+        </div>
+        <div class="ud-context-chips">
+          <div class="ud-chip"><span class="ud-chip-label">Loan ID</span><span class="ud-chip-value">${loan.id}</span></div>
+          <div class="ud-chip"><span class="ud-chip-label">Program</span><span class="ud-chip-value">${loan.program}</span></div>
+          <div class="ud-chip"><span class="ud-chip-label">Amount</span><span class="ud-chip-value">${Display.currency(loan.amount)}</span></div>
+          <div class="ud-chip"><span class="ud-chip-label">LTV / CLTV</span><span class="ud-chip-value">${loan.ltv ?? '—'}% / ${loan.cltv ?? '—'}%</span></div>
+          <div class="ud-chip"><span class="ud-chip-label">DTI</span><span class="ud-chip-value">${dti}%</span></div>
+          <div class="ud-chip"><span class="ud-chip-label">FICO</span><span class="ud-chip-value">${loan.fico || '—'}</span></div>
+          <div class="ud-chip"><span class="ud-chip-label">Borrower</span><span class="ud-chip-value">${loan.borrowerName}</span></div>
+          <div class="ud-chip"><span class="ud-chip-label">Loan Officer</span><span class="ud-chip-value">${loName}</span></div>
+          <div class="ud-chip"><span class="ud-chip-label">Rate Lock</span><span class="ud-chip-value ${rateLockExpiring ? 'warn' : ''}">${rateLockDate}</span></div>
+          <div class="ud-chip"><span class="ud-chip-label">Est. Close</span><span class="ud-chip-value">${estCloseDate}</span></div>
+        </div>
+      </div>`;
+  },
+
+  /* ── App Detail: Stage Tracker ── */
+  _appStageTracker(proc) {
+    return `<div class="ud-stage-tracker">${proc.map((stage, idx) => {
+      const done = stage.tasks.filter(t => t.status === 'done').length;
+      const total = stage.tasks.length;
+      const isDone = stage.status === 'completed';
+      const isCurrent = stage.status === 'in_progress';
+      const dotClass = isDone ? 'done' : isCurrent ? 'current' : 'pending';
+      const activeTask = stage.tasks.find(t => t.status === 'active');
+      const detailText = isDone ? `${total}/${total} complete` : isCurrent ? `${done}/${total}` + (activeTask ? ' \u00B7 ' + activeTask.label.substring(0, 25) : '') : `0/${total}`;
+      const detailClass = isCurrent && activeTask ? 'warn' : '';
+      const line = idx < proc.length - 1 ? `<div class="ud-stage-line ${isDone ? 'done' : 'pending'}"></div>` : '';
+      return `
+        <div class="ud-stage ${isCurrent ? 'active' : ''}">
+          <div class="ud-stage-dot ${dotClass}">${isDone ? '&#10003;' : idx + 1}</div>
+          <div class="ud-stage-info">
+            <div class="ud-stage-name">${stage.label}</div>
+            <div class="ud-stage-detail ${detailClass}">${detailText}</div>
+          </div>
+        </div>${line}`;
+    }).join('')}</div>`;
+  },
+
+  /* ── App Detail: Content Tabs ── */
+  _appContentTabs() {
+    const tabs = ['Overview', 'Tasks', 'Documents', 'Parties', 'History'];
+    const keys = ['overview', 'tasks', 'documents', 'parties', 'history'];
+    return `<div class="ud-content-tabs">${tabs.map((t, i) =>
+      `<button class="ud-content-tab ${this._activeAppTab === keys[i] ? 'active' : ''}" onclick="DataPlatformView.switchAppTab('${keys[i]}')">${t}</button>`
+    ).join('')}</div>`;
+  },
+
+  /* ── App Detail: Tab Content Dispatcher ── */
+  _appTabContent(loan, proc, loName) {
+    switch (this._activeAppTab) {
+      case 'tasks':     return this._appTasksTab(proc);
+      case 'documents': return this._appDocumentsTab(loan);
+      case 'parties':   return this._appPartiesTab(loan, loName);
+      case 'history':   return this._appHistoryTab(loan);
+      default:          return this._appOverviewTab(loan, proc);
+    }
+  },
+
+  /* ── App Detail: Overview Tab ── */
+  _appOverviewTab(loan, proc) {
+    const currentStage = proc.find(s => s.status === 'in_progress');
+    const lastCompleted = proc.filter(s => s.status === 'completed').pop();
+    const activeStage = currentStage || lastCompleted;
+
+    let currentSectionHtml = '';
+    if (activeStage) {
+      const done = activeStage.tasks.filter(t => t.status === 'done').length;
+      const total = activeStage.tasks.length;
+      const pct = Math.round((done / total) * 100);
+      currentSectionHtml = `
+        <div class="ud-content-section">
+          <div class="ud-section-title">
+            ${activeStage.label}
+            <span class="ud-section-count">${done} of ${total} tasks</span>
+            <div style="flex:1"></div>
+            <div style="width:100px"><div class="ud-progress-bar"><div class="ud-progress-fill" style="width:${pct}%"></div></div></div>
+          </div>
+          ${activeStage.tasks.map(t => `
+            <div class="ud-task-row">
+              <div class="ud-task-icon ${t.status === 'done' ? 'done' : t.status === 'active' ? 'active' : 'pending'}">${t.status === 'done' ? '&#10003;' : t.status === 'active' ? '&#9679;' : ''}</div>
+              <span class="ud-task-label ${t.status === 'done' ? 'done' : ''}">${t.label}</span>
+              <span class="ud-task-owner ${this._appOwnerClass(t.role)}">${t.role}</span>
+              ${t.action && t.status !== 'done' ? `<button class="ud-task-action ${t.status === 'active' ? 'primary' : ''}" onclick="event.stopPropagation()">${t.action}</button>` : ''}
+            </div>`).join('')}
+        </div>`;
+    }
+
+    const completedStages = proc.filter(s => s.status === 'completed' && s !== activeStage);
+    const completedHtml = completedStages.map(s => `
+      <div class="ud-content-section">
+        <div class="ud-section-title" style="color:#16A34A"><span style="font-size:16px;margin-right:4px">&#10003;</span> ${s.label} <span class="ud-section-count">${s.tasks.length}/${s.tasks.length} complete</span></div>
+      </div>`).join('');
+
+    const purchasePrice = Math.round(loan.amount / ((loan.ltv || 75) / 100));
+    const overviewItems = [
+      ['Loan Amount', Display.currency(loan.amount)],
+      ['Purchase Price', Display.currency(purchasePrice)],
+      ['LTV / CLTV', `${loan.ltv ?? '—'}% / ${loan.cltv ?? '—'}%`],
+      ['FICO', loan.fico || '—'],
+      ['Appraised Value', loan.appraisedHomeValue ? Display.currency(loan.appraisedHomeValue) : 'TBD'],
+      ['Closing Date', loan.closingDate ? Display.date(loan.closingDate) : 'TBD'],
+      ['Closing Fees', loan.closingFees ? Display.currency(loan.closingFees) : 'TBD'],
+      ['Borrower Net', loan.borrowerNet ? Display.currency(loan.borrowerNet) : 'TBD'],
+    ];
+
+    const originatorItems = [
+      ['Company', loan.originatorCompany || '—'],
+      ['Company NMLS #', loan.originatorNmls || '—'],
+      ['Appraiser', loan.appraiserCompany || 'TBD'],
+      ['Title Company', 'First American Title'],
+    ];
+
+    return `
+      ${currentSectionHtml}
+      ${completedHtml}
+      <div class="ud-content-section">
+        <div class="ud-section-title">Loan Overview</div>
+        <div class="ud-info-grid">${overviewItems.map(([l, v]) =>
+          `<div class="ud-info-item"><div class="ud-info-label">${l}</div><div class="ud-info-value ${v === 'TBD' ? 'tbd' : ''}">${v}</div></div>`
+        ).join('')}</div>
+      </div>
+      <div class="ud-content-section">
+        <div class="ud-section-title">Originator &amp; Appraisal</div>
+        <div class="ud-info-grid">${originatorItems.map(([l, v]) =>
+          `<div class="ud-info-item"><div class="ud-info-label">${l}</div><div class="ud-info-value ${v === 'TBD' ? 'tbd' : ''}">${v}</div></div>`
+        ).join('')}</div>
+      </div>`;
+  },
+
+  /* ── App Detail: Tasks Tab ── */
+  _appTasksTab(proc) {
+    return proc.map(stage => {
+      const done = stage.tasks.filter(t => t.status === 'done').length;
+      const total = stage.tasks.length;
+      const isDone = stage.status === 'completed';
+      const isCurrent = stage.status === 'in_progress';
+      const isPending = stage.status === 'pending';
+      const isExpanded = this._expandedAppStages.has(stage.id) || isCurrent;
+
+      if (isPending && !this._expandedAppStages.has(stage.id)) {
+        return `
+          <div class="ud-content-section">
+            <div class="ud-stage-section-header" onclick="DataPlatformView.toggleAppStage('${stage.id}')">
+              <div class="ud-section-title" style="color:var(--color-text-muted);margin:0">${stage.label} <span class="ud-section-count">0/${total} &middot; Pending</span></div>
+              <span class="ud-stage-section-toggle">&#9654;</span>
+            </div>
+          </div>`;
+      }
+
+      return `
+        <div class="ud-content-section ud-stage-section ${isCurrent ? 'in-progress' : ''}">
+          <div class="ud-stage-section-header" onclick="DataPlatformView.toggleAppStage('${stage.id}')">
+            <div class="ud-section-title" style="margin:0">
+              ${isDone ? '<span style="color:#16A34A;font-size:16px;margin-right:4px">&#10003;</span>' : ''}
+              ${stage.label}
+              <span class="ud-section-count">${done}/${total}${isCurrent ? ' \u00B7 In Progress' : isDone ? ' complete' : ''}</span>
+            </div>
+            <span class="ud-stage-section-toggle ${isExpanded ? 'open' : ''}">&#9654;</span>
+          </div>
+          ${isExpanded ? stage.tasks.map(t => `
+            <div class="ud-task-row">
+              <div class="ud-task-icon ${t.status === 'done' ? 'done' : t.status === 'active' ? 'active' : 'pending'}">${t.status === 'done' ? '&#10003;' : t.status === 'active' ? '&#9679;' : ''}</div>
+              <span class="ud-task-label ${t.status === 'done' ? 'done' : ''}">${t.label}</span>
+              <span class="ud-task-owner ${this._appOwnerClass(t.role)}">${t.role}</span>
+              ${t.action && t.status !== 'done' ? `<button class="ud-task-action ${t.status === 'active' ? 'primary' : ''}" onclick="event.stopPropagation()">${t.action}</button>` : ''}
+            </div>`).join('') : ''}
+        </div>`;
+    }).join('');
+  },
+
+  /* ── App Detail: Documents Tab ── */
+  _appDocumentsTab(loan) {
+    const hasAppraisal = ['application_documents_approved','original_appraisal_submitted','sent_to_docutech','pending_origination_creation','origination_created','completed'].includes(loan.status);
+    const hasTitle = ['sent_to_docutech','pending_origination_creation','origination_created','completed'].includes(loan.status);
+    const isComplete = loan.status === 'completed';
+    const hasOrigination = isComplete || loan.status === 'origination_created';
+    const hasDocs = loan.status !== 'draft' && loan.status !== 'prequalification_in_progress';
+
+    const docs = [
+      { name: 'Initial Disclosure Package', meta: 'PDF \u00B7 2.4 MB \u00B7 Uploaded Mar 18', status: hasDocs ? 'approved' : 'missing', owner: 'Account Manager' },
+      { name: 'Borrower Authorization',     meta: 'PDF \u00B7 156 KB \u00B7 Uploaded Mar 18', status: hasDocs ? 'approved' : 'missing', owner: 'Account Manager' },
+      { name: 'Signed Loan Application 1003', meta: hasDocs ? 'PDF \u00B7 320 KB \u00B7 Uploaded Mar 18' : 'Required for Application', status: hasDocs ? 'approved' : 'missing', owner: 'Borrower' },
+      { name: 'Appraisal Report',            meta: hasAppraisal ? 'PDF \u00B7 8.1 MB \u00B7 Uploaded Mar 22' : 'Required for CDA & Appraisal stage', status: hasAppraisal ? 'approved' : 'missing', owner: 'Loan Officer' },
+      { name: 'Title Commitment',            meta: hasTitle ? 'PDF \u00B7 1.8 MB \u00B7 Uploaded Mar 25' : 'Required for Closing stage', status: hasTitle ? 'approved' : 'pending', owner: 'Account Manager' },
+      { name: 'Closing Disclosure',          meta: isComplete ? 'PDF \u00B7 3.2 MB \u00B7 Uploaded Apr 1' : 'Required for Closing stage', status: isComplete ? 'approved' : 'pending', owner: 'System' },
+      { name: 'SAN Note',                    meta: hasOrigination ? 'PDF \u00B7 412 KB \u00B7 Uploaded Apr 2' : 'Required for Closing stage', status: hasOrigination ? 'approved' : 'pending', owner: 'Account Manager' },
+    ];
+    const approvedCount = docs.filter(d => d.status === 'approved').length;
+
+    return `
+      <div class="ud-content-section">
+        <div class="ud-section-title">Documents <span class="ud-section-count">${approvedCount} of ${docs.length} approved</span></div>
+        ${docs.map(d => `
+          <div class="ud-doc-row">
+            <div class="ud-doc-icon">&#128196;</div>
+            <div class="ud-doc-info"><div class="ud-doc-name">${d.name}</div><div class="ud-doc-meta">${d.meta}</div></div>
+            <span class="ud-doc-badge ${d.status}">${d.status === 'approved' ? 'Approved' : d.status === 'missing' ? 'Not Uploaded' : 'Pending'}</span>
+            <span class="ud-task-owner ${this._appOwnerClass(d.owner)}">${d.owner}</span>
+            ${d.status === 'missing' ? '<button class="ud-task-action" onclick="event.stopPropagation()">Upload</button>' : ''}
+          </div>`).join('')}
+      </div>`;
+  },
+
+  /* ── App Detail: Parties Tab ── */
+  _appPartiesTab(loan, loName) {
+    const borrowerItems = [
+      ['Borrower Name(s)', loan.borrowerName],
+      ['FICO Score', loan.fico || '—'],
+      ['Household Income', loan.householdIncome ? Display.currency(loan.householdIncome) : '—'],
+      ['Employment Status', 'Verified'],
+      ['Debt-to-Income Ratio', (loan.id === 'DCDC000003' ? 38 : Math.round(28 + (loan.ltv || 70) / 5)) + '%'],
+      ['Credit History', 'Good standing'],
+    ];
+    const originatorItems = [
+      ['Loan Officer', loName],
+      ['Company', loan.originatorCompany || '—'],
+      ['Company NMLS #', loan.originatorNmls || '—'],
+      ['Processor', 'Kevin Park'],
+    ];
+    const titleItems = [
+      ['Title Company', 'First American Title'],
+      ['Title Officer', 'Karen Mitchell'],
+      ['Title Number', 'FA-2026-' + loan.id.slice(-4)],
+    ];
+    const appraisalItems = [
+      ['Appraiser Company', loan.appraiserCompany || 'TBD'],
+      ['Appraiser Name', loan.appraiserName || 'TBD'],
+      ['Appraiser License #', loan.appraiserLicense || 'TBD'],
+    ];
+
+    const renderGrid = (items) => `<div class="ud-info-grid">${items.map(([l, v]) =>
+      `<div class="ud-info-item"><div class="ud-info-label">${l}</div><div class="ud-info-value ${v === 'TBD' ? 'tbd' : ''}">${v}</div></div>`
+    ).join('')}</div>`;
+
+    return `
+      <div class="ud-content-section"><div class="ud-section-title">Borrower</div>${renderGrid(borrowerItems)}</div>
+      <div class="ud-content-section"><div class="ud-section-title">Originator</div>${renderGrid(originatorItems)}</div>
+      <div class="ud-content-section"><div class="ud-section-title">Appraiser</div>${renderGrid(appraisalItems)}</div>
+      <div class="ud-content-section"><div class="ud-section-title">Title Company</div>${renderGrid(titleItems)}</div>`;
+  },
+
+  /* ── App Detail: History Tab ── */
+  _appHistoryTab(loan) {
+    const COMMS = {
+      'DCDC000001': [
+        { action: 'Loan Estimate sent to borrower', actor: 'System', time: 'Mar 20, 2026' },
+        { action: 'Application submitted', actor: 'Loan Officer', time: 'Mar 18, 2026' },
+        { action: 'Prequalification completed', actor: 'Account Manager', time: 'Mar 15, 2026' },
+        { action: 'Loan created', actor: 'System', time: 'Mar 12, 2026' },
+      ],
+      'DCDC000002': [
+        { action: 'Closing Disclosure sent to borrower', actor: 'System', time: 'Apr 1, 2026' },
+        { action: 'Documents approved by underwriter', actor: 'Account Manager', time: 'Mar 28, 2026' },
+        { action: 'Loan Estimate sent', actor: 'System', time: 'Mar 12, 2026' },
+        { action: 'Loan created', actor: 'System', time: 'Mar 5, 2026' },
+      ],
+      'DCDC000003': [
+        { action: 'Closing completed — loan funded', actor: 'System', time: 'Mar 15, 2026' },
+        { action: 'Final CD sent to borrower', actor: 'System', time: 'Mar 10, 2026' },
+        { action: 'Title insurance confirmed', actor: 'Title Co.', time: 'Mar 5, 2026' },
+        { action: 'Loan created', actor: 'System', time: 'Feb 20, 2026' },
+      ],
+    };
+    const events = COMMS[loan.id] || [
+      { action: 'Loan created', actor: 'System', time: loan.submittedAt || '2026-03-10' },
+      { action: 'Status: ' + Display.loanStatusLabel(loan.status), actor: 'System', time: loan.updatedAt || '2026-04-01' },
+    ];
+
+    return `
+      <div class="ud-content-section">
+        <div class="ud-section-title">Activity History</div>
+        <div class="ud-timeline">
+          ${events.map(e => `
+            <div class="ud-timeline-item">
+              <div class="ud-timeline-dot"></div>
+              <div class="ud-timeline-content"><strong>${e.action}</strong> &mdash; ${e.actor}</div>
+              <div class="ud-timeline-time">${typeof e.time === 'string' && e.time.includes(',') ? e.time : Display.date(e.time)}</div>
+            </div>`).join('')}
+        </div>
+      </div>`;
+  },
+
+  /* ── App Detail: Right Sidebar ── */
+  _appSidebar(loan, proc, loName, days, rateLockDate, estCloseDate) {
+    const currentStage = proc.find(s => s.status === 'in_progress');
+    const activeTask = currentStage?.tasks.find(t => t.status === 'active');
+    const rateLockExpiring = loan.id === 'DCDC000002';
+
+    // Next Actions
+    let actionsHtml = '';
+    if (activeTask) {
+      actionsHtml += `<div class="ud-sidebar-item"><span class="ud-sidebar-dot amber"></span><div class="ud-sidebar-item-text"><div>${activeTask.label}</div><div class="ud-sidebar-item-sub">${activeTask.role} \u00B7 ${currentStage.label}</div></div></div>`;
+    }
+    const nextPending = currentStage?.tasks.find(t => t.status === 'pending');
+    if (nextPending) {
+      actionsHtml += `<div class="ud-sidebar-item"><span class="ud-sidebar-dot blue"></span><div class="ud-sidebar-item-text"><div>${nextPending.label}</div><div class="ud-sidebar-item-sub">${nextPending.role}</div></div></div>`;
+    }
+    if (!actionsHtml) actionsHtml = '<div class="ud-sidebar-item"><span class="ud-sidebar-dot green"></span><div class="ud-sidebar-item-text"><div>All tasks complete</div></div></div>';
+
+    // Warnings
+    let warningsHtml = '';
+    if (days > 14 && loan.status !== 'completed') {
+      warningsHtml += `<div class="ud-sidebar-item"><span class="ud-sidebar-dot red"></span><div class="ud-sidebar-item-text"><div>${days} days in current stage</div><div class="ud-sidebar-item-sub">Avg for this stage: 10 days</div></div></div>`;
+    }
+    if (rateLockExpiring) {
+      warningsHtml += `<div class="ud-sidebar-item"><span class="ud-sidebar-dot red"></span><div class="ud-sidebar-item-text"><div>Rate lock expiring soon</div><div class="ud-sidebar-item-sub">${rateLockDate}</div></div></div>`;
+    }
+    if (!loan.closingDate && loan.status !== 'completed') {
+      warningsHtml += `<div class="ud-sidebar-item"><span class="ud-sidebar-dot amber"></span><div class="ud-sidebar-item-text"><div>Closing date not set</div><div class="ud-sidebar-item-sub">Set closing date to proceed</div></div></div>`;
+    }
+    if (!warningsHtml) warningsHtml = '<div class="ud-sidebar-item" style="color:var(--color-text-muted);font-size:12px;padding:12px 16px">No warnings</div>';
+
+    return `
+      <div class="ud-sidebar-panel">
+        <div class="ud-sidebar-panel-title">Next Actions</div>
+        ${actionsHtml}
+      </div>
+      <div class="ud-sidebar-panel">
+        <div class="ud-sidebar-panel-title">Warnings</div>
+        ${warningsHtml}
+      </div>
+      <div class="ud-sidebar-panel">
+        <div class="ud-sidebar-panel-title">Key Dates</div>
+        <div class="ud-sidebar-kv"><span class="ud-sidebar-kv-label">Submitted</span><span class="ud-sidebar-kv-value">${loan.submittedAt ? Display.date(loan.submittedAt) : '—'}</span></div>
+        <div class="ud-sidebar-kv"><span class="ud-sidebar-kv-label">Rate Lock</span><span class="ud-sidebar-kv-value ${rateLockExpiring ? 'warn' : ''}">${rateLockDate}</span></div>
+        <div class="ud-sidebar-kv"><span class="ud-sidebar-kv-label">Est. Close</span><span class="ud-sidebar-kv-value">${estCloseDate}</span></div>
+        <div class="ud-sidebar-kv"><span class="ud-sidebar-kv-label">Days in Stage</span><span class="ud-sidebar-kv-value" ${days > 14 ? 'style="color:var(--color-danger)"' : ''}>${days}d</span></div>
+      </div>
+      <div class="ud-sidebar-panel">
+        <div class="ud-sidebar-panel-title">Parties</div>
+        <div class="ud-sidebar-kv"><span class="ud-sidebar-kv-label">Borrower</span><span class="ud-sidebar-kv-value">${loan.borrowerName}</span></div>
+        <div class="ud-sidebar-kv"><span class="ud-sidebar-kv-label">Loan Officer</span><span class="ud-sidebar-kv-value">${loName}</span></div>
+        <div class="ud-sidebar-kv"><span class="ud-sidebar-kv-label">Processor</span><span class="ud-sidebar-kv-value">Kevin Park</span></div>
+        <div class="ud-sidebar-kv"><span class="ud-sidebar-kv-label">Title Co.</span><span class="ud-sidebar-kv-value">First American Title</span></div>
+      </div>`;
   },
 
   _backToApplications() {
