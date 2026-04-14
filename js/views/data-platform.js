@@ -2454,11 +2454,19 @@ const DataPlatformView = {
     }).join('');
 
     return `
+      <div class="page-header">
+        <div class="page-header-inner">
+          <div class="page-header-left">
+            <div class="page-title">Batches</div>
+            <div class="page-subtitle">${batches.length} batches in pipeline</div>
+          </div>
+          ${canCreate ? `<div class="page-header-actions"><button class="btn btn-primary btn-sm">+ Create New Batch</button></div>` : ''}
+        </div>
+      </div>
       ${statsHtml}
       ${eligibleSection}
       <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:12px">
         <div style="font-size:15px;font-weight:600;color:var(--color-text)">All Batches</div>
-        ${canCreate ? `<button class="btn btn-primary btn-sm">+ Create New Batch</button>` : ''}
       </div>
       <div class="table-container">
         <table>
@@ -2544,6 +2552,14 @@ const DataPlatformView = {
       </tr>`).join('');
 
     return `
+      <div class="page-header">
+        <div class="page-header-inner">
+          <div class="page-header-left">
+            <div class="page-title">Activations</div>
+            <div class="page-subtitle">Token minting and activation history</div>
+          </div>
+        </div>
+      </div>
       ${tokenSummary}
       ${statsHtml}
       <div class="table-container">
