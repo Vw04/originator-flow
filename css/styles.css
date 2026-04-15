@@ -5571,21 +5571,21 @@ label { font-size: 12px; font-weight: 600; color: var(--color-text); }
 /* ── Program Overview Cards ── */
 .prospect-programs-grid {
   display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
-  gap: 16px;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 20px;
 }
 .prospect-program-card {
   background: var(--color-card);
   border: 1px solid var(--color-border);
   border-radius: var(--radius-lg);
-  padding: 20px 24px;
+  padding: 24px 28px;
   border-left: 4px solid var(--color-primary);
 }
 .prospect-program-header {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  margin-bottom: 6px;
+  margin-bottom: 8px;
 }
 .prospect-program-geo {
   font-size: 11px;
@@ -5599,32 +5599,35 @@ label { font-size: 12px; font-weight: 600; color: var(--color-text); }
   font-size: 18px;
   font-weight: 400;
   color: var(--color-text);
-  margin-bottom: 16px;
+  margin-bottom: 20px;
 }
 .prospect-program-metrics {
   display: grid;
   grid-template-columns: 1fr 1fr;
-  gap: 12px 20px;
-  margin-bottom: 16px;
+  gap: 14px 32px;
+  margin-bottom: 20px;
 }
 .prospect-program-metric {
   display: flex;
   justify-content: space-between;
   align-items: baseline;
   font-size: 13px;
+  gap: 12px;
 }
 .prospect-pm-label {
   color: var(--color-text-muted);
+  white-space: nowrap;
 }
 .prospect-pm-value {
   font-weight: 700;
   color: var(--color-text);
+  white-space: nowrap;
 }
 .prospect-program-params {
   display: flex;
-  gap: 12px;
+  gap: 10px;
   flex-wrap: wrap;
-  padding-top: 12px;
+  padding-top: 16px;
   border-top: 1px solid var(--color-border);
   font-size: 11px;
   color: var(--color-text-muted);
@@ -5929,7 +5932,7 @@ label { font-size: 12px; font-weight: 600; color: var(--color-text); }
 @media (max-width: 768px) {
   .prospect-hero-inner { flex-direction: column; }
   .prospect-hero-stats { flex-wrap: wrap; }
-  .prospect-programs-grid { grid-template-columns: 1fr; }
+  .prospect-programs-grid { grid-template-columns: 1fr; gap: 16px; }
   .prospect-comparison { flex-direction: column; }
   .prospect-comparison-before { border-radius: var(--radius-lg) var(--radius-lg) 0 0; border-right: none; border-bottom: 1px solid var(--color-border); }
   .prospect-comparison-after { border-radius: 0 0 var(--radius-lg) var(--radius-lg); border-left: 2px solid var(--color-primary); border-top: none; }
