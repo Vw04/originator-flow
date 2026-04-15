@@ -19,14 +19,16 @@ const ProspectDashboardView = {
   render() {
     return `
       ${this._renderHero()}
-      ${this._renderKPIStrip()}
-      ${this._renderProgramOverview()}
-      ${this._renderBorrowerProfile()}
-      ${this._renderImpactSummary()}
-      ${this._renderLoanMetrics()}
-      ${this._renderBorrowerStories()}
-      ${this._renderProjections()}
-      ${this._renderCTA()}`;
+      <div class="prospect-body">
+        ${this._renderKPIStrip()}
+        ${this._renderProgramOverview()}
+        ${this._renderBorrowerProfile()}
+        ${this._renderImpactSummary()}
+        ${this._renderLoanMetrics()}
+        ${this._renderBorrowerStories()}
+        ${this._renderProjections()}
+        ${this._renderCTA()}
+      </div>`;
   },
 
   /* ================================================================

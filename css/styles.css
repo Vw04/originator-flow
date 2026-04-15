@@ -5472,11 +5472,15 @@ label { font-size: 12px; font-weight: 600; color: var(--color-text); }
    INVESTOR PROSPECT DASHBOARD
    ============================================================ */
 
+/* ── Body wrapper ── */
+.prospect-body {
+  padding: 32px 40px 40px;
+}
+
 /* ── Hero ── */
 .prospect-hero {
   background: linear-gradient(135deg, #1D3D2A 0%, #2D6048 60%, #3D7A52 100%);
   color: #fff;
-  margin: -20px -20px 0;
   padding: 48px 40px 40px;
 }
 .prospect-hero-inner {
@@ -5540,14 +5544,17 @@ label { font-size: 12px; font-weight: 600; color: var(--color-text); }
 
 /* ── Sections ── */
 .prospect-section {
-  margin-bottom: 24px;
+  margin-bottom: 36px;
+}
+.prospect-section:last-child {
+  margin-bottom: 0;
 }
 .prospect-section-header {
   display: flex;
   align-items: center;
   justify-content: space-between;
   gap: 16px;
-  margin-bottom: 16px;
+  margin-bottom: 20px;
   flex-wrap: wrap;
 }
 .prospect-section-title {
@@ -5555,7 +5562,7 @@ label { font-size: 12px; font-weight: 600; color: var(--color-text); }
   font-size: 22px;
   font-weight: 400;
   color: var(--color-text);
-  margin: 0 0 16px;
+  margin: 0 0 20px;
 }
 .prospect-section-header .prospect-section-title {
   margin-bottom: 0;
@@ -5885,7 +5892,6 @@ label { font-size: 12px; font-weight: 600; color: var(--color-text); }
   border-radius: var(--radius-lg);
   padding: 48px 40px;
   text-align: center;
-  margin-bottom: 32px;
 }
 .prospect-cta-title {
   font-family: var(--font-heading);
@@ -5931,6 +5937,7 @@ label { font-size: 12px; font-weight: 600; color: var(--color-text); }
   .prospect-comparison-arrow svg { transform: rotate(90deg); }
   .prospect-stories-grid { grid-template-columns: 1fr; }
   .prospect-projections-grid { grid-template-columns: 1fr; }
-  .prospect-hero { padding: 32px 20px; margin: -20px -12px 0; }
+  .prospect-body { padding: 24px 16px 32px; }
+  .prospect-hero { padding: 32px 20px; }
   .prospect-cta { padding: 32px 20px; }
 }
