@@ -24,16 +24,13 @@ const Nav = (() => {
     prog_admin: [
       { path: '/data/analytics',    label: 'Dashboard' },
       { path: '/data/applications', label: 'Applications' },
-      { path: '/originations',      label: 'Originations' },
     ],
     lo: [
       { path: '/data/applications', label: 'Applications' },
-      { path: '/originations',      label: 'My Originations' },
       { path: '/profile',           label: 'My Profile' },
     ],
     lp: [
       { path: '/data/applications', label: 'Applications' },
-      { path: '/originations',      label: 'Originations' },
       { path: '/profile',           label: 'My Profile' },
     ],
     investor: [
@@ -180,7 +177,7 @@ const Nav = (() => {
           ${adminDropdown}
         </div>
         <div class="topnav-right">
-          <div class="topnav-notif" id="topnav-notif" onclick="Nav.toggleNotifications(event)">
+          ${role === 'investor_prospect' ? '' : `<div class="topnav-notif" id="topnav-notif" onclick="Nav.toggleNotifications(event)">
             <svg width="18" height="18" viewBox="0 0 18 18" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round">
               <path d="M9 1.5a5.5 5.5 0 0 1 5.5 5.5c0 3 1 4 1.5 5H2c.5-1 1.5-2 1.5-5A5.5 5.5 0 0 1 9 1.5z"/>
               <path d="M7 15.5a2 2 0 0 0 4 0"/>
@@ -193,7 +190,7 @@ const Nav = (() => {
               </div>
               ${_renderNotifications(role)}
             </div>
-          </div>
+          </div>`}
           <div class="topnav-user-info">
             <div class="topnav-user-name">${userName}</div>
             <div class="topnav-role-label">${meta.label || role}</div>
