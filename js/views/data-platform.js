@@ -392,6 +392,7 @@ const DataPlatformView = {
     })();
 
     const poolSummarySection = this._renderPoolSummary();
+    const investorEnhanced = isInvestor ? this._renderInvestorEnhancements() : '';
 
     return `
       <div class="page-header">
@@ -404,9 +405,72 @@ const DataPlatformView = {
       </div>
       ${kpiHtml}
       ${poolSummarySection}
+      ${investorEnhanced}
       ${pipelineSection}
       ${attnSection}
       ${branchSection}`;
+  },
+
+  /* ================================================================
+     INVESTOR ENHANCED SECTIONS (program metrics, stories, impact)
+  ================================================================ */
+  _renderInvestorEnhancements() {
+    const data = State.getProspectData();
+    if (!data) return '';
+
+    /* ── Program Metrics Comparison Table ── */
+    const programs = data.programs;
+    const metrics = [
+      { key: 'avgHomeSalesPrice', label: 'Avg Home Sales Price', fmt: v => '$' + v.toLocaleString() },
+      { key: 'avgSAMPct',        label: 'Avg Homium SAM %',     fmt: v => v + '%' },
+      { key: 'avgAMI',           label: 'Avg AMI',              fmt: v => v + '%' },
+      { key: 'avgFirstLienRate', label: 'Avg First Lien Rate',  fmt: v => v.toFixed(2) + '%' },
+      { key: 'avgFirstLienLTV',  label: 'Avg First Lien LTV',   fmt: v => v + '%' },
+      { key: 'avgFICO',          label: 'Avg FICO Score',       fmt: v => v.toString() },
+      { key: 'avgIncome',        label: 'Avg Annual Income',    fmt: v => '$' + v.toLocaleString() },
+      { key: 'avgFrontRatio',    label: 'Avg Front Ratio',      fmt: v => v + '%' },
+      { key: 'avgBackRatio',     label: 'Avg Back Ratio',       fmt: v => v + '%' },
+      { key: 'avgPITI',          label: 'Avg Monthly PITI',     fmt: v => '$' + v.toLocaleString() },
+    ];
+    const headerCells = programs.map(p => `<th style="text-align:right">${p.name}</th>`).join('');
+    const rows = metrics.map(m => {
+      const cells = programs.map(p => `<td style="text-align:right;font-weight:600">${m.fmt(p[m.key])}</td>`).join('');
+      return `<tr><td>${m.label}</td>${cells}</tr>`;
+    }).join('');
+
+    const metricsSection = `
+      <div class="card" style="margin-bottom:20px">
+        <div class="card-title">Key Impact Loan Data</div>
+        <div class="table-container" style="border:none;box-shadow:none">
+          <table>
+            <thead><tr><th>Metric</th>${headerCells}</tr></thead>
+            <tbody>${rows}</tbody>
+          </table>
+        </div>
+      </div>`;
+
+    /* ── Borrower Stories ── */
+    const storiesHtml = data.borrowerStories.map(s => `
+      <div class="prospect-story-card">
+        <span class="prospect-story-badge">${s.badge}</span>
+        <h3 class="prospect-story-headline">${s.headline}</h3>
+        <p class="prospect-story-desc">${s.description}</p>
+      </div>`).join('');
+
+    const storiesSection = `
+      <div class="card" style="margin-bottom:20px">
+        <div class="card-title">Borrower Impact Stories</div>
+        <div class="prospect-stories-grid" style="margin-top:12px">${storiesHtml}</div>
+      </div>`;
+
+    /* ── Impact Summary ── */
+    const impactSection = `
+      <div class="card" style="margin-bottom:20px">
+        <div class="card-title">Impact Summary</div>
+        <p style="font-size:14px;line-height:1.7;color:var(--color-text-secondary);margin:0">${data.impactSummary}</p>
+      </div>`;
+
+    return metricsSection + storiesSection + impactSection;
   },
 
   /* ================================================================

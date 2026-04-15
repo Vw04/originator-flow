@@ -11,6 +11,7 @@ const RoleSelectView = {
       { key: 'lo',         title: 'Loan Officer',          scope: 'Branch',        desc: 'Create, edit, and submit loan applications for homeowners within your branch.' },
       { key: 'lp',         title: 'Loan Processor',        scope: 'Branch',        desc: 'Process and update loan applications assigned to your branch.' },
       { key: 'investor',   title: 'Investor',              scope: 'Portfolio',     desc: 'View your investment portfolio and HEI performance. Requires SecuritizeID verification.' },
+      { key: 'investor_prospect', title: 'Investor Prospect', scope: 'Preview', desc: 'High-level platform preview for prospective investors. View program impact, borrower stories, and fund projections.' },
     ];
 
     const isMobile = State.getViewMode() === 'mobile';
@@ -77,6 +78,7 @@ const RoleSelectView = {
                 <div>System Admin · Operator</div>
                 <div>Program Admin · Loan Officer</div>
                 <div>Loan Processor · Investor</div>
+                <div>Investor Prospect</div>
               </div>
             </div>
           </div>
@@ -98,6 +100,11 @@ const RoleSelectView = {
 
   selectRole(role) {
     State.setRole(role);
+    // Prospect skips onboarding — go directly to dashboard
+    if (role === 'investor_prospect') {
+      Router.navigate('/prospect', { replace: true });
+      return;
+    }
     // Reset demo user to invited so the wizard starts from step 0
     const user = State.getCurrentUser();
     if (user) State.updateUser(user.id, { onboardingStatus: 'invited' });

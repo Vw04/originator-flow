@@ -18,6 +18,7 @@ const State = (() => {
   let _assignments = JSON.parse(JSON.stringify(DEMO_DATA.branchAssignments));
   let _auditLog    = JSON.parse(JSON.stringify(DEMO_DATA.auditLog));
   let _poolSummary = JSON.parse(JSON.stringify(DEMO_DATA.poolSummary));
+  let _prospectData = JSON.parse(JSON.stringify(DEMO_DATA.prospectData));
 
   let _currentRole = null;  // role key: 'sys_admin' | 'operator' | 'prog_admin' | 'lo' | 'lp' | 'investor'
   let _currentUser = null;  // user object (simulated logged-in user per role)
@@ -39,6 +40,7 @@ const State = (() => {
     lo:         'user-004',
     lp:         'user-006',
     investor:   'user-018',
+    investor_prospect: 'user-019',
   };
 
   return {
@@ -70,7 +72,7 @@ const State = (() => {
       _impersonating = { savedRole: _currentRole, savedUserId: _currentUser?.id };
       _currentRole = target.role;
       _currentUser = target;
-      _mode = ['lo', 'lp', 'investor'].includes(target.role) ? 'data' : 'admin';
+      _mode = ['lo', 'lp', 'investor', 'investor_prospect'].includes(target.role) ? 'data' : 'admin';
       notify();
     },
     stopImpersonation() {
@@ -96,6 +98,7 @@ const State = (() => {
         lo:         { viewAny: false, editAny: false, deleteAny: false, managePolicy: false, manageCompany: false, manageUsers: false, manageLoans: true  },
         lp:         { viewAny: false, editAny: false, deleteAny: false, managePolicy: false, manageCompany: false, manageUsers: false, processLoans: true },
         investor:   { viewAny: false, editAny: false, deleteAny: false, managePolicy: false, manageCompany: false, manageUsers: false, viewPortfolio: true },
+        investor_prospect: { viewAny: false, editAny: false, deleteAny: false, managePolicy: false, manageCompany: false, manageUsers: false, viewProspect: true },
       };
       return !!(perms[role] && perms[role][action]);
     },
@@ -193,6 +196,9 @@ const State = (() => {
 
     /* ---- Pool Summary ---- */
     getPoolSummary: () => _poolSummary,
+
+    /* ---- Prospect Data ---- */
+    getProspectData: () => _prospectData,
 
     /* ---- Policies / Permissions ---- */
     getPolicies: () => [..._policies],

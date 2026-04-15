@@ -5467,3 +5467,470 @@ label { font-size: 12px; font-weight: 600; color: var(--color-text); }
 }
 .ud-timeline-content { font-size: 13px; color: var(--color-text); }
 .ud-timeline-time { font-size: 11px; color: var(--color-text-muted); margin-top: 2px; }
+
+/* ============================================================
+   INVESTOR PROSPECT DASHBOARD
+   ============================================================ */
+
+/* ── Hero ── */
+.prospect-hero {
+  background: linear-gradient(135deg, #1D3D2A 0%, #2D6048 60%, #3D7A52 100%);
+  color: #fff;
+  margin: -20px -20px 0;
+  padding: 48px 40px 40px;
+}
+.prospect-hero-inner {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 32px;
+  max-width: 1200px;
+}
+.prospect-hero-text { flex: 1; }
+.prospect-badge {
+  display: inline-block;
+  background: rgba(255,255,255,0.18);
+  color: #fff;
+  font-size: 10px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+  padding: 4px 12px;
+  border-radius: 20px;
+  margin-bottom: 12px;
+}
+.prospect-hero-title {
+  font-family: var(--font-heading);
+  font-size: 32px;
+  font-weight: 400;
+  line-height: 1.2;
+  margin: 0 0 12px;
+  color: #fff;
+}
+.prospect-tagline {
+  font-size: 15px;
+  line-height: 1.6;
+  color: rgba(255,255,255,0.8);
+  max-width: 520px;
+}
+.prospect-hero-stats {
+  display: flex;
+  gap: 24px;
+  flex-shrink: 0;
+}
+.prospect-hero-stat {
+  text-align: center;
+  padding: 16px 20px;
+  background: rgba(255,255,255,0.1);
+  border-radius: 12px;
+  min-width: 90px;
+}
+.prospect-hero-stat-value {
+  font-size: 22px;
+  font-weight: 700;
+  color: #fff;
+}
+.prospect-hero-stat-label {
+  font-size: 11px;
+  color: rgba(255,255,255,0.7);
+  margin-top: 4px;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+
+/* ── Sections ── */
+.prospect-section {
+  margin-bottom: 24px;
+}
+.prospect-section-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  margin-bottom: 16px;
+  flex-wrap: wrap;
+}
+.prospect-section-title {
+  font-family: var(--font-heading);
+  font-size: 22px;
+  font-weight: 400;
+  color: var(--color-text);
+  margin: 0 0 16px;
+}
+.prospect-section-header .prospect-section-title {
+  margin-bottom: 0;
+}
+
+/* ── Program Overview Cards ── */
+.prospect-programs-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
+  gap: 16px;
+}
+.prospect-program-card {
+  background: var(--color-card);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-lg);
+  padding: 20px 24px;
+  border-left: 4px solid var(--color-primary);
+}
+.prospect-program-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 6px;
+}
+.prospect-program-geo {
+  font-size: 11px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: var(--color-text-muted);
+}
+.prospect-program-name {
+  font-family: var(--font-heading);
+  font-size: 18px;
+  font-weight: 400;
+  color: var(--color-text);
+  margin-bottom: 16px;
+}
+.prospect-program-metrics {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 12px 20px;
+  margin-bottom: 16px;
+}
+.prospect-program-metric {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  font-size: 13px;
+}
+.prospect-pm-label {
+  color: var(--color-text-muted);
+}
+.prospect-pm-value {
+  font-weight: 700;
+  color: var(--color-text);
+}
+.prospect-program-params {
+  display: flex;
+  gap: 12px;
+  flex-wrap: wrap;
+  padding-top: 12px;
+  border-top: 1px solid var(--color-border);
+  font-size: 11px;
+  color: var(--color-text-muted);
+  font-weight: 500;
+}
+.prospect-program-params span {
+  background: var(--color-bg);
+  padding: 2px 8px;
+  border-radius: 4px;
+}
+
+/* ── Borrower Profile Comparison ── */
+.prospect-comparison {
+  display: flex;
+  align-items: stretch;
+  gap: 0;
+}
+.prospect-comparison-col {
+  flex: 1;
+  padding: 24px;
+}
+.prospect-comparison-before {
+  background: #fafafa;
+  border-radius: var(--radius-lg) 0 0 var(--radius-lg);
+  border-right: 1px solid var(--color-border);
+}
+.prospect-comparison-after {
+  background: rgba(29, 61, 42, 0.04);
+  border-radius: 0 var(--radius-lg) var(--radius-lg) 0;
+  border: 2px solid var(--color-primary);
+  border-left: none;
+}
+.prospect-comparison-arrow {
+  display: flex;
+  align-items: center;
+  padding: 0 12px;
+  background: #fafafa;
+}
+.prospect-comp-label {
+  font-size: 10px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: var(--color-text-muted);
+  margin-bottom: 12px;
+}
+.prospect-comp-items {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+.prospect-comp-row {
+  display: flex;
+  justify-content: space-between;
+  font-size: 13px;
+  color: var(--color-text-secondary);
+}
+.prospect-comp-bold {
+  font-weight: 700;
+  font-size: 20px;
+  color: var(--color-text);
+}
+.prospect-comp-green {
+  color: var(--color-primary) !important;
+}
+.prospect-comp-gap {
+  margin-top: 12px;
+  font-size: 13px;
+  font-weight: 700;
+  color: var(--color-danger);
+}
+.prospect-comp-affordable {
+  margin-top: 12px;
+  font-size: 14px;
+  font-weight: 700;
+  color: var(--color-primary);
+}
+.prospect-comp-headline {
+  text-align: center;
+  padding: 20px 24px 4px;
+  font-size: 14px;
+  color: var(--color-text-secondary);
+  border-top: 1px solid var(--color-border);
+  margin-top: 0;
+}
+.prospect-comp-headline strong {
+  font-weight: 700;
+  color: var(--color-text);
+}
+
+/* ── Impact Summary ── */
+.prospect-impact-text {
+  font-size: 15px;
+  line-height: 1.7;
+  color: var(--color-text-secondary);
+  margin: 0 0 24px;
+}
+.prospect-gap-visual {
+  background: rgba(29, 61, 42, 0.04);
+  border: 1px solid rgba(29, 61, 42, 0.15);
+  border-radius: var(--radius-lg);
+  padding: 28px;
+  text-align: center;
+}
+.prospect-gap-label {
+  font-size: 10px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: var(--color-primary);
+  margin-bottom: 8px;
+}
+.prospect-gap-value {
+  font-family: var(--font-heading);
+  font-size: 42px;
+  font-weight: 400;
+  color: var(--color-primary);
+  margin-bottom: 12px;
+}
+.prospect-gap-desc {
+  font-size: 13px;
+  color: var(--color-text-muted);
+  max-width: 480px;
+  margin: 0 auto;
+  line-height: 1.6;
+}
+
+/* ── Borrower Stories ── */
+.prospect-stories-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 16px;
+}
+.prospect-story-card {
+  background: var(--color-card);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-lg);
+  padding: 24px;
+}
+.prospect-story-badge {
+  display: inline-block;
+  font-size: 9px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  background: var(--color-bg);
+  color: var(--color-text-muted);
+  padding: 3px 10px;
+  border-radius: 4px;
+  margin-bottom: 10px;
+  border: 1px solid var(--color-border);
+}
+.prospect-story-headline {
+  font-family: var(--font-heading);
+  font-size: 17px;
+  font-weight: 400;
+  color: var(--color-text);
+  margin: 0 0 8px;
+  line-height: 1.3;
+}
+.prospect-story-desc {
+  font-size: 13px;
+  line-height: 1.6;
+  color: var(--color-text-muted);
+  margin: 0;
+}
+
+/* ── 30-Year Projections ── */
+.prospect-projections-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 16px;
+}
+.prospect-chart-card {
+  background: var(--color-card);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-lg);
+  padding: 20px 24px 16px;
+}
+.prospect-chart-label {
+  font-size: 10px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: var(--color-text-muted);
+  margin-bottom: 12px;
+}
+.prospect-chart-svg {
+  width: 100%;
+  height: auto;
+  display: block;
+}
+.prospect-chart-text {
+  font-size: 11px;
+  font-weight: 700;
+  fill: var(--color-primary);
+}
+.prospect-chart-xaxis-labels {
+  display: flex;
+  justify-content: space-between;
+  font-size: 10px;
+  color: var(--color-text-muted);
+  margin-top: 6px;
+  padding: 0 10px;
+}
+.prospect-chart-topval {
+  font-size: 14px;
+  font-weight: 700;
+  color: var(--color-primary);
+  margin-bottom: 8px;
+}
+.prospect-chart-legend {
+  display: flex;
+  gap: 16px;
+  font-size: 11px;
+  color: var(--color-text-muted);
+  margin-top: 8px;
+}
+.prospect-legend-line {
+  display: inline-block;
+  width: 16px;
+  height: 2px;
+  border-radius: 1px;
+  vertical-align: middle;
+  margin-right: 4px;
+}
+
+/* ── Bar chart (Active Homeowners) ── */
+.prospect-bars-wrap {
+  display: flex;
+  align-items: flex-end;
+  gap: 4px;
+  height: 120px;
+}
+.prospect-bar-col {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  height: 100%;
+  justify-content: flex-end;
+}
+.prospect-bar {
+  width: 100%;
+  background: var(--color-primary);
+  border-radius: 3px 3px 0 0;
+  min-height: 2px;
+  transition: height 0.3s;
+}
+.prospect-bar-year {
+  font-size: 9px;
+  color: var(--color-text-muted);
+  margin-top: 4px;
+}
+
+/* ── Projection note ── */
+.prospect-proj-note {
+  font-size: 12px;
+  color: var(--color-text-muted);
+}
+
+/* ── CTA ── */
+.prospect-cta {
+  background: linear-gradient(135deg, #1D3D2A 0%, #2D6048 100%);
+  border-radius: var(--radius-lg);
+  padding: 48px 40px;
+  text-align: center;
+  margin-bottom: 32px;
+}
+.prospect-cta-title {
+  font-family: var(--font-heading);
+  font-size: 26px;
+  font-weight: 400;
+  color: #fff;
+  margin: 0 0 12px;
+}
+.prospect-cta-desc {
+  font-size: 14px;
+  color: rgba(255,255,255,0.8);
+  margin: 0 0 24px;
+  max-width: 480px;
+  margin-left: auto;
+  margin-right: auto;
+  line-height: 1.6;
+}
+.prospect-cta .btn-primary {
+  background: #fff;
+  color: var(--color-primary);
+  font-weight: 600;
+  border: none;
+}
+.prospect-cta .btn-primary:hover {
+  background: rgba(255,255,255,0.9);
+}
+
+/* ── Role chip for investor_prospect ── */
+.role-investor-prospect {
+  border-color: var(--color-primary);
+  color: var(--color-primary);
+}
+
+/* ── Responsive ── */
+@media (max-width: 768px) {
+  .prospect-hero-inner { flex-direction: column; }
+  .prospect-hero-stats { flex-wrap: wrap; }
+  .prospect-programs-grid { grid-template-columns: 1fr; }
+  .prospect-comparison { flex-direction: column; }
+  .prospect-comparison-before { border-radius: var(--radius-lg) var(--radius-lg) 0 0; border-right: none; border-bottom: 1px solid var(--color-border); }
+  .prospect-comparison-after { border-radius: 0 0 var(--radius-lg) var(--radius-lg); border-left: 2px solid var(--color-primary); border-top: none; }
+  .prospect-comparison-arrow { justify-content: center; padding: 8px; background: transparent; }
+  .prospect-comparison-arrow svg { transform: rotate(90deg); }
+  .prospect-stories-grid { grid-template-columns: 1fr; }
+  .prospect-projections-grid { grid-template-columns: 1fr; }
+  .prospect-hero { padding: 32px 20px; margin: -20px -12px 0; }
+  .prospect-cta { padding: 32px 20px; }
+}

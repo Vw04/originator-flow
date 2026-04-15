@@ -40,6 +40,9 @@ const Nav = (() => {
       { path: '/data/analytics',    label: 'Dashboard' },
       { path: '/profile',           label: 'My Profile' },
     ],
+    investor_prospect: [
+      { path: '/prospect',          label: 'Dashboard' },
+    ],
   };
 
   /* Notification data */
@@ -72,7 +75,7 @@ const Nav = (() => {
     prog_admin: [
       { path: '/origination-companies', label: 'My Company' },
     ],
-    lo: [], lp: [], investor: [],
+    lo: [], lp: [], investor: [], investor_prospect: [],
   };
 
   const ADMIN_PATHS = ['/admin-dashboard', '/dashboard', '/origination-companies', '/investors', '/platform', '/system-config'];
@@ -84,6 +87,7 @@ const Nav = (() => {
     lo:         { label: 'Loan Officer' },
     lp:         { label: 'Loan Processor' },
     investor:   { label: 'Investor' },
+    investor_prospect: { label: 'Investor Prospect' },
   };
 
   function _notifForRole(role) {

@@ -45,6 +45,9 @@ const App = {
     Router.register('/data/batches',      () => { DataPlatformView._activeTab = 'batches';      this.renderShell(DataPlatformView.render()); });
     Router.register('/data/activations',  () => { DataPlatformView._activeTab = 'activations';  this.renderShell(DataPlatformView.render()); });
 
+    // Prospect dashboard
+    Router.register('/prospect', () => this.renderShell(ProspectDashboardView.render()));
+
     // Mobile routes
     Router.register('/m/home',          () => this.renderMobileShell(MobileHomeView.render()));
     Router.register('/m/loans',         () => this.renderMobileShell(MobileLoansView.render()));
@@ -121,6 +124,7 @@ const App = {
       // /data/originations removed — originations now served by /originations
       '/data/batches':            () => { DataPlatformView._activeTab = 'batches';      return DataPlatformView.render(); },
       '/data/activations':        () => { DataPlatformView._activeTab = 'activations';  return DataPlatformView.render(); },
+      '/prospect':                () => ProspectDashboardView.render(),
     };
 
     let fn = viewMap[path];

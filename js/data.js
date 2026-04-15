@@ -98,6 +98,9 @@ const DEMO_DATA = {
 
     // Investor
     { id: 'user-018', companyId: null,     branchId: null,    firstName: 'Robert',    lastName: 'Huang',     email: 'rhuang@capitalpartners.com',            role: 'investor',   onboardingStatus: 'active',               lastLogin: '2026-03-15', nmlsId: null,      phone: '212-555-0500', title: 'Accredited Investor',    policies: ['investor_view'] },
+
+    // Investor Prospect
+    { id: 'user-019', companyId: null,     branchId: null,    firstName: 'Sarah',     lastName: 'Chen',      email: 'schen@prospectcapital.com',             role: 'investor_prospect', onboardingStatus: 'active',        lastLogin: '2026-04-10', nmlsId: null,      phone: '415-555-0600', title: 'Managing Director',      policies: ['prospect_view'] },
   ],
 
   /* ---- Loans / Originations ---- */
@@ -150,6 +153,7 @@ const DEMO_DATA = {
     { id: 'lo_multi_branch', name: 'LO Multi-Branch',         description: 'LO Standard extended to multiple branches',                      roleTarget: 'lo'         },
     { id: 'lp_standard',     name: 'LP Standard',             description: 'Process and update loan applications in assigned branch',         roleTarget: 'lp'         },
     { id: 'investor_view',   name: 'Investor View',           description: 'View portfolio and investment reports',                           roleTarget: 'investor'   },
+    { id: 'prospect_view',   name: 'Prospect View',           description: 'High-level platform overview for prospective investors',           roleTarget: 'investor_prospect' },
   ],
 
   /* ---- Permission Matrix (base permissions by role) ---- */
@@ -163,6 +167,7 @@ const DEMO_DATA = {
       lo:         { 'Platform-View': false, 'Platform-Create/Edit': false, 'Platform-Submit/Approve': false, 'Platform-Delete': false, 'Platform-Manage Policies': false, 'Company-View': false, 'Company-Create/Edit': false, 'Company-Submit/Approve': false, 'Company-Delete': false, 'Company-Manage Policies': false, 'Branch-View': true,  'Branch-Create/Edit': false, 'Branch-Submit/Approve': false, 'Branch-Delete': false, 'Branch-Manage Policies': false, 'Own Loans-View': true,  'Own Loans-Create/Edit': true,  'Own Loans-Submit/Approve': true,  'Own Loans-Delete': false, 'Own Loans-Manage Policies': false, 'Any User-Impersonate': false },
       lp:         { 'Platform-View': false, 'Platform-Create/Edit': false, 'Platform-Submit/Approve': false, 'Platform-Delete': false, 'Platform-Manage Policies': false, 'Company-View': false, 'Company-Create/Edit': false, 'Company-Submit/Approve': false, 'Company-Delete': false, 'Company-Manage Policies': false, 'Branch-View': true,  'Branch-Create/Edit': false, 'Branch-Submit/Approve': false, 'Branch-Delete': false, 'Branch-Manage Policies': false, 'Own Loans-View': true,  'Own Loans-Create/Edit': true,  'Own Loans-Submit/Approve': false, 'Own Loans-Delete': false, 'Own Loans-Manage Policies': false, 'Any User-Impersonate': false },
       investor:   { 'Platform-View': false, 'Platform-Create/Edit': false, 'Platform-Submit/Approve': false, 'Platform-Delete': false, 'Platform-Manage Policies': false, 'Company-View': false, 'Company-Create/Edit': false, 'Company-Submit/Approve': false, 'Company-Delete': false, 'Company-Manage Policies': false, 'Branch-View': false, 'Branch-Create/Edit': false, 'Branch-Submit/Approve': false, 'Branch-Delete': false, 'Branch-Manage Policies': false, 'Own Loans-View': true,  'Own Loans-Create/Edit': false, 'Own Loans-Submit/Approve': false, 'Own Loans-Delete': false, 'Own Loans-Manage Policies': false, 'Any User-Impersonate': false },
+      investor_prospect: { 'Platform-View': false, 'Platform-Create/Edit': false, 'Platform-Submit/Approve': false, 'Platform-Delete': false, 'Platform-Manage Policies': false, 'Company-View': false, 'Company-Create/Edit': false, 'Company-Submit/Approve': false, 'Company-Delete': false, 'Company-Manage Policies': false, 'Branch-View': false, 'Branch-Create/Edit': false, 'Branch-Submit/Approve': false, 'Branch-Delete': false, 'Branch-Manage Policies': false, 'Own Loans-View': false, 'Own Loans-Create/Edit': false, 'Own Loans-Submit/Approve': false, 'Own Loans-Delete': false, 'Own Loans-Manage Policies': false, 'Any User-Impersonate': false },
     }
   },
 
@@ -360,6 +365,107 @@ const DEMO_DATA = {
       { label: '$100K +',      value: 320000 },
     ],
   },
+
+  /* ---- Prospect Dashboard Data (aggregated, no PII) ---- */
+  prospectData: {
+    platformKPIs: {
+      homeownersServed: 170,
+      totalEquityCreated: 222400000,
+      fundROI: 0.87,
+      monthlySavingsPerFamily: 1070,
+      programsActive: 3,
+    },
+
+    programs: [
+      {
+        id: 'prog-utah', name: 'Utah Program', geography: 'Utah', state: 'UT',
+        fundSize: 25000000, homeownersServed: 48, equityCreated: 62800000,
+        roi: 0.87, monthlySavings: 1070, samPct: 35, downPayment: 3, programFee: 5,
+        mgmtFee: 0.5, interestRate: 7.0, hpa: 5.0, status: 'active',
+        avgHomeSalesPrice: 391594, avgSAMPct: 35, avgAMI: 80, avgFICO: 718,
+        avgFirstLienRate: 6.42, avgFirstLienLTV: 66, avgIncome: 66215,
+        avgFrontRatio: 27, avgBackRatio: 43, avgPITI: 1893,
+        scenarios: [
+          { name: 'LO', homeowners: 43, income: 49661, homeValue: 313275 },
+          { name: 'MID', homeowners: 103, income: 66215, homeValue: 391594 },
+          { name: 'HI', homeowners: 24, income: 89390, homeValue: 548232 },
+        ],
+        projections: [
+          { year: 2026, activeHOs: 169, equity: 3300000,   fundNAV: 24800000, capitalReturned: 144000,    roi: -0.00 },
+          { year: 2028, activeHOs: 163, equity: 10600000,  fundNAV: 26300000, capitalReturned: 1100000,   roi: 0.10 },
+          { year: 2030, activeHOs: 157, equity: 18500000,  fundNAV: 27900000, capitalReturned: 2200000,   roi: 0.20 },
+          { year: 2035, activeHOs: 112, equity: 42100000,  fundNAV: 25500000, capitalReturned: 11500000,  roi: 0.48 },
+          { year: 2040, activeHOs: 48,  equity: 72200000,  fundNAV: 14100000, capitalReturned: 27800000,  roi: 0.68 },
+          { year: 2045, activeHOs: 23,  equity: 110700000, fundNAV: 8600000,  capitalReturned: 36200000,  roi: 0.80 },
+          { year: 2050, activeHOs: 7,   equity: 159800000, fundNAV: 3500000,  capitalReturned: 42900000,  roi: 0.86 },
+          { year: 2055, activeHOs: 0,   equity: 222400000, fundNAV: 269000,   capitalReturned: 46500000,  roi: 0.87 },
+        ],
+      },
+      {
+        id: 'prog-dc', name: 'DC Dream Fund', geography: 'Washington, DC', state: 'DC',
+        fundSize: 100000000, homeownersServed: 82, equityCreated: 107200000,
+        roi: 0.85, monthlySavings: 1040, samPct: 30, downPayment: 3, programFee: 5,
+        mgmtFee: 0.5, interestRate: 6.5, hpa: 4.8, status: 'active',
+        avgHomeSalesPrice: 433833, avgSAMPct: 30, avgAMI: 87, avgFICO: 743,
+        avgFirstLienRate: 6.42, avgFirstLienLTV: 66, avgIncome: 82944,
+        avgFrontRatio: 27, avgBackRatio: 43, avgPITI: 2195,
+        scenarios: [
+          { name: 'LO', homeowners: 20, income: 62400, homeValue: 380000 },
+          { name: 'MID', homeowners: 48, income: 82944, homeValue: 433833 },
+          { name: 'HI', homeowners: 14, income: 110000, homeValue: 625000 },
+        ],
+        projections: [
+          { year: 2026, activeHOs: 80,  equity: 5200000,   fundNAV: 98500000,  capitalReturned: 320000,    roi: -0.00 },
+          { year: 2028, activeHOs: 78,  equity: 16800000,  fundNAV: 102000000, capitalReturned: 2100000,   roi: 0.04 },
+          { year: 2030, activeHOs: 75,  equity: 29400000,  fundNAV: 106000000, capitalReturned: 4800000,   roi: 0.11 },
+          { year: 2035, activeHOs: 62,  equity: 58000000,  fundNAV: 98000000,  capitalReturned: 18000000,  roi: 0.16 },
+          { year: 2040, activeHOs: 38,  equity: 95000000,  fundNAV: 72000000,  capitalReturned: 48000000,  roi: 0.20 },
+          { year: 2055, activeHOs: 0,   equity: 310000000, fundNAV: 400000,    capitalReturned: 185000000, roi: 0.85 },
+        ],
+      },
+      {
+        id: 'prog-ky', name: 'Kentucky DPA', geography: 'Kentucky', state: 'KY',
+        fundSize: 15000000, homeownersServed: 40, equityCreated: 52400000,
+        roi: 0.84, monthlySavings: 980, samPct: 40, downPayment: 3, programFee: 5,
+        mgmtFee: 0.5, interestRate: 6.21, hpa: 4.5, status: 'active',
+        avgHomeSalesPrice: 170625, avgSAMPct: 40, avgAMI: 57, avgFICO: 702,
+        avgFirstLienRate: 6.21, avgFirstLienLTV: 53, avgIncome: 51951,
+        avgFrontRatio: 15, avgBackRatio: 32, avgPITI: 948,
+        scenarios: [
+          { name: 'LO', homeowners: 12, income: 38000, homeValue: 125000 },
+          { name: 'MID', homeowners: 22, income: 51951, homeValue: 170625 },
+          { name: 'HI', homeowners: 6,  income: 72000, homeValue: 240000 },
+        ],
+        projections: [
+          { year: 2026, activeHOs: 39, equity: 1800000,  fundNAV: 14600000, capitalReturned: 85000,     roi: -0.01 },
+          { year: 2028, activeHOs: 37, equity: 5800000,  fundNAV: 15200000, capitalReturned: 620000,    roi: 0.05 },
+          { year: 2030, activeHOs: 35, equity: 10200000, fundNAV: 15800000, capitalReturned: 1400000,   roi: 0.14 },
+          { year: 2035, activeHOs: 26, equity: 22000000, fundNAV: 14200000, capitalReturned: 5800000,   roi: 0.33 },
+          { year: 2040, activeHOs: 12, equity: 38000000, fundNAV: 8200000,  capitalReturned: 14500000,  roi: 0.51 },
+          { year: 2055, activeHOs: 0,  equity: 118000000, fundNAV: 120000,  capitalReturned: 27600000,  roi: 0.84 },
+        ],
+      },
+    ],
+
+    borrowerProfile: {
+      income: 66215,
+      homePrice: 391594,
+      monthlyRent: 1240,
+      beforeHomium: { monthlyPITI: 2963, maxAffordable: 1931 },
+      withHomium:   { monthlyPITI: 1893, monthlySavings: 1070 },
+      affordabilityGap: 129242,
+      headline: 'A family earning $66,215 can now afford a $391,594 home.',
+    },
+
+    borrowerStories: [
+      { id: 'story-1', program: 'DC Dream Fund',  badge: 'THHI DETROIT', headline: "A Single Mother's Dream Fulfilled", description: 'A 30-year-old community health worker, navigating the challenges of single parenthood, triumphantly achieved first-time homeownership — securing long-term stability and a brighter future for her family.' },
+      { id: 'story-2', program: 'Utah Program',    badge: 'UTAH DREAM FUND', headline: "A Young Guardian's Milestone", description: 'At just 25, a dedicated security guard seized the opportunity for homeownership, unlocking a future of financial independence and planting roots for a prosperous career.' },
+      { id: 'story-3', program: 'DC Dream Fund',  badge: 'THHI DETROIT', headline: 'A Lifelong Dream Realized', description: 'At 65 years young, a dedicated renter at 36% AMI transformed her living situation, finally purchasing the very home she had cherished for 14 years — marking her incredible journey to first-time homeownership.' },
+      { id: 'story-4', program: 'Kentucky DPA',   badge: 'UTAH DREAM FUND', headline: 'Foundation for a Shared Future', description: 'A physical therapist and a mechanic, both in their mid-30s, built a strong foundation for their lives together through homeownership — establishing long-term stability and a sense of belonging.' },
+    ],
+
+    impactSummary: 'Homium\'s shared appreciation model bridges the homeownership affordability gap by reducing monthly payments by an average of $1,070 per family. Our programs have served 170 families across three states, creating $222.4M in total homeowner equity while delivering consistent returns to fund investors.',
+  },
 };
 
 /* ---- US State SVG Paths (simplified from Wikimedia blank US map, public domain) ---- */
@@ -461,6 +567,7 @@ const Display = {
     lo:         'Loan Officer',
     lp:         'Loan Processor',
     investor:   'Investor',
+    investor_prospect: 'Investor Prospect',
   })[role] || role,
 
   roleClass: (role) => ({
@@ -470,6 +577,7 @@ const Display = {
     lo:         'role-lo',
     lp:         'role-lp',
     investor:   'role-investor',
+    investor_prospect: 'role-investor-prospect',
   })[role] || '',
 
   onboardingStatusLabel: (s) => ({
