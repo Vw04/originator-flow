@@ -38,11 +38,11 @@ const AdminDashboardView = {
       },
     ];
 
-    const kpiHtml = kpis.map(k => `
-      <div class="admin-dash-kpi">
-        <div class="admin-dash-kpi-value" style="${k.accent ? 'color:var(--color-danger)' : ''}">${k.value}</div>
-        <div class="admin-dash-kpi-label">${k.label}</div>
-        <div class="admin-dash-kpi-sub">${k.sub}</div>
+    const kpiHtml = kpis.map((k, i) => `
+      ${i > 0 ? '<div class="stat-divider"></div>' : ''}
+      <div class="stat-item">
+        <div class="stat-value" style="${k.accent ? 'color:var(--color-danger)' : ''}">${k.value}</div>
+        <div class="stat-label">${k.label}</div>
       </div>`).join('');
 
     /* Onboarding funnel */
@@ -156,7 +156,7 @@ const AdminDashboardView = {
         </div>
       </div>
       <div class="page-body">
-        <div class="admin-dash-kpis">${kpiHtml}</div>
+        <div class="stat-row">${kpiHtml}</div>
         <div class="admin-dash-body">
           <div class="admin-dash-main">
             <div class="card" style="margin-bottom:20px">

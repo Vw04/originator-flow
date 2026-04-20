@@ -76,12 +76,12 @@ const ProspectDashboardView = {
 
     return `
       <div class="prospect-section">
-        <div class="lop-kpi-cards" style="grid-template-columns:repeat(5,1fr)">
+        <div class="stat-row">
           ${kpis.map(k => `
-            <div class="lop-kpi-card">
-              <div class="lop-kpi-value">${k.value}</div>
-              <div class="lop-kpi-label">${k.label}</div>
-              <div class="lop-kpi-sub">${k.sub}</div>
+            <div class="stat-item">
+              <div class="stat-label">${k.label}</div>
+              <div class="stat-value" style="font-size:26px">${k.value}</div>
+              <div class="stat-desc">${k.sub}</div>
             </div>`).join('')}
         </div>
       </div>`;

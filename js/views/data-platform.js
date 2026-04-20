@@ -179,12 +179,12 @@ const DataPlatformView = {
       { label: 'Avg Days to Close',    value: '45',                                                  sub: 'Industry avg: 49 days' },
       { label: 'On-Track Rate',        value: onTrackPct + '%',                                      sub: stalledLoans.length > 0 ? `${stalledLoans.length} loan${stalledLoans.length!==1?'s':''} stalled` : 'All loans on track', accent: onTrackPct < 80, accentColor: 'var(--color-danger)' },
     ];
-    const kpiHtml = `<div class="lop-kpi-cards" style="grid-template-columns:repeat(5,1fr)">${
+    const kpiHtml = `<div class="stat-row">${
       kpis.map(k => `
-        <div class="lop-kpi-card">
-          <div class="lop-kpi-value" style="${k.accent ? `color:${k.accentColor}` : ''}">${k.value}</div>
-          <div class="lop-kpi-label">${k.label}</div>
-          <div class="lop-kpi-sub">${k.sub}</div>
+        <div class="stat-item">
+          <div class="stat-label">${k.label}</div>
+          <div class="stat-value" style="font-size:26px${k.accent ? `;color:${k.accentColor}` : ''}">${k.value}</div>
+          <div class="stat-desc">${k.sub}</div>
         </div>`).join('')
     }</div>`;
 
@@ -460,12 +460,12 @@ const DataPlatformView = {
     ];
     const kpiHtml = `
       <div class="prospect-section">
-        <div class="lop-kpi-cards" style="grid-template-columns:repeat(5,1fr)">
+        <div class="stat-row">
           ${kpis.map(k => `
-            <div class="lop-kpi-card">
-              <div class="lop-kpi-value">${k.value}</div>
-              <div class="lop-kpi-label">${k.label}</div>
-              <div class="lop-kpi-sub">${k.sub}</div>
+            <div class="stat-item">
+              <div class="stat-label">${k.label}</div>
+              <div class="stat-value" style="font-size:26px">${k.value}</div>
+              <div class="stat-desc">${k.sub}</div>
             </div>`).join('')}
         </div>
       </div>`;
@@ -1135,12 +1135,12 @@ const DataPlatformView = {
       { label: 'Close Rate',       value: closeRate + '%', sub: `${done.length} of ${allLoans.length} completed` },
     ];
 
-    const kpiHtml = `<div class="lop-kpi-cards" style="grid-template-columns:repeat(6,1fr);margin-bottom:20px">${
+    const kpiHtml = `<div class="stat-row" style="margin-bottom:20px">${
       kpis.map(k => `
-        <div class="lop-kpi-card">
-          <div class="lop-kpi-value" ${k.accent ? 'style="color:var(--color-danger)"' : ''}>${k.value}</div>
-          <div class="lop-kpi-label">${k.label}</div>
-          <div class="lop-kpi-sub">${k.sub}</div>
+        <div class="stat-item">
+          <div class="stat-label">${k.label}</div>
+          <div class="stat-value" style="font-size:26px${k.accent ? ';color:var(--color-danger)' : ''}">${k.value}</div>
+          <div class="stat-desc">${k.sub}</div>
         </div>`).join('')
     }</div>`;
 

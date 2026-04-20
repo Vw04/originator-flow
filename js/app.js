@@ -236,12 +236,12 @@ const OriginationsView = {
       { label: 'At-Risk',            value: stalled.length, sub: stalled.length ? 'Stalled >14 days' : 'All on track', accent: stalled.length > 0 },
     ];
 
-    const kpiHtml = `<div class="lop-kpi-cards" style="grid-template-columns:repeat(6,1fr);margin-bottom:20px">${
+    const kpiHtml = `<div class="stat-row" style="margin-bottom:20px">${
       kpis.map(k => `
-        <div class="lop-kpi-card">
-          <div class="lop-kpi-value" ${k.accent ? 'style="color:var(--color-danger)"' : ''}>${k.value}</div>
-          <div class="lop-kpi-label">${k.label}</div>
-          <div class="lop-kpi-sub">${k.sub}</div>
+        <div class="stat-item">
+          <div class="stat-label">${k.label}</div>
+          <div class="stat-value" style="font-size:26px${k.accent ? ';color:var(--color-danger)' : ''}">${k.value}</div>
+          <div class="stat-desc">${k.sub}</div>
         </div>`).join('')
     }</div>`;
 

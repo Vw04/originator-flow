@@ -781,14 +781,14 @@ tbody td {
   color: var(--color-text-secondary);
 }
 
-.role-badge { display: inline-flex; align-items: center; padding: 4px 12px; border-radius: var(--radius-full); font-size: 12px; font-weight: 500; border: 1px solid var(--color-border); background: #fff; }
+.role-badge { display: inline-flex; align-items: center; padding: 4px 12px; border-radius: var(--radius-full); font-size: 12px; font-weight: 500; border: 1px solid var(--color-border); background: #fff; color: var(--color-text-secondary); }
 
-.role-sys-admin   { color: #3730A3; }
-.role-prog-admin  { color: #1A6B30; }
-.role-lo          { color: #1D4ED8; }
-.role-lp          { color: #854D0E; }
-.role-investor    { color: var(--color-purple); }
-.role-operator    { color: #BE123C; }
+.role-sys-admin   {}
+.role-prog-admin  {}
+.role-lo          {}
+.role-lp          {}
+.role-investor    {}
+.role-operator    {}
 
 /* ============================================================
    FORMS & INPUTS
@@ -933,7 +933,7 @@ label { font-size: 12px; font-weight: 600; color: var(--color-text); }
 .filter-search {
   padding: 8px 14px 8px 36px; font-size: 13px; border: 1px solid var(--color-border);
   border-radius: var(--radius-full); background: var(--color-card); color: var(--color-text);
-  flex: 1; outline: none; transition: border-color 0.15s;
+  width: 260px; outline: none; transition: border-color 0.15s;
   background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='14' height='14' viewBox='0 0 24 24' fill='none' stroke='%239CA3AF' stroke-width='2.5' stroke-linecap='round' stroke-linejoin='round'%3E%3Ccircle cx='11' cy='11' r='8'/%3E%3Cpath d='m21 21-4.35-4.35'/%3E%3C/svg%3E");
   background-repeat: no-repeat;
   background-position: 14px center;
