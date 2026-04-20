@@ -20,15 +20,15 @@
   --color-secondary-container:    #CDEAE0;   /* neutral-variant 90 */
   --color-on-secondary-container: #06201A;   /* neutral-variant 10 */
 
-  /* MD3 surface containers (warm-neutral) */
-  --color-bg:           #F3F2EC;   /* surface-container-low */
-  --color-surface:      #EDECEA;   /* surface-container */
+  /* MD3 surface containers (cool-neutral) */
+  --color-bg:           #F9FAFB;   /* surface-container-low */
+  --color-surface:      #F3F4F6;   /* surface-container */
   --color-card:         #FFFFFF;   /* surface-container-lowest */
-  --color-surface-high: #E8E7E2;   /* surface-container-high */
+  --color-surface-high: #E5E7EB;   /* surface-container-high */
 
   /* MD3 outline tokens */
-  --color-border:       #C3D0CC;   /* outline-variant */
-  --color-border-light: #D9E4E1;   /* softer outline */
+  --color-border:       #E5E7EB;   /* outline-variant */
+  --color-border-light: #F3F4F6;   /* softer outline */
 
   --color-text:           #1A1A18;
   --color-text-secondary: #4B5563;

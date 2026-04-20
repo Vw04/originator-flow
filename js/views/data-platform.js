@@ -3004,12 +3004,12 @@ const DataPlatformView = {
     const usPath = `M 150,120 L 155,95 L 170,85 L 200,80 L 230,75 L 260,70 L 290,68 L 320,65 L 350,63 L 380,62 L 420,62 L 460,64 L 490,68 L 510,72 L 530,70 L 560,65 L 590,62 L 620,65 L 650,70 L 670,80 L 680,95 L 685,110 L 682,130 L 675,148 L 665,162 L 655,175 L 648,190 L 642,210 L 638,225 L 640,240 L 644,255 L 648,265 L 645,278 L 635,290 L 620,298 L 600,302 L 580,305 L 560,308 L 535,312 L 510,315 L 485,318 L 460,318 L 435,315 L 410,310 L 385,305 L 360,300 L 335,295 L 310,290 L 285,282 L 262,272 L 242,260 L 228,248 L 215,235 L 205,220 L 195,205 L 183,192 L 170,178 L 158,160 L 150,145 Z`;
 
     return `
-      <div style="background:#F8F7F2;border-radius:6px;overflow:hidden;padding:8px">
+      <div style="background:#F9FAFB;border-radius:6px;overflow:hidden;padding:8px">
         <svg viewBox="0 0 800 400" style="width:100%;height:auto;display:block" xmlns="http://www.w3.org/2000/svg">
-          <path d="${usPath}" fill="#E8E6E0" stroke="#C8C5BE" stroke-width="1.5" />
-          <line x1="420" y1="62" x2="415" y2="318" stroke="#D4D1CA" stroke-width="0.8" opacity="0.5"/>
-          <line x1="530" y1="70" x2="535" y2="312" stroke="#D4D1CA" stroke-width="0.8" opacity="0.5"/>
-          <line x1="310" y1="65" x2="310" y2="290" stroke="#D4D1CA" stroke-width="0.8" opacity="0.5"/>
+          <path d="${usPath}" fill="#E5E7EB" stroke="#D1D5DB" stroke-width="1.5" />
+          <line x1="420" y1="62" x2="415" y2="318" stroke="#E5E7EB" stroke-width="0.8" opacity="0.5"/>
+          <line x1="530" y1="70" x2="535" y2="312" stroke="#E5E7EB" stroke-width="0.8" opacity="0.5"/>
+          <line x1="310" y1="65" x2="310" y2="290" stroke="#E5E7EB" stroke-width="0.8" opacity="0.5"/>
           ${dots}
         </svg>
         <div style="display:flex;gap:16px;flex-wrap:wrap;padding:4px 4px 0">
