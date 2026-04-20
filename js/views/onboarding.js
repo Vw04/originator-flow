@@ -33,6 +33,17 @@ const OnboardingView = {
     App.renderView('/onboarding');
   },
 
+  toggleFiltersMenu(e) {
+    e.stopPropagation();
+    const el = document.getElementById('onboarding-filters-menu');
+    if (!el) return;
+    const open = el.style.display !== 'none';
+    if (!open) {
+      el.style.display = 'block';
+      setTimeout(() => document.addEventListener('click', () => { el.style.display = 'none'; }, { once: true }), 0);
+    } else { el.style.display = 'none'; }
+  },
+
   setSort(field, dir) {
     this._sort = { field, dir };
     App.renderView('/onboarding');
@@ -79,33 +90,35 @@ const OnboardingView = {
 
     return `
       <div style="margin-bottom:16px">
-        <!-- Row 1: Search + category dropdowns -->
-        <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap;margin-bottom:8px">
-          <input class="input input-sm input-search" style="width:200px" placeholder="Search by name or email…"
+        <div class="filter-toolbar" style="margin-bottom:8px">
+          <input class="filter-search" placeholder="Search by name or email…"
             value="${this._search}" oninput="OnboardingView.setSearch(this.value)" />
-
-          <select class="filter-select" onchange="OnboardingView.addFilter('company',this.value);this.value=''">
-            <option value="">Organization…</option>
-            ${companies.map(c => `<option value="${c.id}">${c.name}</option>`).join('')}
-          </select>
-
-          <select class="filter-select" onchange="OnboardingView.addFilter('status',this.value);this.value=''">
-            <option value="">Status…</option>
-            ${['invited','email_verified','2fa_complete','verification_pending','active','verification_failed','suspended'].map(s =>
-              `<option value="${s}">${Display.onboardingStatusLabel(s)}</option>`).join('')}
-          </select>
-
-          <select class="filter-select" onchange="OnboardingView.addFilter('role',this.value);this.value=''">
-            <option value="">Role…</option>
-            ${['lo','lp','prog_admin'].map(r => `<option value="${r}">${Display.roleName(r)}</option>`).join('')}
-          </select>
-
-          <select class="filter-select" onchange="OnboardingView.addFilter('branch',this.value);this.value=''">
-            <option value="">Branch…</option>
-            ${branches.map(b => `<option value="${b.id}">${b.name}</option>`).join('')}
-          </select>
-
-          ${hasFilters ? `<button class="btn btn-ghost btn-sm" onclick="OnboardingView.clearOnboardingFilters()">Clear</button>` : ''}
+          <div style="position:relative">
+            <button class="filter-menu-btn" onclick="OnboardingView.toggleFiltersMenu(event)">
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 3H2l8 9.46V19l4 2v-8.54L22 3z"/></svg>
+              Filters
+            </button>
+            <div class="filter-menu-panel" id="onboarding-filters-menu" style="display:none">
+              <div class="filter-menu-section">
+                <div class="filter-menu-label">Organization</div>
+                ${companies.map(c => `<div class="filter-menu-item" onclick="OnboardingView.addFilter('company','${c.id}')">${c.name}</div>`).join('')}
+              </div>
+              <div class="filter-menu-section">
+                <div class="filter-menu-label">Status</div>
+                ${['invited','email_verified','2fa_complete','verification_pending','active','verification_failed','suspended'].map(s =>
+                  `<div class="filter-menu-item" onclick="OnboardingView.addFilter('status','${s}')">${Display.onboardingStatusLabel(s)}</div>`).join('')}
+              </div>
+              <div class="filter-menu-section">
+                <div class="filter-menu-label">Role</div>
+                ${['lo','lp','prog_admin'].map(r => `<div class="filter-menu-item" onclick="OnboardingView.addFilter('role','${r}')">${Display.roleName(r)}</div>`).join('')}
+              </div>
+              <div class="filter-menu-section">
+                <div class="filter-menu-label">Branch</div>
+                ${branches.map(b => `<div class="filter-menu-item" onclick="OnboardingView.addFilter('branch','${b.id}')">${b.name}</div>`).join('')}
+              </div>
+              ${hasFilters ? `<div class="filter-menu-section" style="border-top:1px solid var(--color-border);padding-top:8px"><div class="filter-menu-item" onclick="OnboardingView.clearOnboardingFilters()" style="color:var(--color-danger)">Clear All Filters</div></div>` : ''}
+            </div>
+          </div>
         </div>
 
         <!-- Row 2: Sort controls + active filter chips -->

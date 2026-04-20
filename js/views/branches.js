@@ -130,28 +130,37 @@ const BranchesView = {
       ${header}
       ${scope ? '' : '<div class="page-body">'}
         <div class="table-container">
-          <div class="table-toolbar">
-            <input type="text" class="input input-sm input-search" style="width:200px" placeholder="Search branches…"
+          <div class="filter-toolbar">
+            <input class="filter-search" placeholder="Search branches…"
               value="${f.search}" oninput="BranchesView.setFilter('search', this.value)" />
-            ${(role !== 'prog_admin' && !scope?.companyId) ? `
-              <select class="filter-select" onchange="BranchesView.setFilter('companyId', this.value)">
-                <option value="">All Companies</option>${companyOptions}
-              </select>` : ''}
-            <select class="filter-select" onchange="BranchesView.setFilter('state', this.value)">
-              <option value="">All States</option>
-              <option value="DC" ${f.state==='DC'?'selected':''}>DC</option>
-              <option value="KY" ${f.state==='KY'?'selected':''}>KY</option>
-            </select>
-            <select class="filter-select" onchange="BranchesView.setFilter('program', this.value)">
-              <option value="">All Programs</option>${programOptions}
-            </select>
-            <select class="filter-select" onchange="BranchesView.setFilter('status', this.value)">
-              <option value="">All Statuses</option>
-              <option value="active" ${f.status==='active'?'selected':''}>Active</option>
-              <option value="pending" ${f.status==='pending'?'selected':''}>Pending</option>
-            </select>
-            ${hasFilters ? `<button class="btn btn-ghost btn-sm" onclick="BranchesView.clearFilters()">Clear</button>` : ''}
-            ${scope && canEdit ? `<div style="margin-left:auto"><button class="btn btn-primary btn-sm" onclick="BranchesView.openAddModal()">+ Add Branch</button></div>` : ''}
+            <div style="position:relative">
+              <button class="filter-menu-btn" onclick="BranchesView.toggleFiltersMenu(event)">
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 3H2l8 9.46V19l4 2v-8.54L22 3z"/></svg>
+                Filters
+              </button>
+              <div class="filter-menu-panel" id="branches-filters-menu" style="display:none">
+                ${(role !== 'prog_admin' && !scope?.companyId) ? `<div class="filter-menu-section">
+                  <div class="filter-menu-label">Company</div>
+                  ${companies.map(c=>`<div class="filter-menu-item${f.companyId===c.id?' active':''}" onclick="BranchesView.setFilter('companyId','${c.id}')">${c.name}</div>`).join('')}
+                </div>` : ''}
+                <div class="filter-menu-section">
+                  <div class="filter-menu-label">State</div>
+                  <div class="filter-menu-item${f.state==='DC'?' active':''}" onclick="BranchesView.setFilter('state','DC')">DC</div>
+                  <div class="filter-menu-item${f.state==='KY'?' active':''}" onclick="BranchesView.setFilter('state','KY')">KY</div>
+                </div>
+                <div class="filter-menu-section">
+                  <div class="filter-menu-label">Program</div>
+                  ${[...new Set(State.getBranches().flatMap(b=>b.programs||[]))].map(p=>`<div class="filter-menu-item${f.program===p?' active':''}" onclick="BranchesView.setFilter('program','${p}')">${p}</div>`).join('')}
+                </div>
+                <div class="filter-menu-section">
+                  <div class="filter-menu-label">Status</div>
+                  <div class="filter-menu-item${f.status==='active'?' active':''}" onclick="BranchesView.setFilter('status','active')">Active</div>
+                  <div class="filter-menu-item${f.status==='pending'?' active':''}" onclick="BranchesView.setFilter('status','pending')">Pending</div>
+                </div>
+                ${hasFilters ? `<div class="filter-menu-section" style="border-top:1px solid var(--color-border);padding-top:8px"><div class="filter-menu-item" onclick="BranchesView.clearFilters()" style="color:var(--color-danger)">Clear All Filters</div></div>` : ''}
+              </div>
+            </div>
+            ${scope && canEdit ? `<button class="btn btn-primary btn-sm" onclick="BranchesView.openAddModal()" style="margin-left:auto">+ Add Branch</button>` : ''}
           </div>
 
           ${ordered.length ? `
@@ -190,6 +199,17 @@ const BranchesView = {
   clearFilters() {
     this._filter = { search: '', companyId: '', state: '', program: '', status: '' };
     BranchesView._rerender();
+  },
+
+  toggleFiltersMenu(e) {
+    e.stopPropagation();
+    const el = document.getElementById('branches-filters-menu');
+    if (!el) return;
+    const open = el.style.display !== 'none';
+    if (!open) {
+      el.style.display = 'block';
+      setTimeout(() => document.addEventListener('click', () => { el.style.display = 'none'; }, { once: true }), 0);
+    } else { el.style.display = 'none'; }
   },
 
   openDetail(branchId) {

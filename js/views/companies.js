@@ -86,15 +86,23 @@ const CompaniesView = {
 
       <div class="page-body">
         <div class="table-container">
-          <div class="table-toolbar">
-            <input type="text" class="input input-sm input-search" style="width:220px" placeholder="Search companies…"
+          <div class="filter-toolbar">
+            <input class="filter-search" placeholder="Search companies…"
               value="${f.search}" oninput="CompaniesView.setFilter('search', this.value)" />
-            <select class="filter-select" onchange="CompaniesView.setFilter('status', this.value)">
-              <option value="">All Statuses</option>
-              <option value="active" ${f.status==='active'?'selected':''}>Active</option>
-              <option value="pending" ${f.status==='pending'?'selected':''}>Pending</option>
-            </select>
-            ${Object.values(f).some(v=>v) ? `<button class="btn btn-ghost btn-sm" onclick="CompaniesView.clearFilters()">Clear</button>` : ''}
+            <div style="position:relative">
+              <button class="filter-menu-btn" onclick="CompaniesView.toggleFiltersMenu(event)">
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 3H2l8 9.46V19l4 2v-8.54L22 3z"/></svg>
+                Filters
+              </button>
+              <div class="filter-menu-panel" id="companies-filters-menu" style="display:none">
+                <div class="filter-menu-section">
+                  <div class="filter-menu-label">Status</div>
+                  <div class="filter-menu-item${f.status==='active'?' active':''}" onclick="CompaniesView.setFilter('status','active')">Active</div>
+                  <div class="filter-menu-item${f.status==='pending'?' active':''}" onclick="CompaniesView.setFilter('status','pending')">Pending</div>
+                </div>
+                ${Object.values(f).some(v=>v) ? `<div class="filter-menu-section" style="border-top:1px solid var(--color-border);padding-top:8px"><div class="filter-menu-item" onclick="CompaniesView.clearFilters()" style="color:var(--color-danger)">Clear All Filters</div></div>` : ''}
+              </div>
+            </div>
           </div>
 
           ${companies.length ? `
@@ -126,6 +134,17 @@ const CompaniesView = {
   clearFilters() {
     this._filter = { search: '', status: '' };
     App.renderView('/companies');
+  },
+
+  toggleFiltersMenu(e) {
+    e.stopPropagation();
+    const el = document.getElementById('companies-filters-menu');
+    if (!el) return;
+    const open = el.style.display !== 'none';
+    if (!open) {
+      el.style.display = 'block';
+      setTimeout(() => document.addEventListener('click', () => { el.style.display = 'none'; }, { once: true }), 0);
+    } else { el.style.display = 'none'; }
   },
 
   openDetail(companyId) {

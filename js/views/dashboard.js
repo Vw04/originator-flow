@@ -255,6 +255,19 @@ const DashboardView = {
     }
   },
 
+  toggleFiltersMenu(e) {
+    e.stopPropagation();
+    const el = document.getElementById('dash-filters-menu');
+    if (!el) return;
+    const open = el.style.display !== 'none';
+    if (!open) {
+      el.style.display = 'block';
+      setTimeout(() => document.addEventListener('click', () => { el.style.display = 'none'; }, { once: true }), 0);
+    } else {
+      el.style.display = 'none';
+    }
+  },
+
   /* ---- System Admin / Operator ---- */
   renderAdminDashboard() {
     const companies        = State.getCompanies();
@@ -388,35 +401,31 @@ const DashboardView = {
                 ${this._filters.length || this._searchQuery ? `<button class="btn btn-ghost btn-sm" onclick="DashboardView.clearFilters()">Clear</button>` : ''}
               </div>
             </div>
-            <div style="padding:8px 16px 12px;display:flex;align-items:center;gap:8px;flex-wrap:wrap">
-              <div class="filter-bar">
-                <input class="filter-search" placeholder="Search by name or email…" value="${this._searchQuery}" oninput="DashboardView.setSearch(this.value)" />
-                <div class="filter-btn-group">
-                  <div style="position:relative">
-                    <button class="filter-btn" onclick="DashboardView.toggleFilterPopover('section',event)">Section ▾</button>
-                    <div class="filter-popover" id="dash-popover-section" style="display:none">
-                      <div class="filter-popover-item" onclick="DashboardView.addFilter('section','origination')">Origination</div>
-                      <div class="filter-popover-item" onclick="DashboardView.addFilter('section','investor')">Investors & Funds</div>
-                      <div class="filter-popover-item" onclick="DashboardView.addFilter('section','platform')">Platform Operations</div>
-                    </div>
+            <div class="filter-toolbar">
+              <input class="filter-search" placeholder="Search by name or email…" value="${this._searchQuery}" oninput="DashboardView.setSearch(this.value)" />
+              <div style="position:relative">
+                <button class="filter-menu-btn" onclick="DashboardView.toggleFiltersMenu(event)">
+                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 3H2l8 9.46V19l4 2v-8.54L22 3z"/></svg>
+                  Filters
+                </button>
+                <div class="filter-menu-panel" id="dash-filters-menu" style="display:none">
+                  <div class="filter-menu-section">
+                    <div class="filter-menu-label">Section</div>
+                    <div class="filter-menu-item" onclick="DashboardView.addFilter('section','origination')">Origination</div>
+                    <div class="filter-menu-item" onclick="DashboardView.addFilter('section','investor')">Investors & Funds</div>
+                    <div class="filter-menu-item" onclick="DashboardView.addFilter('section','platform')">Platform Operations</div>
                   </div>
-                  <div style="position:relative">
-                    <button class="filter-btn" onclick="DashboardView.toggleFilterPopover('company',event)">Company ▾</button>
-                    <div class="filter-popover" id="dash-popover-company" style="display:none">
-                      ${companies.map(c=>`<div class="filter-popover-item" onclick="DashboardView.addFilter('company','${c.id}')">${c.name}</div>`).join('')}
-                    </div>
+                  <div class="filter-menu-section">
+                    <div class="filter-menu-label">Company</div>
+                    ${companies.map(c=>`<div class="filter-menu-item" onclick="DashboardView.addFilter('company','${c.id}')">${c.name}</div>`).join('')}
                   </div>
-                  <div style="position:relative">
-                    <button class="filter-btn" onclick="DashboardView.toggleFilterPopover('status',event)">Status ▾</button>
-                    <div class="filter-popover" id="dash-popover-status" style="display:none">
-                      ${['invited','email_verified','2fa_complete','verification_pending'].map(s=>`<div class="filter-popover-item" onclick="DashboardView.addFilter('status','${s}')">${Display.onboardingStatusLabel(s)}</div>`).join('')}
-                    </div>
+                  <div class="filter-menu-section">
+                    <div class="filter-menu-label">Status</div>
+                    ${['invited','email_verified','2fa_complete','verification_pending'].map(s=>`<div class="filter-menu-item" onclick="DashboardView.addFilter('status','${s}')">${Display.onboardingStatusLabel(s)}</div>`).join('')}
                   </div>
-                  <div style="position:relative">
-                    <button class="filter-btn" onclick="DashboardView.toggleFilterPopover('role',event)">Role ▾</button>
-                    <div class="filter-popover" id="dash-popover-role" style="display:none">
-                      ${['sys_admin','operator','prog_admin','lo','lp','investor'].map(r=>`<div class="filter-popover-item" onclick="DashboardView.addFilter('role','${r}')">${Display.roleName(r)}</div>`).join('')}
-                    </div>
+                  <div class="filter-menu-section">
+                    <div class="filter-menu-label">Role</div>
+                    ${['sys_admin','operator','prog_admin','lo','lp','investor'].map(r=>`<div class="filter-menu-item" onclick="DashboardView.addFilter('role','${r}')">${Display.roleName(r)}</div>`).join('')}
                   </div>
                 </div>
               </div>

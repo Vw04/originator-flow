@@ -178,35 +178,31 @@ const UsersView = {
       ${header}
       ${bodyOpen}
         <div class="table-container">
-          <div class="table-toolbar">
-            <input type="text" class="input input-sm input-search" style="width:220px" placeholder="Search users…"
+          <div class="filter-toolbar">
+            <input class="filter-search" placeholder="Search by name or email…"
               value="${f.search}" oninput="UsersView.setFilter('search', this.value)" />
-            <select class="filter-select" onchange="UsersView.setFilter('role', this.value)">
-              <option value="">All Roles</option>
-              <option value="prog_admin" ${f.role==='prog_admin'?'selected':''}>Program Admin</option>
-              <option value="lo" ${f.role==='lo'?'selected':''}>Loan Officer</option>
-              <option value="lp" ${f.role==='lp'?'selected':''}>Loan Processor</option>
-              <option value="investor" ${f.role==='investor'?'selected':''}>Investor</option>
-            </select>
-            <select class="filter-select" onchange="UsersView.setFilter('status', this.value)">
-              <option value="">All Statuses</option>
-              <option value="active" ${f.status==='active'?'selected':''}>Active</option>
-              <option value="invited" ${f.status==='invited'?'selected':''}>Invited</option>
-              <option value="email_verified" ${f.status==='email_verified'?'selected':''}>Email Verified</option>
-              <option value="2fa_complete" ${f.status==='2fa_complete'?'selected':''}>2FA Complete</option>
-              <option value="verification_pending" ${f.status==='verification_pending'?'selected':''}>KYC Pending</option>
-              <option value="verification_failed" ${f.status==='verification_failed'?'selected':''}>KYC Failed</option>
-              <option value="suspended" ${f.status==='suspended'?'selected':''}>Suspended</option>
-            </select>
-            ${!hideOrgCol ? `
-              <select class="filter-select" onchange="UsersView.setFilter('companyId', this.value)">
-                <option value="">All Companies</option>${companyOptions}
-              </select>` : ''}
-            <select class="filter-select" onchange="UsersView.setFilter('branchId', this.value)">
-              <option value="">All Branches</option>${branchOptions}
-            </select>
-            ${Object.values(f).some(v=>v) ? `<button class="btn btn-ghost btn-sm" onclick="UsersView.clearFilters()">Clear</button>` : ''}
-            ${scope && canInvite ? `<div style="margin-left:auto"><button class="btn btn-primary btn-sm" onclick="UsersView.openInviteModal()">+ Invite User</button></div>` : ''}
+            <div style="position:relative">
+              <button class="filter-menu-btn" onclick="UsersView.toggleFiltersMenu(event)">
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 3H2l8 9.46V19l4 2v-8.54L22 3z"/></svg>
+                Filters
+              </button>
+              <div class="filter-menu-panel" id="users-filters-menu" style="display:none">
+                <div class="filter-menu-section">
+                  <div class="filter-menu-label">Role</div>
+                  ${['prog_admin','lo','lp','investor'].map(r=>`<div class="filter-menu-item${f.role===r?' active':''}" onclick="UsersView.setFilter('role','${r}')">${Display.roleName(r)}</div>`).join('')}
+                </div>
+                <div class="filter-menu-section">
+                  <div class="filter-menu-label">Status</div>
+                  ${['active','invited','email_verified','2fa_complete','verification_pending','verification_failed','suspended'].map(s=>`<div class="filter-menu-item${f.status===s?' active':''}" onclick="UsersView.setFilter('status','${s}')">${Display.onboardingStatusLabel(s)}</div>`).join('')}
+                </div>
+                ${!hideOrgCol ? `<div class="filter-menu-section">
+                  <div class="filter-menu-label">Company</div>
+                  ${companies.map(c=>`<div class="filter-menu-item${f.companyId===c.id?' active':''}" onclick="UsersView.setFilter('companyId','${c.id}')">${c.name}</div>`).join('')}
+                </div>` : ''}
+                ${Object.values(f).some(v=>v) ? `<div class="filter-menu-section" style="border-top:1px solid var(--color-border);padding-top:8px"><div class="filter-menu-item" onclick="UsersView.clearFilters()" style="color:var(--color-danger)">Clear All Filters</div></div>` : ''}
+              </div>
+            </div>
+            ${scope && canInvite ? `<button class="btn btn-primary btn-sm" onclick="UsersView.openInviteModal()" style="margin-left:auto">+ Invite User</button>` : ''}
           </div>
 
           ${users.length ? `
@@ -253,6 +249,19 @@ const UsersView = {
   clearFilters() {
     this._filter = { search: '', role: '', status: '', branchId: '', companyId: '' };
     this._rerender();
+  },
+
+  toggleFiltersMenu(e) {
+    e.stopPropagation();
+    const el = document.getElementById('users-filters-menu');
+    if (!el) return;
+    const open = el.style.display !== 'none';
+    if (!open) {
+      el.style.display = 'block';
+      setTimeout(() => document.addEventListener('click', () => { el.style.display = 'none'; }, { once: true }), 0);
+    } else {
+      el.style.display = 'none';
+    }
   },
 
   advanceStatus(userId) {
