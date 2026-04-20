@@ -102,7 +102,8 @@ const RoleSelectView = {
     State.setRole(role);
     // Prospect skips onboarding — go directly to dashboard
     if (role === 'investor_prospect') {
-      Router.navigate('/prospect', { replace: true });
+      const path = State.getViewMode() === 'mobile' ? '/m/prospect' : '/prospect';
+      Router.navigate(path, { replace: true });
       return;
     }
     // Reset demo user to invited so the wizard starts from step 0

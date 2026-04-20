@@ -10,6 +10,8 @@ const MobileNav = (() => {
     file: '<svg width="20" height="20" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M11 2H5.5A1.5 1.5 0 0 0 4 3.5v13A1.5 1.5 0 0 0 5.5 18h9a1.5 1.5 0 0 0 1.5-1.5V7L11 2z"/><path d="M11 2v5h5"/></svg>',
     bell: '<svg width="20" height="20" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M10 2a6 6 0 0 1 6 6c0 3.3 1.1 4.4 1.6 5.5H2.4C3 12.4 4 11.3 4 8a6 6 0 0 1 6-6z"/><path d="M7.5 16.5a2.5 2.5 0 0 0 5 0"/></svg>',
     user: '<svg width="20" height="20" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><circle cx="10" cy="7" r="3.5"/><path d="M3.5 17.5c0-3.3 2.9-6 6.5-6s6.5 2.7 6.5 6"/></svg>',
+    heart: '<svg width="20" height="20" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M10 17.5S2.5 13 2.5 7.5C2.5 4.46 4.96 2 8 2c1.66 0 3.14.74 4.14 1.91a5.33 5.33 0 0 1 2.36-.91c2.5 0 5 2.46 5 5.5C19.5 13 10 17.5 10 17.5z"/></svg>',
+    chart: '<svg width="20" height="20" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M17 17H3V3"/><path d="M15 6l-4 5-3-2-5 5"/></svg>',
   };
 
   const TABS = {
@@ -45,6 +47,11 @@ const MobileNav = (() => {
     investor: [
       { path: '/m/home',          label: 'Home',      icon: 'home' },
       { path: '/m/profile',       label: 'Profile',   icon: 'user' },
+    ],
+    investor_prospect: [
+      { path: '/m/prospect',          label: 'Home',    icon: 'home' },
+      { path: '/m/prospect/stories',  label: 'Stories', icon: 'heart' },
+      { path: '/m/prospect/data',     label: 'Data',    icon: 'chart' },
     ],
   };
 

@@ -54,6 +54,11 @@ const App = {
     Router.register('/m/companies',     () => this.renderMobileShell(MobileLoansView.render()));
     Router.register('/m/profile',       () => this.renderMobileShell(MobileProfileView.render()));
     Router.register('/m/notifications', () => this.renderMobileShell(MobileNotificationsView.render()));
+    // Mobile prospect routes
+    Router.register('/m/prospect',          () => this.renderMobileShell(MobileProspectView.render()));
+    Router.register('/m/prospect/stories',  () => this.renderMobileShell(MobileProspectView.render()));
+    Router.register('/m/prospect/data',     () => this.renderMobileShell(MobileProspectView.render()));
+
     Router.register('/m/detail',        (path) => {
       const id = path.replace('/m/detail/', '');
       if (id && id !== '/m/detail') MobileDetailView._loanId = id;
