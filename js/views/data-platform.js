@@ -1652,16 +1652,21 @@ const DataPlatformView = {
         <div class="ud-context-header-compact">
           <div class="ud-compact-info">
             <div class="ud-compact-address">${addr}</div>
-            <div class="ud-compact-id">${loan.id}</div>
+            <div class="ud-compact-id">${loan.id} &middot; ${loan.borrowerName}</div>
           </div>
           <span class="ud-status-pill ${isCompleted ? 'completed' : ''}" style="flex-shrink:0"><span class="ud-status-pill-dot"></span> ${Display.loanStatusLabel(loan.status)}</span>
+          <div class="ud-compact-divider"></div>
           <div class="ud-compact-metrics">
+            <div class="ud-compact-metric"><span class="ud-compact-metric-label">Program</span><span class="ud-compact-metric-value">${loan.program}</span></div>
             <div class="ud-compact-metric"><span class="ud-compact-metric-label">Amount</span><span class="ud-compact-metric-value">${Display.currency(loan.amount)}</span></div>
-            <div class="ud-compact-metric"><span class="ud-compact-metric-label">LTV</span><span class="ud-compact-metric-value">${loan.ltv ?? '—'}%</span></div>
+            <div class="ud-compact-metric"><span class="ud-compact-metric-label">LTV / CLTV</span><span class="ud-compact-metric-value">${loan.ltv ?? '—'}% / ${loan.cltv ?? '—'}%</span></div>
             <div class="ud-compact-metric"><span class="ud-compact-metric-label">FICO</span><span class="ud-compact-metric-value">${loan.fico || '—'}</span></div>
+            <div class="ud-compact-metric"><span class="ud-compact-metric-label">Officer</span><span class="ud-compact-metric-value">${loName}</span></div>
+            <div class="ud-compact-metric"><span class="ud-compact-metric-label">Est. Close</span><span class="ud-compact-metric-value">${estCloseDate}</span></div>
           </div>
+          <div class="ud-compact-divider"></div>
           <div class="ud-compact-progress">${compactMilestone}</div>
-          <span class="ud-compact-stage">${stageLabel}</span>
+          <span class="ud-compact-stage">${stageLabel} &middot; ${overallPct}%</span>
         </div>
       </div>`;
   },
@@ -1873,7 +1878,7 @@ const DataPlatformView = {
                 <span class="ud-task-label ${t.status === 'done' ? 'done' : ''}">${t.label}</span>
                 ${this._appOwnerAvatar(t.role)}
                 ${!isTaskExpanded && t.action && t.status !== 'done' ? `<button class="ud-task-action ${t.status === 'active' ? 'primary' : ''}" onclick="event.stopPropagation()">${t.action}</button>` : ''}
-                <span class="ud-task-expand-chevron ${isTaskExpanded ? 'open' : ''}">&#9654;</span>
+                <span class="ud-task-expand-toggle ${isTaskExpanded ? 'open' : ''}">${isTaskExpanded ? '&minus;' : '&plus;'}</span>
               </div>
               ${isTaskExpanded && detail ? `
               <div class="ud-task-expanded">
