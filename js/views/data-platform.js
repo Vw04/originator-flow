@@ -42,17 +42,22 @@ const DataPlatformView = {
 
   _nextAction(loan) {
     const map = {
-      'draft':                          'Complete & submit application',
-      'prequalification_in_progress':   'Awaiting borrower prequalification',
-      'initial_application_submitted':  'Upload appraisal report',
-      'application_documents_approved': 'Send to DocuTech for docs',
-      'original_appraisal_submitted':   'Review appraisal — order title',
-      'sent_to_docutech':               'Awaiting DocuTech documents',
-      'pending_origination_creation':   'Create origination record',
-      'origination_created':            'Submit for final review',
-      'completed':                      '—',
+      'draft':                          { text: 'Complete & submit application',  owner: 'originator' },
+      'prequalification_in_progress':   { text: 'Awaiting borrower prequalification', owner: 'originator' },
+      'initial_application_submitted':  { text: 'Upload appraisal report',       owner: 'originator' },
+      'application_documents_approved': { text: 'Send to DocuTech for docs',     owner: 'homium' },
+      'original_appraisal_submitted':   { text: 'Review appraisal — order title', owner: 'homium' },
+      'sent_to_docutech':               { text: 'Awaiting DocuTech documents',   owner: 'homium' },
+      'pending_origination_creation':   { text: 'Create origination record',     owner: 'homium' },
+      'origination_created':            { text: 'Submit for final review',       owner: 'homium' },
+      'completed':                      { text: '—', owner: null },
     };
-    return map[loan.status] || '—';
+    const entry = map[loan.status];
+    if (!entry || !entry.owner) return '—';
+    const tag = entry.owner === 'originator'
+      ? '<span class="ownership-tag originator">Originator</span>'
+      : '<span class="ownership-tag homium">Homium</span>';
+    return `${tag} ${entry.text}`;
   },
 
   /* Days since submittedAt (or last status change) — demo approximations */
@@ -1116,7 +1121,7 @@ const DataPlatformView = {
           <td style="font-size:12px;color:var(--color-text-secondary);max-width:150px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${l.address}</td>
           <td>${milestoneHtml}</td>
           <td>${this._daysBadge(days)}</td>
-          <td style="font-size:12px;color:var(--color-text-secondary);max-width:160px">${this._nextAction(l)}</td>
+          <td style="font-size:12px;color:var(--color-text-secondary);max-width:200px">${this._nextAction(l)}</td>
           <td style="font-size:12px;color:var(--color-text-secondary)">${loName}</td>
           <td style="font-weight:600">${Display.currency(l.amount)}</td>
           <td style="font-size:11px;color:var(--color-text-muted);white-space:nowrap">${timeAgo}</td>
@@ -1565,17 +1570,9 @@ const DataPlatformView = {
       <div id="dp-modal"></div>`;
   },
 
-  /* ── App Detail: Owner avatar helper ── */
-  _appOwnerAvatar(role) {
-    if (!role) return '';
-    const r = role.toLowerCase();
-    let cls = 'system', initials = 'SY';
-    if (r.includes('loan officer') || r === 'lo') { cls = 'lo'; initials = 'LO'; }
-    else if (r.includes('account') || r.includes('am')) { cls = 'am'; initials = 'AM'; }
-    else if (r.includes('processor')) { cls = 'am'; initials = 'PR'; }
-    else if (r.includes('borrower')) { cls = 'borrower'; initials = 'BO'; }
-    else if (r.includes('appraiser')) { cls = 'system'; initials = 'AP'; }
-    return `<span class="ud-task-owner ${cls}" title="${role}">${initials}<span class="ud-task-owner-tip">${role}</span></span>`;
+  /* ── App Detail: Owner tag helper ── */
+  _appOwnerTag(role) {
+    return ownershipTag(role);
   },
 
   /* ── App Detail: Stage icon SVGs ── */
@@ -1733,7 +1730,7 @@ const DataPlatformView = {
       <div class="ud-action-banner-body">
         <div class="ud-action-banner-label">Next Action Required</div>
         <div class="ud-action-banner-text">${activeTask.label}</div>
-        <div class="ud-action-banner-sub">${this._appOwnerAvatar(activeTask.role)} ${activeTask.role} &middot; ${currentStage.label}</div>
+        <div class="ud-action-banner-sub">${this._appOwnerTag(activeTask.role)} ${activeTask.role} &middot; ${currentStage.label}</div>
         ${upNextHtml}
       </div>
       <div class="ud-action-banner-right">
@@ -1786,7 +1783,7 @@ const DataPlatformView = {
             <div class="ud-task-row">
               <div class="ud-task-icon ${t.status === 'done' ? 'done' : t.status === 'active' ? 'active' : 'pending'}">${t.status === 'done' ? '&#10003;' : t.status === 'active' ? '&#9679;' : ''}</div>
               <span class="ud-task-label ${t.status === 'done' ? 'done' : ''}">${t.label}</span>
-              ${this._appOwnerAvatar(t.role)}
+              ${this._appOwnerTag(t.role)}
               ${t.action && t.status !== 'done' ? `<button class="ud-task-action ${t.status === 'active' ? 'primary' : ''}" onclick="event.stopPropagation()">${t.action}</button>` : ''}
             </div>`).join('')}
         </div>`;
@@ -1876,9 +1873,9 @@ const DataPlatformView = {
               <div class="ud-task-row">
                 <div class="ud-task-icon ${t.status === 'done' ? 'done' : t.status === 'active' ? 'active' : 'pending'}">${t.status === 'done' ? '&#10003;' : t.status === 'active' ? '&#9679;' : ''}</div>
                 <span class="ud-task-label ${t.status === 'done' ? 'done' : ''}">${t.label}</span>
-                ${this._appOwnerAvatar(t.role)}
+                ${this._appOwnerTag(t.role)}
                 ${!isTaskExpanded && t.action && t.status !== 'done' ? `<button class="ud-task-action ${t.status === 'active' ? 'primary' : ''}" onclick="event.stopPropagation()">${t.action}</button>` : ''}
-                <span class="ud-task-expand-toggle ${isTaskExpanded ? 'open' : ''}">${isTaskExpanded ? '&minus;' : '&plus;'}</span>
+                <span class="ud-task-expand-toggle ${isTaskExpanded ? 'open' : ''}">&#9654;</span>
               </div>
               ${isTaskExpanded && detail ? `
               <div class="ud-task-expanded">
@@ -1935,7 +1932,7 @@ const DataPlatformView = {
             <div class="ud-doc-icon">&#128196;</div>
             <div class="ud-doc-info"><div class="ud-doc-name">${d.name}</div><div class="ud-doc-meta">${d.meta}</div></div>
             <span class="ud-doc-badge ${d.status}">${d.status === 'approved' ? 'Approved' : d.status === 'missing' ? 'Not Uploaded' : 'Pending'}</span>
-            ${this._appOwnerAvatar(d.owner)}
+            ${this._appOwnerTag(d.owner)}
             ${d.status === 'missing' ? '<button class="ud-task-action" onclick="event.stopPropagation()">Upload</button>' : ''}
           </div>`).join('')}
       </div>`;

@@ -3641,9 +3641,9 @@ label { font-size: 12px; font-weight: 600; color: var(--color-text); }
   filter: drop-shadow(0 1px 1px rgba(0,0,0,0.08));
 }
 
-/* Needs-attention row */
-.row-needs-attention td:first-child { border-left: 3px solid #DC2626; }
-.row-needs-attention { background: #FFF8F8; }
+/* Needs-attention row — removed red bg, days badge handles urgency */
+.row-needs-attention td:first-child { border-left: none; }
+.row-needs-attention { background: transparent; }
 
 /* ============================================================
    Application Detail — Redesigned
@@ -5586,28 +5586,16 @@ label { font-size: 12px; font-weight: 600; color: var(--color-text); }
 .ud-task-label { flex: 1; font-size: 13px; }
 .ud-task-label.done { color: var(--color-text-muted); }
 /* Owner avatar — compact circle with initials */
-.ud-task-owner {
-  width: 26px; height: 26px; border-radius: 50%; display: inline-flex; align-items: center; justify-content: center;
-  font-size: 10px; font-weight: 700; letter-spacing: -0.02em; flex-shrink: 0;
-  background: var(--color-surface); color: var(--color-text-muted);
-  position: relative; cursor: default;
+/* Ownership tags — Originator vs Homium */
+.ownership-tag {
+  display: inline-flex; align-items: center;
+  font-size: 10px; font-weight: 700; letter-spacing: 0.02em;
+  padding: 2px 7px; border-radius: 4px;
+  white-space: nowrap; flex-shrink: 0;
+  line-height: 1.4;
 }
-.ud-task-owner.lo { background: #EDE9FE; color: #6D28D9; }
-.ud-task-owner.am { background: #DBEAFE; color: #1E40AF; }
-.ud-task-owner.borrower { background: #FEF3C7; color: #92400E; }
-.ud-task-owner.system { background: var(--color-surface); color: var(--color-text-muted); }
-/* Tooltip for owner full name */
-.ud-task-owner-tip {
-  position: absolute; bottom: calc(100% + 6px); left: 50%; transform: translateX(-50%);
-  background: var(--color-text); color: #fff; font-size: 11px; font-weight: 600;
-  padding: 3px 8px; border-radius: 5px; white-space: nowrap; pointer-events: none;
-  opacity: 0; transition: opacity 0.12s; z-index: 10;
-}
-.ud-task-owner-tip::after {
-  content: ''; position: absolute; top: 100%; left: 50%; transform: translateX(-50%);
-  border: 3px solid transparent; border-top-color: var(--color-text);
-}
-.ud-task-owner:hover .ud-task-owner-tip { opacity: 1; }
+.ownership-tag.originator { background: #F0FDF4; color: #16A34A; border: 1px solid #BBF7D0; }
+.ownership-tag.homium { background: #EFF6FF; color: #1E40AF; border: 1px solid #BFDBFE; }
 .ud-task-action {
   padding: 4px 12px; border-radius: 6px; font-size: 11px; font-weight: 700;
   border: 1px solid var(--color-primary); color: var(--color-primary); background: transparent;
@@ -5633,23 +5621,19 @@ label { font-size: 12px; font-weight: 600; color: var(--color-text); }
 }
 .ud-task-row-wrapper .ud-task-row { border-bottom: none; }
 
-/* Expand toggle (plus/minus) */
+/* Disclosure triangle toggle */
 .ud-task-expand-toggle {
-  width: 20px; height: 20px;
-  border-radius: 4px;
-  display: flex;
+  display: inline-flex;
   align-items: center;
   justify-content: center;
-  font-size: 14px;
-  font-weight: 400;
+  font-size: 11px;
   color: var(--color-text-muted);
-  background: var(--color-surface);
   flex-shrink: 0;
-  transition: all 0.12s;
+  transition: transform 0.15s ease, color 0.12s;
+  transform: rotate(0deg);
   line-height: 1;
 }
-.ud-task-expand-toggle:hover { background: var(--color-border); color: var(--color-text); }
-.ud-task-expand-toggle.open { background: var(--color-primary); color: #fff; }
+.ud-task-expand-toggle.open { transform: rotate(90deg); color: var(--color-primary); }
 
 /* Expanded detail panel */
 .ud-task-expanded {

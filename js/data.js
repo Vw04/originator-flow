@@ -734,6 +734,21 @@ function generateOriginationProcess(status) {
   });
 }
 
+/* ---- Task ownership: Originator vs Homium ---- */
+function taskOwnership(role) {
+  if (!role) return 'system';
+  const r = role.toLowerCase();
+  if (r.includes('loan officer') || r === 'lo' || r.includes('processor') || r.includes('borrower')) return 'originator';
+  return 'homium'; // Account Manager, System, Appraiser = Homium internal
+}
+
+function ownershipTag(role) {
+  const owner = taskOwnership(role);
+  if (owner === 'originator') return '<span class="ownership-tag originator">Originator</span>';
+  if (owner === 'homium') return '<span class="ownership-tag homium">Homium</span>';
+  return '';
+}
+
 /* ---- Stage filtering for Application vs Origination context ---- */
 const APPLICATION_STAGE_IDS = ['prequalification', 'application_disclosures', 'cda_appraisal', 'clear_close'];
 

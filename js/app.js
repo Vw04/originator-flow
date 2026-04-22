@@ -320,7 +320,7 @@ const OriginationsView = {
           <td style="font-size:12px;color:var(--color-text-secondary);max-width:150px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${l.address}</td>
           <td>${rowMilestone}</td>
           <td>${DataPlatformView._daysBadge(days)}</td>
-          <td style="font-size:12px;color:var(--color-text-secondary);max-width:160px">${nextAction}</td>
+          <td style="font-size:12px;color:var(--color-text-secondary);max-width:200px">${nextAction}</td>
           <td style="font-size:12px;color:var(--color-text-secondary)">${loName}</td>
           <td style="font-weight:600">${Display.currency(l.amount)}</td>
           <td style="font-size:11px;color:var(--color-text-muted);white-space:nowrap">${timeAgo}</td>
@@ -435,17 +435,9 @@ const OriginationsView = {
       <div id="originations-modal"></div>`;
   },
 
-  /* ── Owner avatar helper — returns full HTML for compact circle with tooltip ── */
-  _ownerAvatar(role) {
-    if (!role) return '';
-    const r = role.toLowerCase();
-    let cls = 'system', initials = 'SY';
-    if (r.includes('loan officer') || r === 'lo') { cls = 'lo'; initials = 'LO'; }
-    else if (r.includes('account') || r.includes('am')) { cls = 'am'; initials = 'AM'; }
-    else if (r.includes('processor')) { cls = 'am'; initials = 'PR'; }
-    else if (r.includes('borrower')) { cls = 'borrower'; initials = 'BO'; }
-    else if (r.includes('appraiser')) { cls = 'system'; initials = 'AP'; }
-    return `<span class="ud-task-owner ${cls}" title="${role}">${initials}<span class="ud-task-owner-tip">${role}</span></span>`;
+  /* ── Owner tag helper ── */
+  _ownerTag(role) {
+    return ownershipTag(role);
   },
 
   /* ── Stage icon SVGs ── */
@@ -600,7 +592,7 @@ const OriginationsView = {
       <div class="ud-action-banner-body">
         <div class="ud-action-banner-label">Next Action Required</div>
         <div class="ud-action-banner-text">${activeTask.label}</div>
-        <div class="ud-action-banner-sub">${this._ownerAvatar(activeTask.role)} ${activeTask.role} &middot; ${currentStage.label}</div>
+        <div class="ud-action-banner-sub">${this._ownerTag(activeTask.role)} ${activeTask.role} &middot; ${currentStage.label}</div>
         ${upNextHtml}
       </div>
       <div class="ud-action-banner-right">
@@ -653,7 +645,7 @@ const OriginationsView = {
             <div class="ud-task-row">
               <div class="ud-task-icon ${t.status === 'done' ? 'done' : t.status === 'active' ? 'active' : 'pending'}">${t.status === 'done' ? '&#10003;' : t.status === 'active' ? '&#9679;' : ''}</div>
               <span class="ud-task-label ${t.status === 'done' ? 'done' : ''}">${t.label}</span>
-              ${this._ownerAvatar(t.role)}
+              ${this._ownerTag(t.role)}
               ${t.action && t.status !== 'done' ? `<button class="ud-task-action ${t.status === 'active' ? 'primary' : ''}" onclick="event.stopPropagation()">${t.action}</button>` : ''}
             </div>`).join('')}
         </div>`;
@@ -743,9 +735,9 @@ const OriginationsView = {
               <div class="ud-task-row">
                 <div class="ud-task-icon ${t.status === 'done' ? 'done' : t.status === 'active' ? 'active' : 'pending'}">${t.status === 'done' ? '&#10003;' : t.status === 'active' ? '&#9679;' : ''}</div>
                 <span class="ud-task-label ${t.status === 'done' ? 'done' : ''}">${t.label}</span>
-                ${this._ownerAvatar(t.role)}
+                ${this._ownerTag(t.role)}
                 ${!isTaskExpanded && t.action && t.status !== 'done' ? `<button class="ud-task-action ${t.status === 'active' ? 'primary' : ''}" onclick="event.stopPropagation()">${t.action}</button>` : ''}
-                <span class="ud-task-expand-toggle ${isTaskExpanded ? 'open' : ''}">${isTaskExpanded ? '&minus;' : '&plus;'}</span>
+                <span class="ud-task-expand-toggle ${isTaskExpanded ? 'open' : ''}">&#9654;</span>
               </div>
               ${isTaskExpanded && detail ? `
               <div class="ud-task-expanded">
@@ -801,7 +793,7 @@ const OriginationsView = {
             <div class="ud-doc-icon">&#128196;</div>
             <div class="ud-doc-info"><div class="ud-doc-name">${d.name}</div><div class="ud-doc-meta">${d.meta}</div></div>
             <span class="ud-doc-badge ${d.status}">${d.status === 'approved' ? 'Approved' : d.status === 'missing' ? 'Not Uploaded' : 'Pending'}</span>
-            ${this._ownerAvatar(d.owner)}
+            ${this._ownerTag(d.owner)}
             ${d.status === 'missing' ? '<button class="ud-task-action" onclick="event.stopPropagation()">Upload</button>' : ''}
           </div>`).join('')}
       </div>`;
