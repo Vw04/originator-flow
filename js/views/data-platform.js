@@ -10,6 +10,7 @@ const DataPlatformView = {
   _activeStep: 4,
   _activeAppTab: 'overview',
   _expandedAppStages: new Set(),
+  _expandedTaskId: null,
   _appFilter: 'all',
   _appSearch: '',
   _appSortField: null,
@@ -20,6 +21,7 @@ const DataPlatformView = {
   _batchExpanded: null,
   _dashProgramFilter: 'all',
   _dashCollapsedCompanies: [],
+  _stickyObserver: null,
 
   /* ---- Step / status helpers ---- */
   _STEP_MAP: {
@@ -97,7 +99,7 @@ const DataPlatformView = {
     switch (this._activeTab) {
       case 'analytics':    content = this._renderDashboard();    break;
       case 'applications': content = this._renderApplications(); break;
-      case 'originations': content = this._renderOriginations(); break;
+      // originations now served by /originations route (OriginationsView)
       case 'batches':      content = this._renderBatches();      break;
       case 'activations':  content = this._renderActivations();  break;
       default:             content = this._renderDashboard();
@@ -131,6 +133,11 @@ const DataPlatformView = {
   toggleAppStage(stageId) {
     if (this._expandedAppStages.has(stageId)) this._expandedAppStages.delete(stageId);
     else this._expandedAppStages.add(stageId);
+    App.renderView('/data/applications');
+  },
+
+  toggleTask(taskId) {
+    this._expandedTaskId = (this._expandedTaskId === taskId) ? null : taskId;
     App.renderView('/data/applications');
   },
 
@@ -1086,14 +1093,12 @@ const DataPlatformView = {
     const someChecked = this._appSelected.size > 0;
 
     const rows = pageLoans.map((l, i) => {
-      const step     = this._loanStep(l);
       const days     = this._daysInStage(l);
       const attn     = days > 14 && l.status !== 'completed' && l.status !== 'draft';
       const lo       = State.getUser(l.loId);
       const loName   = lo ? Display.fullName(lo) : '—';
-      const dots     = Array.from({length: 9}, (_, di) =>
-        `<span class="loan-progress-dot ${di < step ? 'done' : di === step ? 'current' : ''}"></span>`
-      ).join('');
+      const appProc  = filterStagesForContext(generateOriginationProcess(l.status), 'application');
+      const milestoneHtml = renderMilestoneBar(appProc, { size: 'compact' });
       const checked  = this._appSelected.has(l.id);
       const timeAgo  = l.submittedAt ? Display.relativeTime(l.submittedAt) : '—';
 
@@ -1109,7 +1114,7 @@ const DataPlatformView = {
             <div style="font-size:13px;color:var(--color-text)">${l.borrowerName}</div>
           </td>
           <td style="font-size:12px;color:var(--color-text-secondary);max-width:150px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${l.address}</td>
-          <td><div class="loan-progress-dots">${dots}</div></td>
+          <td>${milestoneHtml}</td>
           <td>${this._daysBadge(days)}</td>
           <td style="font-size:12px;color:var(--color-text-secondary);max-width:160px">${this._nextAction(l)}</td>
           <td style="font-size:12px;color:var(--color-text-secondary)">${loName}</td>
@@ -1539,12 +1544,14 @@ const DataPlatformView = {
 
     const lo = State.getUser(loan.loId);
     const loName = lo ? Display.fullName(lo) : '—';
-    const proc = generateOriginationProcess(loan.status);
+    const fullProc = generateOriginationProcess(loan.status);
+    const proc = filterStagesForContext(fullProc, 'application');
     const days = this._daysInStage(loan);
     const rateLockDate = loanId === 'DCDC000002' ? 'Apr 12, 2026' : 'Apr 30, 2026';
     const estCloseDate = loanId === 'DCDC000003' ? 'Mar 15, 2026' : 'May 15, 2026';
 
     return `
+      <div id="context-header-sentinel"></div>
       <button class="ud-back-btn" onclick="DataPlatformView._backToApplications()">&#8592; Back to Applications</button>
       ${this._appContextHeader(loan, loName, proc, rateLockDate, estCloseDate)}
       ${this._appActionBanner(loan, proc)}
@@ -1599,28 +1606,7 @@ const DataPlatformView = {
     const currentStage = proc.find(s => s.status === 'in_progress');
     const currentIdx = currentStage ? proc.indexOf(currentStage) : (isCompleted ? proc.length : 0);
 
-    const segments = proc.map((stage) => {
-      const cls = stage.status === 'completed' ? 'done' : stage.status === 'in_progress' ? 'current' : 'pending';
-      const sDone = stage.tasks.filter(t => t.status === 'done').length;
-      const sTotal = stage.tasks.length;
-      const pct = sTotal ? Math.round((sDone / sTotal) * 100) : 0;
-      const statusLabel = cls === 'done' ? 'Complete' : cls === 'current' ? 'In Progress' : 'Pending';
-      return `<div class="ud-progress-segment ${cls}" style="flex:${sTotal}">
-        <span class="ud-progress-segment-tip">
-          <div class="ud-seg-tip-header">
-            <div class="ud-seg-tip-icon ${cls}">${this._appStageIcon(stage.id)}</div>
-            <span class="ud-seg-tip-name">${stage.label}</span>
-          </div>
-          <div style="display:flex;align-items:center;justify-content:space-between;gap:8px;margin-bottom:4px">
-            <span class="ud-seg-tip-status ${cls}">${statusLabel}</span>
-          </div>
-          <div class="ud-seg-tip-progress">
-            <div class="ud-seg-tip-bar"><div class="ud-seg-tip-bar-fill" style="width:${pct}%"></div></div>
-            <span>${sDone}/${sTotal} tasks</span>
-          </div>
-        </span>
-      </div>`;
-    }).join('');
+    const milestoneBarHtml = renderMilestoneBar(proc, { size: 'full', stageIcons: this._appStageIcon.bind(this) });
 
     const stageLabel = currentStage ? currentStage.label : (isCompleted ? 'Completed' : 'Not Started');
     const stageIconCls = isCompleted ? 'done' : '';
@@ -1629,35 +1615,53 @@ const DataPlatformView = {
     const stageTotal = currentStage ? currentStage.tasks.length : 0;
     const stageCount = currentStage ? `${stageDone}/${stageTotal} tasks` : '';
 
+    const compactMilestone = renderMilestoneBar(proc, { size: 'compact' });
+
     return `
       <div class="ud-context-header">
-        <div class="ud-context-top">
-          <div>
-            <div class="ud-context-address">${addr}</div>
-            <div class="ud-context-sub">${sub}</div>
+        <div class="ud-context-header-full">
+          <div class="ud-context-top">
+            <div>
+              <div class="ud-context-address">${addr}</div>
+              <div class="ud-context-sub">${sub}</div>
+            </div>
+            <span class="ud-status-pill ${isCompleted ? 'completed' : ''}"><span class="ud-status-pill-dot"></span> ${Display.loanStatusLabel(loan.status)}</span>
           </div>
-          <span class="ud-status-pill ${isCompleted ? 'completed' : ''}"><span class="ud-status-pill-dot"></span> ${Display.loanStatusLabel(loan.status)}</span>
-        </div>
-        <div class="ud-context-chips">
-          <div class="ud-chip"><span class="ud-chip-label">Loan ID</span><span class="ud-chip-value">${loan.id}</span></div>
-          <div class="ud-chip"><span class="ud-chip-label">Program</span><span class="ud-chip-value">${loan.program}</span></div>
-          <div class="ud-chip"><span class="ud-chip-label">Amount</span><span class="ud-chip-value">${Display.currency(loan.amount)}</span></div>
-          <div class="ud-chip"><span class="ud-chip-label">LTV / CLTV</span><span class="ud-chip-value">${loan.ltv ?? '—'}% / ${loan.cltv ?? '—'}%</span></div>
-          <div class="ud-chip"><span class="ud-chip-label">DTI</span><span class="ud-chip-value">${dti}%</span></div>
-          <div class="ud-chip"><span class="ud-chip-label">FICO</span><span class="ud-chip-value">${loan.fico || '—'}</span></div>
-          <div class="ud-chip"><span class="ud-chip-label">Borrower</span><span class="ud-chip-value">${loan.borrowerName}</span></div>
-          <div class="ud-chip"><span class="ud-chip-label">Loan Officer</span><span class="ud-chip-value">${loName}</span></div>
-          <div class="ud-chip"><span class="ud-chip-label">Rate Lock</span><span class="ud-chip-value ${rateLockExpiring ? 'warn' : ''}">${rateLockDate}</span></div>
-          <div class="ud-chip"><span class="ud-chip-label">Est. Close</span><span class="ud-chip-value">${estCloseDate}</span></div>
-        </div>
-        <div class="ud-progress-strip">
-          <div class="ud-progress-bar-segmented">${segments}</div>
-          <div class="ud-progress-meta">
-            <div class="ud-progress-stage-icon ${stageIconCls}">${stageIconSvg}</div>
-            <span class="ud-progress-stage-label">${stageLabel}</span>
-            ${stageCount ? `<span class="ud-progress-stage-count">${stageCount}</span>` : ''}
-            <span class="ud-progress-overall">Stage ${currentIdx + 1} of ${proc.length} &middot; ${overallPct}% complete</span>
+          <div class="ud-context-chips">
+            <div class="ud-chip"><span class="ud-chip-label">Loan ID</span><span class="ud-chip-value">${loan.id}</span></div>
+            <div class="ud-chip"><span class="ud-chip-label">Program</span><span class="ud-chip-value">${loan.program}</span></div>
+            <div class="ud-chip"><span class="ud-chip-label">Amount</span><span class="ud-chip-value">${Display.currency(loan.amount)}</span></div>
+            <div class="ud-chip"><span class="ud-chip-label">LTV / CLTV</span><span class="ud-chip-value">${loan.ltv ?? '—'}% / ${loan.cltv ?? '—'}%</span></div>
+            <div class="ud-chip"><span class="ud-chip-label">DTI</span><span class="ud-chip-value">${dti}%</span></div>
+            <div class="ud-chip"><span class="ud-chip-label">FICO</span><span class="ud-chip-value">${loan.fico || '—'}</span></div>
+            <div class="ud-chip"><span class="ud-chip-label">Borrower</span><span class="ud-chip-value">${loan.borrowerName}</span></div>
+            <div class="ud-chip"><span class="ud-chip-label">Loan Officer</span><span class="ud-chip-value">${loName}</span></div>
+            <div class="ud-chip"><span class="ud-chip-label">Rate Lock</span><span class="ud-chip-value ${rateLockExpiring ? 'warn' : ''}">${rateLockDate}</span></div>
+            <div class="ud-chip"><span class="ud-chip-label">Est. Close</span><span class="ud-chip-value">${estCloseDate}</span></div>
           </div>
+          <div class="ud-progress-strip">
+            ${milestoneBarHtml}
+            <div class="ud-progress-meta">
+              <div class="ud-progress-stage-icon ${stageIconCls}">${stageIconSvg}</div>
+              <span class="ud-progress-stage-label">${stageLabel}</span>
+              ${stageCount ? `<span class="ud-progress-stage-count">${stageCount}</span>` : ''}
+              <span class="ud-progress-overall">Stage ${currentIdx + 1} of ${proc.length} &middot; ${overallPct}% complete</span>
+            </div>
+          </div>
+        </div>
+        <div class="ud-context-header-compact">
+          <div class="ud-compact-info">
+            <div class="ud-compact-address">${addr}</div>
+            <div class="ud-compact-id">${loan.id}</div>
+          </div>
+          <span class="ud-status-pill ${isCompleted ? 'completed' : ''}" style="flex-shrink:0"><span class="ud-status-pill-dot"></span> ${Display.loanStatusLabel(loan.status)}</span>
+          <div class="ud-compact-metrics">
+            <div class="ud-compact-metric"><span class="ud-compact-metric-label">Amount</span><span class="ud-compact-metric-value">${Display.currency(loan.amount)}</span></div>
+            <div class="ud-compact-metric"><span class="ud-compact-metric-label">LTV</span><span class="ud-compact-metric-value">${loan.ltv ?? '—'}%</span></div>
+            <div class="ud-compact-metric"><span class="ud-compact-metric-label">FICO</span><span class="ud-compact-metric-value">${loan.fico || '—'}</span></div>
+          </div>
+          <div class="ud-compact-progress">${compactMilestone}</div>
+          <span class="ud-compact-stage">${stageLabel}</span>
         </div>
       </div>`;
   },
@@ -1827,6 +1831,10 @@ const DataPlatformView = {
 
   /* ── App Detail: Tasks Tab ── */
   _appTasksTab(proc) {
+    // Determine which task to auto-expand (active task by default)
+    const activeTask = proc.flatMap(s => s.tasks).find(t => t.status === 'active');
+    const expandedId = this._expandedTaskId ?? (activeTask ? activeTask.id : null);
+
     return proc.map(stage => {
       const done = stage.tasks.filter(t => t.status === 'done').length;
       const total = stage.tasks.length;
@@ -1855,13 +1863,30 @@ const DataPlatformView = {
             </div>
             <span class="ud-stage-section-toggle ${isExpanded ? 'open' : ''}">&#9654;</span>
           </div>
-          ${isExpanded ? stage.tasks.map(t => `
-            <div class="ud-task-row">
-              <div class="ud-task-icon ${t.status === 'done' ? 'done' : t.status === 'active' ? 'active' : 'pending'}">${t.status === 'done' ? '&#10003;' : t.status === 'active' ? '&#9679;' : ''}</div>
-              <span class="ud-task-label ${t.status === 'done' ? 'done' : ''}">${t.label}</span>
-              ${this._appOwnerAvatar(t.role)}
-              ${t.action && t.status !== 'done' ? `<button class="ud-task-action ${t.status === 'active' ? 'primary' : ''}" onclick="event.stopPropagation()">${t.action}</button>` : ''}
-            </div>`).join('') : ''}
+          ${isExpanded ? stage.tasks.map(t => {
+            const isTaskExpanded = t.id === expandedId;
+            const detail = TASK_DETAILS[t.id];
+            return `
+            <div class="ud-task-row-wrapper ${isTaskExpanded ? 'expanded' : ''}" onclick="DataPlatformView.toggleTask('${t.id}')">
+              <div class="ud-task-row">
+                <div class="ud-task-icon ${t.status === 'done' ? 'done' : t.status === 'active' ? 'active' : 'pending'}">${t.status === 'done' ? '&#10003;' : t.status === 'active' ? '&#9679;' : ''}</div>
+                <span class="ud-task-label ${t.status === 'done' ? 'done' : ''}">${t.label}</span>
+                ${this._appOwnerAvatar(t.role)}
+                ${!isTaskExpanded && t.action && t.status !== 'done' ? `<button class="ud-task-action ${t.status === 'active' ? 'primary' : ''}" onclick="event.stopPropagation()">${t.action}</button>` : ''}
+                <span class="ud-task-expand-chevron ${isTaskExpanded ? 'open' : ''}">&#9654;</span>
+              </div>
+              ${isTaskExpanded && detail ? `
+              <div class="ud-task-expanded">
+                <div class="ud-task-description">${detail.description}</div>
+                ${detail.fields.length ? `<div class="ud-task-fields">${detail.fields.map(f =>
+                  `<div class="ud-task-field-item">
+                    <div class="ud-task-field-icon">${t.status === 'done' ? '&#10003;' : ''}</div>
+                    <span>${f}</span>
+                  </div>`).join('')}</div>` : ''}
+                ${t.action && t.status !== 'done' ? `<button class="ud-task-expanded-action" onclick="event.stopPropagation()">${t.action}</button>` : ''}
+              </div>` : ''}
+            </div>`;
+          }).join('') : ''}
         </div>`;
     }).join('');
   },
@@ -2030,7 +2055,20 @@ const DataPlatformView = {
 
   _backToApplications() {
     this._selectedApplicationId = null;
+    if (this._stickyObserver) { this._stickyObserver.disconnect(); this._stickyObserver = null; }
+    this._expandedTaskId = null;
     App.renderView('/data/applications');
+  },
+
+  _onAfterRender() {
+    if (this._stickyObserver) { this._stickyObserver.disconnect(); this._stickyObserver = null; }
+    const sentinel = document.getElementById('context-header-sentinel');
+    const header = document.querySelector('.ud-context-header');
+    if (!sentinel || !header) return;
+    this._stickyObserver = new IntersectionObserver(([entry]) => {
+      header.classList.toggle('sticky-compact', !entry.isIntersecting);
+    }, { threshold: 0, rootMargin: '-58px 0px 0px 0px' });
+    this._stickyObserver.observe(sentinel);
   },
 
   _handleFileDrop(event) {
@@ -2662,89 +2700,6 @@ const DataPlatformView = {
         <div style="font-size:36px;margin-bottom:14px">${isCompleted ? '✓' : '⏳'}</div>
         <div style="font-size:16px;font-weight:700;color:var(--color-text);margin-bottom:8px">${step?.short || ''}</div>
         <div style="font-size:13px;color:var(--color-text-muted)">${isCompleted ? 'This step has been completed.' : 'This step is pending completion of earlier steps.'}</div>
-      </div>`;
-  },
-
-  /* ================================================================
-     ORIGINATIONS
-  ================================================================ */
-  _renderOriginations() {
-    const role  = State.getRole();
-    const user  = State.getCurrentUser();
-    const loans = (role === 'lo' || role === 'lp')
-      ? State.getLoansByLO(user?.id)
-      : State.getLoans().filter(l => l.status !== 'draft');
-
-    const active   = loans.filter(l => l.status !== 'completed');
-    const onTrack  = active.filter(l => this._daysInStage(l) <= 14);
-    const attn     = active.filter(l => this._daysInStage(l) > 14);
-    const done     = loans.filter(l => l.status === 'completed');
-
-    const statsHtml = `
-      <div class="stat-row" style="margin-bottom:24px">
-        <div class="stat-item">
-          <div class="stat-label">${role === 'lo' || role === 'lp' ? 'My Active' : 'Total Active'}</div>
-          <div class="stat-value" style="font-size:26px">${active.length}</div>
-        </div>
-        <div class="stat-divider"></div>
-        <div class="stat-item">
-          <div class="stat-label">On Track</div>
-          <div class="stat-value" style="font-size:26px;color:var(--color-success)">${onTrack.length}</div>
-        </div>
-        <div class="stat-divider"></div>
-        <div class="stat-item">
-          <div class="stat-label">Needs Attention</div>
-          <div class="stat-value" style="font-size:26px;color:${attn.length > 0 ? 'var(--color-danger)' : 'var(--color-text-muted)'}">${attn.length}</div>
-        </div>
-        <div class="stat-divider"></div>
-        <div class="stat-item">
-          <div class="stat-label">Completed</div>
-          <div class="stat-value" style="font-size:26px">${done.length}</div>
-        </div>
-        <div class="stat-divider"></div>
-        <div class="stat-item">
-          <div class="stat-label">Total Value</div>
-          <div class="stat-value" style="font-size:26px">${Display.currency(loans.reduce((s,l)=>s+l.amount,0))}</div>
-        </div>
-      </div>`;
-
-    const rows = loans.map((l, i) => {
-      const days  = this._daysInStage(l);
-      const isAttn = days > 14 && l.status !== 'completed' && l.status !== 'draft';
-      return `
-        <tr class="${isAttn ? 'row-needs-attention' : ''}">
-          <td style="color:var(--color-text-muted);font-size:12px">${i + 1}</td>
-          <td>
-            <div style="font-size:12px;font-weight:700;color:var(--color-primary)">${l.id}</div>
-            <div style="font-size:13px">${l.borrowerName}</div>
-          </td>
-          <td style="font-size:12px;color:var(--color-text-secondary);max-width:140px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${l.address}</td>
-          <td><span class="badge ${Display.loanStatusClass(l.status)}">${Display.loanStatusLabel(l.status)}</span></td>
-          <td>${this._daysBadge(days)}</td>
-          <td style="font-size:12px;color:var(--color-text-secondary)">${this._nextAction(l)}</td>
-          <td style="font-weight:600">${Display.currency(l.amount)}</td>
-          <td style="font-size:12px;color:var(--color-text-muted)">${Display.currency(Math.round(l.amount / 1000))}</td>
-          <td><button class="btn btn-ghost btn-xs" onclick="DataPlatformView.openApplication('${l.id}')">View</button></td>
-        </tr>`;
-    }).join('');
-
-    return `
-      ${statsHtml}
-      <div class="table-container">
-        <table>
-          <thead><tr>
-            <th>#</th>
-            <th>Loan / Borrower</th>
-            <th>Address</th>
-            <th>Stage</th>
-            <th>Days in Stage</th>
-            <th>Next Action</th>
-            <th>Loan ($)</th>
-            <th>Total Homium ($)</th>
-            <th>Actions</th>
-          </tr></thead>
-          <tbody>${rows || '<tr><td colspan="9" style="text-align:center;color:var(--color-text-muted);padding:32px">No originations found</td></tr>'}</tbody>
-        </table>
       </div>`;
   },
 

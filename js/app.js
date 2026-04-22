@@ -142,6 +142,9 @@ const App = {
     if (fn) {
       mainEl.innerHTML = fn();
       Nav.setActive(path);
+      // Post-render hooks for sticky header observers
+      if (typeof DataPlatformView._onAfterRender === 'function') DataPlatformView._onAfterRender();
+      if (typeof OriginationsView._onAfterRender === 'function') OriginationsView._onAfterRender();
     }
   },
 
@@ -184,8 +187,10 @@ const OriginationsView = {
   _sortDir: 'asc',
   _page: 0,
   _pageSize: 15,
+  _selected: new Set(),
   _activeTab: 'overview',       // 'overview' | 'tasks' | 'documents' | 'parties' | 'history'
   _expandedTaskStages: new Set(),
+  _expandedTaskId: null,
 
   /* ── Days-in-stage (demo approximations) ── */
   _LOAN_DAYS: {
@@ -289,70 +294,73 @@ const OriginationsView = {
       return this._sortDir === 'asc' ? '&#9650;' : '&#9660;';
     };
 
-    const tableHtml = `
-      <div class="card" style="padding:0;overflow:hidden">
-        <div style="display:flex;align-items:center;justify-content:space-between;padding:16px 20px">
-          <div style="display:flex;align-items:center;gap:12px">
-            ${filterHtml}
-            <span style="font-size:12px;color:var(--color-text-muted)">${filtered.length} result${filtered.length !== 1 ? 's' : ''}</span>
-          </div>
-          <div style="display:flex;align-items:center;gap:10px">
-            <input class="orig-table-search" style="width:220px;margin-top:0" placeholder="Search by ID, borrower, address..."
-                   value="${this._search}" oninput="OriginationsView._setSearch(this.value)" />
-            ${role === 'lo' ? `<button class="btn btn-primary btn-sm" onclick="OriginationsView.showNewAppModal()">+ New Application</button>` : ''}
-          </div>
-        </div>
-        <div class="table-container">
-          <table>
-            <thead><tr>
-              <th class="orig-col-sort" onclick="OriginationsView._setSort('id')">ID ${sortIcon('id')}</th>
-              <th>Loan Identifier</th>
-              <th class="orig-col-sort" onclick="OriginationsView._setSort('borrowerName')">Borrower Name ${sortIcon('borrowerName')}</th>
-              <th>Address</th>
-              <th>Phase</th>
-              <th class="orig-col-sort" onclick="OriginationsView._setSort('amount')">Loan ($) ${sortIcon('amount')}</th>
-              <th>Progress</th>
-              <th class="orig-col-sort" onclick="OriginationsView._setSort('updatedAt')">Updated ${sortIcon('updatedAt')}</th>
-            </tr></thead>
-            <tbody>
-              ${pageLoans.length === 0 ? `<tr><td colspan="8" style="text-align:center;padding:32px;color:var(--color-text-muted)">No originations found</td></tr>` :
+    const allChecked = pageLoans.length > 0 && pageLoans.every(l => this._selected.has(l.id));
+    const someChecked = this._selected.size > 0;
 
-                pageLoans.map(l => {
-                  const proc = generateOriginationProcess(l.status);
-                  const totalTasks = proc.reduce((s, st) => s + st.tasks.length, 0);
-                  const doneTasks = proc.reduce((s, st) => s + st.tasks.filter(t => t.status === 'done').length, 0);
-                  const pct = Math.round((doneTasks / totalTasks) * 100);
-                  return `
-                  <tr class="orig-table-row" onclick="OriginationsView.openLoan('${l.id}')">
-                    <td style="font-size:12px;font-weight:700;color:var(--color-primary)">${l.id}</td>
-                    <td style="font-size:12px">${l.minNumber && l.minNumber !== 'PREQUALIFICATION' ? l.minNumber : l.id}</td>
-                    <td>
-                      <div style="font-size:13px;font-weight:600">${l.borrowerName}</div>
-                    </td>
-                    <td style="font-size:12px;color:var(--color-text-secondary);max-width:200px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${l.address}</td>
-                    <td><span class="badge ${Display.loanStatusClass(l.status)}">${Display.loanStatusLabel(l.status)}</span></td>
-                    <td style="font-weight:600;font-size:13px">${Display.currency(l.amount)}</td>
-                    <td>
-                      <div style="display:flex;align-items:center;gap:6px">
-                        <span style="font-size:11px;font-weight:600;color:var(--color-text-muted)">${doneTasks}/${totalTasks}</span>
-                        <div class="orig-progress-bar"><div class="orig-progress-bar-fill" style="width:${pct}%"></div></div>
-                      </div>
-                    </td>
-                    <td style="font-size:12px;color:var(--color-text-muted)">${l.updatedAt ? Display.date(l.updatedAt) : '—'}</td>
-                  </tr>`;
-                }).join('')}
-            </tbody>
-          </table>
-        </div>
-        ${totalPages > 1 ? `
-          <div style="display:flex;align-items:center;justify-content:space-between;padding:12px 20px;border-top:1px solid var(--color-border);font-size:12px;color:var(--color-text-muted)">
-            <span>Page ${this._page + 1} of ${totalPages}</span>
-            <div style="display:flex;gap:6px">
-              <button class="btn btn-xs btn-secondary" ${this._page === 0 ? 'disabled' : ''} onclick="OriginationsView._setPage(${this._page - 1})">Prev</button>
-              <button class="btn btn-xs btn-secondary" ${this._page >= totalPages - 1 ? 'disabled' : ''} onclick="OriginationsView._setPage(${this._page + 1})">Next</button>
-            </div>
-          </div>` : ''}
-      </div>`;
+    const rows = pageLoans.map(l => {
+      const proc = generateOriginationProcess(l.status);
+      const rowMilestone = renderMilestoneBar(proc, { size: 'compact' });
+      const days = this._daysInStage(l);
+      const isAttn = days > 14 && l.status !== 'completed' && l.status !== 'draft';
+      const lo = State.getUser(l.loId);
+      const loName = lo ? Display.fullName(lo) : '—';
+      const nextAction = DataPlatformView._nextAction(l);
+      const checked = this._selected.has(l.id);
+      const timeAgo = l.submittedAt ? Display.relativeTime(l.submittedAt) : '—';
+      return `
+        <tr class="orig-table-row ${isAttn ? 'row-needs-attention' : ''}" onclick="OriginationsView.openLoan('${l.id}')">
+          <td onclick="event.stopPropagation()">
+            <input type="checkbox" ${checked ? 'checked' : ''} style="accent-color:var(--color-primary)"
+                   onchange="OriginationsView._toggleSelect('${l.id}')" />
+          </td>
+          <td>
+            <div style="font-size:12px;font-weight:700;color:var(--color-primary)">${l.id}</div>
+            <div style="font-size:13px;color:var(--color-text)">${l.borrowerName}</div>
+          </td>
+          <td style="font-size:12px;color:var(--color-text-secondary);max-width:150px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${l.address}</td>
+          <td>${rowMilestone}</td>
+          <td>${DataPlatformView._daysBadge(days)}</td>
+          <td style="font-size:12px;color:var(--color-text-secondary);max-width:160px">${nextAction}</td>
+          <td style="font-size:12px;color:var(--color-text-secondary)">${loName}</td>
+          <td style="font-weight:600">${Display.currency(l.amount)}</td>
+          <td style="font-size:11px;color:var(--color-text-muted);white-space:nowrap">${timeAgo}</td>
+        </tr>`;
+    }).join('');
+
+    const tableHtml = `
+      ${filterHtml}
+      ${someChecked ? `
+      <div class="app-bulk-bar">
+        <span style="font-size:12px;font-weight:600;color:var(--color-text)">${this._selected.size} selected</span>
+        <button class="btn btn-secondary btn-sm" onclick="event.stopPropagation()">Export</button>
+        <button class="btn btn-secondary btn-sm" onclick="event.stopPropagation()">Batch</button>
+        <button class="btn btn-ghost btn-sm" onclick="OriginationsView._clearSelection()">Clear</button>
+      </div>` : ''}
+      <div class="table-container">
+        <table>
+          <thead><tr>
+            <th style="width:32px" onclick="event.stopPropagation()">
+              <input type="checkbox" ${allChecked ? 'checked' : ''} style="accent-color:var(--color-primary)"
+                     onchange="OriginationsView._toggleSelectAll()" />
+            </th>
+            <th class="sortable-th" onclick="OriginationsView._setSort('id')">Loan / Borrower ${sortIcon('id')}</th>
+            <th>Address</th>
+            <th>Progress</th>
+            <th class="sortable-th" onclick="OriginationsView._setSort('days')">Days in Stage ${sortIcon('days')}</th>
+            <th>Next Action</th>
+            <th class="sortable-th" onclick="OriginationsView._setSort('borrowerName')">Loan Officer ${sortIcon('borrowerName')}</th>
+            <th class="sortable-th" onclick="OriginationsView._setSort('amount')">Amount ${sortIcon('amount')}</th>
+            <th class="sortable-th" onclick="OriginationsView._setSort('updatedAt')">Updated ${sortIcon('updatedAt')}</th>
+          </tr></thead>
+          <tbody>${rows || '<tr><td colspan="10" style="text-align:center;color:var(--color-text-muted);padding:32px">No originations found</td></tr>'}</tbody>
+        </table>
+      </div>
+      ${totalPages > 1 ? `
+      <div class="app-pagination">
+        <button class="btn btn-ghost btn-sm" ${this._page === 0 ? 'disabled' : ''} onclick="OriginationsView._setPage(${this._page - 1})">← Prev</button>
+        <span class="app-pagination-info">Page ${this._page + 1} of ${totalPages} · ${filtered.length} loans</span>
+        <button class="btn btn-ghost btn-sm" ${this._page >= totalPages - 1 ? 'disabled' : ''} onclick="OriginationsView._setPage(${this._page + 1})">Next →</button>
+      </div>` : `<div class="app-pagination"><span class="app-pagination-info">${filtered.length} loan${filtered.length !== 1 ? 's' : ''}</span></div>`}`;
 
     return `
       <div class="page-header">
@@ -361,12 +369,17 @@ const OriginationsView = {
             <div class="page-title">${title}</div>
             <div class="page-subtitle">${loans.length} total origination${loans.length !== 1 ? 's' : ''} in pipeline</div>
           </div>
+          <div class="page-header-actions" style="display:flex;align-items:center;gap:8px">
+            <input class="input" style="width:220px;padding:7px 12px;font-size:13px"
+                   placeholder="Search by ID, borrower, address…"
+                   value="${this._search}"
+                   oninput="OriginationsView._setSearch(this.value)" />
+            ${role === 'lo' ? `<button class="btn btn-primary btn-sm" onclick="OriginationsView.showNewAppModal()">+ New Application</button>` : ''}
+          </div>
         </div>
       </div>
-      <div class="page-body">
-        ${kpiHtml}
-        ${tableHtml}
-      </div>
+      ${kpiHtml}
+      ${tableHtml}
       <div id="originations-modal"></div>`;
   },
 
@@ -379,6 +392,22 @@ const OriginationsView = {
     App.renderView('/originations');
   },
   _setPage(p)    { this._page = Math.max(0, p); App.renderView('/originations'); },
+  _toggleSelect(id) {
+    if (this._selected.has(id)) this._selected.delete(id);
+    else this._selected.add(id);
+    App.renderView('/originations');
+  },
+  _toggleSelectAll() {
+    // Toggle all on current page
+    const role = State.getRole();
+    const user = State.getCurrentUser();
+    let loans = (role === 'lo' || role === 'lp') ? State.getLoansByLO(user?.id) : State.getLoans();
+    const pageLoans = loans.slice(this._page * this._pageSize, (this._page + 1) * this._pageSize);
+    const allChecked = pageLoans.every(l => this._selected.has(l.id));
+    pageLoans.forEach(l => { if (allChecked) this._selected.delete(l.id); else this._selected.add(l.id); });
+    App.renderView('/originations');
+  },
+  _clearSelection() { this._selected.clear(); App.renderView('/originations'); },
 
   /* ================================================================
      DETAIL VIEW — Unified layout (context header + stage tracker + tabs + sidebar)
@@ -393,6 +422,7 @@ const OriginationsView = {
 
     return `
       <div class="page-body">
+        <div id="context-header-sentinel"></div>
         <button class="ud-back-btn" onclick="OriginationsView.backToList()">&#8592; Back to Originations</button>
         ${this._udContextHeader(loan, loName, proc)}
         ${this._udActionBanner(loan, proc)}
@@ -446,28 +476,7 @@ const OriginationsView = {
     const currentStage = proc.find(s => s.status === 'in_progress');
     const currentIdx = currentStage ? proc.indexOf(currentStage) : (isCompleted ? proc.length : 0);
 
-    const segments = proc.map((stage) => {
-      const cls = stage.status === 'completed' ? 'done' : stage.status === 'in_progress' ? 'current' : 'pending';
-      const sDone = stage.tasks.filter(t => t.status === 'done').length;
-      const sTotal = stage.tasks.length;
-      const pct = sTotal ? Math.round((sDone / sTotal) * 100) : 0;
-      const statusLabel = cls === 'done' ? 'Complete' : cls === 'current' ? 'In Progress' : 'Pending';
-      return `<div class="ud-progress-segment ${cls}" style="flex:${sTotal}">
-        <span class="ud-progress-segment-tip">
-          <div class="ud-seg-tip-header">
-            <div class="ud-seg-tip-icon ${cls}">${this._stageIcon(stage.id)}</div>
-            <span class="ud-seg-tip-name">${stage.label}</span>
-          </div>
-          <div style="display:flex;align-items:center;justify-content:space-between;gap:8px;margin-bottom:4px">
-            <span class="ud-seg-tip-status ${cls}">${statusLabel}</span>
-          </div>
-          <div class="ud-seg-tip-progress">
-            <div class="ud-seg-tip-bar"><div class="ud-seg-tip-bar-fill" style="width:${pct}%"></div></div>
-            <span>${sDone}/${sTotal} tasks</span>
-          </div>
-        </span>
-      </div>`;
-    }).join('');
+    const milestoneBarHtml = renderMilestoneBar(proc, { size: 'full', stageIcons: this._stageIcon.bind(this) });
 
     const stageLabel = currentStage ? currentStage.label : (isCompleted ? 'Completed' : 'Not Started');
     const stageIconCls = isCompleted ? 'done' : '';
@@ -476,33 +485,51 @@ const OriginationsView = {
     const stageTotal = currentStage ? currentStage.tasks.length : 0;
     const stageCount = currentStage ? `${stageDone}/${stageTotal} tasks` : '';
 
+    const compactMilestone = renderMilestoneBar(proc, { size: 'compact' });
+
     return `
       <div class="ud-context-header">
-        <div class="ud-context-top">
-          <div>
-            <div class="ud-context-address">${addr}</div>
-            <div class="ud-context-sub">${sub}</div>
+        <div class="ud-context-header-full">
+          <div class="ud-context-top">
+            <div>
+              <div class="ud-context-address">${addr}</div>
+              <div class="ud-context-sub">${sub}</div>
+            </div>
+            <span class="ud-status-pill ${isCompleted ? 'completed' : ''}"><span class="ud-status-pill-dot"></span> ${Display.loanStatusLabel(loan.status)}</span>
           </div>
-          <span class="ud-status-pill ${isCompleted ? 'completed' : ''}"><span class="ud-status-pill-dot"></span> ${Display.loanStatusLabel(loan.status)}</span>
-        </div>
-        <div class="ud-context-chips">
-          <div class="ud-chip"><span class="ud-chip-label">Loan ID</span><span class="ud-chip-value">${loan.id}</span></div>
-          <div class="ud-chip"><span class="ud-chip-label">Program</span><span class="ud-chip-value">${loan.program}</span></div>
-          <div class="ud-chip"><span class="ud-chip-label">Amount</span><span class="ud-chip-value">${Display.currency(loan.amount)}</span></div>
-          <div class="ud-chip"><span class="ud-chip-label">LTV / CLTV</span><span class="ud-chip-value">${loan.ltv ?? '—'}% / ${loan.cltv ?? '—'}%</span></div>
-          <div class="ud-chip"><span class="ud-chip-label">FICO</span><span class="ud-chip-value">${loan.fico || '—'}</span></div>
-          <div class="ud-chip"><span class="ud-chip-label">Borrower</span><span class="ud-chip-value">${loan.borrowerName}</span></div>
-          <div class="ud-chip"><span class="ud-chip-label">Loan Officer</span><span class="ud-chip-value">${loName}</span></div>
-          <div class="ud-chip"><span class="ud-chip-label">Est. Close</span><span class="ud-chip-value ${loan.closingDate ? '' : 'warn'}">${loan.closingDate ? Display.date(loan.closingDate) : 'TBD'}</span></div>
-        </div>
-        <div class="ud-progress-strip">
-          <div class="ud-progress-bar-segmented">${segments}</div>
-          <div class="ud-progress-meta">
-            <div class="ud-progress-stage-icon ${stageIconCls}">${stageIconSvg}</div>
-            <span class="ud-progress-stage-label">${stageLabel}</span>
-            ${stageCount ? `<span class="ud-progress-stage-count">${stageCount}</span>` : ''}
-            <span class="ud-progress-overall">Stage ${currentIdx + 1} of ${proc.length} &middot; ${overallPct}% complete</span>
+          <div class="ud-context-chips">
+            <div class="ud-chip"><span class="ud-chip-label">Loan ID</span><span class="ud-chip-value">${loan.id}</span></div>
+            <div class="ud-chip"><span class="ud-chip-label">Program</span><span class="ud-chip-value">${loan.program}</span></div>
+            <div class="ud-chip"><span class="ud-chip-label">Amount</span><span class="ud-chip-value">${Display.currency(loan.amount)}</span></div>
+            <div class="ud-chip"><span class="ud-chip-label">LTV / CLTV</span><span class="ud-chip-value">${loan.ltv ?? '—'}% / ${loan.cltv ?? '—'}%</span></div>
+            <div class="ud-chip"><span class="ud-chip-label">FICO</span><span class="ud-chip-value">${loan.fico || '—'}</span></div>
+            <div class="ud-chip"><span class="ud-chip-label">Borrower</span><span class="ud-chip-value">${loan.borrowerName}</span></div>
+            <div class="ud-chip"><span class="ud-chip-label">Loan Officer</span><span class="ud-chip-value">${loName}</span></div>
+            <div class="ud-chip"><span class="ud-chip-label">Est. Close</span><span class="ud-chip-value ${loan.closingDate ? '' : 'warn'}">${loan.closingDate ? Display.date(loan.closingDate) : 'TBD'}</span></div>
           </div>
+          <div class="ud-progress-strip">
+            ${milestoneBarHtml}
+            <div class="ud-progress-meta">
+              <div class="ud-progress-stage-icon ${stageIconCls}">${stageIconSvg}</div>
+              <span class="ud-progress-stage-label">${stageLabel}</span>
+              ${stageCount ? `<span class="ud-progress-stage-count">${stageCount}</span>` : ''}
+              <span class="ud-progress-overall">Stage ${currentIdx + 1} of ${proc.length} &middot; ${overallPct}% complete</span>
+            </div>
+          </div>
+        </div>
+        <div class="ud-context-header-compact">
+          <div class="ud-compact-info">
+            <div class="ud-compact-address">${addr}</div>
+            <div class="ud-compact-id">${loan.id}</div>
+          </div>
+          <span class="ud-status-pill ${isCompleted ? 'completed' : ''}" style="flex-shrink:0"><span class="ud-status-pill-dot"></span> ${Display.loanStatusLabel(loan.status)}</span>
+          <div class="ud-compact-metrics">
+            <div class="ud-compact-metric"><span class="ud-compact-metric-label">Amount</span><span class="ud-compact-metric-value">${Display.currency(loan.amount)}</span></div>
+            <div class="ud-compact-metric"><span class="ud-compact-metric-label">LTV</span><span class="ud-compact-metric-value">${loan.ltv ?? '—'}%</span></div>
+            <div class="ud-compact-metric"><span class="ud-compact-metric-label">FICO</span><span class="ud-compact-metric-value">${loan.fico || '—'}</span></div>
+          </div>
+          <div class="ud-compact-progress">${compactMilestone}</div>
+          <span class="ud-compact-stage">${stageLabel}</span>
         </div>
       </div>`;
   },
@@ -674,6 +701,9 @@ const OriginationsView = {
 
   /* ── Tasks Tab (full pipeline) ── */
   _udTasksTab(proc) {
+    const activeTask = proc.flatMap(s => s.tasks).find(t => t.status === 'active');
+    const expandedId = this._expandedTaskId ?? (activeTask ? activeTask.id : null);
+
     return proc.map(stage => {
       const done = stage.tasks.filter(t => t.status === 'done').length;
       const total = stage.tasks.length;
@@ -702,13 +732,30 @@ const OriginationsView = {
             </div>
             <span class="ud-stage-section-toggle ${isExpanded ? 'open' : ''}">&#9654;</span>
           </div>
-          ${isExpanded ? stage.tasks.map(t => `
-            <div class="ud-task-row">
-              <div class="ud-task-icon ${t.status === 'done' ? 'done' : t.status === 'active' ? 'active' : 'pending'}">${t.status === 'done' ? '&#10003;' : t.status === 'active' ? '&#9679;' : ''}</div>
-              <span class="ud-task-label ${t.status === 'done' ? 'done' : ''}">${t.label}</span>
-              ${this._ownerAvatar(t.role)}
-              ${t.action && t.status !== 'done' ? `<button class="ud-task-action ${t.status === 'active' ? 'primary' : ''}" onclick="event.stopPropagation()">${t.action}</button>` : ''}
-            </div>`).join('') : ''}
+          ${isExpanded ? stage.tasks.map(t => {
+            const isTaskExpanded = t.id === expandedId;
+            const detail = TASK_DETAILS[t.id];
+            return `
+            <div class="ud-task-row-wrapper ${isTaskExpanded ? 'expanded' : ''}" onclick="OriginationsView.toggleTask('${t.id}')">
+              <div class="ud-task-row">
+                <div class="ud-task-icon ${t.status === 'done' ? 'done' : t.status === 'active' ? 'active' : 'pending'}">${t.status === 'done' ? '&#10003;' : t.status === 'active' ? '&#9679;' : ''}</div>
+                <span class="ud-task-label ${t.status === 'done' ? 'done' : ''}">${t.label}</span>
+                ${this._ownerAvatar(t.role)}
+                ${!isTaskExpanded && t.action && t.status !== 'done' ? `<button class="ud-task-action ${t.status === 'active' ? 'primary' : ''}" onclick="event.stopPropagation()">${t.action}</button>` : ''}
+                <span class="ud-task-expand-chevron ${isTaskExpanded ? 'open' : ''}">&#9654;</span>
+              </div>
+              ${isTaskExpanded && detail ? `
+              <div class="ud-task-expanded">
+                <div class="ud-task-description">${detail.description}</div>
+                ${detail.fields.length ? `<div class="ud-task-fields">${detail.fields.map(f =>
+                  `<div class="ud-task-field-item">
+                    <div class="ud-task-field-icon">${t.status === 'done' ? '&#10003;' : ''}</div>
+                    <span>${f}</span>
+                  </div>`).join('')}</div>` : ''}
+                ${t.action && t.status !== 'done' ? `<button class="ud-task-expanded-action" onclick="event.stopPropagation()">${t.action}</button>` : ''}
+              </div>` : ''}
+            </div>`;
+          }).join('') : ''}
         </div>`;
     }).join('');
   },
@@ -887,7 +934,22 @@ const OriginationsView = {
   backToList() {
     this._viewMode = 'list';
     this._selectedLoanId = null;
+    if (this._stickyObserver) { this._stickyObserver.disconnect(); this._stickyObserver = null; }
+    this._expandedTaskId = null;
     Router.navigate('/originations');
+  },
+
+  _stickyObserver: null,
+
+  _onAfterRender() {
+    if (this._stickyObserver) { this._stickyObserver.disconnect(); this._stickyObserver = null; }
+    const sentinel = document.getElementById('context-header-sentinel');
+    const header = document.querySelector('.ud-context-header');
+    if (!sentinel || !header) return;
+    this._stickyObserver = new IntersectionObserver(([entry]) => {
+      header.classList.toggle('sticky-compact', !entry.isIntersecting);
+    }, { threshold: 0, rootMargin: '-58px 0px 0px 0px' });
+    this._stickyObserver.observe(sentinel);
   },
 
   switchTab(tab) {
@@ -898,6 +960,11 @@ const OriginationsView = {
   toggleTaskStage(stageId) {
     if (this._expandedTaskStages.has(stageId)) this._expandedTaskStages.delete(stageId);
     else this._expandedTaskStages.add(stageId);
+    App.renderView('/originations/' + this._selectedLoanId);
+  },
+
+  toggleTask(taskId) {
+    this._expandedTaskId = (this._expandedTaskId === taskId) ? null : taskId;
     App.renderView('/originations/' + this._selectedLoanId);
   },
 

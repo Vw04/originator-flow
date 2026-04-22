@@ -733,3 +733,116 @@ function generateOriginationProcess(status) {
     return { id: stage.id, label: stage.label, status: stageStatus, tasks };
   });
 }
+
+/* ---- Stage filtering for Application vs Origination context ---- */
+const APPLICATION_STAGE_IDS = ['prequalification', 'application_disclosures', 'cda_appraisal', 'clear_close'];
+
+function filterStagesForContext(proc, context) {
+  if (context === 'application') {
+    return proc.filter(s => APPLICATION_STAGE_IDS.includes(s.id));
+  }
+  return proc; // origination context gets all 6 stages
+}
+
+/* ---- Shared Milestone Progress Bar Renderer ---- */
+function renderMilestoneBar(proc, options = {}) {
+  const size = options.size || 'compact';
+  const stageIconFn = options.stageIcons || null;
+
+  const currentIdx = proc.findIndex(s => s.status === 'in_progress');
+  const allDone = proc.every(s => s.status === 'completed');
+  const count = proc.length;
+
+  // Track fill: extends to center of current/last-done node
+  let fillPct = 0;
+  if (allDone) {
+    fillPct = 100;
+  } else if (currentIdx > 0) {
+    fillPct = (currentIdx / (count - 1)) * 100;
+  } else if (currentIdx === 0) {
+    fillPct = 0;
+  }
+
+  const checkSvg = '<svg class="milestone-check" viewBox="0 0 12 12"><polyline points="2.5 6 5 8.5 9.5 3.5" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>';
+
+  if (size === 'compact') {
+    const nodes = proc.map((stage) => {
+      const cls = stage.status === 'completed' ? 'done' : stage.status === 'in_progress' ? 'current' : 'pending';
+      return `<div class="milestone-node ${cls}">${cls === 'done' ? checkSvg : ''}</div>`;
+    }).join('');
+
+    return `<div class="milestone-bar compact">
+      <div class="milestone-track"><div class="milestone-track-fill" style="width:${fillPct}%"></div></div>
+      ${nodes}
+    </div>`;
+  }
+
+  // Full size — with labels and tooltips
+  const steps = proc.map((stage) => {
+    const cls = stage.status === 'completed' ? 'done' : stage.status === 'in_progress' ? 'current' : 'pending';
+    const sDone = stage.tasks.filter(t => t.status === 'done').length;
+    const sTotal = stage.tasks.length;
+    const pct = sTotal ? Math.round((sDone / sTotal) * 100) : 0;
+    const statusLabel = cls === 'done' ? 'Complete' : cls === 'current' ? 'In Progress' : 'Pending';
+    const iconHtml = stageIconFn ? `<div class="ud-seg-tip-icon ${cls}">${stageIconFn(stage.id)}</div>` : '';
+
+    return `<div class="milestone-step">
+      <div class="milestone-node ${cls}">${cls === 'done' ? checkSvg : ''}</div>
+      <span class="milestone-label">${stage.label}</span>
+      <span class="milestone-tooltip">
+        <div class="ud-seg-tip-header">
+          ${iconHtml}
+          <span class="ud-seg-tip-name">${stage.label}</span>
+        </div>
+        <div style="display:flex;align-items:center;justify-content:space-between;gap:8px;margin-bottom:4px">
+          <span class="ud-seg-tip-status ${cls}">${statusLabel}</span>
+        </div>
+        <div class="ud-seg-tip-progress">
+          <div class="ud-seg-tip-bar"><div class="ud-seg-tip-bar-fill" style="width:${pct}%"></div></div>
+          <span>${sDone}/${sTotal} tasks</span>
+        </div>
+      </span>
+    </div>`;
+  }).join('');
+
+  return `<div class="milestone-bar full">
+    <div class="milestone-track"><div class="milestone-track-fill" style="width:${fillPct}%"></div></div>
+    ${steps}
+  </div>`;
+}
+
+/* ---- Task Details for Expandable Task Panel ---- */
+const TASK_DETAILS = {
+  pq_creation:    { description: 'Create a new prequalification record for the borrower. Verify basic eligibility criteria and property information.', fields: ['Borrower name & contact', 'Property address', 'Estimated HEI amount', 'Program selection'] },
+  pq_submitted:   { description: 'Submit the prequalification for review by the Homium Account Manager team.', fields: ['Confirm borrower information', 'Verify property details', 'Upload preliminary income documentation'] },
+  pq_review:      { description: 'Account Manager reviews the prequalification submission for completeness and eligibility.', fields: ['Verify eligibility criteria', 'Check property location', 'Review estimated terms'] },
+  pq_accepted:    { description: 'Prequalification has been reviewed and accepted. Borrower may proceed to full application.', fields: ['Confirm acceptance terms', 'Notify borrower of approval'] },
+  ad_initial:     { description: 'Submit the initial loan application with borrower details, property information, and requested terms.', fields: ['Borrower personal information', 'Employment & income details', 'Property details', 'Requested loan terms'] },
+  ad_title:       { description: 'Validate property title information and send initial disclosures to the borrower for review and signature.', fields: ['Verify title report', 'Prepare disclosure package', 'Send to borrower via DocuSign'] },
+  ad_disclosures: { description: 'Borrower reviews and signs the initial disclosure documents electronically.', fields: ['Review disclosure documents', 'Electronic signature required'] },
+  ad_borrower_docs: { description: 'Upload borrower qualification documents including income verification, assets, and identification.', fields: ['W-2s / tax returns', 'Bank statements (2 months)', 'Government-issued ID', 'Employment verification letter'] },
+  ad_app_docs:    { description: 'Upload all remaining application documents required for underwriting review.', fields: ['Signed application (1003)', 'Credit authorization', 'Property insurance binder'] },
+  ad_final:       { description: 'Final review and submission of the complete application package.', fields: ['Verify all documents uploaded', 'Confirm application completeness', 'Submit for processing'] },
+  ca_upload:      { description: 'Upload the appraisal report and supporting documentation for the subject property.', fields: ['Appraisal report (PDF)', 'Property photos', 'Comparable sales data'] },
+  ca_approve:     { description: 'Review and approve the uploaded appraisal documents for accuracy and completeness.', fields: ['Verify appraised value', 'Check for condition flags', 'Approve or request revisions'] },
+  ca_order:       { description: 'Order the CDA (Collateral Desktop Analysis) report based on the approved appraisal.', fields: ['Select CDA provider', 'Submit appraisal data', 'Confirm order placed'] },
+  ca_report:      { description: 'CDA report is being generated by the third-party provider. Typically takes 1-3 business days.', fields: ['Awaiting provider report', 'Track report status'] },
+  ca_review:      { description: 'Review the completed CDA report and approve or flag discrepancies.', fields: ['Review value reconciliation', 'Check risk flags', 'Approve CDA or escalate'] },
+  cc_docs:        { description: 'Final review and approval of all application documents before Clear to Close.', fields: ['Verify all conditions met', 'Confirm document completeness'] },
+  cc_atr:         { description: 'Submit the Ability to Repay (ATR) and Area Median Income (AMI) compliance documentation.', fields: ['ATR calculation worksheet', 'AMI verification', 'Compliance certification'] },
+  cc_ctc:         { description: 'Issue the Clear to Close determination and prepare closing instructions.', fields: ['Clear to Close checklist', 'Closing instructions', 'Final loan terms confirmation'] },
+  cc_prelim:      { description: 'Upload and approve the preliminary closing package including the Closing Disclosure.', fields: ['Closing Disclosure (CD)', 'Settlement statement', 'Title documents'] },
+  cc_san:         { description: 'Upload and approve the Shared Appreciation Note (SAN) for the HEI agreement.', fields: ['SAN document', 'Terms verification', 'Legal review confirmation'] },
+  cc_dates:       { description: 'Set the closing and disbursement dates in coordination with all parties.', fields: ['Closing date', 'Disbursement date', 'Rescission period end date'] },
+  cc_fees:        { description: 'Validate all fees and charges on the Closing Disclosure against approved tolerances.', fields: ['Origination fees', 'Third-party fees', 'Tolerance verification'] },
+  cc_submit:      { description: 'Submit the final closing package for execution. All documents must be approved.', fields: ['Final package review', 'Submit for closing', 'Confirm wire instructions'] },
+  pc_validate:    { description: 'Validate all post-closing data and ensure the closed loan package is complete.', fields: ['Verify closing figures', 'Confirm recording details', 'Check for trailing documents'] },
+  pc_files:       { description: 'Generate required post-closing files including WAB, Disbursement, and MERS registration documents.', fields: ['WAB file generation', 'Disbursement summary', 'MERS registration data'] },
+  pc_package:     { description: 'Upload the complete loan package with all executed closing documents.', fields: ['Executed closing docs', 'Recorded deed of trust', 'Final title policy'] },
+  pc_funding:     { description: 'Submit funding details and authorize disbursement of loan proceeds.', fields: ['Wire transfer details', 'Funding authorization', 'Disbursement confirmation'] },
+  tm_securitize:  { description: 'Submit the loan to Securitize platform for batch processing and tokenization.', fields: ['Loan data submission', 'Batch assignment', 'Securitize confirmation'] },
+  tm_approval:    { description: 'Receive approval from Securitize for the batch submission.', fields: ['Batch approval status', 'Compliance verification'] },
+  tm_mers:        { description: 'Complete MERS registration and TOB2 (Transfer of Beneficial Ownership) transfer.', fields: ['MERS registration', 'MIN assignment', 'TOB2 transfer execution'] },
+  tm_mint:        { description: 'Mint the HEI token on the blockchain representing the shared appreciation agreement.', fields: ['Token minting', 'On-chain verification', 'Investor allocation'] },
+  tm_servicing:   { description: 'Send servicing email with complete loan files to the servicing team for ongoing management.', fields: ['Loan file package', 'Servicing transfer letter', 'Borrower notification'] },
+};
