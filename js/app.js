@@ -183,6 +183,9 @@ const OriginationsView = {
   _selectedLoanId: null,
   _filter: 'all',              // 'all' | 'originations' | 'prequalifications'
   _search: '',
+  _filterLO: '',
+  _filterOwner: '',
+  _filterProgram: '',
   _sortField: null,
   _sortDir: 'asc',
   _page: 0,
@@ -250,17 +253,10 @@ const OriginationsView = {
         </div>`).join('')
     }</div>`;
 
-    /* ── Filter & Search ── */
-    const filters = [
-      { key: 'all', label: 'All' },
-      { key: 'originations', label: 'Originations' },
-      { key: 'prequalifications', label: 'Prequalifications' },
-    ];
-    const filterHtml = `<div class="orig-filter-tabs">${filters.map(f =>
-      `<button class="orig-filter-tab ${this._filter === f.key ? 'active' : ''}" onclick="OriginationsView._setFilter('${f.key}')">${f.label}</button>`
-    ).join('')}</div>`;
-
     /* ── Apply filters ── */
+    const originations = loans.filter(l => l.phase === 'origination' || !l.phase);
+    const prequalifications = loans.filter(l => l.phase === 'prequalification');
+
     let filtered = [...loans];
     if (this._filter === 'originations') filtered = filtered.filter(l => l.phase === 'origination' || !l.phase);
     if (this._filter === 'prequalifications') filtered = filtered.filter(l => l.phase === 'prequalification');
@@ -272,6 +268,44 @@ const OriginationsView = {
         l.address.toLowerCase().includes(q)
       );
     }
+
+    // Advanced filters
+    if (this._filterLO) filtered = filtered.filter(l => l.loId === this._filterLO);
+    if (this._filterProgram) filtered = filtered.filter(l => l.program === this._filterProgram);
+    if (this._filterOwner) {
+      filtered = filtered.filter(l => DataPlatformView._nextActionOwner(l) === this._filterOwner);
+    }
+
+    // Derive unique values for filter dropdowns
+    const loIds = [...new Set(loans.map(l => l.loId).filter(Boolean))];
+    const loOptions = loIds.map(id => { const u = State.getUser(id); return u ? { id, name: Display.fullName(u) } : null; }).filter(Boolean);
+    const programs = [...new Set(loans.map(l => l.program).filter(Boolean))];
+
+    const hasAdvancedFilters = this._filter !== 'all' || this._filterLO || this._filterOwner || this._filterProgram || this._search;
+
+    const filterBarHtml = `<div class="filter-bar">
+      <input class="filter-search" placeholder="Search by ID, borrower, address…"
+             value="${this._search}" oninput="OriginationsView._setSearch(this.value)" />
+      <select class="filter-select" onchange="OriginationsView._setFilter(this.value)">
+        <option value="all" ${this._filter === 'all' ? 'selected' : ''}>All Types (${loans.length})</option>
+        <option value="originations" ${this._filter === 'originations' ? 'selected' : ''}>Originations (${originations.length})</option>
+        <option value="prequalifications" ${this._filter === 'prequalifications' ? 'selected' : ''}>Prequalifications (${prequalifications.length})</option>
+      </select>
+      <select class="filter-select" onchange="OriginationsView._setFilterLO(this.value)">
+        <option value="">All Loan Officers</option>
+        ${loOptions.map(o => `<option value="${o.id}" ${this._filterLO === o.id ? 'selected' : ''}>${o.name}</option>`).join('')}
+      </select>
+      <select class="filter-select" onchange="OriginationsView._setFilterOwner(this.value)">
+        <option value="">All Next Action</option>
+        <option value="originator" ${this._filterOwner === 'originator' ? 'selected' : ''}>Originator</option>
+        <option value="underwriter" ${this._filterOwner === 'underwriter' ? 'selected' : ''}>Underwriter</option>
+      </select>
+      <select class="filter-select" onchange="OriginationsView._setFilterProgram(this.value)">
+        <option value="">All Programs</option>
+        ${programs.map(p => `<option value="${p}" ${this._filterProgram === p ? 'selected' : ''}>${p}</option>`).join('')}
+      </select>
+      ${hasAdvancedFilters ? `<button class="filter-clear" onclick="OriginationsView._clearFilters()">Clear filters</button>` : ''}
+    </div>`;
 
     /* ── Sort ── */
     if (this._sortField) {
@@ -318,17 +352,17 @@ const OriginationsView = {
             <div style="font-size:13px;color:var(--color-text)">${l.borrowerName}</div>
           </td>
           <td style="font-size:12px;color:var(--color-text-secondary);max-width:150px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${l.address}</td>
-          <td>${rowMilestone}</td>
-          <td>${DataPlatformView._daysBadge(days)}</td>
-          <td style="font-size:12px;color:var(--color-text-secondary);max-width:200px">${nextAction}</td>
-          <td style="font-size:12px;color:var(--color-text-secondary)">${loName}</td>
           <td style="font-weight:600">${Display.currency(l.amount)}</td>
+          <td>${rowMilestone}</td>
+          <td style="font-size:12px;color:var(--color-text-secondary);max-width:220px">${nextAction}</td>
+          <td style="font-size:12px;color:var(--color-text-secondary)">${loName}</td>
+          <td>${DataPlatformView._daysBadge(days)}</td>
           <td style="font-size:11px;color:var(--color-text-muted);white-space:nowrap">${timeAgo}</td>
         </tr>`;
     }).join('');
 
     const tableHtml = `
-      ${filterHtml}
+      ${filterBarHtml}
       ${someChecked ? `
       <div class="app-bulk-bar">
         <span style="font-size:12px;font-weight:600;color:var(--color-text)">${this._selected.size} selected</span>
@@ -345,11 +379,11 @@ const OriginationsView = {
             </th>
             <th class="sortable-th" onclick="OriginationsView._setSort('id')">Loan / Borrower ${sortIcon('id')}</th>
             <th>Address</th>
+            <th class="sortable-th" onclick="OriginationsView._setSort('amount')">Amount ${sortIcon('amount')}</th>
             <th>Progress</th>
-            <th class="sortable-th" onclick="OriginationsView._setSort('days')">Days in Stage ${sortIcon('days')}</th>
             <th>Next Action</th>
             <th class="sortable-th" onclick="OriginationsView._setSort('borrowerName')">Loan Officer ${sortIcon('borrowerName')}</th>
-            <th class="sortable-th" onclick="OriginationsView._setSort('amount')">Amount ${sortIcon('amount')}</th>
+            <th class="sortable-th" onclick="OriginationsView._setSort('days')">Days in Stage ${sortIcon('days')}</th>
             <th class="sortable-th" onclick="OriginationsView._setSort('updatedAt')">Updated ${sortIcon('updatedAt')}</th>
           </tr></thead>
           <tbody>${rows || '<tr><td colspan="10" style="text-align:center;color:var(--color-text-muted);padding:32px">No originations found</td></tr>'}</tbody>
@@ -370,10 +404,6 @@ const OriginationsView = {
             <div class="page-subtitle">${loans.length} total origination${loans.length !== 1 ? 's' : ''} in pipeline</div>
           </div>
           <div class="page-header-actions" style="display:flex;align-items:center;gap:8px">
-            <input class="input" style="width:220px;padding:7px 12px;font-size:13px"
-                   placeholder="Search by ID, borrower, address…"
-                   value="${this._search}"
-                   oninput="OriginationsView._setSearch(this.value)" />
             ${role === 'lo' ? `<button class="btn btn-primary btn-sm" onclick="OriginationsView.showNewAppModal()">+ New Application</button>` : ''}
           </div>
         </div>
@@ -386,6 +416,10 @@ const OriginationsView = {
   /* ── List helpers ── */
   _setFilter(f)  { this._filter = f; this._page = 0; App.renderView('/originations'); },
   _setSearch(q)  { this._search = q; this._page = 0; App.renderView('/originations'); },
+  _setFilterLO(v) { this._filterLO = v; this._page = 0; App.renderView('/originations'); },
+  _setFilterOwner(v) { this._filterOwner = v; this._page = 0; App.renderView('/originations'); },
+  _setFilterProgram(v) { this._filterProgram = v; this._page = 0; App.renderView('/originations'); },
+  _clearFilters() { this._filter = 'all'; this._search = ''; this._filterLO = ''; this._filterOwner = ''; this._filterProgram = ''; this._page = 0; App.renderView('/originations'); },
   _setSort(field) {
     if (this._sortField === field) this._sortDir = this._sortDir === 'asc' ? 'desc' : 'asc';
     else { this._sortField = field; this._sortDir = 'asc'; }
@@ -460,20 +494,11 @@ const OriginationsView = {
     const sub = loan.address.split(',').slice(1).join(',').trim();
 
     // Progress strip data
-    const totalTasks = proc.reduce((s, st) => s + st.tasks.length, 0);
-    const doneTasks = proc.reduce((s, st) => s + st.tasks.filter(t => t.status === 'done').length, 0);
-    const overallPct = totalTasks ? Math.round((doneTasks / totalTasks) * 100) : 0;
     const currentStage = proc.find(s => s.status === 'in_progress');
-    const currentIdx = currentStage ? proc.indexOf(currentStage) : (isCompleted ? proc.length : 0);
 
     const milestoneBarHtml = renderMilestoneBar(proc, { size: 'full', stageIcons: this._stageIcon.bind(this) });
 
     const stageLabel = currentStage ? currentStage.label : (isCompleted ? 'Completed' : 'Not Started');
-    const stageIconCls = isCompleted ? 'done' : '';
-    const stageIconSvg = currentStage ? this._stageIcon(currentStage.id) : this._stageIcon('transfer_minting');
-    const stageDone = currentStage ? currentStage.tasks.filter(t => t.status === 'done').length : 0;
-    const stageTotal = currentStage ? currentStage.tasks.length : 0;
-    const stageCount = currentStage ? `${stageDone}/${stageTotal} tasks` : '';
 
     const compactMilestone = renderMilestoneBar(proc, { size: 'compact' });
 
@@ -499,12 +524,6 @@ const OriginationsView = {
           </div>
           <div class="ud-progress-strip">
             ${milestoneBarHtml}
-            <div class="ud-progress-meta">
-              <div class="ud-progress-stage-icon ${stageIconCls}">${stageIconSvg}</div>
-              <span class="ud-progress-stage-label">${stageLabel}</span>
-              ${stageCount ? `<span class="ud-progress-stage-count">${stageCount}</span>` : ''}
-              <span class="ud-progress-overall">Stage ${currentIdx + 1} of ${proc.length} &middot; ${overallPct}% complete</span>
-            </div>
           </div>
         </div>
         <div class="ud-context-header-compact">
@@ -524,7 +543,7 @@ const OriginationsView = {
           </div>
           <div class="ud-compact-divider"></div>
           <div class="ud-compact-progress">${compactMilestone}</div>
-          <span class="ud-compact-stage">${stageLabel} &middot; ${overallPct}%</span>
+          <span class="ud-compact-stage">${stageLabel}</span>
         </div>
       </div>`;
   },

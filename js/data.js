@@ -734,18 +734,18 @@ function generateOriginationProcess(status) {
   });
 }
 
-/* ---- Task ownership: Originator vs Homium ---- */
+/* ---- Task ownership: Originator vs Underwriter ---- */
 function taskOwnership(role) {
   if (!role) return 'system';
   const r = role.toLowerCase();
   if (r.includes('loan officer') || r === 'lo' || r.includes('processor') || r.includes('borrower')) return 'originator';
-  return 'homium'; // Account Manager, System, Appraiser = Homium internal
+  return 'underwriter'; // Account Manager, System, Appraiser = Underwriter
 }
 
 function ownershipTag(role) {
   const owner = taskOwnership(role);
   if (owner === 'originator') return '<span class="ownership-tag originator">Originator</span>';
-  if (owner === 'homium') return '<span class="ownership-tag homium">Homium</span>';
+  if (owner === 'underwriter') return '<span class="ownership-tag underwriter">Underwriter</span>';
   return '';
 }
 
@@ -792,8 +792,8 @@ function renderMilestoneBar(proc, options = {}) {
     </div>`;
   }
 
-  // Full size — with labels and tooltips
-  const steps = proc.map((stage) => {
+  // Full size — with labels, tooltips, and current-stage annotation
+  const steps = proc.map((stage, idx) => {
     const cls = stage.status === 'completed' ? 'done' : stage.status === 'in_progress' ? 'current' : 'pending';
     const sDone = stage.tasks.filter(t => t.status === 'done').length;
     const sTotal = stage.tasks.length;
@@ -801,9 +801,15 @@ function renderMilestoneBar(proc, options = {}) {
     const statusLabel = cls === 'done' ? 'Complete' : cls === 'current' ? 'In Progress' : 'Pending';
     const iconHtml = stageIconFn ? `<div class="ud-seg-tip-icon ${cls}">${stageIconFn(stage.id)}</div>` : '';
 
+    // Annotation for current stage: task count + stage position
+    const annotation = cls === 'current'
+      ? `<span class="milestone-annotation">${sDone}/${sTotal} tasks &middot; Stage ${idx + 1} of ${count}</span>`
+      : '';
+
     return `<div class="milestone-step">
       <div class="milestone-node ${cls}">${cls === 'done' ? checkSvg : ''}</div>
       <span class="milestone-label">${stage.label}</span>
+      ${annotation}
       <span class="milestone-tooltip">
         <div class="ud-seg-tip-header">
           ${iconHtml}

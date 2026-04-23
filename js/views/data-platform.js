@@ -13,6 +13,9 @@ const DataPlatformView = {
   _expandedTaskId: null,
   _appFilter: 'all',
   _appSearch: '',
+  _appFilterLO: '',
+  _appFilterOwner: '',
+  _appFilterProgram: '',
   _appSortField: null,
   _appSortDir: 'asc',
   _appPage: 0,
@@ -45,19 +48,19 @@ const DataPlatformView = {
       'draft':                          { text: 'Complete & submit application',  owner: 'originator' },
       'prequalification_in_progress':   { text: 'Awaiting borrower prequalification', owner: 'originator' },
       'initial_application_submitted':  { text: 'Upload appraisal report',       owner: 'originator' },
-      'application_documents_approved': { text: 'Send to DocuTech for docs',     owner: 'homium' },
-      'original_appraisal_submitted':   { text: 'Review appraisal — order title', owner: 'homium' },
-      'sent_to_docutech':               { text: 'Awaiting DocuTech documents',   owner: 'homium' },
-      'pending_origination_creation':   { text: 'Create origination record',     owner: 'homium' },
-      'origination_created':            { text: 'Submit for final review',       owner: 'homium' },
+      'application_documents_approved': { text: 'Send to DocuTech for docs',     owner: 'underwriter' },
+      'original_appraisal_submitted':   { text: 'Review appraisal — order title', owner: 'underwriter' },
+      'sent_to_docutech':               { text: 'Awaiting DocuTech documents',   owner: 'underwriter' },
+      'pending_origination_creation':   { text: 'Create origination record',     owner: 'underwriter' },
+      'origination_created':            { text: 'Submit for final review',       owner: 'underwriter' },
       'completed':                      { text: '—', owner: null },
     };
     const entry = map[loan.status];
     if (!entry || !entry.owner) return '—';
     const tag = entry.owner === 'originator'
       ? '<span class="ownership-tag originator">Originator</span>'
-      : '<span class="ownership-tag homium">Homium</span>';
-    return `${tag} ${entry.text}`;
+      : '<span class="ownership-tag underwriter">Underwriter</span>';
+    return `<span class="next-action-cell">${tag}<span class="next-action-text">${entry.text}</span></span>`;
   },
 
   /* Days since submittedAt (or last status change) — demo approximations */
@@ -1056,19 +1059,47 @@ const DataPlatformView = {
       l.id.toLowerCase().includes(search)
     );
 
-    const filterTabs = [
-      { key: 'all',          label: 'All',           count: allLoans.length },
-      { key: 'needs_action', label: 'Needs Action',  count: needsAction.length },
-      { key: 'in_review',    label: 'In Review',     count: inReview.length },
-      { key: 'completed',    label: 'Completed',     count: done.length },
-    ];
+    // Advanced filters
+    if (this._appFilterLO) filtered = filtered.filter(l => l.loId === this._appFilterLO);
+    if (this._appFilterProgram) filtered = filtered.filter(l => l.program === this._appFilterProgram);
+    if (this._appFilterOwner) {
+      filtered = filtered.filter(l => {
+        const entry = this._nextActionOwner(l);
+        return entry === this._appFilterOwner;
+      });
+    }
 
-    const filterTabsHtml = filterTabs.map(t => `
-      <div class="lop-filter-tab ${this._appFilter === t.key ? 'active' : ''}"
-           onclick="DataPlatformView._setFilter('${t.key}')">
-        ${t.label}
-        <span class="lop-filter-tab-count ${this._appFilter === t.key ? 'active' : ''}">${t.count}</span>
-      </div>`).join('');
+    // Derive unique values for filter dropdowns
+    const loIds = [...new Set(allLoans.map(l => l.loId).filter(Boolean))];
+    const loOptions = loIds.map(id => { const u = State.getUser(id); return u ? { id, name: Display.fullName(u) } : null; }).filter(Boolean);
+    const programs = [...new Set(allLoans.map(l => l.program).filter(Boolean))];
+
+    const hasAdvancedFilters = this._appFilter !== 'all' || this._appFilterLO || this._appFilterOwner || this._appFilterProgram || this._appSearch;
+
+    const filterBarHtml = `<div class="filter-bar">
+      <input class="filter-search" placeholder="Search borrower or loan ID…"
+             value="${this._appSearch}" oninput="DataPlatformView._setSearch(this.value)" />
+      <select class="filter-select" onchange="DataPlatformView._setFilter(this.value)">
+        <option value="all" ${this._appFilter === 'all' ? 'selected' : ''}>All Status (${allLoans.length})</option>
+        <option value="needs_action" ${this._appFilter === 'needs_action' ? 'selected' : ''}>Needs Action (${needsAction.length})</option>
+        <option value="in_review" ${this._appFilter === 'in_review' ? 'selected' : ''}>In Review (${inReview.length})</option>
+        <option value="completed" ${this._appFilter === 'completed' ? 'selected' : ''}>Completed (${done.length})</option>
+      </select>
+      <select class="filter-select" onchange="DataPlatformView._setFilterLO(this.value)">
+        <option value="">All Loan Officers</option>
+        ${loOptions.map(o => `<option value="${o.id}" ${this._appFilterLO === o.id ? 'selected' : ''}>${o.name}</option>`).join('')}
+      </select>
+      <select class="filter-select" onchange="DataPlatformView._setFilterOwner(this.value)">
+        <option value="">All Next Action</option>
+        <option value="originator" ${this._appFilterOwner === 'originator' ? 'selected' : ''}>Originator</option>
+        <option value="underwriter" ${this._appFilterOwner === 'underwriter' ? 'selected' : ''}>Underwriter</option>
+      </select>
+      <select class="filter-select" onchange="DataPlatformView._setFilterProgram(this.value)">
+        <option value="">All Programs</option>
+        ${programs.map(p => `<option value="${p}" ${this._appFilterProgram === p ? 'selected' : ''}>${p}</option>`).join('')}
+      </select>
+      ${hasAdvancedFilters ? `<button class="filter-clear" onclick="DataPlatformView._clearFilters()">Clear filters</button>` : ''}
+    </div>`;
 
     // Sorting
     if (this._appSortField) {
@@ -1119,11 +1150,11 @@ const DataPlatformView = {
             <div style="font-size:13px;color:var(--color-text)">${l.borrowerName}</div>
           </td>
           <td style="font-size:12px;color:var(--color-text-secondary);max-width:150px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${l.address}</td>
-          <td>${milestoneHtml}</td>
-          <td>${this._daysBadge(days)}</td>
-          <td style="font-size:12px;color:var(--color-text-secondary);max-width:200px">${this._nextAction(l)}</td>
-          <td style="font-size:12px;color:var(--color-text-secondary)">${loName}</td>
           <td style="font-weight:600">${Display.currency(l.amount)}</td>
+          <td>${milestoneHtml}</td>
+          <td style="font-size:12px;color:var(--color-text-secondary);max-width:220px">${this._nextAction(l)}</td>
+          <td style="font-size:12px;color:var(--color-text-secondary)">${loName}</td>
+          <td>${this._daysBadge(days)}</td>
           <td style="font-size:11px;color:var(--color-text-muted);white-space:nowrap">${timeAgo}</td>
         </tr>`;
     }).join('');
@@ -1140,7 +1171,7 @@ const DataPlatformView = {
       { label: 'My Applications', value: allLoans.length, sub: Display.currency(allLoans.reduce((s,l)=>s+l.amount,0)) + ' total value' },
       { label: 'Active Pipeline',  value: Display.currency(activeVal), sub: `${active.length} loan${active.length !== 1 ? 's' : ''} in progress` },
       { label: 'Pending Actions',  value: needsAction.length, sub: needsAction.length ? 'Need attention' : 'All on track', accent: needsAction.length > 0 },
-      { label: 'In Review',        value: inReview.length, sub: 'With Homium team' },
+      { label: 'In Review',        value: inReview.length, sub: 'With Underwriter' },
       { label: 'Avg Days in Stage', value: avgDays, sub: active.length ? 'Active loans' : 'No active loans' },
       { label: 'Close Rate',       value: closeRate + '%', sub: `${done.length} of ${allLoans.length} completed` },
     ];
@@ -1164,16 +1195,12 @@ const DataPlatformView = {
             <div class="page-subtitle">${allLoans.length} total application${allLoans.length !== 1 ? 's' : ''} in pipeline</div>
           </div>
           <div class="page-header-actions" style="display:flex;align-items:center;gap:8px">
-            <input class="input" style="width:220px;padding:7px 12px;font-size:13px"
-                   placeholder="Search borrower or loan ID…"
-                   value="${this._appSearch}"
-                   oninput="DataPlatformView._setSearch(this.value)" />
             ${canCreate ? `<button class="btn btn-primary btn-sm" onclick="DataPlatformView._openNewAppModal()">+ New Application</button>` : ''}
           </div>
         </div>
       </div>
       ${kpiHtml}
-      <div class="lop-filter-tabs">${filterTabsHtml}</div>
+      ${filterBarHtml}
       ${someChecked ? `
       <div class="app-bulk-bar">
         <span style="font-size:12px;font-weight:600;color:var(--color-text)">${this._appSelected.size} selected</span>
@@ -1190,11 +1217,11 @@ const DataPlatformView = {
             </th>
             <th class="sortable-th" onclick="DataPlatformView._setSort('id')">Loan / Borrower ${this._sortIcon('id')}</th>
             <th>Address</th>
+            <th class="sortable-th" onclick="DataPlatformView._setSort('amount')">Amount ${this._sortIcon('amount')}</th>
             <th class="sortable-th" onclick="DataPlatformView._setSort('progress')">Progress ${this._sortIcon('progress')}</th>
-            <th class="sortable-th" onclick="DataPlatformView._setSort('days')">Days in Stage ${this._sortIcon('days')}</th>
             <th>Next Action</th>
             <th class="sortable-th" onclick="DataPlatformView._setSort('borrower')">Loan Officer ${this._sortIcon('borrower')}</th>
-            <th class="sortable-th" onclick="DataPlatformView._setSort('amount')">Amount ${this._sortIcon('amount')}</th>
+            <th class="sortable-th" onclick="DataPlatformView._setSort('days')">Days in Stage ${this._sortIcon('days')}</th>
             <th class="sortable-th" onclick="DataPlatformView._setSort('updated')">Updated ${this._sortIcon('updated')}</th>
           </tr></thead>
           <tbody>${rows || '<tr><td colspan="10" style="text-align:center;color:var(--color-text-muted);padding:32px">No applications found</td></tr>'}</tbody>
@@ -1209,8 +1236,21 @@ const DataPlatformView = {
       <div id="dp-modal"></div>`;
   },
 
+  _nextActionOwner(loan) {
+    const map = {
+      'draft': 'originator', 'prequalification_in_progress': 'originator', 'initial_application_submitted': 'originator',
+      'application_documents_approved': 'underwriter', 'original_appraisal_submitted': 'underwriter',
+      'sent_to_docutech': 'underwriter', 'pending_origination_creation': 'underwriter', 'origination_created': 'underwriter',
+      'completed': null,
+    };
+    return map[loan.status] || null;
+  },
   _setFilter(f) { this._appFilter = f; this._appPage = 0; this._appSelected.clear(); App.renderView('/data/applications'); },
   _setSearch(v) { this._appSearch = v; this._appPage = 0; App.renderView('/data/applications'); },
+  _setFilterLO(v) { this._appFilterLO = v; this._appPage = 0; App.renderView('/data/applications'); },
+  _setFilterOwner(v) { this._appFilterOwner = v; this._appPage = 0; App.renderView('/data/applications'); },
+  _setFilterProgram(v) { this._appFilterProgram = v; this._appPage = 0; App.renderView('/data/applications'); },
+  _clearFilters() { this._appFilter = 'all'; this._appSearch = ''; this._appFilterLO = ''; this._appFilterOwner = ''; this._appFilterProgram = ''; this._appPage = 0; App.renderView('/data/applications'); },
   _setSort(field) {
     if (this._appSortField === field) {
       this._appSortDir = this._appSortDir === 'asc' ? 'desc' : 'asc';

@@ -3624,6 +3624,12 @@ label { font-size: 12px; font-weight: 600; color: var(--color-text); }
 .milestone-step .milestone-node.done + .milestone-label + .milestone-tooltip ~ .milestone-label,
 .milestone-step:has(.milestone-node.done) .milestone-label { color: var(--color-text-secondary); }
 .milestone-step:has(.milestone-node.current) .milestone-label { color: var(--color-primary); font-weight: 600; }
+/* Annotation under current stage — task count + stage position */
+.milestone-annotation {
+  font-size: 9px; font-weight: 600; color: var(--color-info);
+  text-align: center; white-space: nowrap; margin-top: 2px;
+  letter-spacing: 0.01em;
+}
 
 /* Tooltip on full milestone */
 .milestone-tooltip {
@@ -5416,7 +5422,7 @@ label { font-size: 12px; font-weight: 600; color: var(--color-text); }
   top: 58px;
   z-index: 50;
   border-radius: 0 0 12px 12px;
-  padding: 12px 24px;
+  padding: 14px 24px;
   box-shadow: 0 2px 8px rgba(0,0,0,0.08);
   margin-left: -40px;
   margin-right: -40px;
@@ -5425,7 +5431,7 @@ label { font-size: 12px; font-weight: 600; color: var(--color-text); }
   border-top: none;
 }
 .ud-context-header.sticky-compact .ud-context-header-full { display: none; }
-.ud-context-header.sticky-compact .ud-context-header-compact { display: flex; align-items: center; gap: 20px; }
+.ud-context-header.sticky-compact .ud-context-header-compact { display: flex; align-items: center; gap: 24px; }
 
 /* Compact header inner layout */
 .ud-compact-info { flex-shrink: 0; min-width: 0; }
@@ -5434,11 +5440,11 @@ label { font-size: 12px; font-weight: 600; color: var(--color-text); }
   white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 220px;
 }
 .ud-compact-id { font-size: 11px; color: var(--color-text-muted); font-weight: 600; }
-.ud-compact-metrics { display: flex; gap: 16px; align-items: center; flex-shrink: 0; }
-.ud-compact-metric { display: flex; flex-direction: column; }
+.ud-compact-metrics { display: flex; gap: 20px; align-items: center; flex-shrink: 0; }
+.ud-compact-metric { display: flex; flex-direction: column; padding: 0 4px; }
 .ud-compact-metric-label { font-size: 9px; font-weight: 600; color: var(--color-text-muted); text-transform: uppercase; letter-spacing: 0.04em; }
 .ud-compact-metric-value { font-size: 13px; font-weight: 700; color: var(--color-text); }
-.ud-compact-progress { flex: 1; min-width: 120px; max-width: 200px; }
+.ud-compact-progress { flex: 1; min-width: 140px; max-width: 200px; }
 .ud-compact-divider { width: 1px; height: 28px; background: var(--color-border); flex-shrink: 0; }
 .ud-compact-stage { font-size: 11px; font-weight: 600; color: var(--color-text-muted); white-space: nowrap; flex-shrink: 0; }
 .ud-context-top { display: flex; align-items: flex-start; justify-content: space-between; margin-bottom: 14px; }
@@ -5586,7 +5592,7 @@ label { font-size: 12px; font-weight: 600; color: var(--color-text); }
 .ud-task-label { flex: 1; font-size: 13px; }
 .ud-task-label.done { color: var(--color-text-muted); }
 /* Owner avatar — compact circle with initials */
-/* Ownership tags — Originator vs Homium */
+/* Ownership tags — Originator vs Underwriter */
 .ownership-tag {
   display: inline-flex; align-items: center;
   font-size: 10px; font-weight: 700; letter-spacing: 0.02em;
@@ -5595,7 +5601,36 @@ label { font-size: 12px; font-weight: 600; color: var(--color-text); }
   line-height: 1.4;
 }
 .ownership-tag.originator { background: #F0FDF4; color: #16A34A; border: 1px solid #BBF7D0; }
-.ownership-tag.homium { background: #EFF6FF; color: #1E40AF; border: 1px solid #BFDBFE; }
+.ownership-tag.underwriter { background: #EFF6FF; color: #1E40AF; border: 1px solid #BFDBFE; }
+/* Next Action cell — inline flex to keep tag + text on one line */
+.next-action-cell { display: inline-flex; align-items: center; gap: 6px; max-width: 100%; }
+.next-action-text { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+/* Unified filter bar */
+.filter-bar {
+  display: flex; align-items: center; gap: 8px; flex-wrap: wrap;
+  padding: 10px 0; margin-bottom: 8px;
+}
+.filter-search {
+  padding: 7px 12px; font-size: 13px; border: 1px solid var(--color-border);
+  border-radius: 8px; background: #fff; min-width: 200px; outline: none;
+  transition: border-color 0.15s;
+}
+.filter-search:focus { border-color: var(--color-primary); }
+.filter-select {
+  padding: 7px 28px 7px 10px; font-size: 12px; font-weight: 600;
+  border: 1px solid var(--color-border); border-radius: 8px; background: #fff;
+  color: var(--color-text); cursor: pointer; outline: none;
+  appearance: none; -webkit-appearance: none;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='6'%3E%3Cpath d='M0 0l5 6 5-6z' fill='%236B7280'/%3E%3C/svg%3E");
+  background-repeat: no-repeat; background-position: right 10px center;
+}
+.filter-select:focus { border-color: var(--color-primary); }
+.filter-clear {
+  padding: 6px 12px; font-size: 12px; font-weight: 600;
+  color: var(--color-danger); background: none; border: none; cursor: pointer;
+  white-space: nowrap;
+}
+.filter-clear:hover { text-decoration: underline; }
 .ud-task-action {
   padding: 4px 12px; border-radius: 6px; font-size: 11px; font-weight: 700;
   border: 1px solid var(--color-primary); color: var(--color-primary); background: transparent;
