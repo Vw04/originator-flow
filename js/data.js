@@ -826,8 +826,11 @@ function renderMilestoneBar(proc, options = {}) {
     </div>`;
   }).join('');
 
+  // Track inset: align with center of first/last step (each step = (100% - 40px) / N wide)
+  const trackInset = `calc(20px + (100% - 40px) / ${2 * count})`;
+
   return `<div class="milestone-bar full">
-    <div class="milestone-track"><div class="milestone-track-fill" style="width:${fillPct}%"></div></div>
+    <div class="milestone-track" style="left:${trackInset};right:${trackInset}"><div class="milestone-track-fill" style="width:${fillPct}%"></div></div>
     ${steps}
   </div>`;
 }

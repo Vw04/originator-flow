@@ -96,6 +96,9 @@ const App = {
         <div class="main-content">${content}</div>
       </div>`;
     Nav.setActive(Router.getCurrentPath() || '/data/analytics');
+    // Post-render hooks for sticky header observers
+    if (typeof DataPlatformView._onAfterRender === 'function') DataPlatformView._onAfterRender();
+    if (typeof OriginationsView._onAfterRender === 'function') OriginationsView._onAfterRender();
     if (typeof initColumnResize === 'function') initColumnResize();
   },
 
@@ -294,18 +297,18 @@ const OriginationsView = {
         <option value="originations" ${this._filter === 'originations' ? 'selected' : ''}>Originations (${originations.length})</option>
         <option value="prequalifications" ${this._filter === 'prequalifications' ? 'selected' : ''}>Prequalifications (${prequalifications.length})</option>
       </select>
-      <select class="filter-select" onchange="OriginationsView._setFilterLO(this.value)">
-        <option value="">All Loan Officers</option>
-        ${loOptions.map(o => `<option value="${o.id}" ${this._filterLO === o.id ? 'selected' : ''}>${o.name}</option>`).join('')}
-      </select>
-      <select class="filter-select" onchange="OriginationsView._setFilterOwner(this.value)">
-        <option value="">All Next Action</option>
-        <option value="originator" ${this._filterOwner === 'originator' ? 'selected' : ''}>Originator</option>
-        <option value="underwriter" ${this._filterOwner === 'underwriter' ? 'selected' : ''}>Underwriter</option>
-      </select>
       <select class="filter-select" onchange="OriginationsView._setFilterProgram(this.value)">
         <option value="">All Programs</option>
         ${programs.map(p => `<option value="${p}" ${this._filterProgram === p ? 'selected' : ''}>${p}</option>`).join('')}
+      </select>
+      <select class="filter-select" onchange="OriginationsView._setFilterOwner(this.value)">
+        <option value="">Next Action: All</option>
+        <option value="originator" ${this._filterOwner === 'originator' ? 'selected' : ''}>Originator</option>
+        <option value="underwriter" ${this._filterOwner === 'underwriter' ? 'selected' : ''}>Underwriter</option>
+      </select>
+      <select class="filter-select" onchange="OriginationsView._setFilterLO(this.value)">
+        <option value="">All Owners</option>
+        ${loOptions.map(o => `<option value="${o.id}" ${this._filterLO === o.id ? 'selected' : ''}>${o.name}</option>`).join('')}
       </select>
       ${hasAdvancedFilters ? `<button class="filter-clear" onclick="OriginationsView._clearFilters()">Clear filters</button>` : ''}
     </div>`;
@@ -338,9 +341,11 @@ const OriginationsView = {
       const proc = generateOriginationProcess(l.status);
       const rowMilestone = renderMilestoneBar(proc, { size: 'compact' });
       const isAttn = this._daysInStage(l) > 14 && l.status !== 'completed' && l.status !== 'draft';
-      const nextAction = DataPlatformView._nextAction(l);
       const checked = this._selected.has(l.id);
       const timeAgo = l.submittedAt ? Display.relativeTime(l.submittedAt) : '—';
+      const addrParts = l.address.split(',');
+      const addrLine1 = addrParts[0].trim();
+      const addrLine2 = addrParts.slice(1).join(',').trim();
       return `
         <tr class="orig-table-row ${isAttn ? 'row-needs-attention' : ''}" onclick="OriginationsView.openLoan('${l.id}')">
           <td onclick="event.stopPropagation()">
@@ -351,10 +356,11 @@ const OriginationsView = {
             <div style="font-size:12px;font-weight:700;color:var(--color-primary)">${l.id}</div>
             <div style="font-size:13px;color:var(--color-text)">${l.borrowerName}</div>
           </td>
-          <td style="font-size:12px;color:var(--color-text-secondary);max-width:150px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${l.address}</td>
-          <td style="font-weight:600">${Display.currency(l.amount)}</td>
+          <td class="td-address"><div class="addr-line1">${addrLine1}</div><div class="addr-line2">${addrLine2}</div></td>
+          <td class="td-amount">${Display.currency(l.amount)}</td>
           <td>${rowMilestone}</td>
-          <td style="font-size:12px;color:var(--color-text-secondary);max-width:220px">${nextAction}</td>
+          <td class="td-action-tag">${DataPlatformView._nextActionTag(l)}</td>
+          <td class="td-action-text">${DataPlatformView._nextActionText(l)}</td>
           <td>${renderOwnersCell(l)}</td>
           <td style="font-size:11px;color:var(--color-text-muted);white-space:nowrap">${timeAgo}</td>
         </tr>`;
@@ -380,11 +386,12 @@ const OriginationsView = {
             <th>Address</th>
             <th class="sortable-th" onclick="OriginationsView._setSort('amount')">Amount ${sortIcon('amount')}</th>
             <th>Progress</th>
+            <th>Who</th>
             <th>Next Action</th>
             <th class="sortable-th" onclick="OriginationsView._setSort('borrowerName')">Owners ${sortIcon('borrowerName')}</th>
             <th class="sortable-th" onclick="OriginationsView._setSort('updatedAt')">Updated ${sortIcon('updatedAt')}</th>
           </tr></thead>
-          <tbody>${rows || '<tr><td colspan="8" style="text-align:center;color:var(--color-text-muted);padding:32px">No originations found</td></tr>'}</tbody>
+          <tbody>${rows || '<tr><td colspan="9" style="text-align:center;color:var(--color-text-muted);padding:32px">No originations found</td></tr>'}</tbody>
         </table>
       </div>
       ${totalPages > 1 ? `
@@ -595,13 +602,13 @@ const OriginationsView = {
     }
     if (!activeTask) return '';
     const nextPending = currentStage?.tasks.find(t => t.status === 'pending');
-    const upNextHtml = nextPending ? `<div class="ud-action-banner-sub">Up next: ${nextPending.label} &middot; ${nextPending.role}</div>` : '';
+    const upNextHtml = nextPending ? `<div class="ud-action-banner-upnext">Up next: ${nextPending.label} &middot; ${nextPending.role}</div>` : '';
 
     // Deadline
     const deadline = this._taskDeadline(loan, activeTask.id);
     const dl = this._formatDeadline(deadline);
     const deadlineHtml = dl
-      ? `<div class="ud-action-banner-deadline ${dl.cls}">Suggested deadline: ${dl.dateStr}<br>${dl.urgency}</div>`
+      ? `<div class="ud-action-banner-deadline ${dl.cls}">${dl.dateStr} &middot; ${dl.urgency}</div>`
       : '';
 
     return `<div class="ud-action-banner">
@@ -610,11 +617,11 @@ const OriginationsView = {
         <div class="ud-action-banner-label">Next Action Required</div>
         <div class="ud-action-banner-text">${activeTask.label}</div>
         <div class="ud-action-banner-sub">${this._ownerTag(activeTask.role)} ${activeTask.role} &middot; ${currentStage.label}</div>
-        ${upNextHtml}
       </div>
       <div class="ud-action-banner-right">
         ${activeTask.action ? `<button class="ud-action-banner-btn" onclick="event.stopPropagation();OriginationsView.jumpToTask('${currentStage.id}','${activeTask.id}')">${activeTask.action}</button>` : ''}
         ${deadlineHtml}
+        ${upNextHtml}
       </div>
     </div>`;
   },

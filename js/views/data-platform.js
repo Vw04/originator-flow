@@ -43,24 +43,38 @@ const DataPlatformView = {
     return this._STEP_MAP[loan.status] ?? 0;
   },
 
+  _NEXT_ACTION_MAP: {
+    'draft':                          { text: 'Complete & submit application',  owner: 'originator' },
+    'prequalification_in_progress':   { text: 'Awaiting borrower prequalification', owner: 'originator' },
+    'initial_application_submitted':  { text: 'Upload appraisal report',       owner: 'originator' },
+    'application_documents_approved': { text: 'Send to DocuTech for docs',     owner: 'underwriter' },
+    'original_appraisal_submitted':   { text: 'Review appraisal — order title', owner: 'underwriter' },
+    'sent_to_docutech':               { text: 'Awaiting DocuTech documents',   owner: 'underwriter' },
+    'pending_origination_creation':   { text: 'Create origination record',     owner: 'underwriter' },
+    'origination_created':            { text: 'Submit for final review',       owner: 'underwriter' },
+    'completed':                      { text: '—', owner: null },
+  },
+
   _nextAction(loan) {
-    const map = {
-      'draft':                          { text: 'Complete & submit application',  owner: 'originator' },
-      'prequalification_in_progress':   { text: 'Awaiting borrower prequalification', owner: 'originator' },
-      'initial_application_submitted':  { text: 'Upload appraisal report',       owner: 'originator' },
-      'application_documents_approved': { text: 'Send to DocuTech for docs',     owner: 'underwriter' },
-      'original_appraisal_submitted':   { text: 'Review appraisal — order title', owner: 'underwriter' },
-      'sent_to_docutech':               { text: 'Awaiting DocuTech documents',   owner: 'underwriter' },
-      'pending_origination_creation':   { text: 'Create origination record',     owner: 'underwriter' },
-      'origination_created':            { text: 'Submit for final review',       owner: 'underwriter' },
-      'completed':                      { text: '—', owner: null },
-    };
-    const entry = map[loan.status];
+    const entry = this._NEXT_ACTION_MAP[loan.status];
     if (!entry || !entry.owner) return '—';
     const tag = entry.owner === 'originator'
       ? '<span class="ownership-tag originator">Originator</span>'
       : '<span class="ownership-tag underwriter">Underwriter</span>';
     return `<span class="next-action-cell">${tag}<span class="next-action-text">${entry.text}</span></span>`;
+  },
+
+  _nextActionTag(loan) {
+    const entry = this._NEXT_ACTION_MAP[loan.status];
+    if (!entry || !entry.owner) return '';
+    return entry.owner === 'originator'
+      ? '<span class="ownership-tag originator">Originator</span>'
+      : '<span class="ownership-tag underwriter">Underwriter</span>';
+  },
+
+  _nextActionText(loan) {
+    const entry = this._NEXT_ACTION_MAP[loan.status];
+    return entry ? entry.text : '—';
   },
 
   /* Days since submittedAt (or last status change) — demo approximations */
@@ -228,6 +242,7 @@ const DataPlatformView = {
                 <th>Address</th>
                 <th>Amount</th>
                 <th>Progress</th>
+                <th>Who</th>
                 <th>Next Action</th>
                 <th>Owners</th>
                 <th>Updated</th>
@@ -237,16 +252,18 @@ const DataPlatformView = {
                   const appProc = filterStagesForContext(generateOriginationProcess(l.status), 'application');
                   const milestoneHtml = renderMilestoneBar(appProc, { size: 'compact' });
                   const timeAgo = l.submittedAt ? Display.relativeTime(l.submittedAt) : '—';
+                  const addrParts = l.address.split(',');
                   return `
                   <tr style="cursor:pointer" onclick="DataPlatformView.openApplication('${l.id}')">
                     <td>
                       <div style="font-size:12px;font-weight:700;color:var(--color-primary)">${l.id}</div>
                       <div style="font-size:13px;color:var(--color-text)">${l.borrowerName}</div>
                     </td>
-                    <td style="font-size:12px;color:var(--color-text-secondary);max-width:150px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${l.address}</td>
-                    <td style="font-weight:600">${Display.currency(l.amount)}</td>
+                    <td class="td-address"><div class="addr-line1">${addrParts[0].trim()}</div><div class="addr-line2">${addrParts.slice(1).join(',').trim()}</div></td>
+                    <td class="td-amount">${Display.currency(l.amount)}</td>
                     <td>${milestoneHtml}</td>
-                    <td style="font-size:12px;color:var(--color-text-secondary);max-width:220px">${this._nextAction(l)}</td>
+                    <td class="td-action-tag">${this._nextActionTag(l)}</td>
+                    <td class="td-action-text">${this._nextActionText(l)}</td>
                     <td>${renderOwnersCell(l)}</td>
                     <td style="font-size:11px;color:var(--color-text-muted);white-space:nowrap">${timeAgo}</td>
                   </tr>`;}).join('')}
@@ -1090,18 +1107,18 @@ const DataPlatformView = {
         <option value="in_review" ${this._appFilter === 'in_review' ? 'selected' : ''}>In Review (${inReview.length})</option>
         <option value="completed" ${this._appFilter === 'completed' ? 'selected' : ''}>Completed (${done.length})</option>
       </select>
-      <select class="filter-select" onchange="DataPlatformView._setFilterLO(this.value)">
-        <option value="">All Loan Officers</option>
-        ${loOptions.map(o => `<option value="${o.id}" ${this._appFilterLO === o.id ? 'selected' : ''}>${o.name}</option>`).join('')}
-      </select>
-      <select class="filter-select" onchange="DataPlatformView._setFilterOwner(this.value)">
-        <option value="">All Next Action</option>
-        <option value="originator" ${this._appFilterOwner === 'originator' ? 'selected' : ''}>Originator</option>
-        <option value="underwriter" ${this._appFilterOwner === 'underwriter' ? 'selected' : ''}>Underwriter</option>
-      </select>
       <select class="filter-select" onchange="DataPlatformView._setFilterProgram(this.value)">
         <option value="">All Programs</option>
         ${programs.map(p => `<option value="${p}" ${this._appFilterProgram === p ? 'selected' : ''}>${p}</option>`).join('')}
+      </select>
+      <select class="filter-select" onchange="DataPlatformView._setFilterOwner(this.value)">
+        <option value="">Next Action: All</option>
+        <option value="originator" ${this._appFilterOwner === 'originator' ? 'selected' : ''}>Originator</option>
+        <option value="underwriter" ${this._appFilterOwner === 'underwriter' ? 'selected' : ''}>Underwriter</option>
+      </select>
+      <select class="filter-select" onchange="DataPlatformView._setFilterLO(this.value)">
+        <option value="">All Owners</option>
+        ${loOptions.map(o => `<option value="${o.id}" ${this._appFilterLO === o.id ? 'selected' : ''}>${o.name}</option>`).join('')}
       </select>
       ${hasAdvancedFilters ? `<button class="filter-clear" onclick="DataPlatformView._clearFilters()">Clear filters</button>` : ''}
     </div>`;
@@ -1141,6 +1158,10 @@ const DataPlatformView = {
       const checked  = this._appSelected.has(l.id);
       const timeAgo  = l.submittedAt ? Display.relativeTime(l.submittedAt) : '—';
 
+      const addrParts = l.address.split(',');
+      const addrLine1 = addrParts[0].trim();
+      const addrLine2 = addrParts.slice(1).join(',').trim();
+
       return `
         <tr class="${attn ? 'row-needs-attention' : ''}" style="cursor:pointer"
             onclick="DataPlatformView.openApplication('${l.id}')">
@@ -1152,10 +1173,11 @@ const DataPlatformView = {
             <div style="font-size:12px;font-weight:700;color:var(--color-primary)">${l.id}</div>
             <div style="font-size:13px;color:var(--color-text)">${l.borrowerName}</div>
           </td>
-          <td style="font-size:12px;color:var(--color-text-secondary);max-width:150px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${l.address}</td>
-          <td style="font-weight:600">${Display.currency(l.amount)}</td>
+          <td class="td-address"><div class="addr-line1">${addrLine1}</div><div class="addr-line2">${addrLine2}</div></td>
+          <td class="td-amount">${Display.currency(l.amount)}</td>
           <td>${milestoneHtml}</td>
-          <td style="font-size:12px;color:var(--color-text-secondary);max-width:220px">${this._nextAction(l)}</td>
+          <td class="td-action-tag">${this._nextActionTag(l)}</td>
+          <td class="td-action-text">${this._nextActionText(l)}</td>
           <td>${renderOwnersCell(l)}</td>
           <td style="font-size:11px;color:var(--color-text-muted);white-space:nowrap">${timeAgo}</td>
         </tr>`;
@@ -1221,11 +1243,12 @@ const DataPlatformView = {
             <th>Address</th>
             <th class="sortable-th" onclick="DataPlatformView._setSort('amount')">Amount ${this._sortIcon('amount')}</th>
             <th class="sortable-th" onclick="DataPlatformView._setSort('progress')">Progress ${this._sortIcon('progress')}</th>
+            <th>Who</th>
             <th>Next Action</th>
             <th class="sortable-th" onclick="DataPlatformView._setSort('borrower')">Owners ${this._sortIcon('borrower')}</th>
             <th class="sortable-th" onclick="DataPlatformView._setSort('updated')">Updated ${this._sortIcon('updated')}</th>
           </tr></thead>
-          <tbody>${rows || '<tr><td colspan="8" style="text-align:center;color:var(--color-text-muted);padding:32px">No applications found</td></tr>'}</tbody>
+          <tbody>${rows || '<tr><td colspan="9" style="text-align:center;color:var(--color-text-muted);padding:32px">No applications found</td></tr>'}</tbody>
         </table>
       </div>
       ${totalPages > 1 ? `
@@ -1742,13 +1765,13 @@ const DataPlatformView = {
     }
     if (!activeTask) return '';
     const nextPending = currentStage?.tasks.find(t => t.status === 'pending');
-    const upNextHtml = nextPending ? `<div class="ud-action-banner-sub">Up next: ${nextPending.label} &middot; ${nextPending.role}</div>` : '';
+    const upNextHtml = nextPending ? `<div class="ud-action-banner-upnext">Up next: ${nextPending.label} &middot; ${nextPending.role}</div>` : '';
 
     // Deadline
     const deadline = this._taskDeadline(loan, activeTask.id);
     const dl = this._formatDeadline(deadline);
     const deadlineHtml = dl
-      ? `<div class="ud-action-banner-deadline ${dl.cls}">Suggested deadline: ${dl.dateStr}<br>${dl.urgency}</div>`
+      ? `<div class="ud-action-banner-deadline ${dl.cls}">${dl.dateStr} &middot; ${dl.urgency}</div>`
       : '';
 
     return `<div class="ud-action-banner">
@@ -1757,11 +1780,11 @@ const DataPlatformView = {
         <div class="ud-action-banner-label">Next Action Required</div>
         <div class="ud-action-banner-text">${activeTask.label}</div>
         <div class="ud-action-banner-sub">${this._appOwnerTag(activeTask.role)} ${activeTask.role} &middot; ${currentStage.label}</div>
-        ${upNextHtml}
       </div>
       <div class="ud-action-banner-right">
         ${activeTask.action ? `<button class="ud-action-banner-btn" onclick="event.stopPropagation();DataPlatformView.jumpToAppTask('${currentStage.id}','${activeTask.id}')">${activeTask.action}</button>` : ''}
         ${deadlineHtml}
+        ${upNextHtml}
       </div>
     </div>`;
   },
