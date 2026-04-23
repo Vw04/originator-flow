@@ -229,17 +229,13 @@ const DataPlatformView = {
                 <th>Amount</th>
                 <th>Progress</th>
                 <th>Next Action</th>
-                <th>Loan Officer</th>
-                <th>Days in Stage</th>
+                <th>Owners</th>
                 <th>Updated</th>
               </tr></thead>
               <tbody>
                 ${stalledLoans.map(l => {
-                  const lo = State.getUser(l.loId);
-                  const loName = lo ? Display.fullName(lo) : '—';
                   const appProc = filterStagesForContext(generateOriginationProcess(l.status), 'application');
                   const milestoneHtml = renderMilestoneBar(appProc, { size: 'compact' });
-                  const days = this._daysInStage(l);
                   const timeAgo = l.submittedAt ? Display.relativeTime(l.submittedAt) : '—';
                   return `
                   <tr style="cursor:pointer" onclick="DataPlatformView.openApplication('${l.id}')">
@@ -251,8 +247,7 @@ const DataPlatformView = {
                     <td style="font-weight:600">${Display.currency(l.amount)}</td>
                     <td>${milestoneHtml}</td>
                     <td style="font-size:12px;color:var(--color-text-secondary);max-width:220px">${this._nextAction(l)}</td>
-                    <td style="font-size:12px;color:var(--color-text-secondary)">${loName}</td>
-                    <td>${this._daysBadge(days)}</td>
+                    <td>${renderOwnersCell(l)}</td>
                     <td style="font-size:11px;color:var(--color-text-muted);white-space:nowrap">${timeAgo}</td>
                   </tr>`;}).join('')}
               </tbody>
@@ -1141,8 +1136,6 @@ const DataPlatformView = {
     const rows = pageLoans.map((l, i) => {
       const days     = this._daysInStage(l);
       const attn     = days > 14 && l.status !== 'completed' && l.status !== 'draft';
-      const lo       = State.getUser(l.loId);
-      const loName   = lo ? Display.fullName(lo) : '—';
       const appProc  = filterStagesForContext(generateOriginationProcess(l.status), 'application');
       const milestoneHtml = renderMilestoneBar(appProc, { size: 'compact' });
       const checked  = this._appSelected.has(l.id);
@@ -1163,8 +1156,7 @@ const DataPlatformView = {
           <td style="font-weight:600">${Display.currency(l.amount)}</td>
           <td>${milestoneHtml}</td>
           <td style="font-size:12px;color:var(--color-text-secondary);max-width:220px">${this._nextAction(l)}</td>
-          <td style="font-size:12px;color:var(--color-text-secondary)">${loName}</td>
-          <td>${this._daysBadge(days)}</td>
+          <td>${renderOwnersCell(l)}</td>
           <td style="font-size:11px;color:var(--color-text-muted);white-space:nowrap">${timeAgo}</td>
         </tr>`;
     }).join('');
@@ -1230,11 +1222,10 @@ const DataPlatformView = {
             <th class="sortable-th" onclick="DataPlatformView._setSort('amount')">Amount ${this._sortIcon('amount')}</th>
             <th class="sortable-th" onclick="DataPlatformView._setSort('progress')">Progress ${this._sortIcon('progress')}</th>
             <th>Next Action</th>
-            <th class="sortable-th" onclick="DataPlatformView._setSort('borrower')">Loan Officer ${this._sortIcon('borrower')}</th>
-            <th class="sortable-th" onclick="DataPlatformView._setSort('days')">Days in Stage ${this._sortIcon('days')}</th>
+            <th class="sortable-th" onclick="DataPlatformView._setSort('borrower')">Owners ${this._sortIcon('borrower')}</th>
             <th class="sortable-th" onclick="DataPlatformView._setSort('updated')">Updated ${this._sortIcon('updated')}</th>
           </tr></thead>
-          <tbody>${rows || '<tr><td colspan="10" style="text-align:center;color:var(--color-text-muted);padding:32px">No applications found</td></tr>'}</tbody>
+          <tbody>${rows || '<tr><td colspan="8" style="text-align:center;color:var(--color-text-muted);padding:32px">No applications found</td></tr>'}</tbody>
         </table>
       </div>
       ${totalPages > 1 ? `
@@ -1647,20 +1638,11 @@ const DataPlatformView = {
     const rateLockExpiring = loan.id === 'DCDC000002';
 
     // Progress strip data
-    const totalTasks = proc.reduce((s, st) => s + st.tasks.length, 0);
-    const doneTasks = proc.reduce((s, st) => s + st.tasks.filter(t => t.status === 'done').length, 0);
-    const overallPct = totalTasks ? Math.round((doneTasks / totalTasks) * 100) : 0;
     const currentStage = proc.find(s => s.status === 'in_progress');
-    const currentIdx = currentStage ? proc.indexOf(currentStage) : (isCompleted ? proc.length : 0);
 
     const milestoneBarHtml = renderMilestoneBar(proc, { size: 'full', stageIcons: this._appStageIcon.bind(this) });
 
     const stageLabel = currentStage ? currentStage.label : (isCompleted ? 'Completed' : 'Not Started');
-    const stageIconCls = isCompleted ? 'done' : '';
-    const stageIconSvg = currentStage ? this._appStageIcon(currentStage.id) : this._appStageIcon('transfer_minting');
-    const stageDone = currentStage ? currentStage.tasks.filter(t => t.status === 'done').length : 0;
-    const stageTotal = currentStage ? currentStage.tasks.length : 0;
-    const stageCount = currentStage ? `${stageDone}/${stageTotal} tasks` : '';
 
     const compactMilestone = renderMilestoneBar(proc, { size: 'compact' });
 
@@ -1688,12 +1670,6 @@ const DataPlatformView = {
           </div>
           <div class="ud-progress-strip">
             ${milestoneBarHtml}
-            <div class="ud-progress-meta">
-              <div class="ud-progress-stage-icon ${stageIconCls}">${stageIconSvg}</div>
-              <span class="ud-progress-stage-label">${stageLabel}</span>
-              ${stageCount ? `<span class="ud-progress-stage-count">${stageCount}</span>` : ''}
-              <span class="ud-progress-overall">Stage ${currentIdx + 1} of ${proc.length} &middot; ${overallPct}% complete</span>
-            </div>
           </div>
         </div>
         <div class="ud-context-header-compact">
@@ -1713,7 +1689,7 @@ const DataPlatformView = {
           </div>
           <div class="ud-compact-divider"></div>
           <div class="ud-compact-progress">${compactMilestone}</div>
-          <span class="ud-compact-stage">${stageLabel} &middot; ${overallPct}%</span>
+          <span class="ud-compact-stage">${stageLabel}</span>
         </div>
       </div>`;
   },
@@ -1784,10 +1760,21 @@ const DataPlatformView = {
         ${upNextHtml}
       </div>
       <div class="ud-action-banner-right">
-        ${activeTask.action ? `<button class="ud-action-banner-btn" onclick="event.stopPropagation()">${activeTask.action}</button>` : ''}
+        ${activeTask.action ? `<button class="ud-action-banner-btn" onclick="event.stopPropagation();DataPlatformView.jumpToAppTask('${currentStage.id}','${activeTask.id}')">${activeTask.action}</button>` : ''}
         ${deadlineHtml}
       </div>
     </div>`;
+  },
+
+  jumpToAppTask(stageId, taskId) {
+    this._activeAppTab = 'tasks';
+    this._expandedAppStages.add(stageId);
+    this._expandedTaskId = taskId;
+    App.renderView('/data/applications');
+    requestAnimationFrame(() => {
+      const el = document.querySelector(`.ud-task-row-wrapper[onclick*="${taskId}"]`);
+      if (el) el.scrollIntoView({ behavior: 'smooth', block: 'center' });
+    });
   },
 
   /* ── App Detail: Content Tabs ── */

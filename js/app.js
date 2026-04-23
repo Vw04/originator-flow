@@ -236,7 +236,7 @@ const OriginationsView = {
     const avgDays   = active.length
       ? Math.round(active.reduce((s, l) => s + this._daysInStage(l), 0) / active.length)
       : 0;
-    const stalled   = active.filter(l => this._daysInStage(l) > 14);
+    const needsAction = active.filter(l => this._daysInStage(l) > 14);
 
     const kpis = [
       { label: 'Total Originations', value: loans.length, sub: Display.currency(totalVal) + ' total value' },
@@ -244,7 +244,7 @@ const OriginationsView = {
       { label: 'Avg Loan Amount',    value: Display.currency(avgAmount), sub: `Across ${loans.length} loans` },
       { label: 'Close Rate',         value: closeRate + '%', sub: `${completed.length} of ${loans.length} completed` },
       { label: 'Avg Days in Stage',  value: avgDays, sub: active.length ? 'Active loans' : 'No active loans' },
-      { label: 'At-Risk',            value: stalled.length, sub: stalled.length ? 'Stalled >14 days' : 'All on track', accent: stalled.length > 0 },
+      { label: 'Needs Action',       value: needsAction.length, sub: needsAction.length ? 'Need attention' : 'All on track', accent: needsAction.length > 0 },
     ];
 
     const kpiHtml = `<div class="stat-row" style="margin-bottom:20px">${
@@ -337,10 +337,7 @@ const OriginationsView = {
     const rows = pageLoans.map(l => {
       const proc = generateOriginationProcess(l.status);
       const rowMilestone = renderMilestoneBar(proc, { size: 'compact' });
-      const days = this._daysInStage(l);
-      const isAttn = days > 14 && l.status !== 'completed' && l.status !== 'draft';
-      const lo = State.getUser(l.loId);
-      const loName = lo ? Display.fullName(lo) : '—';
+      const isAttn = this._daysInStage(l) > 14 && l.status !== 'completed' && l.status !== 'draft';
       const nextAction = DataPlatformView._nextAction(l);
       const checked = this._selected.has(l.id);
       const timeAgo = l.submittedAt ? Display.relativeTime(l.submittedAt) : '—';
@@ -358,8 +355,7 @@ const OriginationsView = {
           <td style="font-weight:600">${Display.currency(l.amount)}</td>
           <td>${rowMilestone}</td>
           <td style="font-size:12px;color:var(--color-text-secondary);max-width:220px">${nextAction}</td>
-          <td style="font-size:12px;color:var(--color-text-secondary)">${loName}</td>
-          <td>${DataPlatformView._daysBadge(days)}</td>
+          <td>${renderOwnersCell(l)}</td>
           <td style="font-size:11px;color:var(--color-text-muted);white-space:nowrap">${timeAgo}</td>
         </tr>`;
     }).join('');
@@ -385,11 +381,10 @@ const OriginationsView = {
             <th class="sortable-th" onclick="OriginationsView._setSort('amount')">Amount ${sortIcon('amount')}</th>
             <th>Progress</th>
             <th>Next Action</th>
-            <th class="sortable-th" onclick="OriginationsView._setSort('borrowerName')">Loan Officer ${sortIcon('borrowerName')}</th>
-            <th class="sortable-th" onclick="OriginationsView._setSort('days')">Days in Stage ${sortIcon('days')}</th>
+            <th class="sortable-th" onclick="OriginationsView._setSort('borrowerName')">Owners ${sortIcon('borrowerName')}</th>
             <th class="sortable-th" onclick="OriginationsView._setSort('updatedAt')">Updated ${sortIcon('updatedAt')}</th>
           </tr></thead>
-          <tbody>${rows || '<tr><td colspan="10" style="text-align:center;color:var(--color-text-muted);padding:32px">No originations found</td></tr>'}</tbody>
+          <tbody>${rows || '<tr><td colspan="8" style="text-align:center;color:var(--color-text-muted);padding:32px">No originations found</td></tr>'}</tbody>
         </table>
       </div>
       ${totalPages > 1 ? `
@@ -618,7 +613,7 @@ const OriginationsView = {
         ${upNextHtml}
       </div>
       <div class="ud-action-banner-right">
-        ${activeTask.action ? `<button class="ud-action-banner-btn" onclick="event.stopPropagation()">${activeTask.action}</button>` : ''}
+        ${activeTask.action ? `<button class="ud-action-banner-btn" onclick="event.stopPropagation();OriginationsView.jumpToTask('${currentStage.id}','${activeTask.id}')">${activeTask.action}</button>` : ''}
         ${deadlineHtml}
       </div>
     </div>`;
@@ -978,6 +973,18 @@ const OriginationsView = {
     if (this._expandedTaskStages.has(stageId)) this._expandedTaskStages.delete(stageId);
     else this._expandedTaskStages.add(stageId);
     App.renderView('/originations/' + this._selectedLoanId);
+  },
+
+  jumpToTask(stageId, taskId) {
+    this._activeTab = 'tasks';
+    this._expandedTaskStages.add(stageId);
+    this._expandedTaskId = taskId;
+    App.renderView('/originations/' + this._selectedLoanId);
+    // Scroll to the task after render
+    requestAnimationFrame(() => {
+      const el = document.querySelector(`.ud-task-row-wrapper[onclick*="${taskId}"]`);
+      if (el) el.scrollIntoView({ behavior: 'smooth', block: 'center' });
+    });
   },
 
   toggleTask(taskId) {

@@ -522,6 +522,7 @@ img { max-width: 100%; display: block; }
   border: 1px solid var(--color-border);
   border-radius: var(--radius-lg);
   overflow: hidden;
+  max-width: 100%;
 }
 
 .table-toolbar {
@@ -540,7 +541,10 @@ img { max-width: 100%; display: block; }
   flex: 1;
 }
 
-table { width: 100%; border-collapse: collapse; }
+table { width: 100%; border-collapse: collapse; table-layout: auto; }
+/* When resizable, cells clip overflow */
+table[data-resizable] { table-layout: fixed; }
+table[data-resizable] td, table[data-resizable] th { overflow: hidden; text-overflow: ellipsis; }
 
 thead th {
   background: var(--color-card);
@@ -5644,6 +5648,11 @@ label { font-size: 12px; font-weight: 600; color: var(--color-text); }
   white-space: nowrap;
 }
 .filter-clear:hover { text-decoration: underline; }
+/* Owners cell — stacked LO, processor, company */
+.owners-cell { line-height: 1.35; }
+.owners-lo { font-size: 12px; font-weight: 600; color: var(--color-text); }
+.owners-proc { font-size: 11px; color: var(--color-text-secondary); }
+.owners-company { font-size: 10px; color: var(--color-text-muted); font-weight: 500; }
 .ud-task-action {
   padding: 4px 12px; border-radius: 6px; font-size: 11px; font-weight: 700;
   border: 1px solid var(--color-primary); color: var(--color-primary); background: transparent;

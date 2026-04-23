@@ -868,6 +868,23 @@ const TASK_DETAILS = {
   tm_servicing:   { description: 'Send servicing email with complete loan files to the servicing team for ongoing management.', fields: ['Loan file package', 'Servicing transfer letter', 'Borrower notification'] },
 };
 
+/* ---- Owners cell: LO + processor(s) + company ---- */
+function renderOwnersCell(loan) {
+  const lo = State.getUser(loan.loId);
+  const loName = lo ? Display.fullName(lo) : '—';
+  const company = State.getCompany(loan.companyId);
+  const companyName = company ? company.name : '';
+  // Find processors in the same branch
+  const branchUsers = loan.branchId ? State.getUsersByBranch(loan.branchId) : [];
+  const processors = branchUsers.filter(u => u.role === 'lp' && u.onboardingStatus === 'active');
+  const procNames = processors.map(u => Display.fullName(u));
+  return `<div class="owners-cell">
+    <div class="owners-lo">${loName}</div>
+    ${procNames.length ? `<div class="owners-proc">${procNames.join(', ')}</div>` : ''}
+    ${companyName ? `<div class="owners-company">${companyName}</div>` : ''}
+  </div>`;
+}
+
 /* ============================================================
    Column Resize — drag-to-resize table headers
    Call initColumnResize() after rendering tables.
@@ -878,7 +895,6 @@ function initColumnResize(container) {
   tables.forEach(table => {
     if (table.dataset.resizable) return; // already initialized
     table.dataset.resizable = '1';
-    table.style.tableLayout = 'fixed';
 
     const ths = table.querySelectorAll('thead th');
     // Set initial widths from current computed sizes so fixed layout keeps them
