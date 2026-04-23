@@ -96,6 +96,7 @@ const App = {
         <div class="main-content">${content}</div>
       </div>`;
     Nav.setActive(Router.getCurrentPath() || '/data/analytics');
+    if (typeof initColumnResize === 'function') initColumnResize();
   },
 
   renderView(path) {
@@ -145,6 +146,8 @@ const App = {
       // Post-render hooks for sticky header observers
       if (typeof DataPlatformView._onAfterRender === 'function') DataPlatformView._onAfterRender();
       if (typeof OriginationsView._onAfterRender === 'function') OriginationsView._onAfterRender();
+      // Column resize on all tables
+      if (typeof initColumnResize === 'function') initColumnResize(mainEl);
     }
   },
 

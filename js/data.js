@@ -867,3 +867,60 @@ const TASK_DETAILS = {
   tm_mint:        { description: 'Mint the HEI token on the blockchain representing the shared appreciation agreement.', fields: ['Token minting', 'On-chain verification', 'Investor allocation'] },
   tm_servicing:   { description: 'Send servicing email with complete loan files to the servicing team for ongoing management.', fields: ['Loan file package', 'Servicing transfer letter', 'Borrower notification'] },
 };
+
+/* ============================================================
+   Column Resize — drag-to-resize table headers
+   Call initColumnResize() after rendering tables.
+   ============================================================ */
+function initColumnResize(container) {
+  const root = container || document;
+  const tables = root.querySelectorAll('.table-container table');
+  tables.forEach(table => {
+    if (table.dataset.resizable) return; // already initialized
+    table.dataset.resizable = '1';
+    table.style.tableLayout = 'fixed';
+
+    const ths = table.querySelectorAll('thead th');
+    // Set initial widths from current computed sizes so fixed layout keeps them
+    ths.forEach(th => {
+      if (!th.style.width) th.style.width = th.offsetWidth + 'px';
+    });
+
+    ths.forEach((th, i) => {
+      if (i === ths.length - 1) return; // skip last column
+      const grip = document.createElement('div');
+      grip.className = 'col-resize-grip';
+      th.style.position = 'relative';
+      th.appendChild(grip);
+
+      let startX, startW, nextW, nextTh;
+
+      grip.addEventListener('mousedown', e => {
+        e.preventDefault();
+        e.stopPropagation();
+        startX = e.clientX;
+        startW = th.offsetWidth;
+        nextTh = ths[i + 1];
+        nextW = nextTh.offsetWidth;
+        grip.classList.add('active');
+
+        const onMove = ev => {
+          const dx = ev.clientX - startX;
+          const newW = Math.max(40, startW + dx);
+          const newNextW = Math.max(40, nextW - dx);
+          th.style.width = newW + 'px';
+          nextTh.style.width = newNextW + 'px';
+        };
+
+        const onUp = () => {
+          grip.classList.remove('active');
+          document.removeEventListener('mousemove', onMove);
+          document.removeEventListener('mouseup', onUp);
+        };
+
+        document.addEventListener('mousemove', onMove);
+        document.addEventListener('mouseup', onUp);
+      });
+    });
+  });
+}

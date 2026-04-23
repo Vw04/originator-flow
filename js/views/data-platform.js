@@ -225,26 +225,36 @@ const DataPlatformView = {
             <table>
               <thead><tr>
                 <th>Loan / Borrower</th>
-                <th>Program</th>
-                <th>Stage</th>
-                <th>Days Stalled</th>
+                <th>Address</th>
                 <th>Amount</th>
+                <th>Progress</th>
                 <th>Next Action</th>
+                <th>Loan Officer</th>
+                <th>Days in Stage</th>
+                <th>Updated</th>
               </tr></thead>
               <tbody>
-                ${stalledLoans.map(l => `
-                  <tr class="row-needs-attention" style="cursor:pointer" onclick="DataPlatformView.openApplication('${l.id}')">
+                ${stalledLoans.map(l => {
+                  const lo = State.getUser(l.loId);
+                  const loName = lo ? Display.fullName(lo) : '—';
+                  const appProc = filterStagesForContext(generateOriginationProcess(l.status), 'application');
+                  const milestoneHtml = renderMilestoneBar(appProc, { size: 'compact' });
+                  const days = this._daysInStage(l);
+                  const timeAgo = l.submittedAt ? Display.relativeTime(l.submittedAt) : '—';
+                  return `
+                  <tr style="cursor:pointer" onclick="DataPlatformView.openApplication('${l.id}')">
                     <td>
-                      <div style="font-size:11px;font-weight:700;color:var(--color-primary);margin-bottom:1px">${l.id}</div>
-                      <div style="font-size:13px;font-weight:600">${l.borrowerName}</div>
-                      <div style="font-size:11px;color:var(--color-text-muted)">${l.address.split(',').slice(0,2).join(',').trim()}</div>
+                      <div style="font-size:12px;font-weight:700;color:var(--color-primary)">${l.id}</div>
+                      <div style="font-size:13px;color:var(--color-text)">${l.borrowerName}</div>
                     </td>
-                    <td style="font-size:12px"><span class="tag">${l.program}</span></td>
-                    <td><span class="badge ${Display.loanStatusClass(l.status)}">${Display.loanStatusLabel(l.status)}</span></td>
-                    <td>${this._daysBadge(this._daysInStage(l))}</td>
-                    <td style="font-weight:600;font-size:13px">${Display.currency(l.amount)}</td>
-                    <td style="font-size:12px;color:var(--color-text-secondary)">${this._nextAction(l)}</td>
-                  </tr>`).join('')}
+                    <td style="font-size:12px;color:var(--color-text-secondary);max-width:150px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${l.address}</td>
+                    <td style="font-weight:600">${Display.currency(l.amount)}</td>
+                    <td>${milestoneHtml}</td>
+                    <td style="font-size:12px;color:var(--color-text-secondary);max-width:220px">${this._nextAction(l)}</td>
+                    <td style="font-size:12px;color:var(--color-text-secondary)">${loName}</td>
+                    <td>${this._daysBadge(days)}</td>
+                    <td style="font-size:11px;color:var(--color-text-muted);white-space:nowrap">${timeAgo}</td>
+                  </tr>`;}).join('')}
               </tbody>
             </table>
           </div>` : `

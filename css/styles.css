@@ -555,6 +555,19 @@ thead th {
   white-space: nowrap;
 }
 
+/* Column resize grip */
+.col-resize-grip {
+  position: absolute; top: 0; right: -2px; width: 5px; height: 100%;
+  cursor: col-resize; z-index: 5; user-select: none;
+}
+.col-resize-grip::after {
+  content: ''; position: absolute; top: 25%; right: 2px; width: 1px; height: 50%;
+  background: var(--color-border); transition: background 0.15s;
+}
+.col-resize-grip:hover::after, .col-resize-grip.active::after {
+  background: var(--color-primary); width: 2px; right: 1px;
+}
+
 thead th.sortable { cursor: pointer; user-select: none; }
 thead th.sortable:hover { color: var(--color-text); }
 thead th.sortable::after { content: ' ↕'; opacity: 0.4; }
