@@ -192,13 +192,24 @@ const State = (() => {
     getLoans:          () => [..._loans],
     getLoan:           (id) => _loans.find(l => l.id === id),
     getLoansByLO:      (uid) => _loans.filter(l => l.loId === uid),
+    getLoansByBranch:  (bid) => _loans.filter(l => l.branchId === bid),
     getLoansByCompany: (cid) => _loans.filter(l => l.companyId === cid),
+    getLoansForRole: () => {
+      const role = State.getRole();
+      const user = State.getCurrentUser();
+      if (role === 'lp') return State.getLoansByBranch(user?.branchId);
+      if (role === 'lo') return State.getLoansByLO(user?.id);
+      return [..._loans];
+    },
 
     /* ---- Pool Summary ---- */
     getPoolSummary: () => _poolSummary,
 
     /* ---- Prospect Data ---- */
     getProspectData: () => _prospectData,
+
+    /* ---- Investor Portfolio ---- */
+    getInvestorPortfolio: () => DEMO_DATA.investorPortfolio,
 
     /* ---- Policies / Permissions ---- */
     getPolicies: () => [..._policies],

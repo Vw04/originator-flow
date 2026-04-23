@@ -183,6 +183,56 @@ const DEMO_DATA = {
     { id: 'fund-002', investorId: 'inv-002', name: 'Heartland HEI Pool',      vintage: 2026, committed: 50000000,  deployed: 12000000, status: 'active' },
   ],
 
+  /* ---- Investor Portfolio Data ---- */
+  investorPortfolio: {
+    investorId: 'inv-001',
+    investorName: 'Capital Partners Fund I',
+    capitalCommitted: 1000000,
+    capitalDeployed: 875000,
+    currentNAV: 1142000,
+    totalReturn: 0.142,
+    irr: 0.089,
+    inceptionDate: '2025-06-15',
+    distributions: 48500,
+    tokenPrice: 112.45,
+    tokenPriceChange: 0.034,
+    tokensOwned: 10000,
+    secondaryMarketBid: 110.20,
+    secondaryMarketAsk: 114.75,
+    positions: [
+      { id: 'pos-001', program: 'DC Dream Fund',        units: 4200, costBasis: 100.00, currentPrice: 114.20, allocation: 0.48, deployed: 420000, currentValue: 479640,  status: 'active',  acquisitionDate: '2025-06-15' },
+      { id: 'pos-002', program: 'Utah Program',          units: 3500, costBasis: 100.00, currentPrice: 111.80, allocation: 0.35, deployed: 350000, currentValue: 391300,  status: 'active',  acquisitionDate: '2025-08-01' },
+      { id: 'pos-003', program: 'Kentucky Dream Fund',   units: 1500, costBasis: 100.00, currentPrice: 108.50, allocation: 0.12, deployed: 150000, currentValue: 162750,  status: 'active',  acquisitionDate: '2025-11-01' },
+      { id: 'pos-004', program: 'Georgia HEI Pool',      units: 500,  costBasis: 100.00, currentPrice: 105.20, allocation: 0.05, deployed: 50000,  currentValue: 52600,   status: 'pending', acquisitionDate: '2026-02-15' },
+    ],
+    performanceHistory: [
+      { month: '2025-07', nav: 1000000, price: 100.00 },
+      { month: '2025-08', nav: 1005000, price: 100.50 },
+      { month: '2025-09', nav: 1012000, price: 101.20 },
+      { month: '2025-10', nav: 1025000, price: 102.50 },
+      { month: '2025-11', nav: 1038000, price: 103.80 },
+      { month: '2025-12', nav: 1055000, price: 105.50 },
+      { month: '2026-01', nav: 1078000, price: 107.80 },
+      { month: '2026-02', nav: 1098000, price: 109.80 },
+      { month: '2026-03', nav: 1120000, price: 112.00 },
+      { month: '2026-04', nav: 1142000, price: 112.45 },
+    ],
+    poolMetrics: {
+      totalLoans: 147, totalPoolValue: 28500000, avgLTV: 68.4, avgFICO: 734,
+      weightedAvgCoupon: 3.85, avgLoanAge: 8.2, delinquencyRate: 0.014, prepaymentRate: 0.062,
+    },
+    documents: [
+      { id: 'doc-001', name: 'Subscription Agreement',          type: 'legal',      status: 'executed',        date: '2025-06-10' },
+      { id: 'doc-002', name: 'Limited Partnership Agreement',   type: 'legal',      status: 'executed',        date: '2025-06-10' },
+      { id: 'doc-003', name: 'Q1 2026 Investor Report',         type: 'report',     status: 'available',       date: '2026-04-15' },
+      { id: 'doc-004', name: 'Q4 2025 Investor Report',         type: 'report',     status: 'available',       date: '2026-01-15' },
+      { id: 'doc-005', name: 'Capital Call Notice #4',           type: 'investment', status: 'action_required', date: '2026-04-01' },
+      { id: 'doc-006', name: 'Reinvestment Election Form',      type: 'investment', status: 'action_required', date: '2026-03-20' },
+      { id: 'doc-007', name: 'Distribution Notice — March 2026', type: 'investment', status: 'completed',       date: '2026-03-15' },
+      { id: 'doc-008', name: 'K-1 Tax Document (2025)',         type: 'tax',        status: 'available',       date: '2026-03-01' },
+    ],
+  },
+
   /* ---- Permission Templates ---- */
   permissionTemplates: [
     {

@@ -122,6 +122,7 @@ const DataPlatformView = {
       case 'analytics':    content = this._renderDashboard();    break;
       case 'applications': content = this._renderApplications(); break;
       // originations now served by /originations route (OriginationsView)
+      case 'portfolio':    content = this._renderInvestorPortfolio(); break;
       case 'batches':      content = this._renderBatches();      break;
       case 'activations':  content = this._renderActivations();  break;
       default:             content = this._renderDashboard();
@@ -179,13 +180,10 @@ const DataPlatformView = {
      DASHBOARD
   ================================================================ */
   _renderDashboard() {
-    const allLoans = State.getLoans();
     const role     = State.getRole();
-    const loans    = (role === 'lo' || role === 'lp')
-      ? State.getLoansByLO(State.getCurrentUser()?.id)
-      : allLoans;
     const isInvestor = role === 'investor';
     if (isInvestor) return this._renderInvestorDashboard();
+    const loans    = State.getLoansForRole();
 
     const active    = loans.filter(l => l.status !== 'draft' && l.status !== 'completed');
     const completed = loans.filter(l => l.status === 'completed');
@@ -783,6 +781,202 @@ const DataPlatformView = {
   },
 
   /* ================================================================
+     INVESTOR PORTFOLIO TAB
+  ================================================================ */
+  _investorPortfolioTab: 'overview', // overview | documents
+
+  _renderInvestorPortfolio() {
+    const p = State.getInvestorPortfolio();
+    if (!p) return '<div class="card">No portfolio data available.</div>';
+
+    const tab = this._investorPortfolioTab || 'overview';
+    const tabBtn = (key, label) => `<button class="ud-content-tab ${tab === key ? 'active' : ''}" onclick="DataPlatformView._investorPortfolioTab='${key}';App.renderView('/data/portfolio')">${label}</button>`;
+
+    const tabsHtml = `<div class="ud-content-tabs" style="margin-bottom:20px">${tabBtn('overview','Portfolio Overview')}${tabBtn('documents','Documents & Actions')}</div>`;
+
+    if (tab === 'documents') return this._renderInvestorDocuments(p, tabsHtml);
+
+    /* ── Investment Summary KPIs ── */
+    const kpis = [
+      { label: 'Capital Committed',  value: '$' + (p.capitalCommitted / 1e3).toFixed(0) + 'K' },
+      { label: 'Capital Deployed',   value: '$' + (p.capitalDeployed / 1e3).toFixed(0) + 'K' },
+      { label: 'Current NAV',        value: '$' + (p.currentNAV / 1e6).toFixed(3) + 'M', accent: true },
+      { label: 'Total Return',       value: (p.totalReturn * 100).toFixed(1) + '%', accent: true },
+      { label: 'IRR (Net)',          value: (p.irr * 100).toFixed(1) + '%' },
+      { label: 'Distributions',      value: '$' + (p.distributions / 1e3).toFixed(1) + 'K' },
+    ];
+    const kpiHtml = `<div class="stat-row" style="margin-bottom:24px">${kpis.map(k =>
+      `<div class="stat-item"><div class="stat-label">${k.label}</div><div class="stat-value" style="font-size:24px${k.accent ? ';color:var(--color-primary)' : ''}">${k.value}</div></div>`
+    ).join('')}</div>`;
+
+    /* ── Token / Secondary Market ── */
+    const tokenSection = `
+      <div class="card" style="margin-bottom:20px">
+        <div style="display:flex;align-items:center;gap:10px;margin-bottom:16px">
+          <h3 style="font-size:14px;font-weight:700;margin:0">Token & Secondary Market</h3>
+        </div>
+        <div style="display:grid;grid-template-columns:repeat(5,1fr);gap:16px">
+          <div><div class="stat-label">Token Price</div><div style="font-size:20px;font-weight:700">$${p.tokenPrice.toFixed(2)}</div><div style="font-size:11px;color:${p.tokenPriceChange >= 0 ? 'var(--color-success)' : 'var(--color-danger)'}">${p.tokenPriceChange >= 0 ? '+' : ''}${(p.tokenPriceChange * 100).toFixed(1)}% MTD</div></div>
+          <div><div class="stat-label">Tokens Owned</div><div style="font-size:20px;font-weight:700">${p.tokensOwned.toLocaleString()}</div><div style="font-size:11px;color:var(--color-text-muted)">Token value: $${(p.tokensOwned * p.tokenPrice / 1e6).toFixed(3)}M</div></div>
+          <div><div class="stat-label">Secondary Bid</div><div style="font-size:20px;font-weight:700">$${p.secondaryMarketBid.toFixed(2)}</div><div style="font-size:11px;color:var(--color-text-muted)">Per token</div></div>
+          <div><div class="stat-label">Secondary Ask</div><div style="font-size:20px;font-weight:700">$${p.secondaryMarketAsk.toFixed(2)}</div><div style="font-size:11px;color:var(--color-text-muted)">Per token</div></div>
+          <div><div class="stat-label">Bid/Ask Spread</div><div style="font-size:20px;font-weight:700">$${(p.secondaryMarketAsk - p.secondaryMarketBid).toFixed(2)}</div><div style="font-size:11px;color:var(--color-text-muted)">${((p.secondaryMarketAsk - p.secondaryMarketBid) / p.secondaryMarketAsk * 100).toFixed(1)}%</div></div>
+        </div>
+      </div>`;
+
+    /* ── NAV Performance Chart ── */
+    const hist = p.performanceHistory;
+    const navMax = Math.max(...hist.map(h => h.nav));
+    const navMin = Math.min(...hist.map(h => h.nav));
+    const navRange = navMax - navMin || 1;
+    const navPoints = hist.map((h, i) => {
+      const x = (i / (hist.length - 1)) * 280 + 10;
+      const y = 130 - ((h.nav - navMin) / navRange) * 110;
+      return `${x},${y}`;
+    }).join(' ');
+    const navArea = `10,130 ${navPoints} 290,130`;
+
+    const chartSection = `
+      <div class="card" style="margin-bottom:20px">
+        <h3 style="font-size:14px;font-weight:700;margin:0 0 16px">NAV Performance</h3>
+        <svg viewBox="0 0 300 150" style="width:100%;height:180px">
+          <polygon points="${navArea}" fill="var(--color-primary-container)" opacity="0.4"/>
+          <polyline points="${navPoints}" fill="none" stroke="var(--color-primary)" stroke-width="2"/>
+          <text x="290" y="${130 - ((hist[hist.length-1].nav - navMin) / navRange) * 110 - 6}" text-anchor="end" style="font-size:10px;fill:var(--color-primary);font-weight:700">$${(hist[hist.length-1].nav / 1e6).toFixed(3)}M</text>
+          <text x="10" y="145" style="font-size:8px;fill:var(--color-text-muted)">${hist[0].month}</text>
+          <text x="290" y="145" text-anchor="end" style="font-size:8px;fill:var(--color-text-muted)">${hist[hist.length-1].month}</text>
+        </svg>
+      </div>`;
+
+    /* ── Positions Table ── */
+    const posRows = p.positions.map(pos => {
+      const gain = pos.currentValue - pos.deployed;
+      const gainPct = ((gain / pos.deployed) * 100).toFixed(1);
+      const gainCls = gain >= 0 ? 'color:var(--color-success)' : 'color:var(--color-danger)';
+      return `<tr>
+        <td style="font-weight:600">${pos.program}</td>
+        <td style="text-align:right">${pos.units.toLocaleString()}</td>
+        <td style="text-align:right">$${pos.costBasis.toFixed(2)}</td>
+        <td style="text-align:right;font-weight:600">$${pos.currentPrice.toFixed(2)}</td>
+        <td style="text-align:right">$${(pos.deployed / 1e3).toFixed(0)}K</td>
+        <td style="text-align:right;font-weight:600">$${(pos.currentValue / 1e3).toFixed(0)}K</td>
+        <td style="text-align:right;${gainCls};font-weight:600">${gain >= 0 ? '+' : ''}$${(gain / 1e3).toFixed(1)}K (${gainPct}%)</td>
+        <td style="text-align:right">${(pos.allocation * 100).toFixed(0)}%</td>
+        <td><span class="badge ${pos.status === 'active' ? 'badge-active' : 'badge-pending'}" style="font-size:10px">${pos.status}</span></td>
+      </tr>`;
+    }).join('');
+
+    const positionsSection = `
+      <div class="card" style="margin-bottom:20px">
+        <h3 style="font-size:14px;font-weight:700;margin:0 0 16px">Individual Positions</h3>
+        <div class="table-container" style="border:none;box-shadow:none">
+          <table>
+            <thead><tr>
+              <th>Program</th><th style="text-align:right">Units</th><th style="text-align:right">Cost Basis</th>
+              <th style="text-align:right">Current Price</th><th style="text-align:right">Invested</th>
+              <th style="text-align:right">Current Value</th><th style="text-align:right">Gain/Loss</th>
+              <th style="text-align:right">Allocation</th><th>Status</th>
+            </tr></thead>
+            <tbody>${posRows}</tbody>
+          </table>
+        </div>
+      </div>`;
+
+    /* ── Underlying Pool Metrics ── */
+    const pm = p.poolMetrics;
+    const poolSection = `
+      <div class="card" style="margin-bottom:20px">
+        <h3 style="font-size:14px;font-weight:700;margin:0 0 16px">Underlying Pool Summary</h3>
+        <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:16px">
+          <div><div class="stat-label">Total Loans</div><div style="font-size:18px;font-weight:700">${pm.totalLoans}</div></div>
+          <div><div class="stat-label">Pool Value</div><div style="font-size:18px;font-weight:700">$${(pm.totalPoolValue / 1e6).toFixed(1)}M</div></div>
+          <div><div class="stat-label">Avg LTV</div><div style="font-size:18px;font-weight:700">${pm.avgLTV}%</div></div>
+          <div><div class="stat-label">Avg FICO</div><div style="font-size:18px;font-weight:700">${pm.avgFICO}</div></div>
+          <div><div class="stat-label">Wtd Avg Coupon</div><div style="font-size:18px;font-weight:700">${pm.weightedAvgCoupon}%</div></div>
+          <div><div class="stat-label">Avg Loan Age</div><div style="font-size:18px;font-weight:700">${pm.avgLoanAge} mo</div></div>
+          <div><div class="stat-label">Delinquency Rate</div><div style="font-size:18px;font-weight:700">${(pm.delinquencyRate * 100).toFixed(1)}%</div></div>
+          <div><div class="stat-label">Prepayment Rate</div><div style="font-size:18px;font-weight:700">${(pm.prepaymentRate * 100).toFixed(1)}%</div></div>
+        </div>
+      </div>`;
+
+    return `
+      <div class="page-header">
+        <div class="page-header-inner">
+          <div class="page-header-left">
+            <div class="page-title">My Portfolio</div>
+            <div class="page-subtitle">${p.investorName} &middot; Since ${new Date(p.inceptionDate).toLocaleDateString('en-US', { month: 'short', year: 'numeric' })}</div>
+          </div>
+        </div>
+      </div>
+      ${tabsHtml}
+      ${kpiHtml}
+      ${tokenSection}
+      ${chartSection}
+      ${positionsSection}
+      ${poolSection}`;
+  },
+
+  /* ── Investor Documents Sub-Tab ── */
+  _renderInvestorDocuments(p, tabsHtml) {
+    const typeLabels = { legal: 'Legal', report: 'Report', investment: 'Investment', tax: 'Tax' };
+    const statusLabels = { executed: 'Executed', available: 'Available', action_required: 'Action Required', completed: 'Completed' };
+    const statusCls = { executed: 'badge-active', available: 'badge-info', action_required: 'badge-warning', completed: 'badge-active' };
+
+    const actionDocs = p.documents.filter(d => d.status === 'action_required');
+
+    const renderDocRow = (d) => `
+      <tr>
+        <td style="font-weight:600">${d.name}</td>
+        <td><span class="badge" style="font-size:10px;background:var(--color-surface-alt);color:var(--color-text-secondary)">${typeLabels[d.type] || d.type}</span></td>
+        <td><span class="badge ${statusCls[d.status] || ''}" style="font-size:10px">${statusLabels[d.status] || d.status}</span></td>
+        <td style="font-size:12px;color:var(--color-text-muted)">${new Date(d.date).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}</td>
+        <td style="text-align:right">
+          ${d.status === 'action_required'
+            ? '<button class="btn btn-primary btn-sm" onclick="event.stopPropagation()">Review & Sign</button>'
+            : '<button class="btn btn-secondary btn-sm" onclick="event.stopPropagation()">View</button>'}
+        </td>
+      </tr>`;
+
+    const actionSection = actionDocs.length ? `
+      <div class="card" style="margin-bottom:20px;border-color:var(--color-warning);border-left:4px solid var(--color-warning)">
+        <div style="display:flex;align-items:center;gap:8px;margin-bottom:12px">
+          <span style="font-size:16px">&#9888;</span>
+          <h3 style="font-size:14px;font-weight:700;margin:0;color:var(--color-warning)">Action Required (${actionDocs.length})</h3>
+        </div>
+        <div class="table-container" style="border:none;box-shadow:none">
+          <table>
+            <thead><tr><th>Document</th><th>Type</th><th>Status</th><th>Date</th><th style="text-align:right">Action</th></tr></thead>
+            <tbody>${actionDocs.map(renderDocRow).join('')}</tbody>
+          </table>
+        </div>
+      </div>` : '';
+
+    const allDocsSection = `
+      <div class="card">
+        <h3 style="font-size:14px;font-weight:700;margin:0 0 16px">All Documents</h3>
+        <div class="table-container" style="border:none;box-shadow:none">
+          <table>
+            <thead><tr><th>Document</th><th>Type</th><th>Status</th><th>Date</th><th style="text-align:right">Action</th></tr></thead>
+            <tbody>${p.documents.map(renderDocRow).join('')}</tbody>
+          </table>
+        </div>
+      </div>`;
+
+    return `
+      <div class="page-header">
+        <div class="page-header-inner">
+          <div class="page-header-left">
+            <div class="page-title">My Portfolio</div>
+            <div class="page-subtitle">${p.investorName} &middot; Documents & Actions</div>
+          </div>
+        </div>
+      </div>
+      ${tabsHtml}
+      ${actionSection}
+      ${allDocsSection}`;
+  },
+
+  /* ================================================================
      INVESTOR ENHANCED SECTIONS (program metrics, stories, impact)
   ================================================================ */
   _renderInvestorEnhancements() {
@@ -1060,9 +1254,8 @@ const DataPlatformView = {
     }
 
     const role = State.getRole();
-    const user = State.getCurrentUser();
-    const allLoans = (role === 'lo' || role === 'lp') ? State.getLoansByLO(user?.id) : State.getLoans();
-    const canCreate = ['lo', 'prog_admin', 'sys_admin', 'operator'].includes(role);
+    const allLoans = State.getLoansForRole();
+    const canCreate = ['lo', 'sys_admin', 'operator'].includes(role);
 
     // Filter tabs
     const needsAction = allLoans.filter(l => this._daysInStage(l) > 14 && l.status !== 'completed' && l.status !== 'draft');
@@ -1295,9 +1488,7 @@ const DataPlatformView = {
     App.renderView('/data/applications');
   },
   _toggleSelectAll() {
-    const role = State.getRole();
-    const user = State.getCurrentUser();
-    const allLoans = (role === 'lo' || role === 'lp') ? State.getLoansByLO(user?.id) : State.getLoans();
+    const allLoans = State.getLoansForRole();
     let filtered = allLoans;
     if (this._appFilter === 'needs_action') filtered = filtered.filter(l => this._daysInStage(l) > 14 && l.status !== 'completed' && l.status !== 'draft');
     else if (this._appFilter === 'in_review') filtered = filtered.filter(l => ['application_documents_approved','original_appraisal_submitted','sent_to_docutech','pending_origination_creation'].includes(l.status));
@@ -2771,7 +2962,7 @@ const DataPlatformView = {
   _renderBatches() {
     const role     = State.getRole();
     const loans    = State.getLoans();
-    const canCreate = ['sys_admin', 'operator', 'prog_admin'].includes(role);
+    const canCreate = ['sys_admin', 'operator'].includes(role);
 
     const batches = [
       { id: 'BATCH-2026-001', loans: loans.slice(0,3), status: 'Pending Issuance', statusClass: 'badge-warning', created: '2026-03-10' },

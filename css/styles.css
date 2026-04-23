@@ -5853,7 +5853,6 @@ label { font-size: 12px; font-weight: 600; color: var(--color-text); }
   align-items: flex-start;
   justify-content: space-between;
   gap: 32px;
-  max-width: 1200px;
 }
 .prospect-hero-text { flex: 1; }
 .prospect-badge {

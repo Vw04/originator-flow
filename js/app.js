@@ -42,6 +42,7 @@ const App = {
     Router.register('/data/analytics',    () => { DataPlatformView._activeTab = 'analytics';    this.renderShell(DataPlatformView.render()); });
     Router.register('/data/applications', () => { DataPlatformView._activeTab = 'applications'; this.renderShell(DataPlatformView.render()); });
     // /data/originations removed — originations now served by /originations (OriginationsView)
+    Router.register('/data/portfolio',    () => { DataPlatformView._activeTab = 'portfolio';    this.renderShell(DataPlatformView.render()); });
     Router.register('/data/batches',      () => { DataPlatformView._activeTab = 'batches';      this.renderShell(DataPlatformView.render()); });
     Router.register('/data/activations',  () => { DataPlatformView._activeTab = 'activations';  this.renderShell(DataPlatformView.render()); });
 
@@ -131,6 +132,7 @@ const App = {
       '/data/analytics':          () => { DataPlatformView._activeTab = 'analytics';    return DataPlatformView.render(); },
       '/data/applications':       () => { DataPlatformView._activeTab = 'applications'; return DataPlatformView.render(); },
       // /data/originations removed — originations now served by /originations
+      '/data/portfolio':          () => { DataPlatformView._activeTab = 'portfolio';     return DataPlatformView.render(); },
       '/data/batches':            () => { DataPlatformView._activeTab = 'batches';      return DataPlatformView.render(); },
       '/data/activations':        () => { DataPlatformView._activeTab = 'activations';  return DataPlatformView.render(); },
       '/prospect':                () => ProspectDashboardView.render(),
@@ -222,12 +224,9 @@ const OriginationsView = {
   ================================================================ */
   _renderList() {
     const role  = State.getRole();
-    const user  = State.getCurrentUser();
-    let loans = (role === 'lo' || role === 'lp')
-      ? State.getLoansByLO(user?.id)
-      : State.getLoans();
+    let loans = State.getLoansForRole();
 
-    const title = role === 'lo' ? 'My Originations' : 'Originations';
+    const title = (role === 'lo' || role === 'lp') ? 'My Originations' : 'Originations';
 
     /* ── KPI Metrics ── */
     const active    = loans.filter(l => l.status !== 'draft' && l.status !== 'completed');
@@ -438,9 +437,7 @@ const OriginationsView = {
   },
   _toggleSelectAll() {
     // Toggle all on current page
-    const role = State.getRole();
-    const user = State.getCurrentUser();
-    let loans = (role === 'lo' || role === 'lp') ? State.getLoansByLO(user?.id) : State.getLoans();
+    let loans = State.getLoansForRole();
     const pageLoans = loans.slice(this._page * this._pageSize, (this._page + 1) * this._pageSize);
     const allChecked = pageLoans.every(l => this._selected.has(l.id));
     pageLoans.forEach(l => { if (allChecked) this._selected.delete(l.id); else this._selected.add(l.id); });

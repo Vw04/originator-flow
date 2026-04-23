@@ -35,6 +35,7 @@ const Nav = (() => {
     ],
     investor: [
       { path: '/data/analytics',    label: 'Dashboard' },
+      { path: '/data/portfolio',    label: 'Portfolio' },
       { path: '/profile',           label: 'My Profile' },
     ],
     investor_prospect: [
