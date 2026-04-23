@@ -5628,8 +5628,10 @@ label { font-size: 12px; font-weight: 600; color: var(--color-text); }
 .addr-line1 { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 .addr-line2 { font-size: 11px; color: var(--color-text-muted); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 .td-amount { font-weight: 600; font-size: 13px; white-space: nowrap; }
-.td-action-tag { white-space: nowrap; text-align: center; }
-.td-action-text { font-size: 12px; color: var(--color-text-secondary); }
+.td-status { white-space: nowrap; }
+.td-status-label { font-size: 11px; color: var(--color-text-muted); margin-top: 3px; }
+.td-next-action { vertical-align: middle; }
+.td-next-action-text { font-size: 12px; color: var(--color-text-secondary); margin-top: 2px; line-height: 1.3; }
 /* Unified filter bar */
 .filter-bar {
   display: flex; align-items: center; gap: 8px; flex-wrap: wrap;

@@ -340,6 +340,8 @@ const OriginationsView = {
     const rows = pageLoans.map(l => {
       const proc = generateOriginationProcess(l.status);
       const rowMilestone = renderMilestoneBar(proc, { size: 'compact' });
+      const currentStage = proc.find(s => s.status === 'in_progress');
+      const stageLabel = currentStage ? currentStage.label : (l.status === 'completed' ? 'Completed' : 'Not Started');
       const isAttn = this._daysInStage(l) > 14 && l.status !== 'completed' && l.status !== 'draft';
       const checked = this._selected.has(l.id);
       const timeAgo = l.submittedAt ? Display.relativeTime(l.submittedAt) : '—';
@@ -358,9 +360,8 @@ const OriginationsView = {
           </td>
           <td class="td-address"><div class="addr-line1">${addrLine1}</div><div class="addr-line2">${addrLine2}</div></td>
           <td class="td-amount">${Display.currency(l.amount)}</td>
-          <td>${rowMilestone}</td>
-          <td class="td-action-tag">${DataPlatformView._nextActionTag(l)}</td>
-          <td class="td-action-text">${DataPlatformView._nextActionText(l)}</td>
+          <td class="td-status">${rowMilestone}<div class="td-status-label">${stageLabel}</div></td>
+          <td class="td-next-action">${DataPlatformView._nextActionTag(l)}<div class="td-next-action-text">${DataPlatformView._nextActionText(l)}</div></td>
           <td>${renderOwnersCell(l)}</td>
           <td style="font-size:11px;color:var(--color-text-muted);white-space:nowrap">${timeAgo}</td>
         </tr>`;
@@ -385,13 +386,12 @@ const OriginationsView = {
             <th class="sortable-th" onclick="OriginationsView._setSort('id')">Loan / Borrower ${sortIcon('id')}</th>
             <th>Address</th>
             <th class="sortable-th" onclick="OriginationsView._setSort('amount')">Amount ${sortIcon('amount')}</th>
-            <th>Progress</th>
-            <th>Who</th>
+            <th class="sortable-th" onclick="OriginationsView._setSort('progress')">Status ${sortIcon('progress')}</th>
             <th>Next Action</th>
             <th class="sortable-th" onclick="OriginationsView._setSort('borrowerName')">Owners ${sortIcon('borrowerName')}</th>
             <th class="sortable-th" onclick="OriginationsView._setSort('updatedAt')">Updated ${sortIcon('updatedAt')}</th>
           </tr></thead>
-          <tbody>${rows || '<tr><td colspan="9" style="text-align:center;color:var(--color-text-muted);padding:32px">No originations found</td></tr>'}</tbody>
+          <tbody>${rows || '<tr><td colspan="8" style="text-align:center;color:var(--color-text-muted);padding:32px">No originations found</td></tr>'}</tbody>
         </table>
       </div>
       ${totalPages > 1 ? `

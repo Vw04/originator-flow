@@ -241,8 +241,7 @@ const DataPlatformView = {
                 <th>Loan / Borrower</th>
                 <th>Address</th>
                 <th>Amount</th>
-                <th>Progress</th>
-                <th>Who</th>
+                <th>Status</th>
                 <th>Next Action</th>
                 <th>Owners</th>
                 <th>Updated</th>
@@ -251,6 +250,8 @@ const DataPlatformView = {
                 ${stalledLoans.map(l => {
                   const appProc = filterStagesForContext(generateOriginationProcess(l.status), 'application');
                   const milestoneHtml = renderMilestoneBar(appProc, { size: 'compact' });
+                  const currentStage = appProc.find(s => s.status === 'in_progress');
+                  const stageLabel = currentStage ? currentStage.label : (l.status === 'completed' ? 'Completed' : 'Not Started');
                   const timeAgo = l.submittedAt ? Display.relativeTime(l.submittedAt) : '—';
                   const addrParts = l.address.split(',');
                   return `
@@ -261,9 +262,8 @@ const DataPlatformView = {
                     </td>
                     <td class="td-address"><div class="addr-line1">${addrParts[0].trim()}</div><div class="addr-line2">${addrParts.slice(1).join(',').trim()}</div></td>
                     <td class="td-amount">${Display.currency(l.amount)}</td>
-                    <td>${milestoneHtml}</td>
-                    <td class="td-action-tag">${this._nextActionTag(l)}</td>
-                    <td class="td-action-text">${this._nextActionText(l)}</td>
+                    <td class="td-status">${milestoneHtml}<div class="td-status-label">${stageLabel}</div></td>
+                    <td class="td-next-action">${this._nextActionTag(l)}<div class="td-next-action-text">${this._nextActionText(l)}</div></td>
                     <td>${renderOwnersCell(l)}</td>
                     <td style="font-size:11px;color:var(--color-text-muted);white-space:nowrap">${timeAgo}</td>
                   </tr>`;}).join('')}
@@ -1155,6 +1155,8 @@ const DataPlatformView = {
       const attn     = days > 14 && l.status !== 'completed' && l.status !== 'draft';
       const appProc  = filterStagesForContext(generateOriginationProcess(l.status), 'application');
       const milestoneHtml = renderMilestoneBar(appProc, { size: 'compact' });
+      const currentStage = appProc.find(s => s.status === 'in_progress');
+      const stageLabel = currentStage ? currentStage.label : (l.status === 'completed' ? 'Completed' : 'Not Started');
       const checked  = this._appSelected.has(l.id);
       const timeAgo  = l.submittedAt ? Display.relativeTime(l.submittedAt) : '—';
 
@@ -1175,9 +1177,8 @@ const DataPlatformView = {
           </td>
           <td class="td-address"><div class="addr-line1">${addrLine1}</div><div class="addr-line2">${addrLine2}</div></td>
           <td class="td-amount">${Display.currency(l.amount)}</td>
-          <td>${milestoneHtml}</td>
-          <td class="td-action-tag">${this._nextActionTag(l)}</td>
-          <td class="td-action-text">${this._nextActionText(l)}</td>
+          <td class="td-status">${milestoneHtml}<div class="td-status-label">${stageLabel}</div></td>
+          <td class="td-next-action">${this._nextActionTag(l)}<div class="td-next-action-text">${this._nextActionText(l)}</div></td>
           <td>${renderOwnersCell(l)}</td>
           <td style="font-size:11px;color:var(--color-text-muted);white-space:nowrap">${timeAgo}</td>
         </tr>`;
@@ -1242,13 +1243,12 @@ const DataPlatformView = {
             <th class="sortable-th" onclick="DataPlatformView._setSort('id')">Loan / Borrower ${this._sortIcon('id')}</th>
             <th>Address</th>
             <th class="sortable-th" onclick="DataPlatformView._setSort('amount')">Amount ${this._sortIcon('amount')}</th>
-            <th class="sortable-th" onclick="DataPlatformView._setSort('progress')">Progress ${this._sortIcon('progress')}</th>
-            <th>Who</th>
+            <th class="sortable-th" onclick="DataPlatformView._setSort('progress')">Status ${this._sortIcon('progress')}</th>
             <th>Next Action</th>
             <th class="sortable-th" onclick="DataPlatformView._setSort('borrower')">Owners ${this._sortIcon('borrower')}</th>
             <th class="sortable-th" onclick="DataPlatformView._setSort('updated')">Updated ${this._sortIcon('updated')}</th>
           </tr></thead>
-          <tbody>${rows || '<tr><td colspan="9" style="text-align:center;color:var(--color-text-muted);padding:32px">No applications found</td></tr>'}</tbody>
+          <tbody>${rows || '<tr><td colspan="8" style="text-align:center;color:var(--color-text-muted);padding:32px">No applications found</td></tr>'}</tbody>
         </table>
       </div>
       ${totalPages > 1 ? `
