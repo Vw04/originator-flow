@@ -183,29 +183,16 @@ const DataPlatformView = {
     const role     = State.getRole();
     const isInvestor = role === 'investor';
 
-    // Default the Dashboard tab to the new Command Center for both ops + investors.
-    // Toggle picks "Command Center" (map + metrics) or "Classic" (existing charts).
-    let pageMode = State.getPageMode('dashboard');
-    if (pageMode === 'default') pageMode = 'cmd-dash';
-    const toggleHtml = this._renderArtboardToggle('dashboard', [
-      { id: 'cmd-dash', label: 'Command Center' },
-      { id: 'classic',  label: 'Classic charts' },
-    ], pageMode);
+    // The Dashboard tab is always the Command Center for both ops + investors.
+    // (Removed the classic-charts toggle — it was duplicative with /data/applications.)
+    return ArtboardMountView.render('cmd-dash', {
+      height: 'calc(100vh - var(--topnav-height))',
+      props: { context: isInvestor ? 'investor' : 'operator' }
+    });
 
-    if (pageMode === 'cmd-dash') {
-      return `
-        ${ArtboardMountView.render('cmd-dash', {
-          height: 'calc(100vh - var(--topnav-height))',
-          props: { context: isInvestor ? 'investor' : 'operator' }
-        })}
-        <div class="artboard-floating-toggle" data-mode="cmd-dash">${toggleHtml}</div>
-      `;
-    }
-
-    if (isInvestor) return `
-      <div class="prospect-toggle-bar">${toggleHtml}</div>
-      ${this._renderInvestorDashboard()}
-    `;
+    // Legacy classic dashboard render below kept as dead code in case we want
+    // to wire it back into a separate route. Unreachable for now.
+    // eslint-disable-next-line no-unreachable
     const loans    = State.getLoansForRole();
 
     const active    = loans.filter(l => l.status !== 'draft' && l.status !== 'completed');

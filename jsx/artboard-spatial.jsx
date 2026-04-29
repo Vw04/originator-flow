@@ -44,8 +44,8 @@ const SpatialArtboard = () => {
             {[
               { c:'#16A34A', l:'Funded', n:1 },
               { c:'#0E2A47', l:'On track', n:5 },
-              { c:'#D97706', l:'Approaching SLA', n:1 },
-              { c:'#DC2626', l:'SLA breach', n:1 },
+              { c:'#D97706', l:'Stage aging', n:1 },
+              { c:'#DC2626', l:'Stage stalled', n:1 },
             ].map((k,i) => (
               <div key={i} style={{display:'flex', alignItems:'center', gap:6, fontSize:11, color:'var(--h-ink-2)'}}>
                 <span style={{width:10, height:10, borderRadius:'50%', background:k.c, boxShadow:`0 0 0 3px ${k.c}22`}}/>
@@ -201,7 +201,7 @@ const SpatialArtboard = () => {
                     <StageProgress progress={l.progress} stages={STAGES}/>
                     <div style={{display:'flex', justifyContent:'space-between', marginTop:8, fontSize:10, color:'var(--h-ink-3)'}}>
                       <span style={{textTransform:'uppercase', letterSpacing:'0.06em', fontWeight:600, color}}>{STAGES[l.stageIdx].short}</span>
-                      {l.sla === 'red' && <span style={{color:'var(--h-red)', fontWeight:600}}>⚠ {l.daysInStage}d — SLA breach</span>}
+                      {l.sla === 'red' && <span style={{color:'var(--h-red)', fontWeight:600}}>⚠ {l.daysInStage}d — Stage stalled</span>}
                       {l.sla === 'amber' && <span style={{color:'var(--h-amber)', fontWeight:600}}>{l.daysInStage}d — approaching</span>}
                       {l.sla === 'green' && <span>{l.daysInStage}d in stage</span>}
                     </div>

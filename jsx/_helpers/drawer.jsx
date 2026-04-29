@@ -37,14 +37,14 @@ const Drawer = ({ loan, open, onClose }) => {
                     marginLeft: 8, padding: '2px 8px', borderRadius: 999,
                     background: '#FEE2E2', color: 'var(--h-red)',
                     fontSize: 10, fontWeight: 600, letterSpacing: '0.04em', textTransform: 'uppercase'
-                  }}>SLA breach · {loan.daysInStage}d</span>
+                  }}>Stalled · {loan.daysInStage}d in stage</span>
                 )}
                 {loan.sla === 'amber' && (
                   <span style={{
                     marginLeft: 8, padding: '2px 8px', borderRadius: 999,
                     background: '#FEF3C7', color: 'var(--h-amber)',
                     fontSize: 10, fontWeight: 600, letterSpacing: '0.04em', textTransform: 'uppercase'
-                  }}>Approaching SLA</span>
+                  }}>Stage aging · {loan.daysInStage}d</span>
                 )}
               </div>
             </div>

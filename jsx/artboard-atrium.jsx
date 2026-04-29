@@ -14,6 +14,7 @@ const AtriumArtboard = () => {
     : LOANS;
 
   const [activeId, setActiveId] = React.useState(scopedLoans[0] ? scopedLoans[0].id : null);
+  const [inspectorOpen, setInspectorOpen] = React.useState(true);
   React.useEffect(() => {
     if (!scopedLoans.find(l => l.id === activeId) && scopedLoans[0]) setActiveId(scopedLoans[0].id);
   }, [scopedLoans.map(l => l.id).join(',')]);
@@ -33,7 +34,7 @@ const AtriumArtboard = () => {
   const stipBlocked = focus.stips.filter(s => s.status === 'blocked').length;
 
   return (
-    <div className="ab-atrium ab-atrium-no-tabs">
+    <div className={'ab-atrium ab-atrium-no-tabs' + (inspectorOpen ? '' : ' atrium-inspector-collapsed')}>
       {/* `.atr-top` removed — host app's topnav provides logo, search, user.
           Pins/tabs were redundant with the left rail; left rail is the single
           source of which loans are in scope. */}
@@ -67,7 +68,7 @@ const AtriumArtboard = () => {
               </div>
               <div style={{marginTop: 8, display: 'flex', justifyContent: 'space-between', alignItems: 'center'}}>
                 <span className={'atr-rail-card-sla ' + l.sla}>
-                  {l.sla === 'red' ? `${l.daysInStage}d · breach` : l.sla === 'amber' ? `${l.daysInStage}d · risk` : `${l.daysInStage}d`}
+                  {l.sla === 'red' ? `${l.daysInStage}d · stalled` : l.sla === 'amber' ? `${l.daysInStage}d · aging` : `${l.daysInStage}d`}
                 </span>
                 <span style={{fontSize: 10, color: '#9C9583', fontFamily: 'var(--font-mono)'}}>{l.updatedAgo}</span>
               </div>
@@ -100,12 +101,29 @@ const AtriumArtboard = () => {
 
       {/* CENTER CANVAS */}
       <div className="atr-canvas">
+        {/* Sticky loan-info banner — persists at the top while the canvas scrolls. */}
+        <div className="atr-sticky-banner">
+          <div className="atr-sticky-id">{focus.id}</div>
+          <div className="atr-sticky-borrower">{focus.borrower}</div>
+          <div className="atr-sticky-addr">{focus.address}</div>
+          <div className="atr-sticky-stage">{STAGES[focus.stageIdx].short}</div>
+          <div className={'atr-sticky-pill ' + (focus.sla === 'red' ? 'warn' : focus.sla === 'amber' ? 'aging' : 'ok')}>
+            {focus.sla === 'red' ? `Stalled · ${focus.daysInStage}d` : focus.sla === 'amber' ? `Aging · ${focus.daysInStage}d` : `${focus.daysInStage}d in stage`}
+          </div>
+          <div className="atr-sticky-amt">{fmt$(focus.amount)}</div>
+          {!inspectorOpen && (
+            <button className="atr-sticky-restore" onClick={() => setInspectorOpen(true)} title="Show inspector panel">
+              <Icon name="chevL" size={14}/>
+              <span>Inspector</span>
+            </button>
+          )}
+        </div>
         <div className="atr-canvas-inner">
           <div className="atr-canvas-head">
             <div className="atr-canvas-id">
               <span>{focus.id}</span>
               <span className={'atr-canvas-pill' + (focus.sla === 'red' ? ' warn' : '')}>
-                {focus.sla === 'red' ? 'SLA BREACH' : focus.sla === 'amber' ? 'SLA AT RISK' : 'ON TRACK'}
+                {focus.sla === 'red' ? 'STAGE STALLED' : focus.sla === 'amber' ? 'STAGE AGING' : 'ON TRACK'}
               </span>
               <span>{focus.program.name.toUpperCase()}</span>
             </div>
@@ -265,8 +283,11 @@ const AtriumArtboard = () => {
         </div>
       </div>
 
-      {/* RIGHT INSPECTOR: AI copilot, presence, signals */}
-      <div className="atr-inspector">
+      {/* RIGHT INSPECTOR: AI copilot, presence, signals — collapsible. */}
+      {inspectorOpen && <div className="atr-inspector">
+        <button className="atr-inspector-collapse" onClick={() => setInspectorOpen(false)} title="Hide inspector panel">
+          <Icon name="chevR" size={14}/>
+        </button>
         <div className="atr-insp-section">
           <div className="atr-copilot">
             <div className="atr-copilot-h">Homium AI · co-pilot</div>
@@ -316,7 +337,7 @@ const AtriumArtboard = () => {
             <div className={'atr-signal-dot ' + (focus.sla === 'red' ? 'red' : focus.sla === 'amber' ? 'amber' : 'green')}/>
             <div>
               <div className="atr-signal-msg">
-                <b>{focus.sla === 'red' ? 'SLA breached' : focus.sla === 'amber' ? 'Approaching SLA' : 'On schedule'}</b> · {focus.daysInStage} days in {STAGES[focus.stageIdx].label}
+                <b>{focus.sla === 'red' ? 'Stage stalled' : focus.sla === 'amber' ? 'Stage aging' : 'On schedule'}</b> · {focus.daysInStage} days in {STAGES[focus.stageIdx].label}
               </div>
               <div className="atr-signal-time">{focus.updatedAgo}</div>
             </div>
@@ -340,7 +361,7 @@ const AtriumArtboard = () => {
             </div>
           </div>
         </div>
-      </div>
+      </div>}
     </div>
   );
 };

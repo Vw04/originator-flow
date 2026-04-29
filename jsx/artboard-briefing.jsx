@@ -32,8 +32,8 @@ const BriefingArtboard = () => {
     'DCDC000005': 'Borrower hasn\'t responded to 3 emails. Homium AI suggests a personalized SMS referencing their April 14 voicemail. Five-minute fix could save the closing date.',
     'DCDC000007': 'Title underwriter signed off this morning. Final lender review estimated at 24 hours. Wire desk has been alerted to expect funding by EOW.',
     'DCDC000001': 'OCR auto-confirmed YTD gross of $32,140 against tax transcripts. Outstanding: signed disclosures + bank statement March. ETA to close: 37 days.',
-    'DCDC000002': 'Underwriter approved with two prior-to-doc conditions. Borrower needs to acknowledge updated rate lock by Friday or program eligibility expires.',
-    'DCDC000003': 'Wire confirmed at 14:32 yesterday. Hill household is officially home. Q2 funded total now $1.23M across DC DreamCatcher.',
+    'DCDC000002': 'Underwriter approved with two prior-to-doc conditions. Borrower needs to acknowledge program eligibility window by Friday or shared-appreciation participation expires.',
+    'DCDC000003': 'Wire confirmed at 14:32 yesterday. Hill household is officially home. Q2 funded total now $1.23M across DC Dream Fund.',
   };
 
   return (
@@ -73,7 +73,7 @@ const BriefingArtboard = () => {
           <div className="brf-num-cell">
             <div className="brf-num-lbl">Need you today</div>
             <div className="brf-num-val danger">3</div>
-            <div className="brf-num-delta">1 SLA breach · 2 stips</div>
+            <div className="brf-num-delta">1 stalled · 2 stips</div>
           </div>
           <div className="brf-num-cell">
             <div className="brf-num-lbl">Days median to close</div>
@@ -114,7 +114,7 @@ const BriefingArtboard = () => {
             <div className="brf-loan-rank">{String(idx+1).padStart(2,'0')}</div>
             <div>
               <span className={`brf-loan-ribbon ${l.sla}`}>
-                {l.sla === 'red' ? `SLA breach · ${l.daysInStage} days in stage` : `${l.daysInStage} days · approaching limit`}
+                {l.sla === 'red' ? `Stage stalled · ${l.daysInStage} days in stage` : `${l.daysInStage} days · stage aging`}
               </span>
               <h2 className="brf-loan-headline" onClick={() => openLoan(l)}>
                 {headlines[l.id] || `${l.borrower} · ${STAGES[l.stageIdx].label}`}

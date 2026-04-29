@@ -60,6 +60,51 @@
 }
 .cmd-map-title em { font-style: italic; color: var(--h-green, #0E2A47); }
 .cmd-map-sub { font-size: 11px; color: var(--h-ink-3, #9CA3AF); margin-top: 2px; }
+
+/* Program selector dropdown — switches map between DC / Utah / Tobias Harris. */
+.cmd-program-select {
+  margin-left: 12px;
+  font-family: var(--font-sans, 'Inter', sans-serif);
+  font-size: 13px;
+  font-weight: 500;
+  color: var(--h-green, #0E2A47);
+  padding: 4px 28px 4px 10px;
+  background: #fff;
+  border: 1px solid #BFD3E8;
+  border-radius: 6px;
+  cursor: pointer;
+  appearance: none;
+  -webkit-appearance: none;
+  background-image: url("data:image/svg+xml,%3Csvg width='10' height='6' viewBox='0 0 10 6' fill='none' xmlns='http://www.w3.org/2000/svg'%3E%3Cpath d='M1 1l4 4 4-4' stroke='%230E2A47' stroke-width='1.4' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E");
+  background-repeat: no-repeat;
+  background-position: right 10px center;
+}
+.cmd-program-select:hover { border-color: #0E2A47; }
+.cmd-program-select:focus { outline: none; border-color: #0E2A47; box-shadow: 0 0 0 3px rgba(14,42,71,0.12); }
+
+/* MSA appreciation legend */
+.cmd-app-legend {
+  bottom: 16px; right: 16px; min-width: 160px;
+}
+.cmd-app-scale {
+  display: flex; flex-direction: column; gap: 4px; margin-top: 6px;
+}
+.cmd-app-step {
+  display: flex; align-items: center; gap: 8px;
+  font-size: 11px; color: var(--h-ink-2, #4B5563);
+  font-family: var(--font-mono, 'JetBrains Mono', monospace);
+}
+.cmd-app-swatch {
+  width: 16px; height: 10px; border-radius: 2px;
+  border: 1px solid rgba(0,0,0,0.05);
+}
+
+/* Highlight active program in the by-program rail */
+.cmd-prog-row.active {
+  background: rgba(14,42,71,0.05);
+  margin: 0 -8px; padding-left: 8px; padding-right: 8px;
+  border-radius: 6px;
+}
 .cmd-map-legend { display: flex; gap: 14px; }
 .cmd-leg-item {
   display: flex; align-items: center; gap: 6px;

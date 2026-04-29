@@ -44,7 +44,7 @@ const InvestorArtboard = () => {
         <div style={{flex:1, overflow:'auto'}}>
           {/* Hero */}
           <div className="inv-hero">
-            <div className="inv-hero-eyebrow">DC DreamCatcher · Q2 2026</div>
+            <div className="inv-hero-eyebrow">DC Dream Fund · Q2 2026</div>
             <h1 className="inv-hero-title">Your capital has helped <em>88 households</em> cross the threshold into ownership this quarter.</h1>
             <div className="inv-hero-sub">
               Live view of your shared-equity portfolio across the District — stage-by-stage, with real-time borrower and underwriter activity.
@@ -188,7 +188,7 @@ const InvestorArtboard = () => {
           <div className="inst-stats">
             <div className="inst-stat"><div className="inst-stat-label">Capital deployed</div><div className="inst-stat-value">$1.23M</div><div className="inst-stat-desc">+$140k this month</div></div>
             <div className="inst-stat"><div className="inst-stat-label">Active positions</div><div className="inst-stat-value">7</div><div className="inst-stat-desc">1 funded · 6 in pipeline</div></div>
-            <div className="inst-stat"><div className="inst-stat-label">Pending action</div><div className="inst-stat-value danger">2</div><div className="inst-stat-desc">SLA at risk</div></div>
+            <div className="inst-stat"><div className="inst-stat-label">Pending action</div><div className="inst-stat-value danger">2</div><div className="inst-stat-desc">Stage aging</div></div>
             <div className="inst-stat"><div className="inst-stat-label">In review</div><div className="inst-stat-value">4</div><div className="inst-stat-desc">With underwriter</div></div>
             <div className="inst-stat"><div className="inst-stat-label">Avg days in stage</div><div className="inst-stat-value">22</div><div className="inst-stat-desc">↓ 3d vs last month</div></div>
             <div className="inst-stat"><div className="inst-stat-label">Funded rate</div><div className="inst-stat-value">81<span style={{fontSize:20,color:'var(--h-ink-3)'}}>%</span></div><div className="inst-stat-desc">trailing 90d</div></div>
@@ -237,8 +237,8 @@ const InvestorArtboard = () => {
                     <td>
                       <div className={`inst-updated ${loan.sla==='red' ? 'sla-red' : loan.sla==='amber' ? 'sla-amber' : ''}`}>
                         {loan.updatedAgo}
-                        {loan.sla === 'red' && <div style={{fontSize:10, marginTop:2}}>⚠ SLA breach</div>}
-                        {loan.sla === 'amber' && <div style={{fontSize:10, marginTop:2}}>approaching SLA</div>}
+                        {loan.sla === 'red' && <div style={{fontSize:10, marginTop:2}}>⚠ Stage stalled</div>}
+                        {loan.sla === 'amber' && <div style={{fontSize:10, marginTop:2}}>stage aging</div>}
                       </div>
                     </td>
                     <td><Icon name="chevR" size={14} style={{color:'var(--h-ink-3)'}}/></td>
@@ -291,8 +291,8 @@ const CommandCenterMap = ({ LOANS, STAGES, openLoan, selected, hovered, setHover
           {[
             { c:'#16A34A', l:'Funded', n:1 },
             { c:'#0E2A47', l:'On track', n:5 },
-            { c:'#D97706', l:'Approaching SLA', n:1 },
-            { c:'#DC2626', l:'SLA breach', n:1 },
+            { c:'#D97706', l:'Stage aging', n:1 },
+            { c:'#DC2626', l:'Stage stalled', n:1 },
           ].map((k,i) => (
             <div key={i} style={{display:'flex', alignItems:'center', gap:6, fontSize:11, color:'var(--h-ink-2)'}}>
               <span style={{width:10, height:10, borderRadius:'50%', background:k.c, boxShadow:`0 0 0 3px ${k.c}22`}}/>
@@ -408,7 +408,7 @@ const CommandCenterMap = ({ LOANS, STAGES, openLoan, selected, hovered, setHover
                     <StageProgress progress={l.progress} stages={STAGES}/>
                     <div style={{display:'flex', justifyContent:'space-between', marginTop:8, fontSize:10, color:'var(--h-ink-3)'}}>
                       <span style={{textTransform:'uppercase', letterSpacing:'0.06em', fontWeight:600, color}}>{STAGES[l.stageIdx].short}</span>
-                      {l.sla === 'red' && <span style={{color:'var(--h-red)', fontWeight:600}}>⚠ {l.daysInStage}d — SLA breach</span>}
+                      {l.sla === 'red' && <span style={{color:'var(--h-red)', fontWeight:600}}>⚠ {l.daysInStage}d — Stage stalled</span>}
                       {l.sla === 'amber' && <span style={{color:'var(--h-amber)', fontWeight:600}}>{l.daysInStage}d — approaching</span>}
                       {l.sla === 'green' && <span>{l.daysInStage}d in stage</span>}
                     </div>

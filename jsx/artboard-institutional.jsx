@@ -12,7 +12,19 @@ const InstitutionalArtboard = ({ context = 'applications' } = {}) => {
   const STAGES = HOMIUM_DATA.STAGES;
   const PEOPLE = HOMIUM_DATA.PEOPLE;
 
-  const openLoan = (l) => { setSel(l); setDrawerOpen(true); };
+  // Row click → navigate to the classic full loan detail page. The drawer
+  // (quick-look) is reserved for the Command Center map / activity feed clicks.
+  const openLoan = (l) => {
+    if (window.OriginationsView && window.App) {
+      window.OriginationsView._viewMode = 'detail';
+      window.OriginationsView._selectedLoanId = l.id;
+      window.location.hash = '#/originations/' + l.id;
+      window.App.renderView('/originations/' + l.id);
+    } else {
+      // graceful fallback if host isn't wired
+      setSel(l); setDrawerOpen(true);
+    }
+  };
 
   // Underwriter view = post-doc loans only (UW + CDA + CTC + Funded)
   // Originator view  = full pipeline
@@ -48,11 +60,11 @@ const InstitutionalArtboard = ({ context = 'applications' } = {}) => {
     activeNav: 'Pipeline',
     title: 'Underwriting <em>pipeline</em>',
     subtitle: `${baseScope.length} loans in your queue · ${fmt$(total)} committed · live activity`,
-    aiBody: `<b>${slaAtRisk} loan${slaAtRisk === 1 ? '' : 's'} flagged</b> · ${inCDA} awaiting condition-of-approval review, ${inCTC} ready for clear-to-close. Priya — pulling Hayes (DCDC#5) up first will unblock James downstream.`,
+    aiBody: `<b>${slaAtRisk} loan${slaAtRisk === 1 ? '' : 's'} aging in stage</b> · ${inCDA} awaiting condition-of-approval review, ${inCTC} ready for clear-to-close. Priya — pulling Hayes (DCDC#5) up first will unblock James downstream.`,
     filters: [
       { id: 'all',   label: `Queue (${baseScope.length})` },
       { id: 'mine',  label: 'My queue' },
-      { id: 'sla',   label: `SLA at risk (${slaAtRisk})` },
+      { id: 'sla',   label: `Stage aging (${slaAtRisk})` },
       { id: 'cda',   label: `In CDA (${inCDA})` },
       { id: 'ctc',   label: `In CTC (${inCTC})` },
     ],
@@ -65,11 +77,11 @@ const InstitutionalArtboard = ({ context = 'applications' } = {}) => {
     activeNav: 'Applications',
     title: 'Applications <em>in flight</em>',
     subtitle: `${baseScope.length} loans · ${fmt$(total)} committed · live underwriter activity`,
-    aiBody: `<b>${slaAtRisk} loan${slaAtRisk === 1 ? '' : 's'} need your attention</b> · the Hayes file (DCDC#5) is 11 days in App stage with no borrower response — a personal call within the next 4 hours could save the August close.`,
+    aiBody: `<b>${slaAtRisk} loan${slaAtRisk === 1 ? '' : 's'} aging in stage</b> · the Hayes file (DCDC#5) has been 11 days in Application with no borrower response — a personal call within the next 4 hours could keep the August close on track.`,
     filters: [
       { id: 'all',   label: `All (${baseScope.length})` },
       { id: 'mine',  label: 'Mine' },
-      { id: 'sla',   label: `SLA at risk (${slaAtRisk})` },
+      { id: 'sla',   label: `Stage aging (${slaAtRisk})` },
       { id: 'new',   label: 'New' },
     ],
     primaryCta: { label: '+ New application', action: () => {} },
@@ -113,7 +125,7 @@ const InstitutionalArtboard = ({ context = 'applications' } = {}) => {
             <div className="inst-stat-desc">{fmt$k(total)} committed</div>
           </div>
           <div className="inst-stat">
-            <div className="inst-stat-label">SLA at risk</div>
+            <div className="inst-stat-label">Stage aging</div>
             <div className="inst-stat-value danger">{slaAtRisk}</div>
             <div className="inst-stat-desc">action required today</div>
           </div>
@@ -149,9 +161,9 @@ const InstitutionalArtboard = ({ context = 'applications' } = {}) => {
             <div className="inst-stat-desc">1 funded · {baseScope.filter(l => l.stageKey !== 'funded').length} in pipeline</div>
           </div>
           <div className="inst-stat">
-            <div className="inst-stat-label">SLA at risk</div>
+            <div className="inst-stat-label">Stage aging</div>
             <div className="inst-stat-value danger">{slaAtRisk}</div>
-            <div className="inst-stat-desc">1 breach · 1 amber</div>
+            <div className="inst-stat-desc">1 stalled · 1 aging</div>
           </div>
           <div className="inst-stat">
             <div className="inst-stat-label">In review</div>
@@ -253,8 +265,8 @@ const InstitutionalArtboard = ({ context = 'applications' } = {}) => {
                 <td>
                   <div className={'inst-updated' + (loan.sla === 'red' ? ' sla-red' : loan.sla === 'amber' ? ' sla-amber' : '')}>
                     {loan.updatedAgo}
-                    {loan.sla === 'red' && <div style={{fontSize: 10, marginTop: 2}}>⚠ SLA breach</div>}
-                    {loan.sla === 'amber' && <div style={{fontSize: 10, marginTop: 2}}>approaching SLA</div>}
+                    {loan.sla === 'red' && <div style={{fontSize: 10, marginTop: 2}}>⚠ Stalled</div>}
+                    {loan.sla === 'amber' && <div style={{fontSize: 10, marginTop: 2}}>stage aging</div>}
                   </div>
                 </td>
                 <td><Icon name="chevR" size={14} style={{color: 'var(--h-ink-3)'}}/></td>
