@@ -1253,6 +1253,28 @@ const DataPlatformView = {
       return this._renderApplicationDetail(this._selectedApplicationId);
     }
 
+    // ---- Artboard view modes (alternate views from the Loan Origination v2 designs) ----
+    const pageMode = State.getPageMode('applications');
+    const toggleHtml = this._renderArtboardToggle('applications', [
+      { id: 'default',       label: 'Table' },
+      { id: 'institutional', label: 'Institutional' },
+      { id: 'spatial',       label: 'Map · Command' },
+    ], pageMode);
+
+    if (pageMode === 'institutional' || pageMode === 'spatial') {
+      const labelMap = { institutional: 'Direction 1 · Institutional', spatial: 'Direction 4 · Command Center' };
+      return `
+        <div class="artboard-page-header">
+          <div class="artboard-page-title">
+            <span class="artboard-page-eyebrow">APPLICATIONS</span>
+            <span class="artboard-page-name">${labelMap[pageMode]}</span>
+          </div>
+          ${toggleHtml}
+        </div>
+        ${ArtboardMountView.render(pageMode, { height: 'calc(100vh - 110px)' })}
+      `;
+    }
+
     const role = State.getRole();
     const allLoans = State.getLoansForRole();
     const canCreate = ['lo', 'sys_admin', 'operator'].includes(role);
@@ -1412,7 +1434,8 @@ const DataPlatformView = {
             <div class="page-title">${title}</div>
             <div class="page-subtitle">${allLoans.length} total application${allLoans.length !== 1 ? 's' : ''} in pipeline</div>
           </div>
-          <div class="page-header-actions" style="display:flex;align-items:center;gap:8px">
+          <div class="page-header-actions" style="display:flex;align-items:center;gap:12px">
+            ${toggleHtml}
             ${canCreate ? `<button class="btn btn-primary btn-sm" onclick="DataPlatformView._openNewAppModal()">+ New Application</button>` : ''}
           </div>
         </div>
@@ -1461,6 +1484,20 @@ const DataPlatformView = {
       'completed': null,
     };
     return map[loan.status] || null;
+  },
+  _renderArtboardToggle(pageKey, modes, current) {
+    return `<div class="artboard-toggle" role="tablist" aria-label="View mode">
+      ${modes.map(m => `
+        <button role="tab" aria-selected="${m.id === current}"
+                class="${m.id === current ? 'active' : ''}"
+                onclick="DataPlatformView._setPageMode('${pageKey}','${m.id}')">${m.label}</button>
+      `).join('')}
+    </div>`;
+  },
+  _setPageMode(pageKey, mode) {
+    State.setPageMode(pageKey, mode);
+    const map = { applications: '/data/applications', portfolio: '/data/portfolio' };
+    App.renderView(map[pageKey] || '/data/applications');
   },
   _setFilter(f) { this._appFilter = f; this._appPage = 0; this._appSelected.clear(); App.renderView('/data/applications'); },
   _setSearch(v) { this._appSearch = v; this._appPage = 0; App.renderView('/data/applications'); },

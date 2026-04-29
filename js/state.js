@@ -25,6 +25,7 @@ const State = (() => {
   let _mode = 'admin';      // 'admin' | 'data'
   let _impersonating = null; // { savedRole, savedUserId } | null
   let _viewMode = 'desktop'; // 'desktop' | 'mobile'
+  let _pageModes = {};        // { [pageKey: string]: modeId } — toggle state for new artboard views
 
   const _subscribers = [];
 
@@ -64,6 +65,10 @@ const State = (() => {
     /* ---- View Mode (desktop | mobile) ---- */
     getViewMode: () => _viewMode,
     setViewMode(m) { _viewMode = m === 'mobile' ? 'mobile' : 'desktop'; notify(); },
+
+    /* ---- Page Mode (per-page artboard toggle: 'default' | 'institutional' | 'spatial' | 'atrium' | 'investor') ---- */
+    getPageMode(pageKey) { return _pageModes[pageKey] || 'default'; },
+    setPageMode(pageKey, mode) { _pageModes[pageKey] = mode; notify(); },
 
     /* ---- Impersonation ---- */
     startImpersonation(targetUserId) {

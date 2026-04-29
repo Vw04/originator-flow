@@ -5,6 +5,11 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Homium Originator Platform</title>
   <link rel="stylesheet" href="css/styles.css" />
+  <link rel="stylesheet" href="css/institutional.css" />
+  <link rel="stylesheet" href="css/atrium.css" />
+  <link rel="stylesheet" href="css/borrower.css" />
+  <link rel="stylesheet" href="css/briefing.css" />
+  <link rel="stylesheet" href="css/mission.css" />
   <link rel="icon" type="image/png" href="assets/branding/HomiumLogo_0721_Icon (Blue).png" />
   <style>
     #app { display: none; }
@@ -108,9 +113,26 @@
 <!-- ============================================================
      Scripts — load order matters (data → state → router → views → nav → app)
      ============================================================ -->
+
+<!-- React + Babel for JSX artboards (mounted into specific routes) -->
+<script crossorigin src="https://unpkg.com/react@18.3.1/umd/react.production.min.js"></script>
+<script crossorigin src="https://unpkg.com/react-dom@18.3.1/umd/react-dom.production.min.js"></script>
+<script src="https://unpkg.com/@babel/standalone@7.29.0/babel.min.js"></script>
+
 <script src="js/data.js"></script>
 <script src="js/state.js"></script>
 <script src="js/router.js"></script>
+
+<!-- Artboard JSX (React, transpiled in-browser by babel-standalone) -->
+<script type="text/babel" data-presets="react" src="jsx/_helpers/primitives.jsx"></script>
+<script type="text/babel" data-presets="react" src="jsx/_helpers/drawer.jsx"></script>
+<script type="text/babel" data-presets="react" src="jsx/artboard-institutional.jsx"></script>
+<script type="text/babel" data-presets="react" src="jsx/artboard-investor.jsx"></script>
+<script type="text/babel" data-presets="react" src="jsx/artboard-spatial.jsx"></script>
+<script type="text/babel" data-presets="react" src="jsx/artboard-atrium.jsx"></script>
+<script type="text/babel" data-presets="react" src="jsx/artboard-terminal.jsx"></script>
+<script type="text/babel" data-presets="react" src="jsx/artboard-mission.jsx"></script>
+<script type="text/babel" data-presets="react" src="jsx/artboard-briefing.jsx"></script>
 
 <!-- Views -->
 <script src="js/views/role-select.js"></script>
@@ -128,6 +150,7 @@
 <script src="js/views/origination-companies.js"></script>
 <script src="js/views/admin-dashboard.js"></script>
 <script src="js/views/prospect-dashboard.js"></script>
+<script src="js/views/artboard-mount.js"></script>
 
 <!-- Mobile Views -->
 <script src="js/views/mobile/mobile-home.js"></script>

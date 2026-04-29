@@ -993,3 +993,214 @@ function initColumnResize(container) {
     });
   });
 }
+
+/* ============================================================
+   HOMIUM_DATA — rich loan-pipeline shape consumed by JSX artboards
+   (Direction 1 Institutional, 3 Investor, 4 Spatial, 8 Atrium,
+    plus already-wired Terminal/Mission/Briefing). Additive to DEMO_DATA.
+   ============================================================ */
+(function () {
+  const STAGES = [
+    { id: 'prequal', short: 'PRE-QUAL', label: 'Pre-qualification' },
+    { id: 'app',     short: 'APP',      label: 'Application' },
+    { id: 'doc',     short: 'DOC',      label: 'Disclosures & Doc' },
+    { id: 'uw',      short: 'UW',       label: 'Underwriting' },
+    { id: 'cda',     short: 'CDA',      label: 'Condition of Approval' },
+    { id: 'ctc',     short: 'CTC',      label: 'Clear to Close' },
+    { id: 'funded',  short: 'FUND',     label: 'Funded' },
+  ];
+
+  const PEOPLE = {
+    priya:  { name: 'Priya Shah',    initials: 'PS', org: 'Homium',     bg: '#1E3F62', role: 'Underwriter' },
+    james:  { name: 'James Okafor',  initials: 'JO', org: 'CC Lending', bg: '#0E2A47', role: 'Originator' },
+    marcus: { name: 'Marcus Webb',   initials: 'MW', org: 'Homium',     bg: '#7C3AED', role: 'Underwriter' },
+    dana:   { name: 'Dana Hill',     initials: 'DH', org: 'CC Lending', bg: '#16A34A', role: 'Processor' },
+    rhea:   { name: 'Rhea Tanaka',   initials: 'RT', org: 'DC HFA',     bg: '#7C3AED', role: 'Portfolio Manager' },
+    evelyn: { name: 'Evelyn Ross',   initials: 'ER', org: 'borrower',   bg: '#C2A14A', role: 'Borrower' },
+  };
+
+  // 7-cell progress array for a stage idx; values: 'done' | 'current' | 'blocked' | ''
+  const progressFor = (idx, opts = {}) => {
+    const arr = [];
+    for (let i = 0; i < 7; i++) {
+      if (i < idx) arr.push('done');
+      else if (i === idx) arr.push(opts.blocked ? 'blocked' : 'current');
+      else arr.push('');
+    }
+    if (idx === 6) { for (let i = 0; i < 7; i++) arr[i] = 'done'; }
+    return arr;
+  };
+
+  const LOANS = [
+    {
+      id: 'DCDC000001',
+      borrower: 'Evelyn Ross', borrowerFirst: 'Evelyn',
+      address: '1408 Lamont St NW', cityState: 'Washington, DC 20010',
+      amount: 185000,
+      stageIdx: 2, stageKey: 'doc',
+      sla: 'green', daysInStage: 4,
+      progress: progressFor(2),
+      updatedAgo: '2h ago', updatedHours: 2,
+      nextAction: 'Sign initial disclosures', nextActor: 'borrower',
+      owners: [{ name: 'James Okafor', initials: 'JO', org: 'CC Lending' }],
+      underwriter: { name: 'Priya Shah', org: 'Homium' },
+      aiNudge: 'OCR confirmed YTD gross of $32,140 against tax transcripts. Two stips remain — borrower expected to clear by Friday.',
+      program: { name: 'DC DreamCatcher' },
+      stips: [
+        { id: 's1', label: 'W-2 (2025)',           status: 'received', owner: 'borrower' },
+        { id: 's2', label: 'Bank statement · Mar', status: 'pending',  owner: 'borrower' },
+        { id: 's3', label: 'Signed disclosures',   status: 'pending',  owner: 'borrower' },
+        { id: 's4', label: 'Tax transcripts',      status: 'received', owner: 'system' },
+        { id: 's5', label: 'Paystub · April',      status: 'received', owner: 'borrower' },
+      ],
+    },
+    {
+      id: 'DCDC000002',
+      borrower: 'Marcus Avery', borrowerFirst: 'Marcus',
+      address: '1244 U St NW', cityState: 'Washington, DC 20009',
+      amount: 220000,
+      stageIdx: 4, stageKey: 'cda',
+      sla: 'amber', daysInStage: 7,
+      progress: progressFor(4),
+      updatedAgo: '6h ago', updatedHours: 6,
+      nextAction: 'Acknowledge updated rate lock', nextActor: 'borrower',
+      owners: [{ name: 'James Okafor', initials: 'JO', org: 'CC Lending' }],
+      underwriter: { name: 'Priya Shah', org: 'Homium' },
+      aiNudge: 'Rate lock expires Friday 18:00. Borrower has not acknowledged updated terms — program eligibility tied to current lock.',
+      program: { name: 'DC DreamCatcher' },
+      stips: [
+        { id: 's1', label: 'COA memo',           status: 'received', owner: 'underwriter' },
+        { id: 's2', label: 'Updated rate lock',  status: 'pending',  owner: 'borrower' },
+        { id: 's3', label: 'Insurance binder',   status: 'pending',  owner: 'borrower' },
+        { id: 's4', label: 'Title commitment',   status: 'received', owner: 'title' },
+      ],
+    },
+    {
+      id: 'DCDC000003',
+      borrower: 'Tasha Hill', borrowerFirst: 'Tasha',
+      address: '509 G St NE', cityState: 'Washington, DC 20002',
+      amount: 155000,
+      stageIdx: 6, stageKey: 'funded',
+      sla: 'green', daysInStage: 1,
+      progress: progressFor(6),
+      updatedAgo: 'yesterday', updatedHours: 24,
+      nextAction: null, nextActor: null,
+      owners: [{ name: 'James Okafor', initials: 'JO', org: 'CC Lending' }],
+      underwriter: { name: 'Priya Shah', org: 'Homium' },
+      aiNudge: 'Wire confirmed at 14:32 yesterday. Hill household is officially home.',
+      program: { name: 'DC DreamCatcher' },
+      stips: [
+        { id: 's1', label: 'Wire confirmation', status: 'received', owner: 'system' },
+        { id: 's2', label: 'Final HUD',         status: 'received', owner: 'closing' },
+        { id: 's3', label: 'Recorded deed',     status: 'received', owner: 'title' },
+      ],
+    },
+    {
+      id: 'DCDC000004',
+      borrower: 'Sun Kim', borrowerFirst: 'Sun',
+      address: '3411 Park Rd NW', cityState: 'Washington, DC 20010',
+      amount: 175000,
+      stageIdx: 3, stageKey: 'uw',
+      sla: 'green', daysInStage: 5,
+      progress: progressFor(3),
+      updatedAgo: '1d ago', updatedHours: 30,
+      nextAction: 'Schedule appraisal', nextActor: 'processor',
+      owners: [{ name: 'Dana Hill', initials: 'DH', org: 'CC Lending' }],
+      underwriter: { name: 'Marcus Webb', org: 'Homium' },
+      aiNudge: 'Appraisal scheduled for Tuesday; borrower confirmed.',
+      program: { name: 'DC DreamCatcher' },
+      stips: [
+        { id: 's1', label: 'Appraisal order',  status: 'received', owner: 'processor' },
+        { id: 's2', label: 'Appraisal report', status: 'pending',  owner: 'appraiser' },
+        { id: 's3', label: 'Income docs',      status: 'received', owner: 'borrower' },
+        { id: 's4', label: 'Asset statements', status: 'received', owner: 'borrower' },
+      ],
+    },
+    {
+      id: 'DCDC000005',
+      borrower: 'Robert Hayes', borrowerFirst: 'Robert',
+      address: '4612 Hayes St NE', cityState: 'Washington, DC 20019',
+      amount: 195000,
+      stageIdx: 1, stageKey: 'app',
+      sla: 'red', daysInStage: 11,
+      progress: progressFor(1, { blocked: true }),
+      updatedAgo: '11d ago', updatedHours: 264,
+      nextAction: 'Personal call · borrower unresponsive', nextActor: 'originator',
+      owners: [{ name: 'James Okafor', initials: 'JO', org: 'CC Lending' }],
+      underwriter: { name: 'Priya Shah', org: 'Homium' },
+      aiNudge: 'Borrower hasn\'t responded to 3 emails. Suggest a personalized SMS referencing their April 14 voicemail. Five-minute fix could save the closing date.',
+      program: { name: 'DC DreamCatcher' },
+      stips: [
+        { id: 's1', label: 'Initial application',     status: 'received', owner: 'borrower' },
+        { id: 's2', label: 'Income verification',     status: 'blocked',  owner: 'borrower' },
+        { id: 's3', label: 'Asset statements',        status: 'pending',  owner: 'borrower' },
+        { id: 's4', label: 'Employment verification', status: 'pending',  owner: 'employer' },
+        { id: 's5', label: 'Credit pull',             status: 'received', owner: 'system' },
+      ],
+    },
+    {
+      id: 'DCDC000006',
+      borrower: 'Aisha Bello', borrowerFirst: 'Aisha',
+      address: '1922 Lamont St NW', cityState: 'Washington, DC 20010',
+      amount: 165000,
+      stageIdx: 0, stageKey: 'prequal',
+      sla: 'green', daysInStage: 2,
+      progress: progressFor(0),
+      updatedAgo: '4h ago', updatedHours: 4,
+      nextAction: 'Submit pre-qual docs', nextActor: 'borrower',
+      owners: [{ name: 'James Okafor', initials: 'JO', org: 'CC Lending' }],
+      underwriter: { name: 'Priya Shah', org: 'Homium' },
+      aiNudge: 'New application received. Initial pull complete.',
+      program: { name: 'DC DreamCatcher' },
+      stips: [
+        { id: 's1', label: 'Pre-qual application', status: 'received', owner: 'borrower' },
+        { id: 's2', label: 'Soft credit pull',     status: 'received', owner: 'system' },
+        { id: 's3', label: 'Income docs',          status: 'pending',  owner: 'borrower' },
+      ],
+    },
+    {
+      id: 'DCDC000007',
+      borrower: 'Devon Webb', borrowerFirst: 'Devon',
+      address: '2301 Pennsylvania Ave SE', cityState: 'Washington, DC 20020',
+      amount: 230000,
+      stageIdx: 5, stageKey: 'ctc',
+      sla: 'green', daysInStage: 3,
+      progress: progressFor(5),
+      updatedAgo: '3h ago', updatedHours: 3,
+      nextAction: 'Final lender review (24h ETA)', nextActor: 'lender',
+      owners: [{ name: 'James Okafor', initials: 'JO', org: 'CC Lending' }],
+      underwriter: { name: 'Marcus Webb', org: 'Homium' },
+      aiNudge: 'Title underwriter signed off this morning. Wire desk alerted to expect funding by EOW.',
+      program: { name: 'DC DreamCatcher' },
+      stips: [
+        { id: 's1', label: 'Title commitment',   status: 'received', owner: 'title' },
+        { id: 's2', label: 'Clear to close',     status: 'received', owner: 'underwriter' },
+        { id: 's3', label: 'Closing disclosure', status: 'received', owner: 'borrower' },
+        { id: 's4', label: 'Wire instructions',  status: 'pending',  owner: 'closing' },
+      ],
+    },
+    {
+      id: 'DCDC000008',
+      borrower: 'Aanya Patel', borrowerFirst: 'Aanya',
+      address: '1118 7th St NE', cityState: 'Washington, DC 20002',
+      amount: 200000,
+      stageIdx: 3, stageKey: 'uw',
+      sla: 'green', daysInStage: 6,
+      progress: progressFor(3),
+      updatedAgo: '8h ago', updatedHours: 8,
+      nextAction: 'Underwriter review', nextActor: 'underwriter',
+      owners: [{ name: 'Dana Hill', initials: 'DH', org: 'CC Lending' }],
+      underwriter: { name: 'Priya Shah', org: 'Homium' },
+      aiNudge: 'Appraisal back, value supported. Loan moving smoothly through underwriting.',
+      program: { name: 'DC DreamCatcher' },
+      stips: [
+        { id: 's1', label: 'Appraisal report',   status: 'received', owner: 'appraiser' },
+        { id: 's2', label: 'Signed disclosures', status: 'received', owner: 'borrower' },
+        { id: 's3', label: 'UW review',          status: 'pending',  owner: 'underwriter' },
+        { id: 's4', label: 'Income docs',        status: 'received', owner: 'borrower' },
+      ],
+    },
+  ];
+
+  window.HOMIUM_DATA = { LOANS, STAGES, PEOPLE };
+})();

@@ -213,16 +213,48 @@ const OriginationsView = {
 
   /* ── Main render dispatcher ── */
   render() {
+    // Artboard view-mode toggle — Atrium replaces both list & detail with the workbench
+    const pageMode = State.getPageMode('originations');
+    if (pageMode === 'atrium') {
+      const toggleHtml = this._renderArtboardToggle();
+      return `
+        <div class="artboard-page-header">
+          <div class="artboard-page-title">
+            <span class="artboard-page-eyebrow">ORIGINATIONS</span>
+            <span class="artboard-page-name">Direction 8 · Atrium · workbench</span>
+          </div>
+          ${toggleHtml}
+        </div>
+        ${ArtboardMountView.render('atrium', { height: 'calc(100vh - 110px)' })}
+      `;
+    }
+
     if (this._viewMode === 'detail' && this._selectedLoanId) {
       return `<div class="page-body">${this._renderDetail()}</div>`;
     }
-    return `<div class="page-body">${this._renderList()}</div>`;
+    return `<div class="page-body">${this._renderList(this._renderArtboardToggle())}</div>`;
   },
+
+  _renderArtboardToggle() {
+    const cur = State.getPageMode('originations');
+    const modes = [
+      { id: 'default', label: 'Default' },
+      { id: 'atrium',  label: 'Atrium · workbench' },
+    ];
+    return `<div class="artboard-toggle" role="tablist" aria-label="View mode">
+      ${modes.map(m => `
+        <button role="tab" aria-selected="${m.id === cur}"
+                class="${m.id === cur ? 'active' : ''}"
+                onclick="OriginationsView._setPageMode('${m.id}')">${m.label}</button>
+      `).join('')}
+    </div>`;
+  },
+  _setPageMode(mode) { State.setPageMode('originations', mode); App.renderView('/originations'); },
 
   /* ================================================================
      LIST VIEW
   ================================================================ */
-  _renderList() {
+  _renderList(toggleHtml) {
     const role  = State.getRole();
     let loans = State.getLoansForRole();
 
@@ -407,7 +439,8 @@ const OriginationsView = {
             <div class="page-title">${title}</div>
             <div class="page-subtitle">${loans.length} total origination${loans.length !== 1 ? 's' : ''} in pipeline</div>
           </div>
-          <div class="page-header-actions" style="display:flex;align-items:center;gap:8px">
+          <div class="page-header-actions" style="display:flex;align-items:center;gap:12px">
+            ${toggleHtml || ''}
             ${role === 'lo' ? `<button class="btn btn-primary btn-sm" onclick="OriginationsView.showNewAppModal()">+ New Application</button>` : ''}
           </div>
         </div>

@@ -1,0 +1,107 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Homium — Loan Origination v2</title>
+<link rel="stylesheet" href="styles.css?v=navy">
+<link rel="stylesheet" href="borrower.css?v=navy">
+<link rel="stylesheet" href="briefing.css?v=navy">
+<link rel="stylesheet" href="mission.css?v=navy">
+<link rel="stylesheet" href="atrium.css?v=navy">
+<style>
+  /* design canvas framing */
+  body { background: #E8E4DA; }
+  .dc-root { font-family: 'Inter', sans-serif; }
+
+  /* artboard content must fill its frame */
+  .artboard-shell { width: 100%; height: 100%; overflow: hidden; }
+
+  /* Canvas chrome subtle override */
+  .dc-section-title { font-family: 'IvyPresto Display', serif !important; font-weight: 300 !important; letter-spacing: -0.01em; }
+</style>
+<script src="https://unpkg.com/react@18.3.1/umd/react.development.js" integrity="sha384-hD6/rw4ppMLGNu3tX5cjIb+uRZ7UkRJ6BPkLpg4hAu/6onKUg4lLsHAs9EBPT82L" crossorigin="anonymous"></script>
+<script src="https://unpkg.com/react-dom@18.3.1/umd/react-dom.development.js" integrity="sha384-u6aeetuaXnQ38mYT8rp6sbXaQe3NL9t+IBXmnYxwkUI2Hw4bsp2Wvmx4yRQF1uAm" crossorigin="anonymous"></script>
+<script src="https://unpkg.com/@babel/standalone@7.29.0/babel.min.js" integrity="sha384-m08KidiNqLdpJqLq95G/LEi8Qvjl/xUYll3QILypMoQ65QorJ9Lvtp2RXYGBFj1y" crossorigin="anonymous"></script>
+<script src="data.js"></script>
+</head>
+<body>
+<div id="root"></div>
+
+<script type="text/babel" src="design-canvas.jsx"></script>
+<script type="text/babel" src="primitives.jsx"></script>
+<script type="text/babel" src="drawer.jsx"></script>
+<script type="text/babel" src="artboard-institutional.jsx"></script>
+<script type="text/babel" src="artboard-terminal.jsx"></script>
+<script type="text/babel" src="artboard-investor.jsx"></script>
+<script type="text/babel" src="artboard-spatial.jsx"></script>
+<script type="text/babel" src="artboard-borrower.jsx"></script>
+<script type="text/babel" src="artboard-briefing.jsx"></script>
+<script type="text/babel" src="artboard-mission.jsx"></script>
+<script type="text/babel" src="artboard-atrium.jsx"></script>
+
+<script type="text/babel" data-presets="react">
+const ArtboardFrame = ({ children }) => (
+  <div className="artboard-shell">{children}</div>
+);
+
+const App = () => {
+  return (
+    <DesignCanvas title="Loan Origination v2 · Homium" subtitle="Revolutionizing the paper-heavy pipeline — five directions for a customer-facing, technology-forward originator platform.">
+
+      <DCSection id="institutional" title="Direction 1 · Institutional" subtitle="Refined Homium brand for loan originators & admins. Editorial serif, calm whitespace, institutional trust. Click any row to open the side-drawer workspace; press ⌘K for the AI command palette.">
+        <DCArtboard id="inst-main" label="Applications · Loan Officer view" width={1440} height={980}>
+          <ArtboardFrame><InstitutionalArtboard /></ArtboardFrame>
+        </DCArtboard>
+      </DCSection>
+
+      <DCSection id="terminal" title="Direction 2 · Terminal" subtitle="Power-user surface for Homium underwriting & operations. Bloomberg-terminal density, monospace data, keyboard-first, realtime presence. Same data, reframed for speed.">
+        <DCArtboard id="term-main" label="Applications · Underwriter workspace" width={1440} height={980}>
+          <ArtboardFrame><TerminalArtboard /></ArtboardFrame>
+        </DCArtboard>
+      </DCSection>
+
+      <DCSection id="investor" title="Direction 3 · Sponsor / Investor" subtitle="✓ Implemented — investor view now has three tabs: Portfolio (default), Pipeline (Direction 1's table reframed for sponsors), Command Center (Direction 4's map). Public & private program investors (DC HFA, impact funds, nonprofits) see their capital in motion.">
+        <DCArtboard id="inv-main" label="Sponsor Portal · Portfolio / Pipeline / Command tabs" width={1440} height={980}>
+          <ArtboardFrame><InvestorArtboard /></ArtboardFrame>
+        </DCArtboard>
+      </DCSection>
+
+      <DCSection id="spatial" title="Direction 4 · Command Center (standalone)" subtitle="The original light-mode map-first surface. Now also embedded as tabs in the Investor (light) and Mission Control (dark) directions, since the same geographic view serves both sponsors and platform operators.">
+        <DCArtboard id="spatial-main" label="Command Center · standalone (light)" width={1440} height={980}>
+          <ArtboardFrame><SpatialArtboard /></ArtboardFrame>
+        </DCArtboard>
+      </DCSection>
+
+      <DCSection id="borrower" title="Direction 5 · Borrower-Facing Portal" subtitle="Invert the lens. The biggest frustration in mortgage is the borrower never knowing what's happening. A reassuring, Apple-Health-tier view: progress ring, a clear 'for you vs. for us' split, OCR feedback on uploads, named humans reachable in one tap. This is the surface that wins NPS and referrals.">
+        <DCArtboard id="borr-main" label="Borrower home · Evelyn Ross" width={1200} height={1200}>
+          <ArtboardFrame><BorrowerArtboard /></ArtboardFrame>
+        </DCArtboard>
+      </DCSection>
+
+      <DCSection id="briefing" title="Direction 6 · Light — The Briefing" subtitle="Reimagined from scratch as a daily morning brief, not a dashboard. NYT-meets-Stripe editorial cadence. Single column, generous whitespace, a dated masthead, narrative-driven copy, and a numbered rundown of what needs your attention today. No tables. No nav rails. Built to answer one question at 9am: what's the actual story today?">
+        <DCArtboard id="brief-main" label="The Homium Brief · Originator edition" width={1100} height={2200}>
+          <ArtboardFrame><BriefingArtboard /></ArtboardFrame>
+        </DCArtboard>
+      </DCSection>
+
+      <DCSection id="mission" title="Direction 7 · Dark — Mission Control" subtitle="✓ Implemented — Mission Control is the platform operators / system admin surface (NOT origination-company users). Now has tabs: OPS (cockpit — ticker, live feed, anomalies, throughput) and COMMAND (dark-mode geographic map with pins, fair-lending coverage alerts, in-flight rail).">
+        <DCArtboard id="mc-main" label="Mission Control · OPS / COMMAND tabs" width={1680} height={1024}>
+          <ArtboardFrame><MissionArtboard /></ArtboardFrame>
+        </DCArtboard>
+      </DCSection>
+
+      <DCSection id="atrium" title="Direction 8 · Light — Atrium" subtitle="A full platform reimagined as a workbench. Three columns: a left rail of loans pinned to today's stack, a center canvas where the focus loan unfolds as a living document with a horizontal Journey strip (a transit-map of the origination flow with each stage as a card), and a right inspector with the AI co-pilot, live team presence, and signals. Multiple loans open as tabs — Linear meets Notion meets a flight plan.">
+        <DCArtboard id="atr-main" label="Atrium · originator workbench" width={1640} height={1100}>
+          <ArtboardFrame><AtriumArtboard /></ArtboardFrame>
+        </DCArtboard>
+      </DCSection>
+
+    </DesignCanvas>
+  );
+};
+
+ReactDOM.createRoot(document.getElementById('root')).render(<App />);
+</script>
+</body>
+</html>

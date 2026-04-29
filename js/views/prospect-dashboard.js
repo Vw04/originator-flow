@@ -17,7 +17,26 @@ const ProspectDashboardView = {
      MAIN RENDER
   ================================================================ */
   render() {
+    const pageMode = State.getPageMode('prospect');
+    const toggleHtml = this._renderArtboardToggle(pageMode);
+
+    if (pageMode === 'investor') {
+      return `
+        <div class="artboard-page-header">
+          <div class="artboard-page-title">
+            <span class="artboard-page-eyebrow">SPONSOR PORTAL</span>
+            <span class="artboard-page-name">Direction 3 · Investor · portfolio + pipeline + command</span>
+          </div>
+          ${toggleHtml}
+        </div>
+        ${ArtboardMountView.render('investor', { height: 'calc(100vh - 110px)' })}
+      `;
+    }
+
     return `
+      <div class="prospect-toggle-bar">
+        ${toggleHtml}
+      </div>
       ${this._renderHero()}
       <div class="prospect-body">
         ${this._renderKPIStrip()}
@@ -30,6 +49,21 @@ const ProspectDashboardView = {
         ${this._renderCTA()}
       </div>`;
   },
+
+  _renderArtboardToggle(cur) {
+    const modes = [
+      { id: 'default',  label: 'Prospect preview' },
+      { id: 'investor', label: 'Investor · sponsor portal' },
+    ];
+    return `<div class="artboard-toggle" role="tablist" aria-label="View mode">
+      ${modes.map(m => `
+        <button role="tab" aria-selected="${m.id === cur}"
+                class="${m.id === cur ? 'active' : ''}"
+                onclick="ProspectDashboardView._setPageMode('${m.id}')">${m.label}</button>
+      `).join('')}
+    </div>`;
+  },
+  _setPageMode(mode) { State.setPageMode('prospect', mode); App.renderView('/prospect'); },
 
   /* ================================================================
      SECTION 1 — HERO HEADER

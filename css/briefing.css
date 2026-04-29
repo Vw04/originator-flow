@@ -1,0 +1,180 @@
+/* Direction 6 — BRIEFING — light, editorial, single-column "morning brief" */
+.ab-briefing {
+  height: 100%; overflow: auto; background: #FAF8F2;
+  font-family: var(--font-sans); color: #1A1A18;
+}
+.brf-shell { max-width: 880px; margin: 0 auto; padding: 56px 60px 80px; }
+
+.brf-masthead {
+  border-bottom: 2px solid #1A1A18;
+  padding-bottom: 20px; margin-bottom: 36px;
+  display: flex; align-items: flex-end; justify-content: space-between;
+}
+.brf-mast-l { display: flex; align-items: baseline; gap: 14px; }
+.brf-mast-mark {
+  width: 38px; height: 38px; border-radius: 8px;
+  background: #0E2A47; color: #fff;
+  font-family: var(--font-serif); font-size: 22px;
+  display: grid; place-items: center; align-self: center;
+}
+.brf-mast-name { font-family: var(--font-serif); font-size: 30px; font-weight: 300; letter-spacing: -0.02em; }
+.brf-mast-edition {
+  font-family: var(--font-serif); font-style: italic;
+  font-size: 13px; color: #6B6557; margin-left: 6px;
+}
+.brf-mast-r { text-align: right; }
+.brf-mast-date {
+  font-family: var(--font-serif); font-size: 13px; color: #1A1A18;
+  text-transform: uppercase; letter-spacing: 0.16em;
+}
+.brf-mast-issue { font-size: 11px; color: #8B8473; margin-top: 4px; font-family: var(--font-mono); }
+
+/* Lead headline */
+.brf-lead {
+  font-family: var(--font-serif); font-size: 52px; font-weight: 300;
+  line-height: 1.05; letter-spacing: -0.03em; margin-bottom: 18px;
+  text-wrap: pretty;
+}
+.brf-lead em { font-style: italic; color: #0E2A47; }
+.brf-deck {
+  font-family: var(--font-serif); font-size: 18px; font-weight: 300; font-style: italic;
+  color: #4D4A42; line-height: 1.45; max-width: 660px; margin-bottom: 38px;
+  border-left: 2px solid #C2A14A; padding-left: 18px;
+}
+
+/* By-the-numbers strip */
+.brf-numbers {
+  display: grid; grid-template-columns: repeat(4, 1fr);
+  border-top: 1px solid #1A1A18; border-bottom: 1px solid #1A1A18;
+  padding: 22px 0; margin: 0 0 44px; gap: 28px;
+}
+.brf-num-cell {
+  border-left: 1px solid #DCD6C4;
+  padding: 0 0 0 18px;
+}
+.brf-num-cell:first-child { border-left: none; padding-left: 0; }
+.brf-num-lbl {
+  font-size: 10px; color: #6B6557; text-transform: uppercase;
+  letter-spacing: 0.14em; font-weight: 600; margin-bottom: 8px;
+}
+.brf-num-val {
+  font-family: var(--font-serif); font-size: 32px; font-weight: 300;
+  letter-spacing: -0.02em; line-height: 1;
+}
+.brf-num-val.danger { color: #B0382C; }
+.brf-num-delta { font-size: 11px; color: #6B6557; margin-top: 6px; font-family: var(--font-mono); }
+
+/* Section headers */
+.brf-section-head {
+  display: flex; align-items: baseline; gap: 16px; margin: 48px 0 22px;
+  border-bottom: 1px solid #DCD6C4; padding-bottom: 10px;
+}
+.brf-section-num {
+  font-family: var(--font-serif); font-style: italic;
+  font-size: 16px; color: #C2A14A;
+}
+.brf-section-title {
+  font-family: var(--font-serif); font-size: 22px; font-weight: 400;
+  letter-spacing: -0.01em;
+}
+.brf-section-rule { flex: 1; height: 1px; }
+
+/* Loan story card */
+.brf-loan {
+  display: grid; grid-template-columns: 80px 1fr auto;
+  gap: 24px; padding: 24px 0; border-top: 1px solid #EBE5D2;
+  align-items: flex-start;
+}
+.brf-loan:first-of-type { border-top: none; }
+.brf-loan-rank {
+  font-family: var(--font-serif); font-size: 44px; font-weight: 300;
+  color: #C2A14A; line-height: 1; letter-spacing: -0.02em;
+}
+.brf-loan-ribbon {
+  display: inline-block; font-size: 10px; font-weight: 600;
+  letter-spacing: 0.1em; text-transform: uppercase;
+  padding: 2px 8px; border-radius: 3px; margin-bottom: 8px;
+}
+.brf-loan-ribbon.red { background: #FBE7E3; color: #B0382C; }
+.brf-loan-ribbon.amber { background: #FBF1D6; color: #8A6414; }
+.brf-loan-ribbon.green { background: #DDEBE2; color: #0E2A47; }
+.brf-loan-headline {
+  font-family: var(--font-serif); font-size: 24px; font-weight: 300;
+  line-height: 1.2; letter-spacing: -0.015em; margin-bottom: 8px;
+  cursor: pointer;
+}
+.brf-loan-headline:hover { color: #0E2A47; text-decoration: underline; text-underline-offset: 4px; }
+.brf-loan-byline {
+  font-size: 12px; color: #8B8473; font-family: var(--font-mono);
+  margin-bottom: 14px; letter-spacing: 0.02em;
+}
+.brf-loan-body {
+  font-size: 14px; line-height: 1.6; color: #2D2A24;
+  max-width: 560px; margin-bottom: 14px;
+}
+.brf-loan-body b { font-weight: 600; }
+.brf-loan-actions { display: flex; gap: 10px; align-items: center; }
+.brf-action-btn {
+  padding: 8px 16px; border: 1px solid #1A1A18; background: #1A1A18; color: #fff;
+  font-size: 12px; font-weight: 500; border-radius: 999px;
+  cursor: pointer; transition: opacity 0.15s;
+}
+.brf-action-btn:hover { opacity: 0.85; }
+.brf-action-btn.ghost { background: transparent; color: #1A1A18; }
+.brf-action-link {
+  font-size: 12px; color: #6B6557; text-decoration: underline;
+  text-underline-offset: 3px; cursor: pointer;
+}
+
+/* Loan side ("at a glance") */
+.brf-loan-aside {
+  width: 200px; padding: 14px; background: #fff;
+  border: 1px solid #EBE5D2; border-radius: 6px;
+}
+.brf-aside-row {
+  display: flex; justify-content: space-between; align-items: baseline;
+  font-size: 11px; padding: 4px 0;
+}
+.brf-aside-row .lbl { color: #8B8473; text-transform: uppercase; letter-spacing: 0.06em; font-weight: 600; }
+.brf-aside-row .val { font-family: var(--font-serif); font-size: 14px; }
+
+/* Mini stage strip in aside */
+.brf-aside-stage {
+  display: flex; gap: 2px; margin-top: 10px;
+}
+.brf-aside-stage-seg {
+  flex: 1; height: 4px; border-radius: 1px; background: #EBE5D2;
+}
+.brf-aside-stage-seg.done { background: #0E2A47; }
+.brf-aside-stage-seg.cur { background: #C2A14A; }
+.brf-aside-stage-seg.bad { background: #B0382C; }
+
+/* AI quote */
+.brf-ai-quote {
+  margin: 28px 0; padding: 22px 28px;
+  background: #1A1A18; color: #F4EFD9; border-radius: 4px;
+  display: grid; grid-template-columns: auto 1fr; gap: 18px;
+  align-items: flex-start;
+}
+.brf-ai-quote-ic {
+  width: 32px; height: 32px; border-radius: 50%;
+  background: #C2A14A; color: #1A1A18;
+  display: grid; place-items: center; font-family: var(--font-serif); font-size: 16px;
+}
+.brf-ai-quote-body { font-family: var(--font-serif); font-size: 18px; font-weight: 300; line-height: 1.5; font-style: italic; }
+.brf-ai-quote-body b { color: #C2A14A; font-style: normal; font-weight: 500; }
+.brf-ai-attr { font-size: 11px; color: #8B8473; margin-top: 8px; font-family: var(--font-mono); }
+.brf-ai-actions { display: flex; gap: 10px; margin-top: 14px; }
+.brf-ai-actions button {
+  padding: 6px 14px; font-size: 12px; border-radius: 999px;
+  background: transparent; color: #F4EFD9; border: 1px solid #4A4438;
+}
+.brf-ai-actions button.primary { background: #C2A14A; color: #1A1A18; border-color: #C2A14A; }
+
+/* Footer rule */
+.brf-end {
+  margin-top: 60px; padding-top: 24px; border-top: 1px solid #1A1A18;
+  display: flex; justify-content: space-between; align-items: baseline;
+  font-size: 11px; color: #6B6557; font-family: var(--font-mono);
+}
+.brf-end-mark { font-family: var(--font-serif); font-size: 22px; color: #C2A14A; font-style: italic; }
