@@ -213,43 +213,99 @@ const OriginationsView = {
 
   /* ── Main render dispatcher ── */
   render() {
-    // Artboard view-mode toggle — Atrium replaces both list & detail with the workbench
-    const pageMode = State.getPageMode('originations');
-    if (pageMode === 'atrium') {
-      const toggleHtml = this._renderArtboardToggle();
+    // Detail view — single-loan workbench. Toggle here picks Atrium vs classic.
+    if (this._viewMode === 'detail' && this._selectedLoanId) {
+      const detailMode = State.getPageMode('originations-detail');
+      if (detailMode === 'atrium') {
+        // Atrium workbench filtered to just the loan(s) in scope
+        State.setAtriumScope([this._selectedLoanId]);
+        const toggleHtml = this._renderDetailArtboardToggle();
+        return `
+          <div class="artboard-floating-toggle" data-mode="atrium">${toggleHtml}</div>
+          ${ArtboardMountView.render('atrium', { height: 'calc(100vh - var(--topnav-height))' })}
+        `;
+      }
+      return `<div class="page-body">${this._renderDetail()}</div>`;
+    }
+
+    // List view — Institutional is the default originations table.
+    let pageMode = State.getPageMode('originations');
+    if (pageMode === 'default') pageMode = 'institutional';
+
+    if (pageMode === 'institutional') {
+      const toggleHtml = this._renderListArtboardToggle(pageMode);
+      const queuedIds = State.getAtriumScope();
       return `
-        <div class="artboard-page-header">
-          <div class="artboard-page-title">
-            <span class="artboard-page-eyebrow">ORIGINATIONS</span>
-            <span class="artboard-page-name">Direction 8 · Atrium · workbench</span>
-          </div>
-          ${toggleHtml}
-        </div>
-        ${ArtboardMountView.render('atrium', { height: 'calc(100vh - 110px)' })}
+        ${ArtboardMountView.render('institutional', {
+          height: 'calc(100vh - var(--topnav-height))',
+          props: { context: 'originations' },
+          suffix: 'originations'
+        })}
+        <div class="artboard-floating-toggle" data-mode="${pageMode}">${toggleHtml}</div>
+        ${queuedIds.length ? `
+          <div class="atrium-queue-bar">
+            <span><b>${queuedIds.length}</b> loan${queuedIds.length === 1 ? '' : 's'} queued for Atrium</span>
+            <button class="btn btn-primary btn-sm" onclick="OriginationsView._enterAtriumQueue()">View in Atrium →</button>
+            <button class="btn btn-ghost btn-sm" onclick="OriginationsView._clearAtriumQueue()">Clear</button>
+          </div>` : ''}
       `;
     }
 
-    if (this._viewMode === 'detail' && this._selectedLoanId) {
-      return `<div class="page-body">${this._renderDetail()}</div>`;
+    if (pageMode === 'atrium-queue') {
+      const toggleHtml = this._renderListArtboardToggle(pageMode);
+      return `
+        <div class="artboard-floating-toggle" data-mode="atrium-queue">${toggleHtml}</div>
+        ${ArtboardMountView.render('atrium', { height: 'calc(100vh - var(--topnav-height))' })}
+      `;
     }
-    return `<div class="page-body">${this._renderList(this._renderArtboardToggle())}</div>`;
+
+    // Classic table fallback
+    return `<div class="page-body">${this._renderList(this._renderListArtboardToggle(pageMode))}</div>`;
   },
 
-  _renderArtboardToggle() {
-    const cur = State.getPageMode('originations');
+  _renderListArtboardToggle(cur) {
+    const queuedIds = State.getAtriumScope();
     const modes = [
-      { id: 'default', label: 'Default' },
+      { id: 'institutional', label: 'Institutional' },
+      { id: 'classic',       label: 'Classic table' },
+      { id: 'atrium-queue',  label: queuedIds.length ? `Atrium · ${queuedIds.length} queued` : 'Atrium · queue', disabled: !queuedIds.length },
+    ];
+    return `<div class="artboard-toggle" role="tablist" aria-label="View mode">
+      ${modes.map(m => `
+        <button role="tab" aria-selected="${m.id === cur}"
+                ${m.disabled ? 'disabled style="opacity:0.5;cursor:not-allowed"' : ''}
+                class="${m.id === cur ? 'active' : ''}"
+                onclick="${m.disabled ? '' : `OriginationsView._setListPageMode('${m.id}')`}">${m.label}</button>
+      `).join('')}
+    </div>`;
+  },
+  _renderDetailArtboardToggle() {
+    const cur = State.getPageMode('originations-detail');
+    const modes = [
+      { id: 'default', label: 'Classic detail' },
       { id: 'atrium',  label: 'Atrium · workbench' },
     ];
     return `<div class="artboard-toggle" role="tablist" aria-label="View mode">
       ${modes.map(m => `
         <button role="tab" aria-selected="${m.id === cur}"
                 class="${m.id === cur ? 'active' : ''}"
-                onclick="OriginationsView._setPageMode('${m.id}')">${m.label}</button>
+                onclick="OriginationsView._setDetailPageMode('${m.id}')">${m.label}</button>
       `).join('')}
     </div>`;
   },
-  _setPageMode(mode) { State.setPageMode('originations', mode); App.renderView('/originations'); },
+  _setListPageMode(mode) { State.setPageMode('originations', mode); App.renderView('/originations'); },
+  _setDetailPageMode(mode) {
+    State.setPageMode('originations-detail', mode);
+    App.renderView('/originations/' + this._selectedLoanId);
+  },
+  _enterAtriumQueue() { State.setPageMode('originations', 'atrium-queue'); App.renderView('/originations'); },
+  _clearAtriumQueue() { State.setAtriumScope([]); App.renderView('/originations'); },
+  _toggleAtriumQueue(id) {
+    const cur = State.getAtriumScope();
+    if (cur.includes(id)) State.setAtriumScope(cur.filter(x => x !== id));
+    else State.setAtriumScope([...cur, id]);
+    App.renderView('/originations');
+  },
 
   /* ================================================================
      LIST VIEW
@@ -1120,3 +1176,7 @@ const OriginationsView = {
    ============================================================ */
 
 document.addEventListener('DOMContentLoaded', () => App.init());
+
+// Expose to window so JSX artboards (run in babel-eval scope) can reach them.
+window.App = App;
+window.OriginationsView = OriginationsView;

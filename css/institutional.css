@@ -29,22 +29,9 @@
   --font-mono:       'JetBrains Mono', 'SF Mono', monospace;
 }
 
-* { box-sizing: border-box; margin: 0; padding: 0; }
-html, body { height: 100%; }
-body {
-  font-family: var(--font-sans);
-  font-size: 13px;
-  line-height: 1.5;
-  color: var(--h-ink);
-  background: #ECEAE4;
-  -webkit-font-smoothing: antialiased;
-  overflow: hidden;
-}
-button { font: inherit; cursor: pointer; border: 0; background: 0; color: inherit; }
-input, select, textarea { font: inherit; color: inherit; }
-ul { list-style: none; }
-img { display: block; max-width: 100%; }
-a { color: inherit; text-decoration: none; }
+/* Global element resets removed — these conflicted with the host app's
+   styles.css (locked body scroll, repainted background). The artboards live
+   inside .ab-* root nodes which scope their own background + overflow. */
 
 /* ============================================================
    ARTBOARD 1: INSTITUTIONAL — refined homium green + serif

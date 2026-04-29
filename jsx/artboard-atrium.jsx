@@ -1,32 +1,31 @@
-/* ARTBOARD 8 — ATRIUM — light originator workbench, 3-column with horizontal journey strip */
+/* ARTBOARD 8 — ATRIUM — light originator workbench, 3-column with horizontal journey strip.
+   Reads State.getAtriumScope() to decide which loans populate the left rail:
+   - If a scope is set (1+ ids from a loan-detail toggle or originations queue),
+     the rail shows only those loans.
+   - If empty (e.g. visited as a standalone artboard preview), it shows all loans. */
 const AtriumArtboard = () => {
   const LOANS = HOMIUM_DATA.LOANS;
   const STAGES = HOMIUM_DATA.STAGES;
   const PEOPLE = HOMIUM_DATA.PEOPLE;
 
-  // Open as tabs: by default, Hayes (urgent) + Ross (active doc) + Webb (CTC)
-  const [openTabIds, setOpenTabIds] = React.useState(['DCDC000005', 'DCDC000001', 'DCDC000007']);
-  const [activeId, setActiveId] = React.useState('DCDC000005');
+  const scopeIds = (typeof State !== 'undefined' && State.getAtriumScope) ? State.getAtriumScope() : [];
+  const scopedLoans = scopeIds.length
+    ? scopeIds.map(id => LOANS.find(l => l.id === id)).filter(Boolean)
+    : LOANS;
 
-  const tabs = openTabIds.map(id => LOANS.find(l => l.id === id)).filter(Boolean);
-  const focus = tabs.find(l => l.id === activeId) || tabs[0];
+  const [activeId, setActiveId] = React.useState(scopedLoans[0] ? scopedLoans[0].id : null);
+  React.useEffect(() => {
+    if (!scopedLoans.find(l => l.id === activeId) && scopedLoans[0]) setActiveId(scopedLoans[0].id);
+  }, [scopedLoans.map(l => l.id).join(',')]);
 
-  const openLoanTab = (id) => {
-    if (!openTabIds.includes(id)) setOpenTabIds([...openTabIds, id]);
-    setActiveId(id);
-  };
-  const closeTab = (id, e) => {
-    e.stopPropagation();
-    const next = openTabIds.filter(t => t !== id);
-    setOpenTabIds(next);
-    if (activeId === id && next.length) setActiveId(next[next.length - 1]);
-  };
+  const focus = scopedLoans.find(l => l.id === activeId) || scopedLoans[0];
 
-  // pinned (today's stack) vs all
-  const pinned = LOANS.filter(l => l.sla === 'red' || l.sla === 'amber' || l.stageKey === 'ctc' || l.stageKey === 'doc');
-  const others = LOANS.filter(l => !pinned.includes(l));
+  // when not in scoped mode, group loans like before; when scoped, just show one section
+  const isScoped = scopeIds.length > 0;
+  const pinned = isScoped ? scopedLoans : LOANS.filter(l => l.sla === 'red' || l.sla === 'amber' || l.stageKey === 'ctc' || l.stageKey === 'doc');
+  const others = isScoped ? [] : LOANS.filter(l => !pinned.includes(l));
 
-  if (!focus) return <div className="ab-atrium"/>;
+  if (!focus) return <div className="ab-atrium" style={{padding:40, color:'#6B6557'}}>No loans in scope. Select loans from the originations list and click "View in Atrium".</div>;
 
   const stipDone = focus.stips.filter(s => s.status === 'received').length;
   const stipTotal = focus.stips.length;
@@ -34,52 +33,23 @@ const AtriumArtboard = () => {
   const stipBlocked = focus.stips.filter(s => s.status === 'blocked').length;
 
   return (
-    <div className="ab-atrium">
-      {/* TOP BAR with tabs */}
-      <div className="atr-top">
-        <div className="atr-top-brand">
-          <div className="atr-brand-mark">h</div>
-          <div className="atr-brand-name">Atrium</div>
-        </div>
-        <div className="atr-tabs">
-          {tabs.map(l => (
-            <div
-              key={l.id}
-              className={'atr-tab' + (l.id === activeId ? ' active' : '')}
-              onClick={() => setActiveId(l.id)}
-            >
-              {l.sla === 'red' && <span className="atr-tab-pulse"/>}
-              <span className="atr-tab-id">{l.id.replace('DCDC000', '#')}</span>
-              <span className="atr-tab-name">{l.borrower}</span>
-              <span className="atr-tab-close" onClick={(e) => closeTab(l.id, e)}>
-                <Icon name="x" size={10}/>
-              </span>
-            </div>
-          ))}
-          <div className="atr-tab-add"><Icon name="plus" size={14}/></div>
-        </div>
-        <div className="atr-top-r">
-          <div className="atr-cmdk">
-            <Icon name="search" size={12}/>
-            <span>Jump to loan…</span>
-            <kbd>⌘K</kbd>
-          </div>
-          <div className="atr-user-ava">JO</div>
-        </div>
-      </div>
+    <div className="ab-atrium ab-atrium-no-tabs">
+      {/* `.atr-top` removed — host app's topnav provides logo, search, user.
+          Pins/tabs were redundant with the left rail; left rail is the single
+          source of which loans are in scope. */}
 
-      {/* LEFT RAIL: today's stack */}
+      {/* LEFT RAIL: scoped loans (or full list when not scoped) */}
       <div className="atr-rail">
         <div className="atr-rail-section">
           <div className="atr-rail-h">
-            <div className="atr-rail-title">Pinned to today</div>
+            <div className="atr-rail-title">{isScoped ? 'In scope' : 'Pinned to today'}</div>
             <span className="atr-rail-count">{pinned.length}</span>
           </div>
           {pinned.map(l => (
             <div
               key={l.id}
               className={'atr-rail-card' + (l.id === activeId ? ' active' : '')}
-              onClick={() => openLoanTab(l.id)}
+              onClick={() => setActiveId(l.id)}
             >
               <div className="atr-rail-card-id">{l.id}</div>
               <div className="atr-rail-card-name">{l.borrower}</div>
@@ -114,7 +84,7 @@ const AtriumArtboard = () => {
             <div
               key={l.id}
               className={'atr-rail-card' + (l.id === activeId ? ' active' : '')}
-              onClick={() => openLoanTab(l.id)}
+              onClick={() => setActiveId(l.id)}
             >
               <div className="atr-rail-card-id">{l.id}</div>
               <div className="atr-rail-card-name">{l.borrower}</div>

@@ -26,6 +26,7 @@ const State = (() => {
   let _impersonating = null; // { savedRole, savedUserId } | null
   let _viewMode = 'desktop'; // 'desktop' | 'mobile'
   let _pageModes = {};        // { [pageKey: string]: modeId } — toggle state for new artboard views
+  let _atriumScope = [];      // [loanId] — which loans the Atrium workbench shows in its left rail
 
   const _subscribers = [];
 
@@ -69,6 +70,12 @@ const State = (() => {
     /* ---- Page Mode (per-page artboard toggle: 'default' | 'institutional' | 'spatial' | 'atrium' | 'investor') ---- */
     getPageMode(pageKey) { return _pageModes[pageKey] || 'default'; },
     setPageMode(pageKey, mode) { _pageModes[pageKey] = mode; notify(); },
+
+    /* ---- Atrium scope — which loan IDs populate the Atrium workbench's left rail.
+         Set to a single id when entering Atrium from a loan-detail page; set to a
+         multi-id list when entering from the originations multi-select queue. ---- */
+    getAtriumScope() { return [..._atriumScope]; },
+    setAtriumScope(ids) { _atriumScope = Array.isArray(ids) ? [...ids] : []; notify(); },
 
     /* ---- Impersonation ---- */
     startImpersonation(targetUserId) {
@@ -401,3 +408,6 @@ const State = (() => {
     subscribe(fn) { _subscribers.push(fn); },
   };
 })();
+
+// Expose State to window so JSX artboards (run in babel-eval scope) can reach it.
+window.State = State;

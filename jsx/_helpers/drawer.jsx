@@ -48,9 +48,45 @@ const Drawer = ({ loan, open, onClose }) => {
                 )}
               </div>
             </div>
-            <button className="drawer-close" onClick={onClose} aria-label="Close">
-              <Icon name="x" size={16}/>
-            </button>
+            <div style={{display: 'flex', gap: 8, alignItems: 'center'}}>
+              <button
+                onClick={() => {
+                  if (window.OriginationsView && window.App) {
+                    window.OriginationsView._viewMode = 'detail';
+                    window.OriginationsView._selectedLoanId = loan.id;
+                    window.App.renderView('/originations/' + loan.id);
+                    window.location.hash = '#/originations/' + loan.id;
+                  }
+                }}
+                style={{
+                  padding: '6px 12px', fontSize: 11, fontWeight: 600,
+                  background: 'var(--h-green)', color: '#fff',
+                  border: 0, borderRadius: 6, cursor: 'pointer',
+                  letterSpacing: '0.04em', textTransform: 'uppercase',
+                }}
+                title="Open the full origination workbench for this loan"
+              >Open detail →</button>
+              <button
+                onClick={() => {
+                  if (window.State && window.OriginationsView && window.App) {
+                    window.State.setAtriumScope([loan.id]);
+                    window.State.setPageMode('originations', 'atrium-queue');
+                    window.location.hash = '#/originations';
+                    window.App.renderView('/originations');
+                  }
+                }}
+                style={{
+                  padding: '6px 12px', fontSize: 11, fontWeight: 600,
+                  background: '#C2A14A', color: '#1A1F18',
+                  border: 0, borderRadius: 6, cursor: 'pointer',
+                  letterSpacing: '0.04em', textTransform: 'uppercase',
+                }}
+                title="Open in Atrium workbench"
+              >Atrium</button>
+              <button className="drawer-close" onClick={onClose} aria-label="Close">
+                <Icon name="x" size={16}/>
+              </button>
+            </div>
           </div>
 
           <div className="drawer-meta-row">

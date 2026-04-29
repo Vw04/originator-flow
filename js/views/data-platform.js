@@ -182,7 +182,30 @@ const DataPlatformView = {
   _renderDashboard() {
     const role     = State.getRole();
     const isInvestor = role === 'investor';
-    if (isInvestor) return this._renderInvestorDashboard();
+
+    // Default the Dashboard tab to the new Command Center for both ops + investors.
+    // Toggle picks "Command Center" (map + metrics) or "Classic" (existing charts).
+    let pageMode = State.getPageMode('dashboard');
+    if (pageMode === 'default') pageMode = 'cmd-dash';
+    const toggleHtml = this._renderArtboardToggle('dashboard', [
+      { id: 'cmd-dash', label: 'Command Center' },
+      { id: 'classic',  label: 'Classic charts' },
+    ], pageMode);
+
+    if (pageMode === 'cmd-dash') {
+      return `
+        ${ArtboardMountView.render('cmd-dash', {
+          height: 'calc(100vh - var(--topnav-height))',
+          props: { context: isInvestor ? 'investor' : 'operator' }
+        })}
+        <div class="artboard-floating-toggle" data-mode="cmd-dash">${toggleHtml}</div>
+      `;
+    }
+
+    if (isInvestor) return `
+      <div class="prospect-toggle-bar">${toggleHtml}</div>
+      ${this._renderInvestorDashboard()}
+    `;
     const loans    = State.getLoansForRole();
 
     const active    = loans.filter(l => l.status !== 'draft' && l.status !== 'completed');
@@ -430,12 +453,20 @@ const DataPlatformView = {
     const poolSummarySection = this._renderPoolSummary();
     const investorEnhanced = isInvestor ? this._renderInvestorEnhancements() : '';
 
+    const _toggle = this._renderArtboardToggle('dashboard', [
+      { id: 'cmd-dash', label: 'Command Center' },
+      { id: 'classic',  label: 'Classic charts' },
+    ], 'classic');
+
     return `
       <div class="page-header">
         <div class="page-header-inner">
           <div class="page-header-left">
             <div class="page-title">Dashboard</div>
             <div class="page-subtitle">Pipeline overview and analytics</div>
+          </div>
+          <div class="page-header-actions" style="display:flex;align-items:center;gap:12px">
+            ${_toggle}
           </div>
         </div>
       </div>
@@ -1253,25 +1284,23 @@ const DataPlatformView = {
       return this._renderApplicationDetail(this._selectedApplicationId);
     }
 
-    // ---- Artboard view modes (alternate views from the Loan Origination v2 designs) ----
-    const pageMode = State.getPageMode('applications');
+    // ---- Artboard view modes — Institutional is now the default for Applications ----
+    let pageMode = State.getPageMode('applications');
+    if (pageMode === 'default') pageMode = 'institutional';
     const toggleHtml = this._renderArtboardToggle('applications', [
-      { id: 'default',       label: 'Table' },
       { id: 'institutional', label: 'Institutional' },
+      { id: 'classic',       label: 'Classic table' },
       { id: 'spatial',       label: 'Map · Command' },
     ], pageMode);
 
     if (pageMode === 'institutional' || pageMode === 'spatial') {
-      const labelMap = { institutional: 'Direction 1 · Institutional', spatial: 'Direction 4 · Command Center' };
+      const isInst = pageMode === 'institutional';
       return `
-        <div class="artboard-page-header">
-          <div class="artboard-page-title">
-            <span class="artboard-page-eyebrow">APPLICATIONS</span>
-            <span class="artboard-page-name">${labelMap[pageMode]}</span>
-          </div>
-          ${toggleHtml}
-        </div>
-        ${ArtboardMountView.render(pageMode, { height: 'calc(100vh - 110px)' })}
+        ${ArtboardMountView.render(pageMode, {
+          height: 'calc(100vh - var(--topnav-height))',
+          props: isInst ? { context: 'applications' } : {}
+        })}
+        <div class="artboard-floating-toggle" data-mode="${pageMode}">${toggleHtml}</div>
       `;
     }
 

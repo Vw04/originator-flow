@@ -17,6 +17,7 @@ const ArtboardMountView = (() => {
     terminal:      () => window.TerminalArtboard,
     mission:       () => window.MissionArtboard,
     briefing:      () => window.BriefingArtboard,
+    'cmd-dash':    () => window.CommandDashboardArtboard,
   };
 
   // Active roots — keyed by mount-id so re-renders unmount cleanly
@@ -25,14 +26,15 @@ const ArtboardMountView = (() => {
   function render(name, opts = {}) {
     const id = 'artboard-mount-' + name + '-' + (opts.suffix || 'main');
     const heightCss = opts.height || 'calc(100vh - 60px)';
+    const props = opts.props || {};
 
     // schedule the React mount after this string is inserted into the DOM
-    queueMicrotask(() => mount(name, id));
+    queueMicrotask(() => mount(name, id, props));
 
     return `<div id="${id}" class="artboard-mount" style="width:100%; height:${heightCss}; overflow:hidden;"></div>`;
   }
 
-  function mount(name, id) {
+  function mount(name, id, props = {}) {
     const node = document.getElementById(id);
     if (!node) return;
     const getComp = COMPONENT_BY_NAME[name];
@@ -40,7 +42,7 @@ const ArtboardMountView = (() => {
     if (!Comp) {
       node.innerHTML = '<div style="padding:40px; font-family: Inter, sans-serif; color:#7B7A73;">Loading artboard…</div>';
       // Babel may still be transpiling — retry once after a brief delay
-      setTimeout(() => mount(name, id), 250);
+      setTimeout(() => mount(name, id, props), 250);
       return;
     }
     // Each main-app re-render replaces the parent innerHTML, so the mount
@@ -52,7 +54,7 @@ const ArtboardMountView = (() => {
       root.__homiumNode = node;
       _roots.set(id, root);
     }
-    root.render(React.createElement(Comp));
+    root.render(React.createElement(Comp, props));
   }
 
   function unmountAll() {

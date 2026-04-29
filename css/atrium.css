@@ -6,6 +6,14 @@
   grid-template-rows: 48px 1fr;
   overflow: hidden;
 }
+/* When mounted inside the host app there's no internal top bar — collapse the
+   first row so the rail/canvas/inspector fill the full mount height. */
+.ab-atrium-no-tabs {
+  grid-template-rows: 1fr;
+}
+.ab-atrium-no-tabs .atr-rail { grid-row: 1; }
+.ab-atrium-no-tabs .atr-canvas { grid-row: 1; }
+.ab-atrium-no-tabs .atr-inspector { grid-row: 1; }
 
 /* topbar spans all */
 .atr-top {

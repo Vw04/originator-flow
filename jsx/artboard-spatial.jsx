@@ -31,30 +31,7 @@ const SpatialArtboard = () => {
 
   return (
     <div className="ab-spatial" style={{position:'relative', height:'100%', display:'flex', flexDirection:'column', background:'var(--h-paper)', overflow:'hidden'}}>
-      {/* top bar (reuse institutional) */}
-      <div className="inst-top">
-        <div className="inst-brand">
-          <div className="inst-brand-mark">h</div>
-          <div className="inst-brand-name">Homium</div>
-        </div>
-        <nav className="inst-nav">
-          <a>Dashboard</a>
-          <a>Applications</a>
-          <a className="active">Command Center</a>
-          <a>Batches</a>
-          <a>Administration</a>
-        </nav>
-        <div className="inst-top-right">
-          <button className="inst-cmdk"><Icon name="search" size={13}/><span>Search the District…</span><kbd>⌘K</kbd></button>
-          <div className="inst-user">
-            <div style={{textAlign:'right'}}>
-              <div className="inst-user-name">Rhea Tanaka</div>
-              <div className="inst-user-role">Portfolio Mgr · DC HFA</div>
-            </div>
-            <div className="inst-user-ava" style={{background:'#7C3AED'}}>RT</div>
-          </div>
-        </div>
-      </div>
+      {/* `.inst-top` removed — host app's topnav provides logo, nav, search, user. */}
 
       {/* dense header strip */}
       <div style={{padding:'18px 28px 16px', borderBottom:'1px solid var(--h-line-2)', display:'flex', alignItems:'flex-end', justifyContent:'space-between'}}>

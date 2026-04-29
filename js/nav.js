@@ -163,6 +163,11 @@ const Nav = (() => {
 
     const initials = user ? Display.initials(user) : 'HM';
     const userName  = user ? Display.fullName(user) : 'Demo User';
+    const company   = user && user.companyId ? State.getCompany(user.companyId) : null;
+    const branch    = user && user.branchId  ? State.getBranch(user.branchId)   : null;
+    const orgLine   = company
+      ? `${meta.label || role}${branch ? ' &middot; ' + branch.name : ''} <span style="opacity:0.65">@</span> ${company.name}`
+      : (meta.label || role);
 
     return `
       <nav class="topnav">
@@ -176,6 +181,16 @@ const Nav = (() => {
         <div class="topnav-links">
           ${navLinks}
           ${adminDropdown}
+        </div>
+        <div class="topnav-search">
+          <button class="topnav-search-btn" onclick="Nav._openCmdK()" aria-label="Jump to loan or borrower">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                 stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+              <circle cx="11" cy="11" r="7"/><path d="M20 20l-3.5-3.5"/>
+            </svg>
+            <span class="topnav-search-text">Jump to loan, borrower, or address</span>
+            <kbd class="topnav-search-kbd">⌘K</kbd>
+          </button>
         </div>
         <div class="topnav-right">
           ${role === 'investor_prospect' ? '' : `<div class="topnav-notif" id="topnav-notif" onclick="Nav.toggleNotifications(event)">
@@ -194,7 +209,7 @@ const Nav = (() => {
           </div>`}
           <div class="topnav-user-info">
             <div class="topnav-user-name">${userName}</div>
-            <div class="topnav-role-label">${meta.label || role}</div>
+            <div class="topnav-role-label">${orgLine}</div>
           </div>
           <div class="topnav-profile" id="topnav-profile" onclick="Nav.toggleProfileMenu(event)">
             <div class="topnav-avatar" style="background:${avatarColor(role)}">${initials}</div>
@@ -203,7 +218,7 @@ const Nav = (() => {
                 <div class="topnav-avatar" style="background:${avatarColor(role)};width:36px;height:36px;font-size:13px">${initials}</div>
                 <div>
                   <div style="font-weight:600;font-size:13px;color:var(--color-text)">${userName}</div>
-                  <div style="font-size:11px;color:var(--color-text-muted);margin-top:1px">${meta.label || role}</div>
+                  <div style="font-size:11px;color:var(--color-text-muted);margin-top:1px">${orgLine}</div>
                 </div>
               </div>
               <div class="profile-dropdown-divider"></div>
@@ -243,6 +258,16 @@ const Nav = (() => {
     _goLOP(path) {
       State.setMode('data');
       Router.navigate(path);
+    },
+
+    _openCmdK() {
+      // Lightweight prompt-style jump for now — wires through the existing
+      // applications view's search field. Replaceable with a richer ⌘K palette later.
+      const q = window.prompt('Jump to loan / borrower / address:');
+      if (!q) return;
+      DataPlatformView._appSearch = q.trim();
+      DataPlatformView._activeTab = 'applications';
+      Router.navigate('/data/applications');
     },
 
     goAdmin(path) {
