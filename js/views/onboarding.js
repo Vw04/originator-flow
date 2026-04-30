@@ -212,7 +212,7 @@ const OnboardingView = {
           </div>
           ${canEdit ? `
             <div class="page-header-actions">
-              <button class="btn btn-primary btn-sm" onclick="UsersView.openInviteModal()">+ Invite User</button>
+              <button class="btn btn-primary btn-sm" onclick="BulkInviteView.start({ companyId: '${currentUser?.companyId || ''}', returnPath: '/onboarding' })">+ Invite User</button>
             </div>` : ''}
         </div>
       </div>

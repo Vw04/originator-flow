@@ -405,7 +405,7 @@ const CompaniesView = {
 
             <hr class="divider" style="margin:16px 0" />
             <div style="font-size:12px;font-weight:700;text-transform:uppercase;letter-spacing:0.07em;color:var(--color-text-muted);margin-bottom:8px">Invite User to this Company</div>
-            <button class="btn btn-ghost btn-sm" onclick="CompaniesView.closeModal();UsersView._presetCompany='${companyId}';UsersView.openInviteModal()">+ Invite User</button>
+            <button class="btn btn-ghost btn-sm" onclick="CompaniesView.closeModal();BulkInviteView.start({ companyId: '${companyId}', returnPath: '/origination-companies/${companyId}' })">+ Invite User</button>
           </div>
 
           <div class="modal-footer">

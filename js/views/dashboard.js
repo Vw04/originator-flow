@@ -487,7 +487,7 @@ const DashboardView = {
             <div class="page-subtitle">${company ? company.name : 'My Company'}</div>
           </div>
           <div class="page-header-actions">
-            <button class="btn btn-primary btn-sm" onclick="UsersView.openInviteModal()">Invite User</button>
+            <button class="btn btn-primary btn-sm" onclick="BulkInviteView.start({ companyId: '${cu?.companyId || ''}', returnPath: '/dashboard' })">Invite User</button>
           </div>
         </div>
       </div>

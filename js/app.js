@@ -31,6 +31,7 @@ const App = {
     Router.register('/investors',             (path) => this.renderShell(InvestorsView.render(path)));
     Router.register('/platform',              (path) => this.renderShell(PlatformOpsView.render(path)));
     Router.register('/system-config',         (path) => this.renderShell(SystemConfigView.render(path)));
+    Router.register('/bulk-invite',           (path) => this.renderShell(BulkInviteView.render(path)));
 
     // Legacy redirects
     Router.register('/companies',    () => Router.navigate('/origination-companies', { replace: true }));
@@ -129,6 +130,7 @@ const App = {
       '/investors':               () => InvestorsView.render(path),
       '/platform':                () => PlatformOpsView.render(path),
       '/system-config':           () => SystemConfigView.render(path),
+      '/bulk-invite':             () => BulkInviteView.render(Router.getCurrentPath()),
       '/data/analytics':          () => { DataPlatformView._activeTab = 'analytics';    return DataPlatformView.render(); },
       '/data/applications':       () => { DataPlatformView._activeTab = 'applications'; return DataPlatformView.render(); },
       // /data/originations removed — originations now served by /originations
