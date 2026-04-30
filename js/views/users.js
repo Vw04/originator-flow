@@ -293,10 +293,11 @@ const UsersView = {
     this._rerender();
   },
 
-  /* ---- Invite Modal (RBAC v1.2) ----
-     Captures: identity + role, then per-branch User Type + Branch Manager
-     flag + LO Assignment tuple (scope × level × subflags). Multi-branch
-     supported; spec-mandated invariants enforced live. */
+  /* ---- Invite Modal (RBAC v1.2 — Round 2) ----
+     Tree-based flow: Branch User Type (LO vs Standard) drives the form,
+     stackable flags (Branch Manager, Program Admin) layer on top per
+     spec §3.1 / §3.3. The Title field is free-text (e.g., "Loan Processor",
+     "Branch Support Staff") since spec §3.2 has only two user types. */
   _invite: null,
 
   openInviteModal() {
@@ -306,7 +307,9 @@ const UsersView = {
     this._presetCompany = null;
     this._invite = {
       firstName: '', lastName: '', email: '', title: '', phone: '', agentNmlsId: '',
-      role: scopedCompanyId ? 'lo' : '',
+      userType: 'lo',         // 'lo' | 'standard' (default)
+      isProgramAdmin: false,
+      platformRole: '',       // for platform-only scope: sys_admin | operator | investor
       companyId: scopedCompanyId || '',
       assignments: [],
     };
@@ -320,34 +323,13 @@ const UsersView = {
     const branches = w.companyId ? State.getBranches().filter(b => b.companyId === w.companyId) : [];
     const companyName = w.companyId ? (State.getCompany(w.companyId)?.name || '') : '';
 
-    const allRoles = [
-      { value: 'prog_admin', label: 'Program Admin (OC-Admin)' },
-      { value: 'lo',         label: 'Branch User — Loan Officer (default)' },
-      { value: 'lp',         label: 'Branch User — Standard User' },
-    ];
-    const platformRoles = [
-      { value: 'sys_admin', label: 'System Admin' },
-      { value: 'operator',  label: 'Platform Operator' },
-      { value: 'investor',  label: 'Investor' },
-    ];
-    const roleOptions = (isPlatformScope ? platformRoles : allRoles)
-      .map(r => `<option value="${r.value}" ${w.role === r.value ? 'selected' : ''}>${r.label}</option>`).join('');
+    if (isPlatformScope) {
+      document.getElementById('modal-container').innerHTML = this._renderPlatformInviteModal(w);
+      return;
+    }
 
-    const showBranchSection = !isPlatformScope && w.role !== 'investor' && w.role !== 'sys_admin' && w.role !== 'operator';
-    const isProgAdmin = w.role === 'prog_admin';
-
-    const branchSection = !showBranchSection ? '' : `
-      <div style="margin-top:18px;border-top:1px solid var(--color-border);padding-top:14px">
-        <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:8px">
-          <div>
-            <div style="font-size:13px;font-weight:600">Branch Assignments ${isProgAdmin ? '<span style="color:var(--color-text-muted);font-weight:400">(optional for Program Admin)</span>' : '*'}</div>
-            <div style="font-size:11px;color:var(--color-text-muted);margin-top:2px">Per-branch User Type, flags, and permission tuples (spec §3.2–§3.6)</div>
-          </div>
-          ${branches.length ? `<button class="btn btn-ghost btn-xs" onclick="UsersView._addInviteAssignment()">+ Add Branch Assignment</button>` : ''}
-        </div>
-        ${w.assignments.length === 0 ? `<div style="font-size:12px;color:var(--color-text-muted);padding:14px;text-align:center;border:1px dashed var(--color-border);border-radius:6px">${branches.length ? 'No assignments yet — click "+ Add Branch Assignment".' : (w.companyId ? 'This company has no branches yet.' : 'Pick a company first.')}</div>` : ''}
-        ${w.assignments.map((a, i) => this._renderInviteAssignment(a, i, branches, w)).join('')}
-      </div>`;
+    const isLO = w.userType === 'lo';
+    const licensePreview = isLO ? this._nmlsLicensePreview(w.agentNmlsId) : null;
 
     document.getElementById('modal-container').innerHTML = `
       <div class="modal-overlay" onclick="if(event.target===this)UsersView.closeModal()">
@@ -355,24 +337,68 @@ const UsersView = {
           <div class="modal-header">
             <div>
               <div class="modal-title">Invite User</div>
-              <div class="modal-subtitle">${w.companyId ? companyName : isPlatformScope ? 'Platform Operations' : 'Identity, role, and per-branch access matrix'}</div>
+              <div class="modal-subtitle">${w.companyId ? companyName : 'Identity, branch user type, and per-branch tuples'}</div>
             </div>
             <button class="modal-close" onclick="UsersView.closeModal()">×</button>
           </div>
 
           <div class="modal-body">
+            <!-- Step 1: Identity -->
+            <div style="font-size:11px;font-weight:600;color:var(--color-text-muted);text-transform:uppercase;letter-spacing:.05em;margin-bottom:10px">Identity</div>
             <div class="form-grid">
               <div class="form-group"><label>First Name *</label><input class="input" value="${w.firstName}" oninput="UsersView._setInviteField('firstName', this.value)"></div>
               <div class="form-group"><label>Last Name *</label><input class="input" value="${w.lastName}" oninput="UsersView._setInviteField('lastName', this.value)"></div>
               <div class="form-group form-full"><label>Email *</label><input class="input" type="email" value="${w.email}" oninput="UsersView._setInviteField('email', this.value)"><div class="form-hint">Must match the company's registered email domain.</div></div>
-              <div class="form-group"><label>Title</label><input class="input" value="${w.title}" oninput="UsersView._setInviteField('title', this.value)"></div>
+              <div class="form-group"><label>Title</label><input class="input" value="${w.title}" oninput="UsersView._setInviteField('title', this.value)" placeholder="e.g. Senior Loan Officer, Loan Processor, Branch Support Staff"></div>
               <div class="form-group"><label>Phone</label><input class="input" value="${w.phone}" oninput="UsersView._setInviteField('phone', this.value)"></div>
-              <div class="form-group"><label>Role *</label><select class="select-input" onchange="UsersView._setInviteRole(this.value)"><option value="">Select role…</option>${roleOptions}</select></div>
-              ${!w.companyId && !isPlatformScope ? `
-              <div class="form-group"><label>Origination Company *</label><select class="select-input" onchange="UsersView._setInviteCompany(this.value)"><option value="">Select company…</option>${companies.map(c => `<option value="${c.id}">${c.name}</option>`).join('')}</select></div>` : ''}
-              <div class="form-group"><label>Agent NMLS ID</label><input class="input" value="${w.agentNmlsId}" oninput="UsersView._setInviteField('agentNmlsId', this.value)" placeholder="LOs only"><div class="form-hint">Used to resolve NMLS license records.</div></div>
+              ${!w.companyId ? `
+              <div class="form-group form-full"><label>Origination Company *</label><select class="select-input" onchange="UsersView._setInviteCompany(this.value)"><option value="">Select company…</option>${companies.map(c => `<option value="${c.id}">${c.name}</option>`).join('')}</select></div>` : ''}
             </div>
-            ${branchSection}
+
+            <!-- Step 2: Branch User Type + flags -->
+            <div style="font-size:11px;font-weight:600;color:var(--color-text-muted);text-transform:uppercase;letter-spacing:.05em;margin:18px 0 10px">Branch User Type & Flags</div>
+            <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:8px">
+              <label style="display:flex;align-items:flex-start;gap:8px;padding:12px 14px;border:2px solid ${isLO ? 'var(--color-primary)' : 'var(--color-border)'};border-radius:8px;cursor:pointer;background:${isLO ? 'rgba(29,61,42,0.04)' : 'var(--color-card)'}">
+                <input type="radio" name="invite-user-type" value="lo" ${isLO ? 'checked' : ''} onchange="UsersView._setUserType('lo')" style="margin-top:2px">
+                <div>
+                  <div style="font-size:13px;font-weight:600">Loan Officer</div>
+                  <div style="font-size:11px;color:var(--color-text-muted);margin-top:2px">Originates applications. Requires NMLS license.</div>
+                </div>
+              </label>
+              <label style="display:flex;align-items:flex-start;gap:8px;padding:12px 14px;border:2px solid ${!isLO ? 'var(--color-primary)' : 'var(--color-border)'};border-radius:8px;cursor:pointer;background:${!isLO ? 'rgba(29,61,42,0.04)' : 'var(--color-card)'}">
+                <input type="radio" name="invite-user-type" value="standard" ${!isLO ? 'checked' : ''} onchange="UsersView._setUserType('standard')" style="margin-top:2px">
+                <div>
+                  <div style="font-size:13px;font-weight:600">Standard User</div>
+                  <div style="font-size:11px;color:var(--color-text-muted);margin-top:2px">Loan Processor, Branch Support Staff, etc. No NMLS required.</div>
+                </div>
+              </label>
+            </div>
+
+            ${isLO ? `
+            <div class="form-grid" style="margin-bottom:8px">
+              <div class="form-group form-full">
+                <label>Agent NMLS ID *</label>
+                <input class="input" value="${w.agentNmlsId}" oninput="UsersView._setInviteField('agentNmlsId', this.value)" onblur="UsersView._renderInviteModal()" placeholder="e.g. 3256789">
+                ${licensePreview ? `<div style="margin-top:6px;font-size:11px;color:var(--color-text-muted)">${licensePreview}</div>` : '<div class="form-hint">License records auto-populate from NMLS sync after invite accepted.</div>'}
+              </div>
+            </div>` : ''}
+
+            <div style="display:flex;flex-wrap:wrap;gap:8px;margin-top:6px">
+              <label style="display:flex;align-items:center;gap:6px;padding:8px 12px;border:1px solid var(--color-border);border-radius:6px;font-size:13px;cursor:pointer;background:${w.isProgramAdmin ? 'rgba(29,61,42,0.04)' : 'var(--color-card)'}">
+                <input type="checkbox" ${w.isProgramAdmin ? 'checked' : ''} onchange="UsersView._setInviteField('isProgramAdmin', this.checked)">
+                <strong>Program Admin</strong>
+                <span style="color:var(--color-text-muted);font-weight:400">— manage OC config & invite users (§3.1)</span>
+              </label>
+              <span style="font-size:11px;color:var(--color-text-muted);align-self:center">Branch Manager flag is set per-branch below.</span>
+            </div>
+
+            <!-- Step 3: Branch Assignments -->
+            <div style="font-size:11px;font-weight:600;color:var(--color-text-muted);text-transform:uppercase;letter-spacing:.05em;margin:18px 0 10px;display:flex;align-items:center;justify-content:space-between">
+              <span>Branch Assignments ${w.isProgramAdmin && !isLO && w.assignments.length === 0 ? '<span style="color:var(--color-text-muted);font-weight:400;text-transform:none">(optional for Program Admin)</span>' : ''}</span>
+              ${branches.length ? `<button class="btn btn-ghost btn-xs" onclick="UsersView._addInviteAssignment()">+ Add Branch Assignment</button>` : ''}
+            </div>
+            ${w.assignments.length === 0 ? `<div style="font-size:12px;color:var(--color-text-muted);padding:14px;text-align:center;border:1px dashed var(--color-border);border-radius:6px">${branches.length ? 'No assignments yet — click "+ Add Branch Assignment".' : (w.companyId ? 'This company has no branches yet.' : 'Pick a company first.')}</div>` : ''}
+            ${w.assignments.map((a, i) => this._renderInviteAssignment(a, i, branches, w)).join('')}
           </div>
 
           <div class="modal-footer">
@@ -381,6 +407,57 @@ const UsersView = {
           </div>
         </div>
       </div>`;
+  },
+
+  /* ---- Platform-side invite (sys_admin / operator / investor) ---- */
+  _renderPlatformInviteModal(w) {
+    const platformRoles = [
+      { value: 'sys_admin', label: 'System Admin' },
+      { value: 'operator',  label: 'Platform Operator' },
+      { value: 'investor',  label: 'Investor' },
+    ];
+    return `
+      <div class="modal-overlay" onclick="if(event.target===this)UsersView.closeModal()">
+        <div class="modal">
+          <div class="modal-header">
+            <div>
+              <div class="modal-title">Invite User</div>
+              <div class="modal-subtitle">Platform Operations</div>
+            </div>
+            <button class="modal-close" onclick="UsersView.closeModal()">×</button>
+          </div>
+          <div class="modal-body">
+            <div class="form-grid">
+              <div class="form-group"><label>First Name *</label><input class="input" value="${w.firstName}" oninput="UsersView._setInviteField('firstName', this.value)"></div>
+              <div class="form-group"><label>Last Name *</label><input class="input" value="${w.lastName}" oninput="UsersView._setInviteField('lastName', this.value)"></div>
+              <div class="form-group form-full"><label>Email *</label><input class="input" type="email" value="${w.email}" oninput="UsersView._setInviteField('email', this.value)"></div>
+              <div class="form-group"><label>Title</label><input class="input" value="${w.title}" oninput="UsersView._setInviteField('title', this.value)"></div>
+              <div class="form-group"><label>Phone</label><input class="input" value="${w.phone}" oninput="UsersView._setInviteField('phone', this.value)"></div>
+              <div class="form-group form-full"><label>Role *</label><select class="select-input" onchange="UsersView._setInviteField('platformRole', this.value)">
+                <option value="">Select role…</option>
+                ${platformRoles.map(r => `<option value="${r.value}" ${w.platformRole === r.value ? 'selected' : ''}>${r.label}</option>`).join('')}
+              </select></div>
+            </div>
+          </div>
+          <div class="modal-footer">
+            <button class="btn btn-secondary" onclick="UsersView.closeModal()">Cancel</button>
+            <button class="btn btn-primary" onclick="UsersView.submitInvite()">Send Invite</button>
+          </div>
+        </div>
+      </div>`;
+  },
+
+  /* ---- NMLS license preview (synthesized from seed data) ---- */
+  _nmlsLicensePreview(nmlsId) {
+    const id = (nmlsId || '').trim();
+    if (!id || id.length < 5) return null;
+    // Match a seeded LO with this agentNmlsId; show their licensed markets.
+    const match = State.getUsers().find(u => u.agentNmlsId === id);
+    if (match && Array.isArray(match.licenses) && match.licenses.length) {
+      const codes = match.licenses.filter(l => l.active).map(l => State.getMarket(l.marketId)?.code).filter(Boolean);
+      return `<span style="color:var(--color-success)">✓ NMLS preview: ${match.licenses.length} license${match.licenses.length === 1 ? '' : 's'} on file (${codes.join(', ')}). Daily sync will keep these current.</span>`;
+    }
+    return `<span style="color:var(--color-text-muted)">NMLS ID ${id} — no preview seeded. Licenses will populate after the daily sync.</span>`;
   },
 
   _renderInviteAssignment(a, idx, branches, w) {
@@ -490,18 +567,27 @@ const UsersView = {
   },
 
   _setInviteField(key, value) {
-    if (this._invite) this._invite[key] = value;
+    if (!this._invite) return;
+    this._invite[key] = value;
+    // Re-render only when a structural change requires it
+    if (key === 'isProgramAdmin') this._renderInviteModal();
   },
 
-  _setInviteRole(role) {
-    this._invite.role = role;
-    // For LO/Standard branch users, ensure at least one assignment slot
-    if (this._invite.companyId && (role === 'lo' || role === 'lp') && this._invite.assignments.length === 0) {
-      this._addInviteAssignment();
-      // Default the first assignment User Type from the role
-      const a = this._invite.assignments[0];
-      a.userType = role === 'lo' ? 'lo' : 'standard';
-    }
+  _setUserType(userType) {
+    this._invite.userType = userType;
+    // Cascade default per-branch userType to existing assignments unless they
+    // were explicitly set otherwise (we just overwrite — simpler in v1)
+    this._invite.assignments.forEach(a => {
+      a.userType = userType;
+      a.allowNewOriginations = userType === 'lo';
+      // Reset tuples that don't make sense for the new type
+      if (userType === 'lo') {
+        a.loAssignments = [{ scope: 'personal', loIds: [], level: 'full', subflags: { canCreate: true, canSubmit: true, canWithdraw: true } }];
+      } else {
+        // Clear LO Full-on-own tuples; default Standard User to a benign all_los/view
+        a.loAssignments = [{ scope: 'all_los', loIds: [], level: 'view', subflags: {} }];
+      }
+    });
     this._renderInviteModal();
   },
 
@@ -512,11 +598,15 @@ const UsersView = {
   },
 
   _addInviteAssignment() {
+    const userType = this._invite.userType || 'lo';
+    const isLO = userType === 'lo';
     this._invite.assignments.push({
-      branchId: '', userType: this._invite.role === 'lo' ? 'lo' : 'standard',
+      branchId: '', userType,
       flags: { branchManager: false },
-      loAssignments: [],
-      allowNewOriginations: this._invite.role === 'lo',
+      loAssignments: isLO
+        ? [{ scope: 'personal', loIds: [], level: 'full', subflags: { canCreate: true, canSubmit: true, canWithdraw: true } }]
+        : [{ scope: 'all_los', loIds: [], level: 'view', subflags: {} }],
+      allowNewOriginations: isLO,
       allowAccessToAllBranchActivity: false,
       eligibleLoanProductIds: [],
     });
@@ -600,29 +690,49 @@ const UsersView = {
   submitInvite() {
     const w = this._invite;
     if (!w) return;
-    if (!w.firstName || !w.lastName || !w.email || !w.role) {
-      alert('Please fill in all required fields (name, email, role).');
+    if (!w.firstName || !w.lastName || !w.email) {
+      alert('Please fill in all required fields (first name, last name, email).');
       return;
     }
-    if (!w.companyId && !this._scope?.platformOnly) {
-      alert('Please select a company.');
+    const isPlatform = this._scope?.platformOnly;
+    if (isPlatform) {
+      if (!w.platformRole) { alert('Please select a role.'); return; }
+      State.inviteUser({
+        firstName: w.firstName, lastName: w.lastName, email: w.email,
+        role: w.platformRole, companyId: null, branchId: null,
+        title: w.title, phone: w.phone || null,
+      });
+      this.closeModal();
+      this._invite = null;
+      this.showSuccess(`Invite sent to ${w.email}`);
+      App.renderView(Router.getCurrentPath());
       return;
     }
-    if (w.role !== 'sys_admin' && w.role !== 'operator' && w.role !== 'investor' && w.role !== 'prog_admin' && w.assignments.length === 0) {
-      alert('Branch users must have at least one branch assignment.');
+
+    if (!w.companyId) { alert('Please select a company.'); return; }
+    if (w.assignments.some(a => !a.branchId)) { alert('All branch assignments need a branch.'); return; }
+    // A user must either be a Program Admin (no branches required) OR have ≥1 branch assignment
+    if (!w.isProgramAdmin && w.assignments.length === 0) {
+      alert('Branch users must have at least one branch assignment, or check Program Admin.');
       return;
     }
-    if (w.assignments.some(a => !a.branchId)) {
-      alert('All branch assignments need a branch.');
-      return;
-    }
+
+    // Compute the legacy `role` tag for nav/filtering purposes.
+    // Spec §3.1: Program Admin is a flag stackable with a Branch User Type.
+    // We tag the user as `prog_admin` only when they have NO branch assignments
+    // (otherwise they're primarily a branch user with the flag also true).
+    let role;
+    if (w.isProgramAdmin && w.assignments.length === 0) role = 'prog_admin';
+    else if (w.userType === 'lo' || w.assignments.some(a => a.userType === 'lo')) role = 'lo';
+    else role = 'lp';
 
     State.inviteUser({
       firstName: w.firstName,
       lastName:  w.lastName,
       email:     w.email,
-      role:      w.role,
-      companyId: w.companyId || null,
+      role,
+      isProgramAdmin: !!w.isProgramAdmin,
+      companyId: w.companyId,
       branchId:  w.assignments[0]?.branchId || null,
       title:     w.title,
       phone:     w.phone || null,

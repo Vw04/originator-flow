@@ -29,7 +29,13 @@ const OCWizardView = {
       oc: { name: '', nmlsId: '', stateOfIncorporation: '', address1: '', address2: '', city: '', state: '', zip: '', contactPhone: '', website: '', emailDomain: '', ccEmails: '' },
       enabledLpmIds: new Set(),
       branches: [],
-      admin: { firstName: '', lastName: '', email: '', title: 'Program Administrator', phone: '' },
+      admin: {
+        skipInvite: false,
+        userType: 'lo',           // 'lo' | 'standard'
+        isProgramAdmin: true,     // default the first invited user to Program Admin per spec §3.1
+        isBranchManager: false,
+        firstName: '', lastName: '', email: '', title: 'Program Administrator', phone: '', agentNmlsId: '',
+      },
       submitted: false,
     };
   },
@@ -157,57 +163,55 @@ const OCWizardView = {
       </div>`;
   },
 
-  /* ---- Step 3: Enablement Grid ---- */
+  /* ---- Step 3: Programs Enabled (round 2 simplification) ----
+     Round 1 had a program × market matrix. Round 2: single checkbox per
+     program; toggling enables ALL of that program's allowed-market pairs
+     at the OC level. The market dimension is a property of the program. */
   _renderEnablement() {
     const w = this._w;
     const programs = State.getLoanPrograms();
-    const markets = State.getMarkets();
     const lpms = State.getLPMs();
-    const supportedMarkets = markets.filter(m => m.supported);
-    const enabledCount = w.enabledLpmIds.size;
     const enabledProgramIds = new Set([...w.enabledLpmIds].map(id => lpms.find(l => l.id === id)?.programId).filter(Boolean));
     const enabledMarketIds = new Set([...w.enabledLpmIds].map(id => lpms.find(l => l.id === id)?.marketId).filter(Boolean));
 
-    const headerRow = `
-      <tr style="background:var(--color-surface)">
-        <th style="text-align:left;font-size:11px;color:var(--color-text-muted);padding:8px 12px">Program / Market</th>
-        ${supportedMarkets.map(m => `<th style="font-size:11px;color:var(--color-text-muted);padding:8px 12px;text-align:center">${m.code}<div style="font-size:9px;font-weight:400;text-transform:none;letter-spacing:0;color:var(--color-text-muted)">${m.name.split(' ')[0]}</div></th>`).join('')}
-      </tr>`;
     const rows = programs.map(p => {
-      const cells = supportedMarkets.map(m => {
-        const lpm = lpms.find(l => l.programId === p.id && l.marketId === m.id);
-        if (!lpm) {
-          return `<td style="text-align:center;padding:6px;color:var(--color-text-muted)" title="Program ${p.name} cannot exist in ${m.name} per platform config">
-            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><rect x="5" y="11" width="14" height="9" rx="1.5"/><path d="M8 11V7a4 4 0 0 1 8 0v4"/></svg>
-          </td>`;
-        }
-        const checked = w.enabledLpmIds.has(lpm.id);
-        return `<td style="text-align:center;padding:6px">
-          <input type="checkbox" ${checked ? 'checked' : ''}
-                 onchange="OCWizardView._toggleLpm('${lpm.id}', this.checked)"
-                 style="width:16px;height:16px;cursor:pointer">
-        </td>`;
-      }).join('');
-      return `<tr><td style="padding:8px 12px;font-size:13px;font-weight:500">${p.name}<div style="font-size:11px;color:var(--color-text-muted);font-weight:400">${p.code} · ${p.token}</div></td>${cells}</tr>`;
+      const lpmsForProgram = lpms.filter(l => l.programId === p.id);
+      const isFully = lpmsForProgram.length > 0 && lpmsForProgram.every(l => w.enabledLpmIds.has(l.id));
+      const marketsLabel = (p.allowedMarketIds || []).map(id => State.getMarket(id)?.code).filter(Boolean).join(', ');
+      return `
+        <label style="display:flex;align-items:center;gap:14px;padding:14px 18px;border-bottom:1px solid var(--color-border-light);cursor:pointer">
+          <input type="checkbox" ${isFully ? 'checked' : ''}
+                 onchange="OCWizardView._toggleProgram('${p.id}', this.checked)"
+                 style="width:16px;height:16px;cursor:pointer;flex-shrink:0">
+          <div style="flex:1;min-width:0">
+            <div style="font-size:14px;font-weight:600;color:var(--color-text)">${p.name}</div>
+            <div style="font-size:11px;color:var(--color-text-muted);margin-top:2px">Markets: ${marketsLabel || '—'}</div>
+          </div>
+          ${isFully ? '<span class="badge badge-active" style="flex-shrink:0">Enabled</span>' : ''}
+        </label>`;
     }).join('');
 
     return `
-      <div class="card">
-        <div class="card-title" style="margin-bottom:6px">LoanProgram-Market Enablement</div>
-        <div style="font-size:12px;color:var(--color-text-muted);margin-bottom:16px">
-          Pick the (program × market) pairs the platform allows this OC to operate in. Locked cells indicate the platform has not allowed that combination at the system level. Spec §1.3: each OC, branch, and LO has independent enablement; effective access intersects all three at runtime.
+      <div class="card" style="padding:0;overflow:hidden">
+        <div style="padding:16px 18px;border-bottom:1px solid var(--color-border)">
+          <div class="card-title" style="margin-bottom:4px">Programs Enabled</div>
+          <div style="font-size:12px;color:var(--color-text-muted)">
+            Pick the loan programs the platform enables for this OC. Each program covers the markets shown next to it. Branches inherit at launch. Loan Officers must hold an active NMLS license in the program's market to originate.
+          </div>
         </div>
-        <div style="border:1px solid var(--color-border);border-radius:var(--radius-lg);overflow:hidden">
-          <table style="width:100%;border-collapse:collapse">
-            <thead>${headerRow}</thead>
-            <tbody>${rows}</tbody>
-          </table>
-        </div>
-        <div style="margin-top:12px;font-size:12px;color:var(--color-text)">
-          <span class="tag" style="background:var(--color-surface);color:var(--color-text);font-weight:600">${enabledCount} LPMs enabled</span>
-          across ${enabledProgramIds.size} program${enabledProgramIds.size === 1 ? '' : 's'} / ${enabledMarketIds.size} market${enabledMarketIds.size === 1 ? '' : 's'}
+        ${rows}
+        <div style="padding:14px 18px;background:var(--color-surface);font-size:12px;color:var(--color-text)">
+          <strong>${enabledProgramIds.size}</strong> program${enabledProgramIds.size === 1 ? '' : 's'} enabled across <strong>${enabledMarketIds.size}</strong> market${enabledMarketIds.size === 1 ? '' : 's'}
         </div>
       </div>`;
+  },
+
+  _toggleProgram(programId, on) {
+    const w = this._w;
+    const lpms = State.getLPMsForProgram(programId);
+    if (on) lpms.forEach(l => w.enabledLpmIds.add(l.id));
+    else    lpms.forEach(l => w.enabledLpmIds.delete(l.id));
+    App.renderView(Router.getCurrentPath());
   },
 
   /* ---- Step 4: Branches ---- */
@@ -245,23 +249,87 @@ const OCWizardView = {
       </div>`;
   },
 
-  /* ---- Step 5: First Program Admin ---- */
+  /* ---- Step 5: Invite First User (optional) ----
+     Spec §3.1 says every OC needs at least one Program Admin, but in v1
+     the platform operator can invite later from the Users tab. So this
+     step is optional, with the Program Admin checkbox stackable on top
+     of any Branch User Type. */
   _renderAdmin() {
     const a = this._w.admin;
+    const skip = a.skipInvite === true;
+    const isLO = a.userType === 'lo';
+    const licensePreview = isLO && a.agentNmlsId ? UsersView._nmlsLicensePreview(a.agentNmlsId) : null;
     return `
-      <div class="card" style="max-width:640px">
-        <div class="card-title" style="margin-bottom:6px">First Program Admin</div>
+      <div class="card" style="max-width:720px">
+        <div class="card-title" style="margin-bottom:6px">Invite First User <span style="color:var(--color-text-muted);font-weight:400;font-size:12px">(optional)</span></div>
         <div style="font-size:12px;color:var(--color-text-muted);margin-bottom:16px">
-          Designate the OC's initial Program Admin (OC-Admin role per spec §3.1, §6). They will receive an invitation email and can invite additional users once active. Branch User Type assignments happen separately on the User detail screen.
+          Spec §3.1: every OC needs at least one Program Admin — invite one now or add it later under <strong>Users</strong>. Branch Manager and Program Admin are stackable flags on top of the Branch User Type.
         </div>
-        <div class="form-grid">
-          <div class="form-group"><label>First Name</label><input type="text" class="input" value="${a.firstName}" oninput="OCWizardView._setAdminField('firstName', this.value)"></div>
-          <div class="form-group"><label>Last Name</label><input type="text" class="input" value="${a.lastName}" oninput="OCWizardView._setAdminField('lastName', this.value)"></div>
-          <div class="form-group form-full"><label>Email</label><input type="email" class="input" value="${a.email}" oninput="OCWizardView._setAdminField('email', this.value)" placeholder="must match company email domain"></div>
-          <div class="form-group"><label>Title</label><input type="text" class="input" value="${a.title}" oninput="OCWizardView._setAdminField('title', this.value)"></div>
-          <div class="form-group"><label>Phone</label><input type="text" class="input" value="${a.phone}" oninput="OCWizardView._setAdminField('phone', this.value)"></div>
+
+        <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:10px;margin-bottom:14px">
+          <label style="display:flex;align-items:flex-start;gap:8px;padding:10px 12px;border:2px solid ${skip ? 'var(--color-border)' : (isLO ? 'var(--color-primary)' : 'var(--color-border)')};border-radius:8px;cursor:pointer;background:${!skip && isLO ? 'rgba(29,61,42,0.04)' : 'var(--color-card)'}">
+            <input type="radio" name="oc-wiz-utype" value="lo" ${!skip && isLO ? 'checked' : ''} onchange="OCWizardView._setAdminUserType('lo')">
+            <div>
+              <div style="font-size:13px;font-weight:600">Loan Officer</div>
+              <div style="font-size:11px;color:var(--color-text-muted)">Originates apps. NMLS required.</div>
+            </div>
+          </label>
+          <label style="display:flex;align-items:flex-start;gap:8px;padding:10px 12px;border:2px solid ${skip ? 'var(--color-border)' : (!isLO ? 'var(--color-primary)' : 'var(--color-border)')};border-radius:8px;cursor:pointer;background:${!skip && !isLO ? 'rgba(29,61,42,0.04)' : 'var(--color-card)'}">
+            <input type="radio" name="oc-wiz-utype" value="standard" ${!skip && !isLO ? 'checked' : ''} onchange="OCWizardView._setAdminUserType('standard')">
+            <div>
+              <div style="font-size:13px;font-weight:600">Standard User</div>
+              <div style="font-size:11px;color:var(--color-text-muted)">Loan Processor, support, etc.</div>
+            </div>
+          </label>
+          <label style="display:flex;align-items:flex-start;gap:8px;padding:10px 12px;border:2px solid ${skip ? 'var(--color-primary)' : 'var(--color-border)'};border-radius:8px;cursor:pointer;background:${skip ? 'rgba(29,61,42,0.04)' : 'var(--color-card)'}">
+            <input type="radio" name="oc-wiz-utype" value="skip" ${skip ? 'checked' : ''} onchange="OCWizardView._setAdminUserType('skip')">
+            <div>
+              <div style="font-size:13px;font-weight:600">Skip user invite</div>
+              <div style="font-size:11px;color:var(--color-text-muted)">Add the first user later.</div>
+            </div>
+          </label>
         </div>
+
+        ${skip ? `<div style="font-size:12px;color:var(--color-text-muted);padding:14px;border:1px dashed var(--color-border);border-radius:6px">No first user will be invited. The OC will be created without any Program Admin — you can invite one later from the Users tab.</div>` : `
+          <div class="form-grid">
+            <div class="form-group"><label>First Name</label><input type="text" class="input" value="${a.firstName}" oninput="OCWizardView._setAdminField('firstName', this.value)"></div>
+            <div class="form-group"><label>Last Name</label><input type="text" class="input" value="${a.lastName}" oninput="OCWizardView._setAdminField('lastName', this.value)"></div>
+            <div class="form-group form-full"><label>Email</label><input type="email" class="input" value="${a.email}" oninput="OCWizardView._setAdminField('email', this.value)" placeholder="must match company email domain"></div>
+            <div class="form-group"><label>Title</label><input type="text" class="input" value="${a.title}" oninput="OCWizardView._setAdminField('title', this.value)" placeholder="e.g. Senior Loan Officer, Branch Support Staff"></div>
+            <div class="form-group"><label>Phone</label><input type="text" class="input" value="${a.phone}" oninput="OCWizardView._setAdminField('phone', this.value)"></div>
+            ${isLO ? `<div class="form-group form-full">
+              <label>Agent NMLS ID</label>
+              <input type="text" class="input" value="${a.agentNmlsId || ''}" oninput="OCWizardView._setAdminField('agentNmlsId', this.value)" onblur="App.renderView(Router.getCurrentPath())">
+              ${licensePreview ? `<div style="margin-top:6px;font-size:11px">${licensePreview}</div>` : '<div class="form-hint">License records auto-populate after the daily NMLS sync.</div>'}
+            </div>` : ''}
+          </div>
+
+          <div style="margin-top:14px;display:flex;flex-wrap:wrap;gap:8px">
+            <label style="display:flex;align-items:center;gap:6px;padding:8px 12px;border:1px solid var(--color-border);border-radius:6px;font-size:13px;cursor:pointer;background:${a.isProgramAdmin ? 'rgba(29,61,42,0.04)' : 'var(--color-card)'}">
+              <input type="checkbox" ${a.isProgramAdmin ? 'checked' : ''} onchange="OCWizardView._setAdminField('isProgramAdmin', this.checked)">
+              <strong>Program Admin</strong>
+              <span style="color:var(--color-text-muted);font-weight:400">— manage OC config & invite users</span>
+            </label>
+            <label style="display:flex;align-items:center;gap:6px;padding:8px 12px;border:1px solid var(--color-border);border-radius:6px;font-size:13px;cursor:pointer;background:${a.isBranchManager ? 'rgba(29,61,42,0.04)' : 'var(--color-card)'}">
+              <input type="checkbox" ${a.isBranchManager ? 'checked' : ''} onchange="OCWizardView._setAdminField('isBranchManager', this.checked)">
+              <strong>Branch Manager</strong>
+              <span style="color:var(--color-text-muted);font-weight:400">— min View on all branch loans</span>
+            </label>
+          </div>
+          <div style="margin-top:8px;font-size:11px;color:var(--color-text-muted)">Branch Manager flag applies to the user's first branch assignment (the OC's first active branch).</div>
+        `}
       </div>`;
+  },
+
+  _setAdminUserType(value) {
+    const a = this._w.admin;
+    if (value === 'skip') {
+      a.skipInvite = true;
+    } else {
+      a.skipInvite = false;
+      a.userType = value;
+    }
+    App.renderView(Router.getCurrentPath());
   },
 
   /* ---- Step 6: Review + Create ---- */
@@ -286,9 +354,9 @@ const OCWizardView = {
         </div>
 
         <div class="card">
-          <div class="card-title" style="margin-bottom:10px">Enablement</div>
+          <div class="card-title" style="margin-bottom:10px">Programs Enabled</div>
           <div style="font-size:13px;line-height:1.7">
-            <div><strong>${enabledLpms.length}</strong> LPMs across <strong>${programNames.length}</strong> programs and <strong>${marketCodes.length}</strong> markets</div>
+            <div><strong>${programNames.length}</strong> program${programNames.length === 1 ? '' : 's'} across <strong>${marketCodes.length}</strong> market${marketCodes.length === 1 ? '' : 's'}</div>
             <div style="color:var(--color-text-muted);margin-top:6px">
               ${programNames.length ? programNames.map(n => `<span class="tag">${n}</span>`).join(' ') : 'No programs enabled'}
             </div>
@@ -309,11 +377,19 @@ const OCWizardView = {
         </div>
 
         <div class="card">
-          <div class="card-title" style="margin-bottom:10px">First Program Admin</div>
-          <div style="font-size:13px">
-            ${w.admin.firstName} ${w.admin.lastName} <span style="color:var(--color-text-muted)">· ${w.admin.email || 'no email yet'} · ${w.admin.title}</span>
-          </div>
-          <div style="font-size:11px;color:var(--color-text-muted);margin-top:6px">An invite email will be sent on submit (simulated).</div>
+          <div class="card-title" style="margin-bottom:10px">First User</div>
+          ${w.admin.skipInvite ? `
+            <div style="font-size:13px;color:var(--color-text-muted)">No first user — invite later from the Users tab.</div>
+            <div style="font-size:11px;color:var(--color-warning);margin-top:6px">⚠ Spec §3.1 requires a Program Admin per OC. Invite one before going live.</div>
+          ` : `
+            <div style="font-size:13px">
+              ${w.admin.firstName} ${w.admin.lastName} <span style="color:var(--color-text-muted)">· ${w.admin.email || 'no email yet'}</span>
+            </div>
+            <div style="font-size:12px;color:var(--color-text-muted);margin-top:4px">
+              ${w.admin.userType === 'lo' ? 'Loan Officer' : 'Standard User'}${w.admin.isProgramAdmin ? ' · Program Admin' : ''}${w.admin.isBranchManager ? ' · Branch Manager' : ''}
+            </div>
+            <div style="font-size:11px;color:var(--color-text-muted);margin-top:6px">An invite email will be sent on submit (simulated).</div>
+          `}
         </div>
       </div>`;
   },
@@ -384,7 +460,10 @@ const OCWizardView = {
     if (stepKey === 'confirm')    return !!(w.oc.name && w.oc.nmlsId && w.oc.emailDomain);
     if (stepKey === 'enablement') return w.enabledLpmIds.size > 0;
     if (stepKey === 'branches')   return w.branches.some(b => b.active);
-    if (stepKey === 'admin')      return !!(w.admin.firstName && w.admin.lastName && w.admin.email);
+    if (stepKey === 'admin') {
+      if (w.admin.skipInvite) return true;
+      return !!(w.admin.firstName && w.admin.lastName && w.admin.email);
+    }
     return true;
   },
 
@@ -422,7 +501,7 @@ const OCWizardView = {
       nmlsId: oc.nmlsId,
       emailDomain: oc.emailDomain,
       stateOfIncorporation: oc.stateOfIncorporation,
-      primaryContact: `${w.admin.firstName} ${w.admin.lastName}`,
+      primaryContact: !w.admin.skipInvite ? `${w.admin.firstName} ${w.admin.lastName}` : '—',
       address1: oc.address1, address2: oc.address2,
       city: oc.city, state: oc.state, zip: oc.zip,
       contactPhone: oc.contactPhone, website: oc.website,
@@ -431,7 +510,7 @@ const OCWizardView = {
       complianceDocs: ['W-9'],
       status: 'active',
     });
-    // Set OC enablement
+    // Set OC enablement (round 2: branches inherit, no separate branch table)
     State.setOcEnablement(company.id, [...w.enabledLpmIds]);
     // Create active branches
     const createdBranches = [];
@@ -447,23 +526,43 @@ const OCWizardView = {
         lastNmlsSync: new Date().toISOString(),
         status: 'active',
       });
-      // Default branch enablement = OC enablement (Program Admin can narrow later)
-      State.setBranchEnablement(branch.id, [...w.enabledLpmIds]);
       createdBranches.push(branch);
     });
-    // Invite first Program Admin
-    State.inviteUser({
-      companyId: company.id,
-      branchId: createdBranches[0]?.id || null,
-      firstName: w.admin.firstName,
-      lastName: w.admin.lastName,
-      email: w.admin.email,
-      title: w.admin.title,
-      phone: w.admin.phone,
-      role: 'prog_admin',
-      onboardingStatus: 'invited',
-      branchAssignments: [],
-    });
+    // Invite first user (optional in round 2)
+    if (!w.admin.skipInvite && w.admin.firstName && w.admin.email) {
+      const isLO = w.admin.userType === 'lo';
+      const firstBranchId = createdBranches[0]?.id || null;
+      const branchAssignments = firstBranchId ? [{
+        branchId: firstBranchId,
+        userType: isLO ? 'lo' : 'standard',
+        flags: { branchManager: !!w.admin.isBranchManager },
+        loAssignments: isLO
+          ? [{ scope: 'personal', loIds: [], level: 'full', subflags: { canCreate: true, canSubmit: true, canWithdraw: true } }]
+          : [{ scope: 'all_los', loIds: [], level: 'view', subflags: {} }],
+        allowNewOriginations: isLO,
+        allowAccessToAllBranchActivity: false,
+        eligibleLoanProductIds: [],
+      }] : [];
+      // Compute legacy role tag
+      const role = w.admin.isProgramAdmin && branchAssignments.length === 0
+        ? 'prog_admin' : (isLO ? 'lo' : 'lp');
+      State.inviteUser({
+        companyId: company.id,
+        branchId: firstBranchId,
+        firstName: w.admin.firstName,
+        lastName: w.admin.lastName,
+        email: w.admin.email,
+        title: w.admin.title,
+        phone: w.admin.phone,
+        nmlsId: w.admin.agentNmlsId || null,
+        agentNmlsId: w.admin.agentNmlsId || null,
+        role,
+        isProgramAdmin: !!w.admin.isProgramAdmin,
+        onboardingStatus: 'invited',
+        branchAssignments,
+        licenses: [],
+      });
+    }
     this.reset();
     Router.navigate(`/origination-companies/${company.id}`);
   },

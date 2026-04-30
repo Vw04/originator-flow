@@ -90,7 +90,7 @@ const DEMO_DATA = {
       stateOfIncorporation: 'DC',
       createdAt: '2026-01-12',
       primaryContact: 'Riley Sundberg',
-      programs: ['DC Dream Fund', 'Kentucky Dream Fund', 'Utah Dream Fund', 'Michigan Equity Pilot', 'Colorado Mountain HEI'],
+      programs: ['DC Dream Fund', 'Kentucky Dream Fund', 'Utah Dream Fund', 'Michigan Equity Pilot', 'Colorado Dream Fund'],
       complianceDocs: ['W-9', 'Broker Agreement', 'E&O Insurance', 'Multi-State License Pack'],
       defaultPermissionTemplateId: null,
       address1: '900 16th St NW',
@@ -127,7 +127,7 @@ const DEMO_DATA = {
     { id: 'br-101', companyId: 'co-004', name: 'Branch B — Louisville KY',   address: '500 W Jefferson St, Louisville, KY 40202',       state: 'KY', managingLO: 'user-102', userCount: 3, programs: ['Kentucky Dream Fund'], status: 'active', parentBranchId: null, nmlsId: '5599001-002', defaultPermissionTemplateId: null, branchType: 'Branch', address1: '500 W Jefferson St',     suite: 'Suite 401',city: 'Louisville',     zip: '40202', contactPhone: '502-555-0902', startDate: '2024-06-15', lastNmlsSync: '2026-04-29T03:14:00Z' },
     { id: 'br-102', companyId: 'co-004', name: 'Branch C — Salt Lake UT',    address: '101 S Main St, Salt Lake City, UT 84111',        state: 'UT', managingLO: 'user-103', userCount: 1, programs: ['Utah Dream Fund'],     status: 'active', parentBranchId: null, nmlsId: '5599001-003', defaultPermissionTemplateId: null, branchType: 'Branch', address1: '101 S Main St',          suite: '',         city: 'Salt Lake City', zip: '84111', contactPhone: '801-555-0903', startDate: '2024-09-10', lastNmlsSync: '2026-04-29T03:14:00Z' },
     { id: 'br-103', companyId: 'co-004', name: 'Branch D — Detroit MI',      address: '1145 Griswold St, Detroit, MI 48226',            state: 'MI', managingLO: 'user-104', userCount: 1, programs: ['Michigan Equity Pilot'], status: 'active', parentBranchId: null, nmlsId: '5599001-004', defaultPermissionTemplateId: null, branchType: 'Branch', address1: '1145 Griswold St',       suite: '',         city: 'Detroit',        zip: '48226', contactPhone: '313-555-0904', startDate: '2025-01-08', lastNmlsSync: '2026-04-29T03:14:00Z' },
-    { id: 'br-104', companyId: 'co-004', name: 'Branch E — Denver CO',       address: '1700 Lincoln St, Denver, CO 80203',              state: 'CO', managingLO: 'user-105', userCount: 1, programs: ['Colorado Mountain HEI'], status: 'active', parentBranchId: null, nmlsId: '5599001-005', defaultPermissionTemplateId: null, branchType: 'Branch', address1: '1700 Lincoln St',        suite: '',         city: 'Denver',         zip: '80203', contactPhone: '303-555-0905', startDate: '2025-04-22', lastNmlsSync: '2026-04-29T03:14:00Z' },
+    { id: 'br-104', companyId: 'co-004', name: 'Branch E — Denver CO',       address: '1700 Lincoln St, Denver, CO 80203',              state: 'CO', managingLO: 'user-105', userCount: 1, programs: ['Colorado Dream Fund'], status: 'active', parentBranchId: null, nmlsId: '5599001-005', defaultPermissionTemplateId: null, branchType: 'Branch', address1: '1700 Lincoln St',        suite: '',         city: 'Denver',         zip: '80203', contactPhone: '303-555-0905', startDate: '2025-04-22', lastNmlsSync: '2026-04-29T03:14:00Z' },
   ],
 
   /* ---- Users ---- */
@@ -137,7 +137,7 @@ const DEMO_DATA = {
     { id: 'user-002', companyId: null,     branchId: null,    firstName: 'Jordan',    lastName: 'Lee',       email: 'jordan.lee@homium.com',                role: 'operator',   onboardingStatus: 'active',               lastLogin: '2026-03-24', nmlsId: null,      phone: '202-555-0101', title: 'Platform Operator',       policies: ['platform_ops'] },
 
     // Capital City Lending
-    { id: 'user-003', companyId: 'co-001', branchId: 'br-001', firstName: 'Patricia', lastName: 'Owens',     email: 'powens@capitalcitylending.com',         role: 'prog_admin', onboardingStatus: 'active',               lastLogin: '2026-03-24', nmlsId: '2145678', phone: '202-555-0200', title: 'Program Administrator',  policies: ['prog_view', 'prog_invite'] },
+    { id: 'user-003', companyId: 'co-001', branchId: 'br-001', firstName: 'Patricia', lastName: 'Owens',     email: 'powens@capitalcitylending.com',         role: 'prog_admin', isProgramAdmin: true, onboardingStatus: 'active',               lastLogin: '2026-03-24', nmlsId: '2145678', phone: '202-555-0200', title: 'Program Administrator',  policies: ['prog_view', 'prog_invite'] },
     { id: 'user-004', companyId: 'co-001', branchId: 'br-001', firstName: 'James',    lastName: 'Okafor',    email: 'jokafor@capitalcitylending.com',        role: 'lo',         onboardingStatus: 'active',               lastLogin: '2026-03-23', nmlsId: '3256789', agentNmlsId: '3256789', phone: '202-555-0201', title: 'Senior Loan Officer',    policies: ['lo_standard'],
       licenses: [
         { id: 'lic-user-004-DC', marketId: 'mkt-DC', regulator: 'DC Department of Insurance, Securities and Banking', active: true, issueDate: '2024-08-12', renewalDate: '2026-08-31', lastSync: '2026-04-29T03:14:00Z' },
@@ -166,14 +166,14 @@ const DEMO_DATA = {
     { id: 'user-009', companyId: 'co-001', branchId: 'br-003', firstName: 'Yolanda',  lastName: 'Simmons',   email: 'ysimmons@capitalcitylending.com',       role: 'lo',         onboardingStatus: 'invited',              lastLogin: null,         nmlsId: null,      phone: null,           title: 'Loan Officer',           policies: [] },
 
     // Bluegrass Home Finance
-    { id: 'user-010', companyId: 'co-002', branchId: 'br-004', firstName: 'Marcus',   lastName: 'Webb',      email: 'mwebb@bluegrasshomefinance.com',        role: 'prog_admin', onboardingStatus: 'active',               lastLogin: '2026-03-20', nmlsId: '6589012', phone: '502-555-0300', title: 'Program Administrator',  policies: ['prog_view'] },
+    { id: 'user-010', companyId: 'co-002', branchId: 'br-004', firstName: 'Marcus',   lastName: 'Webb',      email: 'mwebb@bluegrasshomefinance.com',        role: 'prog_admin', isProgramAdmin: true, onboardingStatus: 'active',               lastLogin: '2026-03-20', nmlsId: '6589012', phone: '502-555-0300', title: 'Program Administrator',  policies: ['prog_view'] },
     { id: 'user-011', companyId: 'co-002', branchId: 'br-004', firstName: 'Tamara',   lastName: 'Fletcher',  email: 'tfletcher@bluegrasshomefinance.com',    role: 'lo',         onboardingStatus: 'active',               lastLogin: '2026-03-19', nmlsId: '7690123', phone: '502-555-0301', title: 'Senior Loan Officer',    policies: ['lo_standard'] },
     { id: 'user-012', companyId: 'co-002', branchId: 'br-004', firstName: 'Garrett',  lastName: 'Nichols',   email: 'gnichols@bluegrasshomefinance.com',     role: 'lp',         onboardingStatus: 'email_verified',       lastLogin: null,         nmlsId: null,      phone: '502-555-0302', title: 'Loan Processor',         policies: [] },
     { id: 'user-013', companyId: 'co-002', branchId: 'br-005', firstName: 'Renee',    lastName: 'Colbert',   email: 'rcolbert@bluegrasshomefinance.com',     role: 'lo',         onboardingStatus: 'active',               lastLogin: '2026-03-18', nmlsId: '8701234', phone: '859-555-0303', title: 'Loan Officer',           policies: ['lo_standard'] },
     { id: 'user-014', companyId: 'co-002', branchId: 'br-005', firstName: 'Darnell',  lastName: 'Booker',    email: 'dbooker@bluegrasshomefinance.com',      role: 'lo',         onboardingStatus: 'verification_failed',  lastLogin: null,         nmlsId: '9812345', phone: '859-555-0304', title: 'Loan Officer',           policies: [] },
 
     // Commonwealth Mortgage Group (KY — in progress)
-    { id: 'user-015', companyId: 'co-003', branchId: 'br-006', firstName: 'Sandra',   lastName: 'Hollis',    email: 'shollis@commonwealthmortgage.com',      role: 'prog_admin', onboardingStatus: '2fa_complete',         lastLogin: null,         nmlsId: '1023456', phone: '502-555-0400', title: 'Program Administrator',  policies: [] },
+    { id: 'user-015', companyId: 'co-003', branchId: 'br-006', firstName: 'Sandra',   lastName: 'Hollis',    email: 'shollis@commonwealthmortgage.com',      role: 'prog_admin', isProgramAdmin: true, onboardingStatus: '2fa_complete',         lastLogin: null,         nmlsId: '1023456', phone: '502-555-0400', title: 'Program Administrator',  policies: [] },
     { id: 'user-016', companyId: 'co-003', branchId: 'br-006', firstName: 'Devon',    lastName: 'Pryce',     email: 'dpryce@commonwealthmortgage.com',       role: 'lo',         onboardingStatus: 'verification_pending', lastLogin: null,         nmlsId: '1134567', phone: '502-555-0401', title: 'Loan Officer',           policies: [] },
     { id: 'user-017', companyId: 'co-003', branchId: 'br-006', firstName: 'Keisha',   lastName: 'Monroe',    email: 'kmonroe@commonwealthmortgage.com',      role: 'lp',         onboardingStatus: 'invited',              lastLogin: null,         nmlsId: null,      phone: null,           title: 'Loan Processor',         policies: [] },
 
@@ -411,7 +411,7 @@ const DEMO_DATA = {
   /* ---- Funds ---- */
   funds: [
     { id: 'fund-001', investorId: 'inv-001', name: 'CP Housing Equity Fund',  vintage: 2025, committed: 100000000, deployed: 45000000, status: 'active' },
-    { id: 'fund-002', investorId: 'inv-002', name: 'Heartland HEI Pool',      vintage: 2026, committed: 50000000,  deployed: 12000000, status: 'active' },
+    { id: 'fund-002', investorId: 'inv-002', name: 'Heartland Equity Pool',   vintage: 2026, committed: 50000000,  deployed: 12000000, status: 'active' },
   ],
 
   /* ---- Investor Portfolio Data ---- */
@@ -434,7 +434,7 @@ const DEMO_DATA = {
       { id: 'pos-001', program: 'DC Dream Fund',        units: 4200, costBasis: 100.00, currentPrice: 114.20, allocation: 0.48, deployed: 420000, currentValue: 479640,  status: 'active',  acquisitionDate: '2025-06-15' },
       { id: 'pos-002', program: 'Utah Program',          units: 3500, costBasis: 100.00, currentPrice: 111.80, allocation: 0.35, deployed: 350000, currentValue: 391300,  status: 'active',  acquisitionDate: '2025-08-01' },
       { id: 'pos-003', program: 'Kentucky Dream Fund',   units: 1500, costBasis: 100.00, currentPrice: 108.50, allocation: 0.12, deployed: 150000, currentValue: 162750,  status: 'active',  acquisitionDate: '2025-11-01' },
-      { id: 'pos-004', program: 'Georgia HEI Pool',      units: 500,  costBasis: 100.00, currentPrice: 105.20, allocation: 0.05, deployed: 50000,  currentValue: 52600,   status: 'pending', acquisitionDate: '2026-02-15' },
+      { id: 'pos-004', program: 'Georgia Dream Fund',    units: 500,  costBasis: 100.00, currentPrice: 105.20, allocation: 0.05, deployed: 50000,  currentValue: 52600,   status: 'pending', acquisitionDate: '2026-02-15' },
     ],
     performanceHistory: [
       { month: '2025-07', nav: 1000000, price: 100.00 },
@@ -606,8 +606,8 @@ const DEMO_DATA = {
     { id: 'lp-ky',    name: 'Kentucky Dream Fund',   code: 'KY',  status: 'active', token: 'HOM', allowedMarketIds: ['mkt-KY'] },
     { id: 'lp-utah',  name: 'Utah Dream Fund',       code: 'UD',  status: 'active', token: 'HK',  allowedMarketIds: ['mkt-UT'] },
     { id: 'lp-mi',    name: 'Michigan Equity Pilot', code: 'MI',  status: 'active', token: 'HOM', allowedMarketIds: ['mkt-MI'] },
-    { id: 'lp-co',    name: 'Colorado Mountain HEI', code: 'CO',  status: 'active', token: 'HOM', allowedMarketIds: ['mkt-CO'] },
-    { id: 'lp-multi', name: 'Multi-State HEI Pool',  code: 'MS',  status: 'active', token: 'HOM', allowedMarketIds: ['mkt-DC','mkt-KY','mkt-UT','mkt-MI','mkt-CO'] },
+    { id: 'lp-co',    name: 'Colorado Dream Fund',   code: 'CO',  status: 'active', token: 'HOM', allowedMarketIds: ['mkt-CO'] },
+    { id: 'lp-multi', name: 'Multi-State Dream Fund', code: 'MS', status: 'active', token: 'HOM', allowedMarketIds: ['mkt-DC','mkt-KY','mkt-UT','mkt-MI','mkt-CO'] },
   ],
 
   /* ---- LoanProgram-Market (LPM) ---- atomic enablement unit ---- */
@@ -632,20 +632,10 @@ const DEMO_DATA = {
     { ocId: 'co-004', lpmIds: ['lpm-lp-dc-DC', 'lpm-lp-ky-KY', 'lpm-lp-utah-UT', 'lpm-lp-mi-MI', 'lpm-lp-co-CO', 'lpm-lp-multi-DC', 'lpm-lp-multi-KY', 'lpm-lp-multi-UT', 'lpm-lp-multi-MI', 'lpm-lp-multi-CO'] },
   ],
 
-  /* ---- Branch Enablement (independent record per spec §1.3) ---- */
-  branchEnablement: [
-    { branchId: 'br-001', lpmIds: ['lpm-lp-dc-DC'] },
-    { branchId: 'br-002', lpmIds: ['lpm-lp-dc-DC', 'lpm-lp-multi-DC'] },
-    { branchId: 'br-003', lpmIds: ['lpm-lp-dc-DC'] },
-    { branchId: 'br-004', lpmIds: ['lpm-lp-ky-KY', 'lpm-lp-multi-KY'] },
-    { branchId: 'br-005', lpmIds: ['lpm-lp-ky-KY'] },
-    { branchId: 'br-006', lpmIds: [] },
-    { branchId: 'br-100', lpmIds: ['lpm-lp-dc-DC', 'lpm-lp-multi-DC'] },
-    { branchId: 'br-101', lpmIds: ['lpm-lp-ky-KY', 'lpm-lp-multi-KY'] },
-    { branchId: 'br-102', lpmIds: ['lpm-lp-utah-UT', 'lpm-lp-multi-UT'] },
-    { branchId: 'br-103', lpmIds: ['lpm-lp-mi-MI', 'lpm-lp-multi-MI'] },
-    { branchId: 'br-104', lpmIds: ['lpm-lp-co-CO', 'lpm-lp-multi-CO'] },
-  ],
+  /* Round 2 simplification: branches inherit OC enablement (spec §6 says
+     branch self-administration is OFF in v1). The seed branchEnablement
+     table was dropped. State.getBranchEnablement(branchId) returns the
+     OC's set at runtime. */
 
   /* ---- NMLS lookup table (used by the OC onboarding wizard) ----
      Pre-populated; no live API. The wizard treats these as if NMLS
@@ -1225,7 +1215,7 @@ function renderMilestoneBar(proc, options = {}) {
 
 /* ---- Task Details for Expandable Task Panel ---- */
 const TASK_DETAILS = {
-  pq_creation:    { description: 'Create a new prequalification record for the borrower. Verify basic eligibility criteria and property information.', fields: ['Borrower name & contact', 'Property address', 'Estimated HEI amount', 'Program selection'] },
+  pq_creation:    { description: 'Create a new prequalification record for the borrower. Verify basic eligibility criteria and property information.', fields: ['Borrower name & contact', 'Property address', 'Estimated loan amount', 'Program selection'] },
   pq_submitted:   { description: 'Submit the prequalification for review by the Homium Account Manager team.', fields: ['Confirm borrower information', 'Verify property details', 'Upload preliminary income documentation'] },
   pq_review:      { description: 'Account Manager reviews the prequalification submission for completeness and eligibility.', fields: ['Verify eligibility criteria', 'Check property location', 'Review estimated terms'] },
   pq_accepted:    { description: 'Prequalification has been reviewed and accepted. Borrower may proceed to full application.', fields: ['Confirm acceptance terms', 'Notify borrower of approval'] },
@@ -1244,7 +1234,7 @@ const TASK_DETAILS = {
   cc_atr:         { description: 'Submit the Ability to Repay (ATR) and Area Median Income (AMI) compliance documentation.', fields: ['ATR calculation worksheet', 'AMI verification', 'Compliance certification'] },
   cc_ctc:         { description: 'Issue the Clear to Close determination and prepare closing instructions.', fields: ['Clear to Close checklist', 'Closing instructions', 'Final loan terms confirmation'] },
   cc_prelim:      { description: 'Upload and approve the preliminary closing package including the Closing Disclosure.', fields: ['Closing Disclosure (CD)', 'Settlement statement', 'Title documents'] },
-  cc_san:         { description: 'Upload and approve the Shared Appreciation Note (SAN) for the HEI agreement.', fields: ['SAN document', 'Terms verification', 'Legal review confirmation'] },
+  cc_san:         { description: 'Upload and approve the Shared Appreciation Note (SAN) for the loan agreement.', fields: ['SAN document', 'Terms verification', 'Legal review confirmation'] },
   cc_dates:       { description: 'Set the closing and disbursement dates in coordination with all parties.', fields: ['Closing date', 'Disbursement date', 'Rescission period end date'] },
   cc_fees:        { description: 'Validate all fees and charges on the Closing Disclosure against approved tolerances.', fields: ['Origination fees', 'Third-party fees', 'Tolerance verification'] },
   cc_submit:      { description: 'Submit the final closing package for execution. All documents must be approved.', fields: ['Final package review', 'Submit for closing', 'Confirm wire instructions'] },
@@ -1255,7 +1245,7 @@ const TASK_DETAILS = {
   tm_securitize:  { description: 'Submit the loan to Securitize platform for batch processing and tokenization.', fields: ['Loan data submission', 'Batch assignment', 'Securitize confirmation'] },
   tm_approval:    { description: 'Receive approval from Securitize for the batch submission.', fields: ['Batch approval status', 'Compliance verification'] },
   tm_mers:        { description: 'Complete MERS registration and TOB2 (Transfer of Beneficial Ownership) transfer.', fields: ['MERS registration', 'MIN assignment', 'TOB2 transfer execution'] },
-  tm_mint:        { description: 'Mint the HEI token on the blockchain representing the shared appreciation agreement.', fields: ['Token minting', 'On-chain verification', 'Investor allocation'] },
+  tm_mint:        { description: 'Mint the fund token on the blockchain representing the shared appreciation agreement.', fields: ['Token minting', 'On-chain verification', 'Investor allocation'] },
   tm_servicing:   { description: 'Send servicing email with complete loan files to the servicing team for ongoing management.', fields: ['Loan file package', 'Servicing transfer letter', 'Borrower notification'] },
 };
 

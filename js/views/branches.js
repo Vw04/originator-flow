@@ -53,7 +53,6 @@ const BranchesView = {
     }
     if (f.companyId) filtered = filtered.filter(b => b.companyId === f.companyId);
     if (f.state)     filtered = filtered.filter(b => b.state === f.state);
-    if (f.program)   filtered = filtered.filter(b => (b.programs || []).includes(f.program));
     if (f.status)    filtered = filtered.filter(b => b.status === f.status);
 
     // Spec §9 #14: branches are flat (no nested sub-branches). Render as a
@@ -75,9 +74,18 @@ const BranchesView = {
       const co     = State.getCompany(b.companyId);
       const mgr    = b.managingLO ? State.getUser(b.managingLO) : null;
       const users  = State.getUsersByBranch(b.id);
-      const ocLpms = State.getOcEnablement(b.companyId);
-      const brLpms = State.getBranchEnablement(b.id);
-      const narrowed = brLpms.length < ocLpms.length;
+      // Round 2: programs available at this branch are derived live —
+      // OC's enabled programs whose allowedMarkets include the branch's state.
+      const branchMarket = State.getMarkets().find(m => m.code === b.state);
+      const ocPrograms = (() => {
+        if (!branchMarket) return [];
+        const ocLpms = State.getOcEnablement(b.companyId);
+        const programIds = [...new Set(ocLpms.map(id => State.getLPM(id)).filter(l => l && l.marketId === branchMarket.id).map(l => l.programId))];
+        return programIds.map(pid => State.getLoanProgram(pid)).filter(Boolean);
+      })();
+      const programChips = ocPrograms.length
+        ? ocPrograms.map(p => `<span class="tag" style="margin-right:4px">${p.name}</span>`).join('')
+        : '<span class="text-muted" style="font-size:11px">Not enabled</span>';
       return `
         <tr class="clickable" onclick="BranchesView.openDetail('${b.id}')">
           <td>
@@ -91,7 +99,7 @@ const BranchesView = {
           <td>${b.state}</td>
           <td>${mgr ? Display.fullName(mgr) : '<span class="text-muted">N/A</span>'}</td>
           <td>${users.length}</td>
-          <td><span class="tag" style="${narrowed ? 'background:#fff7e6;color:#a35c00' : ''}">${brLpms.length} / ${ocLpms.length}${narrowed ? ' · narrowed' : ''}</span></td>
+          <td>${programChips}</td>
           <td style="font-size:11px;color:var(--color-text-muted)">${b.lastNmlsSync ? Display.relativeTime(b.lastNmlsSync) : '—'}</td>
           <td><span class="status-pill ${b.status === 'active' ? 'badge-active' : 'badge-pending'}"><span class="status-dot"></span>${b.status === 'active' ? 'Active' : 'Setup incomplete'}</span></td>
         </tr>`;
@@ -132,12 +140,7 @@ const BranchesView = {
                 </div>` : ''}
                 <div class="filter-menu-section">
                   <div class="filter-menu-label">State</div>
-                  <div class="filter-menu-item${f.state==='DC'?' active':''}" onclick="BranchesView.setFilter('state','DC')">DC</div>
-                  <div class="filter-menu-item${f.state==='KY'?' active':''}" onclick="BranchesView.setFilter('state','KY')">KY</div>
-                </div>
-                <div class="filter-menu-section">
-                  <div class="filter-menu-label">Program</div>
-                  ${[...new Set(State.getBranches().flatMap(b=>b.programs||[]))].map(p=>`<div class="filter-menu-item${f.program===p?' active':''}" onclick="BranchesView.setFilter('program','${p}')">${p}</div>`).join('')}
+                  ${[...new Set(State.getBranches().map(b => b.state))].sort().map(s => `<div class="filter-menu-item${f.state===s?' active':''}" onclick="BranchesView.setFilter('state','${s}')">${s}</div>`).join('')}
                 </div>
                 <div class="filter-menu-section">
                   <div class="filter-menu-label">Status</div>
@@ -159,7 +162,7 @@ const BranchesView = {
                 <th>State</th>
                 <th>Managing LO</th>
                 <th>Users</th>
-                <th>LPMs</th>
+                <th>Programs</th>
                 <th>NMLS Sync</th>
                 <th class="${thClass('status')}" onclick="BranchesView.setSort('status')">Status</th>
               </tr></thead>
@@ -211,29 +214,19 @@ const BranchesView = {
     const users   = State.getUsersByBranch(b.id);
     const canEdit = State.can('editAny') || State.can('manageCompany');
 
-    // Spec §1.3 enablement intersection — render a mini program × market grid
-    // showing OC-allowed cells and which the branch has enabled.
-    const ocLpms = State.getOcEnablement(b.companyId);
-    const brLpms = State.getBranchEnablement(b.id);
-    const ocSet = new Set(ocLpms);
-    const brSet = new Set(brLpms);
-    const programs = State.getLoanPrograms();
-    const markets = State.getMarkets().filter(m => m.supported);
-    const lpms = State.getLPMs();
-
-    const enablementGrid = (() => {
-      const rows = programs.map(p => {
-        const cells = markets.map(m => {
-          const lpm = lpms.find(l => l.programId === p.id && l.marketId === m.id);
-          if (!lpm) return `<td style="text-align:center;padding:5px;color:var(--color-text-muted);font-size:11px">—</td>`;
-          if (!ocSet.has(lpm.id)) return `<td style="text-align:center;padding:5px;background:var(--color-surface)" title="Not enabled at OC level"><svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="var(--color-text-muted)" stroke-width="1.5"><rect x="5" y="11" width="14" height="9" rx="1.5"/><path d="M8 11V7a4 4 0 0 1 8 0v4"/></svg></td>`;
-          return `<td style="text-align:center;padding:5px"><input type="checkbox" ${brSet.has(lpm.id) ? 'checked' : ''} ${canEdit ? '' : 'disabled'} onchange="BranchesView._toggleBranchLpm('${b.id}', '${lpm.id}', this.checked)" style="width:14px;height:14px;cursor:${canEdit ? 'pointer' : 'not-allowed'}"></td>`;
-        }).join('');
-        return `<tr><td style="padding:5px 8px;font-size:12px">${p.name}</td>${cells}</tr>`;
-      }).join('');
-      const header = `<tr><th style="text-align:left;font-size:10px;color:var(--color-text-muted);padding:5px 8px">Program</th>${markets.map(m => `<th style="font-size:10px;color:var(--color-text-muted);padding:5px 6px;text-align:center">${m.code}</th>`).join('')}</tr>`;
-      return `<table style="width:100%;border-collapse:collapse;border:1px solid var(--color-border);border-radius:6px;overflow:hidden;font-size:12px"><thead style="background:var(--color-surface)">${header}</thead><tbody>${rows}</tbody></table>`;
+    // Round 2: programs available at this branch are derived from OC
+    // enablement, narrowed to the branch's state. No editable matrix —
+    // the OC's Programs tab is the only place to toggle enablement.
+    const branchMarket = State.getMarkets().find(m => m.code === b.state);
+    const branchPrograms = (() => {
+      if (!branchMarket) return [];
+      const ocLpms = State.getOcEnablement(b.companyId);
+      const programIds = [...new Set(ocLpms.map(id => State.getLPM(id)).filter(l => l && l.marketId === branchMarket.id).map(l => l.programId))];
+      return programIds.map(pid => State.getLoanProgram(pid)).filter(Boolean);
     })();
+    const programsList = branchPrograms.length
+      ? `<div style="display:flex;flex-wrap:wrap;gap:6px">${branchPrograms.map(p => `<span class="tag" style="padding:5px 10px">${p.name}</span>`).join('')}</div>`
+      : `<div style="color:var(--color-text-muted);font-size:12px">Not enabled — OC has no programs available in ${b.state}.</div>`;
 
     const userRows = users.map(u => {
       const a = State.getBranchAssignments(u.id).find(x => x.branchId === b.id);
@@ -276,9 +269,8 @@ const BranchesView = {
             </div>
 
             <div class="panel-section">
-              <div class="panel-section-label">Enablement <span style="color:var(--color-text-muted);font-weight:400">(${brLpms.length} of ${ocLpms.length} OC LPMs)</span></div>
-              <div style="font-size:11px;color:var(--color-text-muted);margin-bottom:8px">Greyed cells indicate (program × market) pairs not enabled at the OC level.</div>
-              ${enablementGrid}
+              <div class="panel-section-label">Programs Available <span style="color:var(--color-text-muted);font-weight:400">(inherited from OC, narrowed to ${b.state})</span></div>
+              ${programsList}
             </div>
 
             <div class="panel-section">
@@ -482,15 +474,6 @@ const BranchesView = {
       const text = row.querySelector('div:nth-child(2)')?.textContent.toLowerCase() || '';
       row.style.display = text.includes(q) ? '' : 'none';
     });
-  },
-
-  // Branch enablement editor toggle (called from the side panel mini-grid)
-  _toggleBranchLpm(branchId, lpmId, on) {
-    const cur = new Set(State.getBranchEnablement(branchId));
-    if (on) cur.add(lpmId); else cur.delete(lpmId);
-    State.setBranchEnablement(branchId, [...cur]);
-    if (this._detailId === branchId) this.openDetail(branchId);
-    BranchesView._rerender();
   },
 
   submitEdit(branchId) {

@@ -95,7 +95,7 @@ const CompaniesView = {
         <div class="page-header-inner">
           <div class="page-header-left">
             <div class="page-title">Origination Companies</div>
-            <div class="page-subtitle">${companies.length} company${companies.length !== 1 ? 'ies' : ''}</div>
+            <div class="page-subtitle">${companies.length} ${companies.length !== 1 ? 'companies' : 'company'}</div>
           </div>
           ${canEdit ? `
             <div class="page-header-actions">
@@ -133,7 +133,7 @@ const CompaniesView = {
               <tbody>${rows}</tbody>
             </table>
             <div class="table-footer">
-              <span class="table-count">${companies.length} company${companies.length !== 1 ? 'ies' : ''}</span>
+              <span class="table-count">${companies.length} ${companies.length !== 1 ? 'companies' : 'company'}</span>
             </div>` : `
             <div class="table-empty">
               <div class="table-empty-icon"><svg width="40" height="40" viewBox="0 0 40 40" fill="none" stroke="currentColor" stroke-width="1.5" opacity="0.4"><rect x="4" y="8" width="32" height="28" rx="2"/><path d="M12 8V5a2 2 0 0 1 2-2h12a2 2 0 0 1 2 2v3"/><path d="M12 20h16M12 28h10"/></svg></div>

@@ -57,17 +57,16 @@ const OriginationCompaniesView = {
     const canEdit = State.can('manageCompany') || State.can('editAny');
     const showBack = role !== 'prog_admin'; // prog_admin has no list to go back to
 
-    // Spec §6: Program Admin manages OC config screens; Access replaces
-    // the old Permissions tab and uses the v1.2 enablement model.
+    // Spec §6: Program Admin manages OC config screens. Round 2: the
+    // Access tab was dropped — program enablement now lives in Programs.
     const tabs = [
       { key: 'overview',    label: 'Overview' },
       { key: 'branches',    label: 'Branches' },
       { key: 'users',       label: 'Users' },
-      { key: 'access',      label: 'Access' },
       { key: 'programs',    label: 'Programs' },
       { key: 'settings',    label: 'Settings' },
     ];
-    if (this._activeTab === 'permissions') this._activeTab = 'access';
+    if (this._activeTab === 'permissions' || this._activeTab === 'access') this._activeTab = 'programs';
 
     const tabsHtml = tabs.map(t =>
       `<div class="section-tab ${t.key === this._activeTab ? 'active' : ''}"
@@ -79,8 +78,7 @@ const OriginationCompaniesView = {
       case 'overview':    content = this._renderOverview(c, canEdit); break;
       case 'branches':    content = BranchesView.render({ companyId }); break;
       case 'users':       content = UsersView.render({ companyId, roles: ['prog_admin', 'lo', 'lp'] }); break;
-      case 'access':      content = OCAccessView.render(companyId); break;
-      case 'programs':    content = this._renderPrograms(c); break;
+      case 'programs':    content = this._renderPrograms(c, canEdit); break;
       case 'settings':    content = this._renderSettings(c, canEdit); break;
       default:            content = this._renderOverview(c, canEdit);
     }
@@ -118,31 +116,28 @@ const OriginationCompaniesView = {
     const activeUsers = users.filter(u => u.onboardingStatus === 'active').length;
     const pendingUsers = users.filter(u => !['active', 'suspended'].includes(u.onboardingStatus)).length;
 
-    // §1.4: surface enablement intersection + license expiry callouts
     const ocLpmIds = State.getOcEnablement(c.id);
-    const allMarkets = State.getMarkets();
-    const allPrograms = State.getLoanPrograms();
     const enabledLPMs = ocLpmIds.map(id => State.getLPM(id)).filter(Boolean);
     const enabledProgramIds = [...new Set(enabledLPMs.map(l => l.programId))];
-    const enabledMarketIds = [...new Set(enabledLPMs.map(l => l.marketId))];
+    const enabledPrograms = enabledProgramIds.map(id => State.getLoanProgram(id)).filter(Boolean);
 
-    // Branch users → license expiry watchlist
+    // Round 2: count expiring licenses for the At-a-Glance chip only —
+    // the standalone watchlist card was dropped per user feedback.
     const today = new Date();
     const branchIds = new Set(branches.map(b => b.id));
     const branchUsers = users.filter(u => {
       const assignments = State.getBranchAssignments(u.id);
       return assignments.some(a => branchIds.has(a.branchId));
     });
-    const expiringLicenses = [];
+    let expSoonCount = 0;
     branchUsers.forEach(u => {
       (u.licenses || []).forEach(lic => {
         const status = State.getLicenseExpiryStatus(lic, today);
         if (status && ['critical', 'warning', 'soon', 'expired', 'inactive'].includes(status.tier)) {
-          expiringLicenses.push({ user: u, license: lic, status });
+          expSoonCount++;
         }
       });
     });
-    expiringLicenses.sort((a, b) => a.status.days - b.status.days);
     const lastSync = c.lastNmlsSync ? Display.relativeTime(c.lastNmlsSync) : '—';
 
     return `
@@ -185,7 +180,7 @@ const OriginationCompaniesView = {
                 <div style="font-size:11px;color:var(--color-text-secondary)">Pending</div>
               </div>
               <div>
-                <div style="font-size:24px;font-weight:700;color:${expiringLicenses.length ? 'var(--color-warning)' : 'var(--color-text-muted)'}">${expiringLicenses.length}</div>
+                <div style="font-size:24px;font-weight:700;color:${expSoonCount ? 'var(--color-warning)' : 'var(--color-text-muted)'}">${expSoonCount}</div>
                 <div style="font-size:11px;color:var(--color-text-secondary)">Lic. ≤60d</div>
               </div>
             </div>
@@ -201,133 +196,94 @@ const OriginationCompaniesView = {
         </div>
       </div>
 
-      ${c.status !== 'active' && enabledLPMs.length === 0 ? `
+      ${enabledLPMs.length === 0 ? `
         <div class="alert alert-warning" style="margin-bottom:20px;padding:12px 16px;background:#fff7e6;border-left:3px solid var(--color-warning);border-radius:6px;font-size:13px">
-          <strong>Pending platform enablement.</strong> No LoanProgram-Markets are enabled for this OC yet. New applications cannot be created until at least one (program × market) pair is enabled. Configure under <a href="javascript:void(0)" onclick="OriginationCompaniesView.switchTab('access')" style="color:var(--color-primary);font-weight:600">Access</a>.
+          <strong>No programs enabled yet.</strong> New applications cannot be created until the platform enables at least one program for this OC. Configure under <a href="javascript:void(0)" onclick="OriginationCompaniesView.switchTab('programs')" style="color:var(--color-primary);font-weight:600">Programs</a>.
         </div>` : ''}
 
       <div class="card" style="margin-bottom:24px">
         <div class="card-title" style="margin-bottom:14px;display:flex;align-items:center;justify-content:space-between">
-          <span>Enablement Summary <span style="color:var(--color-text-muted);font-weight:400;font-size:12px">(${enabledLPMs.length} LPMs across ${enabledProgramIds.length} programs / ${enabledMarketIds.length} markets)</span></span>
-          ${canEdit ? `<button class="btn btn-xs btn-ghost" onclick="OriginationCompaniesView.switchTab('access')">Edit →</button>` : ''}
+          <span>Programs Enabled <span style="color:var(--color-text-muted);font-weight:400;font-size:12px">(${enabledPrograms.length})</span></span>
+          ${canEdit ? `<button class="btn btn-xs btn-ghost" onclick="OriginationCompaniesView.switchTab('programs')">Manage →</button>` : ''}
         </div>
-        ${this._renderEnablementMiniGrid(ocLpmIds, allPrograms, allMarkets)}
+        ${enabledPrograms.length
+          ? `<div style="display:flex;flex-wrap:wrap;gap:8px">${enabledPrograms.map(p => `<span class="tag" style="font-size:13px;padding:5px 12px">${p.name}<span style="color:var(--color-text-muted);font-weight:400;margin-left:6px">${(p.allowedMarketIds || []).map(id => State.getMarket(id)?.code).filter(Boolean).join(', ')}</span></span>`).join('')}</div>`
+          : '<div style="color:var(--color-text-muted);font-size:13px">No programs enabled.</div>'}
       </div>
-
-      ${expiringLicenses.length ? `
-      <div class="card" style="margin-bottom:24px">
-        <div class="card-title" style="margin-bottom:14px">License Expiry Watchlist</div>
-        <div style="border:1px solid var(--color-border);border-radius:var(--radius-lg);overflow:hidden">
-          <table>
-            <thead><tr><th>Loan Officer</th><th>Market</th><th>Status</th><th>Renewal</th><th>Last Sync</th></tr></thead>
-            <tbody>
-              ${expiringLicenses.slice(0, 8).map(({ user: u, license, status }) => {
-                const mkt = State.getMarket(license.marketId);
-                const tierColor = status.tier === 'critical' || status.tier === 'expired' || status.tier === 'inactive'
-                  ? 'var(--color-danger)'
-                  : status.tier === 'warning' ? 'var(--color-warning)' : 'var(--color-text)';
-                const label = status.tier === 'expired' ? `Expired ${-status.days}d ago`
-                  : status.tier === 'inactive' ? 'Inactive'
-                  : `${status.days}d`;
-                return `
-                  <tr class="clickable" onclick="ProfileView.open('${u.id}')">
-                    <td><div class="cell-primary">${Display.fullName(u)}</div></td>
-                    <td>${mkt?.code || '—'} · ${mkt?.name || ''}</td>
-                    <td style="color:${tierColor};font-weight:600">${label}</td>
-                    <td>${Display.date(license.renewalDate)}</td>
-                    <td style="color:var(--color-text-muted);font-size:11px">${Display.relativeTime(license.lastSync)}</td>
-                  </tr>`;
-              }).join('')}
-            </tbody>
-          </table>
-        </div>
-      </div>` : ''}
 
       <div class="card">
         <div class="card-title" style="margin-bottom:14px">Branches</div>
         <div style="border:1px solid var(--color-border);border-radius:var(--radius-lg);overflow:hidden">
           <table>
-            <thead><tr><th>Branch</th><th>Type</th><th>State</th><th>LPMs Enabled</th><th>Users</th><th>Last Synced</th><th>Status</th></tr></thead>
+            <thead><tr><th>Branch</th><th>Type</th><th>State</th><th>Users</th><th>NMLS Sync</th><th>Status</th></tr></thead>
             <tbody>
-              ${branches.map(b => {
-                const brEnab = State.getBranchEnablement(b.id);
-                const narrowed = brEnab.length < ocLpmIds.length;
-                return `
+              ${branches.map(b => `
                 <tr class="clickable" onclick="BranchesView.openDetail('${b.id}')">
                   <td><div class="cell-primary">${b.name}</div><div class="cell-secondary">${b.address1 || b.address || ''}</div></td>
                   <td>${b.branchType || 'Branch'}</td>
                   <td>${b.state}</td>
-                  <td><span class="tag" style="${narrowed ? 'background:#fff7e6;color:#a35c00' : ''}">${brEnab.length} / ${ocLpmIds.length}${narrowed ? ' · narrowed' : ''}</span></td>
                   <td>${b.userCount}</td>
                   <td style="color:var(--color-text-muted);font-size:11px">${b.lastNmlsSync ? Display.relativeTime(b.lastNmlsSync) : '—'}</td>
                   <td><span class="badge ${b.status === 'active' ? 'badge-active' : 'badge-pending'}">${b.status}</span></td>
-                </tr>`;
-              }).join('')}
+                </tr>`).join('')}
             </tbody>
           </table>
         </div>
       </div>`;
   },
 
-  /* ---- Enablement mini-grid (read-only program × market checkbox grid) ---- */
-  _renderEnablementMiniGrid(ocLpmIds, programs, markets) {
+  /* ---- Programs tab — OC-level enablement editor ----
+     Round 2: each platform-defined program is a single checkbox. Toggling
+     enables/disables ALL of that program's allowed-market LPMs at the OC
+     level. Branches inherit; per-branch enablement editor was dropped. */
+  _renderPrograms(c, canEdit) {
+    const ocLpmIds = State.getOcEnablement(c.id);
     const ocSet = new Set(ocLpmIds);
-    const supportedMarkets = markets.filter(m => m.supported);
-    if (!programs.length || !supportedMarkets.length) {
-      return '<div style="color:var(--color-text-muted);font-size:13px;padding:16px;text-align:center">No programs or markets configured.</div>';
+    const programs = State.getLoanPrograms();
+
+    if (!programs.length) {
+      return `<div class="card"><div style="text-align:center;color:var(--color-text-muted);padding:32px;font-size:13px">No platform-defined loan programs yet.${canEdit ? ' Define one under <a href="javascript:void(0)" onclick="Router.navigate(\'/system-config\')" style="color:var(--color-primary);font-weight:600">System Configuration</a>.' : ''}</div></div>`;
     }
-    const headerRow = `<tr><th style="text-align:left;font-size:11px;color:var(--color-text-muted);text-transform:uppercase;letter-spacing:.04em;padding:6px 10px">Program</th>${supportedMarkets.map(m => `<th style="font-size:11px;color:var(--color-text-muted);text-transform:uppercase;letter-spacing:.04em;padding:6px 10px;text-align:center">${m.code}</th>`).join('')}</tr>`;
+
     const rows = programs.map(p => {
-      const cells = supportedMarkets.map(m => {
-        const lpm = State.getLPMs().find(x => x.programId === p.id && x.marketId === m.id);
-        if (!lpm) {
-          // Not allowed at platform level
-          return `<td style="text-align:center;padding:6px 10px;color:var(--color-text-muted)" title="Not available — program ${p.name} cannot exist in ${m.name}">—</td>`;
-        }
-        const isOn = ocSet.has(lpm.id);
-        return `<td style="text-align:center;padding:6px 10px">${isOn ? '<span style="color:var(--color-success);font-size:14px">●</span>' : '<span style="color:var(--color-text-muted);font-size:14px">○</span>'}</td>`;
-      }).join('');
-      return `<tr><td style="padding:6px 10px;font-size:13px;color:var(--color-text);font-weight:500">${p.name}</td>${cells}</tr>`;
+      const lpmsForProgram = State.getLPMsForProgram(p.id);
+      const isFullyEnabled = lpmsForProgram.length > 0 && lpmsForProgram.every(l => ocSet.has(l.id));
+      const isPartialEnabled = !isFullyEnabled && lpmsForProgram.some(l => ocSet.has(l.id));
+      const marketsLabel = (p.allowedMarketIds || []).map(id => State.getMarket(id)?.code).filter(Boolean).join(', ');
+      return `
+        <label style="display:flex;align-items:center;gap:14px;padding:14px 18px;border-bottom:1px solid var(--color-border-light);cursor:${canEdit ? 'pointer' : 'default'}">
+          <input type="checkbox" ${isFullyEnabled ? 'checked' : ''} ${isPartialEnabled && !isFullyEnabled ? 'data-indeterminate="1"' : ''} ${canEdit ? '' : 'disabled'}
+                 onchange="OriginationCompaniesView._toggleProgramEnabled('${c.id}', '${p.id}', this.checked)"
+                 style="width:16px;height:16px;cursor:${canEdit ? 'pointer' : 'not-allowed'};flex-shrink:0">
+          <div style="flex:1;min-width:0">
+            <div style="font-size:14px;font-weight:600;color:var(--color-text)">${p.name}</div>
+            <div style="font-size:11px;color:var(--color-text-muted);margin-top:2px">
+              Markets: ${marketsLabel || '—'} · ${lpmsForProgram.length} program-market pair${lpmsForProgram.length === 1 ? '' : 's'}
+            </div>
+          </div>
+          ${isFullyEnabled ? '<span class="badge badge-active" style="flex-shrink:0">Enabled</span>' : isPartialEnabled ? '<span class="badge badge-pending" style="flex-shrink:0">Partial</span>' : ''}
+        </label>`;
     }).join('');
-    return `<table style="width:100%;border-collapse:collapse"><thead>${headerRow}</thead><tbody>${rows}</tbody></table>`;
+
+    return `
+      <div class="card" style="padding:0;overflow:hidden">
+        <div style="padding:16px 18px;border-bottom:1px solid var(--color-border);display:flex;align-items:center;justify-content:space-between">
+          <div>
+            <div class="card-title" style="margin-bottom:2px">Programs Enabled</div>
+            <div style="font-size:12px;color:var(--color-text-muted)">Toggle the loan programs available to this OC. Branches inherit. Loan Officers must hold an active NMLS license in a program's market to originate.</div>
+          </div>
+        </div>
+        ${rows}
+      </div>`;
   },
 
-  /* ---- Programs tab — read-only summary linking back to Access ---- */
-  _renderPrograms(c) {
-    const ocLpmIds = State.getOcEnablement(c.id);
-    const branches = State.getBranchesByCompany(c.id);
-    const programs = State.getLoanPrograms();
-    const enabledProgramIds = new Set(ocLpmIds.map(id => State.getLPM(id)?.programId).filter(Boolean));
-    const programRows = programs.filter(p => enabledProgramIds.has(p.id)).map(p => {
-      const lpms = State.getLPMs().filter(l => l.programId === p.id && ocLpmIds.includes(l.id));
-      const marketsList = lpms.map(l => State.getMarket(l.marketId)?.code).filter(Boolean).join(', ');
-      const branchNarrow = branches.filter(b => {
-        const brSet = new Set(State.getBranchEnablement(b.id));
-        return lpms.some(l => brSet.has(l.id));
-      }).length;
-      return `
-        <tr>
-          <td><div class="cell-primary">${p.name}</div><div class="cell-secondary">Token: ${p.token} · Code: ${p.code}</div></td>
-          <td>${marketsList || '—'}</td>
-          <td>${lpms.length}</td>
-          <td>${branchNarrow} of ${branches.length}</td>
-          <td><span class="badge ${p.status === 'active' ? 'badge-active' : 'badge-pending'}">${p.status}</span></td>
-        </tr>`;
-    }).join('');
-    return `
-      <div class="card" style="margin-bottom:20px">
-        <div class="card-title" style="margin-bottom:6px">Enabled Programs</div>
-        <div style="font-size:12px;color:var(--color-text-muted);margin-bottom:14px">
-          (program × market) pairs enabled at the OC level. Branch-level narrowing happens in the
-          <a href="javascript:void(0)" onclick="OriginationCompaniesView.switchTab('access')" style="color:var(--color-primary);font-weight:600">Access</a> tab.
-        </div>
-        <div style="border:1px solid var(--color-border);border-radius:var(--radius-lg);overflow:hidden">
-          <table>
-            <thead><tr><th>Program</th><th>Markets</th><th>LPMs</th><th>Branches enabled</th><th>Status</th></tr></thead>
-            <tbody>${programRows || '<tr><td colspan="5" style="text-align:center;color:var(--color-text-muted);padding:24px;font-size:13px">No programs enabled. Configure under <a href="javascript:void(0)" onclick="OriginationCompaniesView.switchTab(\'access\')" style="color:var(--color-primary)">Access</a>.</td></tr>'}</tbody>
-          </table>
-        </div>
-      </div>`;
+  _toggleProgramEnabled(ocId, programId, on) {
+    const lpms = State.getLPMsForProgram(programId).map(l => l.id);
+    const cur = new Set(State.getOcEnablement(ocId));
+    if (on) lpms.forEach(id => cur.add(id));
+    else    lpms.forEach(id => cur.delete(id));
+    State.setOcEnablement(ocId, [...cur]);
+    App.renderView(Router.getCurrentPath());
   },
 
   /* ---- Settings tab — OC preferences ---- */

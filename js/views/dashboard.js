@@ -647,10 +647,10 @@ const DashboardView = {
           <div class="stat-item">
             <div class="stat-label">Portfolio Value</div>
             <div class="stat-value">$1.24M</div>
-            <div class="stat-desc">Total HEI investments</div>
+            <div class="stat-desc">Total Dream Fund investments</div>
           </div>
           <div class="stat-item">
-            <div class="stat-label">Active HEIs</div>
+            <div class="stat-label">Active Loans</div>
             <div class="stat-value">7</div>
             <div class="stat-desc">Across 2 markets</div>
           </div>
@@ -667,7 +667,7 @@ const DashboardView = {
             <span class="badge badge-active">All Active</span>
           </div>
           <table>
-            <thead><tr><th>Property</th><th>Market</th><th>HEI Amount</th><th>LTV</th><th>Program</th><th>Status</th></tr></thead>
+            <thead><tr><th>Property</th><th>Market</th><th>Loan Amount</th><th>LTV</th><th>Program</th><th>Status</th></tr></thead>
             <tbody>
               ${[
                 { address: '3407 Wisconsin Ave NW, Washington, DC', market: 'Washington DC', amount: 195000, ltv: 71, program: 'DC Dream Fund' },

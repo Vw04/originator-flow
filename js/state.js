@@ -20,12 +20,15 @@ const State = (() => {
   let _poolSummary = JSON.parse(JSON.stringify(DEMO_DATA.poolSummary));
   let _prospectData = JSON.parse(JSON.stringify(DEMO_DATA.prospectData));
 
-  /* ---- RBAC v1.2 mutable seed clones ---- */
+  /* ---- RBAC v1.2 mutable seed clones ----
+     Round 2 simplification: branches inherit OC enablement; we no longer
+     store a separate branch enablement table. The (program × market)
+     intersection is an internal validation concept only — surfaces in the
+     UI as "Programs Enabled". */
   let _markets          = JSON.parse(JSON.stringify(DEMO_DATA.markets || []));
   let _loanPrograms     = JSON.parse(JSON.stringify(DEMO_DATA.loanPrograms || []));
   let _lpms             = JSON.parse(JSON.stringify(DEMO_DATA.loanProgramMarkets || []));
   let _ocEnablement     = JSON.parse(JSON.stringify(DEMO_DATA.ocEnablement || []));
-  let _branchEnablement = JSON.parse(JSON.stringify(DEMO_DATA.branchEnablement || []));
   const _nmlsLookup     = DEMO_DATA.nmlsCompanyLookup || {};
 
   let _currentRole = null;  // role key: 'sys_admin' | 'operator' | 'prog_admin' | 'lo' | 'lp' | 'investor'
@@ -397,10 +400,9 @@ const State = (() => {
         const mkt = _markets.find(m => m.id === mktId);
         if (mkt) _lpms.push({ id: `lpm-${programId}-${mkt.code}`, programId, marketId: mktId });
       });
-      // Cascade: remove LPMs from OC/branch enablement that no longer exist
+      // Cascade: remove LPMs from OC enablement that no longer exist
       const validIds = new Set(_lpms.map(l => l.id));
       _ocEnablement.forEach(e => { e.lpmIds = e.lpmIds.filter(id => validIds.has(id)); });
-      _branchEnablement.forEach(e => { e.lpmIds = e.lpmIds.filter(id => validIds.has(id)); });
       notify();
     },
 
@@ -419,44 +421,26 @@ const State = (() => {
       const next = [...new Set(lpmIds)];
       if (idx >= 0) _ocEnablement[idx].lpmIds = next;
       else _ocEnablement.push({ ocId, lpmIds: next });
-      // Cascade: branches can only narrow OC's set (per §1.3 intersection runs at lookup,
-      // but we also clean up here so the UI stays coherent)
-      const allowed = new Set(next);
-      _branches.filter(b => b.companyId === ocId).forEach(b => {
-        const e = _branchEnablement.find(x => x.branchId === b.id);
-        if (e) e.lpmIds = e.lpmIds.filter(id => allowed.has(id));
-      });
       _auditLog.unshift({
         id: `al-${Date.now()}`,
         actorId: _currentUser?.id,
         action: 'oc_enablement_changed',
         entityType: 'company',
         entityId: ocId,
-        detail: `OC enablement set to ${next.length} LPM(s)`,
+        detail: `OC enablement set to ${next.length} program-market(s)`,
         timestamp: new Date().toISOString(),
       });
       notify();
     },
 
-    /* ---- Branch enablement (independent record per spec §1.3) ---- */
+    /* ---- Branch enablement (round 2: branches inherit OC enablement) ----
+       Spec §6 says self-administer branch enablement is OFF in v1. Returning
+       the OC's set keeps internal validation honest while letting the UI
+       drop the per-branch matrix entirely. */
     getBranchEnablement(branchId) {
-      return [...(_branchEnablement.find(x => x.branchId === branchId)?.lpmIds || [])];
-    },
-    setBranchEnablement(branchId, lpmIds) {
-      const idx = _branchEnablement.findIndex(x => x.branchId === branchId);
-      const next = [...new Set(lpmIds)];
-      if (idx >= 0) _branchEnablement[idx].lpmIds = next;
-      else _branchEnablement.push({ branchId, lpmIds: next });
-      _auditLog.unshift({
-        id: `al-${Date.now()}`,
-        actorId: _currentUser?.id,
-        action: 'branch_enablement_changed',
-        entityType: 'branch',
-        entityId: branchId,
-        detail: `Branch enablement set to ${next.length} LPM(s)`,
-        timestamp: new Date().toISOString(),
-      });
-      notify();
+      const branch = _branches.find(b => b.id === branchId);
+      if (!branch) return [];
+      return State.getOcEnablement(branch.companyId);
     },
 
     /* ---- NMLS lookup (used by OC onboarding wizard) ----
@@ -526,43 +510,46 @@ const State = (() => {
     },
 
     /* ---- §1.4 Effective Access Gate ----
-       Returns { lpmIds, blockedBy: { oc, branch, license } }. The LPMs
-       in `lpmIds` are the (program × market) pairs the user can
-       actually originate in via this branch. */
+       Round 2: branches inherit OC enablement, so the gate is simply
+       (OC enablement) ∩ (branch state's market) ∩ (LO licensed markets).
+       The branch dimension only contributes its state — programs not
+       declared for that market are filtered out so we don't claim a
+       branch is enabled for a market it can't legally operate in. */
     effectiveAccess(userId, branchId) {
       const user = _users.find(u => u.id === userId);
       const branch = _branches.find(b => b.id === branchId);
       if (!user || !branch) return { lpmIds: [], blockedBy: { oc: [], branch: [], license: [] } };
-      const oc = State.getOcEnablement(branch.companyId);
-      const br = State.getBranchEnablement(branchId);
-      const ocSet = new Set(oc);
-      const brSet = new Set(br);
-      const intersect12 = oc.filter(id => brSet.has(id));
+      const ocLpms = State.getOcEnablement(branch.companyId);
+      const branchMarketCode = branch.state;
+      const branchMarket = _markets.find(m => m.code === branchMarketCode);
+      // Filter OC-enabled LPMs to those whose market matches the branch's state
+      const reachableAtBranch = ocLpms.filter(lpmId => {
+        const lpm = _lpms.find(x => x.id === lpmId);
+        return lpm && branchMarket && lpm.marketId === branchMarket.id;
+      });
+      const blockedByBranchState = ocLpms.filter(id => !reachableAtBranch.includes(id));
+
       const assignments = State.getBranchAssignments(userId);
       const a = assignments.find(x => x.branchId === branchId);
       const isLO = a?.userType === 'lo';
       if (!isLO) {
-        // Standard Users not gated by license dimension
+        // Standard Users not gated by the license dimension
         return {
-          lpmIds: intersect12,
-          blockedBy: {
-            oc: br.filter(id => !ocSet.has(id)),
-            branch: oc.filter(id => !brSet.has(id)),
-            license: [],
-          },
+          lpmIds: reachableAtBranch,
+          blockedBy: { oc: [], branch: blockedByBranchState, license: [] },
         };
       }
       const licensedMarkets = new Set((user.licenses || []).filter(l => l.active).map(l => l.marketId));
-      const licensed = intersect12.filter(lpmId => {
+      const licensed = reachableAtBranch.filter(lpmId => {
         const lpm = _lpms.find(x => x.id === lpmId);
         return lpm && licensedMarkets.has(lpm.marketId);
       });
       return {
         lpmIds: licensed,
         blockedBy: {
-          oc: br.filter(id => !ocSet.has(id)),
-          branch: oc.filter(id => !brSet.has(id)),
-          license: intersect12.filter(id => !licensed.includes(id)),
+          oc: [],
+          branch: blockedByBranchState,
+          license: reachableAtBranch.filter(id => !licensed.includes(id)),
         },
       };
     },
@@ -608,6 +595,16 @@ const State = (() => {
     hasFutureGrant(userId, branchId) {
       const a = State.getBranchAssignments(userId).find(x => x.branchId === branchId);
       return !!(a?.loAssignments || []).some(t => t.scope === 'all_los');
+    },
+
+    /* ---- §3.1 Program Admin (OC-Admin) flag ----
+       Round 2: Program Admin is now a stackable flag on the user, not a
+       distinct role. Returns true if explicit `isProgramAdmin` is set or
+       (for legacy seed data) if `role === 'prog_admin'`. */
+    isProgramAdmin(userId) {
+      const u = typeof userId === 'string' ? _users.find(x => x.id === userId) : userId;
+      if (!u) return false;
+      return u.isProgramAdmin === true || u.role === 'prog_admin';
     },
 
     /* ---- §1.4 + §3.5 Application creation gate ---- */

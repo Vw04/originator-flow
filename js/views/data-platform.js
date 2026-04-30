@@ -3351,7 +3351,7 @@ const DataPlatformView = {
                 <input class="input" id="dp-new-address" placeholder="123 Main St, Nashville, TN 37201" />
               </div>
               <div class="form-group">
-                <label>HEI Amount ($) *</label>
+                <label>Loan Amount ($) *</label>
                 <input class="input" id="dp-new-amount" type="number" placeholder="150000" />
               </div>
               <div class="form-group">
@@ -3359,8 +3359,7 @@ const DataPlatformView = {
                 <select class="select-input" id="dp-new-program">
                   <option value="DC Dream Fund">DC Dream Fund</option>
                   <option value="Kentucky Dream Fund">Kentucky Dream Fund</option>
-                  <option value="Standard HEI">Standard HEI</option>
-                  <option value="Jumbo HEI">Jumbo HEI</option>
+                  <option value="Multi-State Dream Fund">Multi-State Dream Fund</option>
                 </select>
               </div>
             </div>

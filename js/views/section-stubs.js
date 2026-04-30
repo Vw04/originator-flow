@@ -283,14 +283,13 @@ const SystemConfigView = {
           <td>${p.code}</td>
           <td class="text-secondary">${p.token}</td>
           <td>${allowedMarkets.map(m => `<span class="tag" style="margin-right:4px">${m.code}</span>`).join('') || '<span class="text-muted">—</span>'}</td>
-          <td>${lpmsForProgram.length}</td>
           <td>${ocCount}</td>
           <td>
             <button class="btn btn-ghost btn-xs" onclick="SystemConfigView.toggleProgramEditor('${p.id}')">Configure Markets</button>
           </td>
         </tr>
         ${this._expandedProgramId === p.id ? `
-        <tr><td colspan="9" style="background:var(--color-surface);padding:14px 18px">
+        <tr><td colspan="8" style="background:var(--color-surface);padding:14px 18px">
           <div style="font-size:12px;color:var(--color-text-muted);margin-bottom:8px"><strong>${p.name}</strong> — Pick which Markets this program can exist in. Cells the platform allows here become available for OC-level enablement.</div>
           <div style="display:flex;flex-wrap:wrap;gap:10px">
             ${markets.map(m => `
@@ -310,13 +309,13 @@ const SystemConfigView = {
         </div>
         <table>
           <thead><tr>
-            <th>ID</th><th>Status</th><th>Program Name</th><th>Code</th><th>Token</th><th>Allowed Markets</th><th>LPMs</th><th>OCs</th><th>Actions</th>
+            <th>ID</th><th>Status</th><th>Program Name</th><th>Code</th><th>Token</th><th>Allowed Markets</th><th>OCs</th><th>Actions</th>
           </tr></thead>
           <tbody>${rows}</tbody>
         </table>
         <div class="table-footer"><span class="table-count">${programs.length} programs</span></div>
-        <div id="loan-program-modal-container"></div>
-      </div>`;
+      </div>
+      <div id="loan-program-modal-container"></div>`;
   },
 
   toggleProgramEditor(programId) {
@@ -336,31 +335,33 @@ const SystemConfigView = {
   openAddProgramModal() {
     const markets = State.getMarkets().filter(m => m.supported);
     const html = `
-      <div class="modal-overlay" onclick="SystemConfigView.closeAddProgramModal()"></div>
-      <div class="modal" style="max-width:520px">
-        <div class="modal-header">
-          <div><div class="modal-title">New Loan Program</div></div>
-          <button class="modal-close" onclick="SystemConfigView.closeAddProgramModal()">×</button>
-        </div>
-        <div class="modal-body">
-          <div class="form-grid">
-            <div class="form-group form-full"><label>Program Name</label><input id="lp-name" class="input" placeholder="e.g. Texas Equity Pilot"></div>
-            <div class="form-group"><label>Code</label><input id="lp-code" class="input" placeholder="TX"></div>
-            <div class="form-group"><label>Token</label><input id="lp-token" class="input" value="HOM"></div>
-            <div class="form-group form-full">
-              <label>Allowed Markets</label>
-              <div style="display:flex;flex-wrap:wrap;gap:8px;margin-top:6px">
-                ${markets.map(m => `
-                  <label style="display:inline-flex;align-items:center;gap:5px;font-size:13px;padding:4px 9px;border:1px solid var(--color-border);border-radius:5px">
-                    <input type="checkbox" data-market-id="${m.id}" class="lp-mkt-pick"> ${m.code}
-                  </label>`).join('')}
+      <div class="modal-overlay" onclick="if(event.target===this)SystemConfigView.closeAddProgramModal()">
+        <div class="modal" style="max-width:520px">
+          <div class="modal-header">
+            <div><div class="modal-title">New Loan Program</div></div>
+            <button class="modal-close" onclick="SystemConfigView.closeAddProgramModal()">×</button>
+          </div>
+          <div class="modal-body">
+            <div class="form-grid">
+              <div class="form-group form-full"><label>Program Name</label><input id="lp-name" class="input" placeholder="e.g. Texas Equity Pilot"></div>
+              <div class="form-group"><label>Code</label><input id="lp-code" class="input" placeholder="TX"></div>
+              <div class="form-group"><label>Token</label><input id="lp-token" class="input" value="HOM"></div>
+              <div class="form-group form-full">
+                <label>Allowed Markets</label>
+                <div style="display:flex;flex-wrap:wrap;gap:8px;margin-top:6px">
+                  ${markets.map(m => `
+                    <label style="display:inline-flex;align-items:center;gap:5px;font-size:13px;padding:4px 9px;border:1px solid var(--color-border);border-radius:5px;cursor:pointer">
+                      <input type="checkbox" data-market-id="${m.id}" class="lp-mkt-pick"> ${m.code}
+                    </label>`).join('')}
+                </div>
+                <div class="form-hint">Pick the markets where this program can exist. OCs can later enable any subset.</div>
               </div>
             </div>
           </div>
-        </div>
-        <div class="modal-footer">
-          <button class="btn btn-secondary" onclick="SystemConfigView.closeAddProgramModal()">Cancel</button>
-          <button class="btn btn-primary" onclick="SystemConfigView.submitAddProgram()">Create Program</button>
+          <div class="modal-footer">
+            <button class="btn btn-secondary" onclick="SystemConfigView.closeAddProgramModal()">Cancel</button>
+            <button class="btn btn-primary" onclick="SystemConfigView.submitAddProgram()">Create Program</button>
+          </div>
         </div>
       </div>`;
     const c = document.getElementById('loan-program-modal-container');

@@ -595,7 +595,7 @@ table[data-resizable] td, table[data-resizable] th { overflow: hidden; text-over
 
 thead th {
   background: var(--color-card);
-  padding: 10px 16px;
+  padding: 12px 22px;
   text-align: left;
   font-size: 10px;
   font-weight: 600;
@@ -636,7 +636,7 @@ tbody tr.clickable { cursor: pointer; }
 tbody tr.row-selected { background: var(--color-primary-container) !important; }
 
 tbody td {
-  padding: 12px 16px;
+  padding: 14px 22px;
   font-size: 13px;
   font-weight: 400;
   color: var(--color-text);
