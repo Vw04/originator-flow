@@ -20,6 +20,14 @@ const State = (() => {
   let _poolSummary = JSON.parse(JSON.stringify(DEMO_DATA.poolSummary));
   let _prospectData = JSON.parse(JSON.stringify(DEMO_DATA.prospectData));
 
+  /* ---- RBAC v1.2 mutable seed clones ---- */
+  let _markets          = JSON.parse(JSON.stringify(DEMO_DATA.markets || []));
+  let _loanPrograms     = JSON.parse(JSON.stringify(DEMO_DATA.loanPrograms || []));
+  let _lpms             = JSON.parse(JSON.stringify(DEMO_DATA.loanProgramMarkets || []));
+  let _ocEnablement     = JSON.parse(JSON.stringify(DEMO_DATA.ocEnablement || []));
+  let _branchEnablement = JSON.parse(JSON.stringify(DEMO_DATA.branchEnablement || []));
+  const _nmlsLookup     = DEMO_DATA.nmlsCompanyLookup || {};
+
   let _currentRole = null;  // role key: 'sys_admin' | 'operator' | 'prog_admin' | 'lo' | 'lp' | 'investor'
   let _currentUser = null;  // user object (simulated logged-in user per role)
   let _mode = 'admin';      // 'admin' | 'data'
@@ -34,13 +42,17 @@ const State = (() => {
     _subscribers.forEach(fn => fn());
   }
 
-  /* ---- Role demo users (one per role for the demo) ---- */
+  /* ---- Role demo users (one per role for the demo) ----
+     `scenario14` is the spec §5 stress-test persona — a Standard User
+     with multi-branch, mixed per-LO permissions. Uses `lp` role plumbing
+     under the hood (Standard User type at branch level per spec §3.2). */
   const DEMO_USERS_BY_ROLE = {
     sys_admin:  'user-001',
     operator:   'user-002',
     prog_admin: 'user-003',
     lo:         'user-004',
     lp:         'user-006',
+    scenario14: 'user-100',
     investor:   'user-018',
     investor_prospect: 'user-019',
   };
@@ -48,9 +60,12 @@ const State = (() => {
   return {
     /* ---- Role ---- */
     setRole(role) {
+      // `scenario14` is a synthetic persona that maps to a real user (Standard User).
+      // Set the role to the user's actual role so existing role-gated paths still work.
       _currentRole = role;
       const uid = DEMO_USERS_BY_ROLE[role];
       _currentUser = _users.find(u => u.id === uid) || null;
+      if (role === 'scenario14') _currentRole = _currentUser?.role || 'lp';
       // Everyone starts in LOP (data) mode; admin sections accessible via nav dropdown
       _mode = 'data';
       _impersonating = null;
@@ -344,7 +359,291 @@ const State = (() => {
       notify();
     },
 
-    /* ---- Permission Resolver ---- */
+    /* ============================================================
+       RBAC v1.2 helpers (spec §1–§5)
+       ============================================================ */
+
+    /* ---- Markets ---- */
+    getMarkets:      () => [..._markets],
+    getMarket:       (id) => _markets.find(m => m.id === id),
+    getSupportedMarkets: () => _markets.filter(m => m.supported),
+    setMarketComingSoon(id, value) {
+      const m = _markets.find(x => x.id === id);
+      if (m) { m.comingSoon = !!value; notify(); }
+    },
+
+    /* ---- Loan Programs ---- */
+    getLoanPrograms: () => [..._loanPrograms],
+    getLoanProgram:  (id) => _loanPrograms.find(p => p.id === id),
+    addLoanProgram(data) {
+      const lp = { id: `lp-${Date.now()}`, status: 'active', token: 'HOM', allowedMarketIds: [], ...data };
+      _loanPrograms.push(lp);
+      // Generate LPM rows for each (program × allowed market) pair
+      lp.allowedMarketIds.forEach(mktId => {
+        const mkt = _markets.find(m => m.id === mktId);
+        if (!mkt) return;
+        _lpms.push({ id: `lpm-${lp.id}-${mkt.code}`, programId: lp.id, marketId: mktId });
+      });
+      notify();
+      return lp;
+    },
+    updateLoanProgramMarkets(programId, allowedMarketIds) {
+      const lp = _loanPrograms.find(p => p.id === programId);
+      if (!lp) return;
+      lp.allowedMarketIds = [...allowedMarketIds];
+      // Regenerate LPM rows for this program
+      _lpms = _lpms.filter(l => l.programId !== programId);
+      lp.allowedMarketIds.forEach(mktId => {
+        const mkt = _markets.find(m => m.id === mktId);
+        if (mkt) _lpms.push({ id: `lpm-${programId}-${mkt.code}`, programId, marketId: mktId });
+      });
+      // Cascade: remove LPMs from OC/branch enablement that no longer exist
+      const validIds = new Set(_lpms.map(l => l.id));
+      _ocEnablement.forEach(e => { e.lpmIds = e.lpmIds.filter(id => validIds.has(id)); });
+      _branchEnablement.forEach(e => { e.lpmIds = e.lpmIds.filter(id => validIds.has(id)); });
+      notify();
+    },
+
+    /* ---- LPMs (LoanProgram-Market pairs) ---- */
+    getLPMs: () => [..._lpms],
+    getLPM:  (id) => _lpms.find(x => x.id === id),
+    getLPMsForProgram: (programId) => _lpms.filter(x => x.programId === programId),
+    getLPMsForMarket:  (marketId)  => _lpms.filter(x => x.marketId === marketId),
+
+    /* ---- OC enablement (set by Platform Operator) ---- */
+    getOcEnablement(ocId) {
+      return [...(_ocEnablement.find(x => x.ocId === ocId)?.lpmIds || [])];
+    },
+    setOcEnablement(ocId, lpmIds) {
+      const idx = _ocEnablement.findIndex(x => x.ocId === ocId);
+      const next = [...new Set(lpmIds)];
+      if (idx >= 0) _ocEnablement[idx].lpmIds = next;
+      else _ocEnablement.push({ ocId, lpmIds: next });
+      // Cascade: branches can only narrow OC's set (per §1.3 intersection runs at lookup,
+      // but we also clean up here so the UI stays coherent)
+      const allowed = new Set(next);
+      _branches.filter(b => b.companyId === ocId).forEach(b => {
+        const e = _branchEnablement.find(x => x.branchId === b.id);
+        if (e) e.lpmIds = e.lpmIds.filter(id => allowed.has(id));
+      });
+      _auditLog.unshift({
+        id: `al-${Date.now()}`,
+        actorId: _currentUser?.id,
+        action: 'oc_enablement_changed',
+        entityType: 'company',
+        entityId: ocId,
+        detail: `OC enablement set to ${next.length} LPM(s)`,
+        timestamp: new Date().toISOString(),
+      });
+      notify();
+    },
+
+    /* ---- Branch enablement (independent record per spec §1.3) ---- */
+    getBranchEnablement(branchId) {
+      return [...(_branchEnablement.find(x => x.branchId === branchId)?.lpmIds || [])];
+    },
+    setBranchEnablement(branchId, lpmIds) {
+      const idx = _branchEnablement.findIndex(x => x.branchId === branchId);
+      const next = [...new Set(lpmIds)];
+      if (idx >= 0) _branchEnablement[idx].lpmIds = next;
+      else _branchEnablement.push({ branchId, lpmIds: next });
+      _auditLog.unshift({
+        id: `al-${Date.now()}`,
+        actorId: _currentUser?.id,
+        action: 'branch_enablement_changed',
+        entityType: 'branch',
+        entityId: branchId,
+        detail: `Branch enablement set to ${next.length} LPM(s)`,
+        timestamp: new Date().toISOString(),
+      });
+      notify();
+    },
+
+    /* ---- NMLS lookup (used by OC onboarding wizard) ----
+       Pre-populated table; no live API. */
+    nmlsLookupCompany(nmlsId) {
+      return _nmlsLookup[String(nmlsId).trim()] || null;
+    },
+    listNmlsLookupSeeds() {
+      return Object.entries(_nmlsLookup).map(([nmlsId, rec]) => ({ nmlsId, name: rec.name, branchCount: rec.branches.length }));
+    },
+
+    /* ---- Branch assignments (RBAC v1.2 spec §3) ----
+       Returns the user's per-branch assignments. Falls back to a
+       synthesized assignment derived from the legacy `role` + `branchId`
+       fields when the user predates v1.2. */
+    getBranchAssignments(userId) {
+      const u = _users.find(x => x.id === userId);
+      if (!u) return [];
+      if (Array.isArray(u.branchAssignments) && u.branchAssignments.length) {
+        return JSON.parse(JSON.stringify(u.branchAssignments));
+      }
+      // Synthesize a default assignment for legacy users
+      if (!u.branchId) return [];
+      const isLO = u.role === 'lo';
+      const isLP = u.role === 'lp';
+      const isPA = u.role === 'prog_admin';
+      const userType = isLO ? 'lo' : (isLP || isPA) ? 'standard' : null;
+      if (!userType) return [];
+      const tuples = [];
+      if (isLO) {
+        tuples.push({ scope: 'personal', loIds: [], level: 'full', subflags: { canCreate: true, canSubmit: true, canWithdraw: true } });
+      } else if (isLP) {
+        // Loan Processors default to "all LOs in branch / Can Edit (no subflags)"
+        tuples.push({ scope: 'all_los', loIds: [], level: 'edit', subflags: { canCreate: false, canSubmit: false, canWithdraw: false } });
+      } else if (isPA) {
+        tuples.push({ scope: 'all_los', loIds: [], level: 'view', subflags: {} });
+      }
+      return [{
+        branchId: u.branchId,
+        userType,
+        flags: { branchManager: false },
+        loAssignments: tuples,
+        allowNewOriginations: isLO,
+        allowAccessToAllBranchActivity: false,
+        eligibleLoanProductIds: [],
+        synthesized: true,
+      }];
+    },
+
+    setBranchAssignments(userId, assignments) {
+      const u = _users.find(x => x.id === userId);
+      if (!u) return;
+      u.branchAssignments = JSON.parse(JSON.stringify(assignments));
+      notify();
+    },
+
+    /* ---- Licenses (LO sub-layer; NMLS-sourced, pre-populated) ---- */
+    getUserLicenses(userId) {
+      const u = _users.find(x => x.id === userId);
+      return u?.licenses ? [...u.licenses] : [];
+    },
+    setUserLicenseActive(userId, licenseId, active) {
+      const u = _users.find(x => x.id === userId);
+      if (!u || !u.licenses) return;
+      const lic = u.licenses.find(l => l.id === licenseId);
+      if (lic) { lic.active = !!active; notify(); }
+    },
+
+    /* ---- §1.4 Effective Access Gate ----
+       Returns { lpmIds, blockedBy: { oc, branch, license } }. The LPMs
+       in `lpmIds` are the (program × market) pairs the user can
+       actually originate in via this branch. */
+    effectiveAccess(userId, branchId) {
+      const user = _users.find(u => u.id === userId);
+      const branch = _branches.find(b => b.id === branchId);
+      if (!user || !branch) return { lpmIds: [], blockedBy: { oc: [], branch: [], license: [] } };
+      const oc = State.getOcEnablement(branch.companyId);
+      const br = State.getBranchEnablement(branchId);
+      const ocSet = new Set(oc);
+      const brSet = new Set(br);
+      const intersect12 = oc.filter(id => brSet.has(id));
+      const assignments = State.getBranchAssignments(userId);
+      const a = assignments.find(x => x.branchId === branchId);
+      const isLO = a?.userType === 'lo';
+      if (!isLO) {
+        // Standard Users not gated by license dimension
+        return {
+          lpmIds: intersect12,
+          blockedBy: {
+            oc: br.filter(id => !ocSet.has(id)),
+            branch: oc.filter(id => !brSet.has(id)),
+            license: [],
+          },
+        };
+      }
+      const licensedMarkets = new Set((user.licenses || []).filter(l => l.active).map(l => l.marketId));
+      const licensed = intersect12.filter(lpmId => {
+        const lpm = _lpms.find(x => x.id === lpmId);
+        return lpm && licensedMarkets.has(lpm.marketId);
+      });
+      return {
+        lpmIds: licensed,
+        blockedBy: {
+          oc: br.filter(id => !ocSet.has(id)),
+          branch: oc.filter(id => !brSet.has(id)),
+          license: intersect12.filter(id => !licensed.includes(id)),
+        },
+      };
+    },
+
+    /* ---- §3.6 Resolver ----
+       Returns the strongest matching tuple for a (user, loan) pair.
+       Hard-codes the spec invariants:
+         - LO + own loan → Full (short-circuit)
+         - BM flag      → minimum View on all-LOs scope */
+    resolveAssignmentForLoan(userId, loanId) {
+      const loan = _loans.find(l => l.id === loanId);
+      const user = _users.find(u => u.id === userId);
+      if (!loan || !user) return { level: 'no_access', subflags: {} };
+      const a = State.getBranchAssignments(userId).find(x => x.branchId === loan.branchId);
+      if (!a) return { level: 'no_access', subflags: {} };
+      // §3.6 invariant: LO Full Access on own loans
+      if (a.userType === 'lo' && loan.loId === userId) {
+        return { level: 'full', subflags: { canCreate: true, canSubmit: true, canWithdraw: true }, source: 'invariant_lo_own' };
+      }
+      const RANK = { no_access: 0, view: 1, edit: 2, full: 3 };
+      // §3.3 invariant: BM minimum View on all branch loans
+      const floor = a.flags?.branchManager ? 'view' : 'no_access';
+      let best = { level: floor, subflags: {}, source: a.flags?.branchManager ? 'invariant_bm_floor' : 'default' };
+      for (const t of (a.loAssignments || [])) {
+        const matches =
+          (t.scope === 'personal' && loan.loId === userId) ||
+          (t.scope === 'specific_los' && (t.loIds || []).includes(loan.loId)) ||
+          (t.scope === 'all_los');
+        if (!matches) continue;
+        if (RANK[t.level] > RANK[best.level]) best = { level: t.level, subflags: t.subflags || {}, source: 'tuple' };
+      }
+      return best;
+    },
+
+    /* ---- §3.6 invariant floor for the tuple editor UI ---- */
+    minLevelFloor({ userType, flags, scope, isOwn }) {
+      if (userType === 'lo' && (scope === 'personal' || isOwn)) return 'full';
+      if (flags?.branchManager && scope === 'all_los') return 'view';
+      return 'no_access';
+    },
+
+    /* ---- §3.7 Future-grant inheritance ---- */
+    hasFutureGrant(userId, branchId) {
+      const a = State.getBranchAssignments(userId).find(x => x.branchId === branchId);
+      return !!(a?.loAssignments || []).some(t => t.scope === 'all_los');
+    },
+
+    /* ---- §1.4 + §3.5 Application creation gate ---- */
+    canCreateApplication(userId, branchId) {
+      const u = _users.find(x => x.id === userId);
+      if (!u) return { ok: false, reason: 'unknown', detail: [] };
+      const a = State.getBranchAssignments(userId).find(x => x.branchId === branchId);
+      if (!a || a.userType !== 'lo') return { ok: false, reason: 'must_be_lo', detail: [] };
+      const eff = State.effectiveAccess(userId, branchId);
+      if (!eff.lpmIds.length) {
+        if (eff.blockedBy.oc.length)      return { ok: false, reason: 'oc_not_enabled',     detail: eff.blockedBy.oc };
+        if (eff.blockedBy.branch.length)  return { ok: false, reason: 'branch_not_enabled', detail: eff.blockedBy.branch };
+        if (eff.blockedBy.license.length) return { ok: false, reason: 'license_missing',    detail: eff.blockedBy.license };
+        return { ok: false, reason: 'unknown', detail: [] };
+      }
+      const tuple = (a.loAssignments || []).find(t => t.scope === 'personal' || t.scope === 'all_los');
+      const canCreate = a.allowNewOriginations !== false &&
+        (tuple?.level === 'full' || (tuple?.level === 'edit' && tuple?.subflags?.canCreate));
+      return canCreate ? { ok: true } : { ok: false, reason: 'no_can_create', detail: [] };
+    },
+
+    /* ---- License expiry helpers ---- */
+    getLicenseExpiryStatus(license, today) {
+      if (!license) return null;
+      const t = today instanceof Date ? today : new Date();
+      const renewal = new Date(license.renewalDate);
+      const days = Math.ceil((renewal - t) / (1000 * 60 * 60 * 24));
+      if (!license.active) return { tier: 'inactive', days };
+      if (days < 0)        return { tier: 'expired',  days };
+      if (days <= 7)       return { tier: 'critical', days };
+      if (days <= 30)      return { tier: 'warning',  days };
+      if (days <= 60)      return { tier: 'soon',     days };
+      return { tier: 'ok', days };
+    },
+
+    /* ---- Permission Resolver (DEPRECATED — use effectiveAccess + resolveAssignmentForLoan) ---- */
     resolvePermissions(userId, branchId) {
       const branch = _branches.find(b => b.id === branchId);
       if (!branch) return {};

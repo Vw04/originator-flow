@@ -4,13 +4,18 @@
 
 const RoleSelectView = {
   render() {
+    // Spec §3.1–§3.2: OC-Admin role (Program Admin) layered with optional
+    // Branch User Type (LO vs Standard User) per branch. The personas below
+    // demo the spec model; legacy `lo`/`lp` keys are retained as references
+    // for the LO and Standard User Branch types respectively.
     const roles = [
-      { key: 'sys_admin',  title: 'System Admin',          scope: 'Homium',        desc: 'Full platform access. Manage all organizations, branches, users, and system-wide permissions.' },
-      { key: 'operator',   title: 'Platform Operator',     scope: 'Platform',      desc: 'Manage organizations, branches, and users across the platform. No policy editing.' },
-      { key: 'prog_admin', title: 'Program Administrator', scope: 'Company',       desc: 'Company-level admin. View users, manage branches, and invite new team members.' },
-      { key: 'lo',         title: 'Loan Officer',          scope: 'Branch',        desc: 'Create, edit, and submit loan applications for homeowners within your branch.' },
-      { key: 'lp',         title: 'Loan Processor',        scope: 'Branch',        desc: 'Process and update loan applications assigned to your branch.' },
-      { key: 'investor',   title: 'Investor',              scope: 'Portfolio',     desc: 'View your investment portfolio and HEI performance. Requires SecuritizeID verification.' },
+      { key: 'sys_admin',  title: 'System Admin',          scope: 'Homium',        desc: 'Full platform access. Manage all OCs, branches, markets, and loan programs.' },
+      { key: 'operator',   title: 'Platform Operator',     scope: 'Platform',      desc: 'Onboard origination companies, configure enablement, manage users.' },
+      { key: 'prog_admin', title: 'Program Admin',         scope: 'Company',       desc: 'OC-Admin role (spec §3.1, §6). Manage branches, users, and OC settings. Stackable with a Branch User Type.', userType: 'OC-Admin' },
+      { key: 'lo',         title: 'Loan Officer',          scope: 'Branch · LO',   desc: 'Originates applications. License-gated by NMLS state coverage.', userType: 'LO' },
+      { key: 'lp',         title: 'Loan Processor',        scope: 'Branch · Standard', desc: 'Standard User type at a branch. Processes apps without owning them.', userType: 'Standard' },
+      { key: 'scenario14', title: 'Multi-Branch Power User', scope: 'Branch ×5 · Standard', desc: 'Spec §5 Scenario 14 stress-test — Standard User across 5 branches with mixed per-LO permissions.', userType: 'Standard' },
+      { key: 'investor',   title: 'Investor',              scope: 'Portfolio',     desc: 'Portfolio access only.' },
       { key: 'investor_prospect', title: 'Investor Prospect', scope: 'Preview', desc: 'High-level platform preview for prospective investors. View program impact, borrower stories, and fund projections.' },
     ];
 
@@ -19,6 +24,7 @@ const RoleSelectView = {
     const cards = roles.map(r => `
       <div class="role-card" onclick="RoleSelectView.selectRole('${r.key}')">
         <span class="role-scope-tag">${r.scope}</span>
+        ${r.userType ? `<span class="badge" style="position:absolute;top:14px;right:14px;font-size:9.5px;padding:2px 6px;background:var(--color-surface);color:var(--color-text-muted)">${r.userType}</span>` : ''}
         <div class="role-card-title">${r.title}</div>
         <div class="role-card-desc">${r.desc}</div>
         <div style="margin-top:4px;display:flex;align-items:center;gap:4px;font-size:12px;color:var(--color-primary);font-weight:500">
@@ -104,6 +110,14 @@ const RoleSelectView = {
     if (role === 'investor_prospect') {
       const path = State.getViewMode() === 'mobile' ? '/m/prospect' : '/prospect';
       Router.navigate(path, { replace: true });
+      return;
+    }
+    // Scenario 14 stress-test: skip the standard onboarding and land
+    // straight on the multi-branch profile to demonstrate the matrix.
+    if (role === 'scenario14') {
+      const user = State.getCurrentUser();
+      if (user) State.updateUser(user.id, { onboardingStatus: 'active' });
+      Router.navigate('/profile', { replace: true });
       return;
     }
     // Reset demo user to invited so the wizard starts from step 0

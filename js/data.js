@@ -21,6 +21,15 @@ const DEMO_DATA = {
       programs: ['DC Dream Fund'],
       complianceDocs: ['W-9', 'Broker Agreement', 'E&O Insurance'],
       defaultPermissionTemplateId: 'lo_own_only',
+      address1: '1100 New York Ave NW',
+      address2: 'Suite 700',
+      city: 'Washington',
+      state: 'DC',
+      zip: '20005',
+      contactPhone: '202-555-0200',
+      website: 'https://capitalcitylending.com',
+      ccEmails: ['compliance@capitalcitylending.com'],
+      lastNmlsSync: '2026-04-29T03:14:00Z',
     },
     {
       id: 'co-002',
@@ -36,6 +45,15 @@ const DEMO_DATA = {
       programs: ['Kentucky Dream Fund'],
       complianceDocs: ['W-9', 'Broker Agreement'],
       defaultPermissionTemplateId: 'lo_own_only',
+      address1: '400 W Market St',
+      address2: '',
+      city: 'Louisville',
+      state: 'KY',
+      zip: '40202',
+      contactPhone: '502-555-0300',
+      website: 'https://bluegrasshomefinance.com',
+      ccEmails: ['ops@bluegrasshomefinance.com'],
+      lastNmlsSync: '2026-04-29T03:14:00Z',
     },
     {
       id: 'co-003',
@@ -51,22 +69,65 @@ const DEMO_DATA = {
       programs: [],
       complianceDocs: ['W-9'],
       defaultPermissionTemplateId: null,
+      address1: '702 Capital Ave',
+      address2: '',
+      city: 'Frankfort',
+      state: 'KY',
+      zip: '40601',
+      contactPhone: '502-555-0400',
+      website: 'https://commonwealthmortgage.com',
+      ccEmails: [],
+      lastNmlsSync: '2026-04-29T03:14:00Z',
+    },
+    {
+      id: 'co-004',
+      name: 'Beacon Mortgage Partners',
+      nmlsId: '5599001',
+      emailDomain: 'beaconmortgage.com',
+      status: 'active',
+      branchCount: 5,
+      userCount: 7,
+      stateOfIncorporation: 'DC',
+      createdAt: '2026-01-12',
+      primaryContact: 'Riley Sundberg',
+      programs: ['DC Dream Fund', 'Kentucky Dream Fund', 'Utah Dream Fund', 'Michigan Equity Pilot', 'Colorado Mountain HEI'],
+      complianceDocs: ['W-9', 'Broker Agreement', 'E&O Insurance', 'Multi-State License Pack'],
+      defaultPermissionTemplateId: null,
+      address1: '900 16th St NW',
+      address2: 'Floor 8',
+      city: 'Washington',
+      state: 'DC',
+      zip: '20006',
+      contactPhone: '202-555-0900',
+      website: 'https://beaconmortgage.com',
+      ccEmails: ['compliance@beaconmortgage.com', 'ops@beaconmortgage.com'],
+      lastNmlsSync: '2026-04-29T03:14:00Z',
     },
   ],
 
-  /* ---- Branches ---- */
+  /* ---- Branches ----
+     Spec §1.1 / §9 #14: branches are FLAT (no nested sub-branches). The
+     legacy `parentBranchId` field is retained for backwards compat with
+     older views but is no longer rendered hierarchically. */
   branches: [
     // Capital City Lending (DC)
-    { id: 'br-001', companyId: 'co-001', name: 'Downtown DC',           address: '1100 New York Ave NW, Washington, DC 20005',  state: 'DC', managingLO: 'user-003', userCount: 4, programs: ['DC Dream Fund'], status: 'active',  parentBranchId: null,     nmlsId: '2045871-001', defaultPermissionTemplateId: null },
-    { id: 'br-002', companyId: 'co-001', name: 'Capitol Hill Branch',   address: '320 First St SE, Washington, DC 20003',        state: 'DC', managingLO: 'user-005', userCount: 4, programs: ['DC Dream Fund'], status: 'active',  parentBranchId: null,     nmlsId: '2045871-002', defaultPermissionTemplateId: 'lo_full_branch' },
-    { id: 'br-003', companyId: 'co-001', name: 'Adams Morgan Office',   address: '1785 Columbia Rd NW, Washington, DC 20009',    state: 'DC', managingLO: null,       userCount: 2, programs: ['DC Dream Fund'], status: 'active',  parentBranchId: 'br-001', nmlsId: '2045871-003', defaultPermissionTemplateId: null },
+    { id: 'br-001', companyId: 'co-001', name: 'Downtown DC',           address: '1100 New York Ave NW, Washington, DC 20005',  state: 'DC', managingLO: 'user-003', userCount: 4, programs: ['DC Dream Fund'], status: 'active',  parentBranchId: null,     nmlsId: '2045871-001', defaultPermissionTemplateId: null,           branchType: 'Main',   address1: '1100 New York Ave NW', suite: 'Suite 700', city: 'Washington', zip: '20005', contactPhone: '202-555-0200', startDate: '2018-04-15', lastNmlsSync: '2026-04-29T03:14:00Z' },
+    { id: 'br-002', companyId: 'co-001', name: 'Capitol Hill Branch',   address: '320 First St SE, Washington, DC 20003',        state: 'DC', managingLO: 'user-005', userCount: 4, programs: ['DC Dream Fund'], status: 'active',  parentBranchId: null,     nmlsId: '2045871-002', defaultPermissionTemplateId: 'lo_full_branch', branchType: 'Branch', address1: '320 First St SE',      suite: 'Floor 2',   city: 'Washington', zip: '20003', contactPhone: '202-555-0210', startDate: '2020-09-01', lastNmlsSync: '2026-04-29T03:14:00Z' },
+    { id: 'br-003', companyId: 'co-001', name: 'Adams Morgan Office',   address: '1785 Columbia Rd NW, Washington, DC 20009',    state: 'DC', managingLO: null,       userCount: 2, programs: ['DC Dream Fund'], status: 'active',  parentBranchId: 'br-001', nmlsId: '2045871-003', defaultPermissionTemplateId: null,           branchType: 'Branch', address1: '1785 Columbia Rd NW', suite: '',         city: 'Washington', zip: '20009', contactPhone: '202-555-0220', startDate: '2023-02-01', lastNmlsSync: '2026-04-29T03:14:00Z' },
 
     // Bluegrass Home Finance (KY)
-    { id: 'br-004', companyId: 'co-002', name: 'Louisville HQ',         address: '400 W Market St, Louisville, KY 40202',        state: 'KY', managingLO: 'user-011', userCount: 4, programs: ['Kentucky Dream Fund'], status: 'active',  parentBranchId: null, nmlsId: '3178904-001', defaultPermissionTemplateId: null },
-    { id: 'br-005', companyId: 'co-002', name: 'Lexington Branch',      address: '200 W Vine St, Lexington, KY 40507',           state: 'KY', managingLO: null,       userCount: 3, programs: ['Kentucky Dream Fund'], status: 'active',  parentBranchId: null, nmlsId: '3178904-002', defaultPermissionTemplateId: null },
+    { id: 'br-004', companyId: 'co-002', name: 'Louisville HQ',         address: '400 W Market St, Louisville, KY 40202',        state: 'KY', managingLO: 'user-011', userCount: 4, programs: ['Kentucky Dream Fund'], status: 'active',  parentBranchId: null, nmlsId: '3178904-001', defaultPermissionTemplateId: null, branchType: 'Main',   address1: '400 W Market St', suite: 'Suite 1500', city: 'Louisville', zip: '40202', contactPhone: '502-555-0300', startDate: '2019-06-10', lastNmlsSync: '2026-04-29T03:14:00Z' },
+    { id: 'br-005', companyId: 'co-002', name: 'Lexington Branch',      address: '200 W Vine St, Lexington, KY 40507',           state: 'KY', managingLO: null,       userCount: 3, programs: ['Kentucky Dream Fund'], status: 'active',  parentBranchId: null, nmlsId: '3178904-002', defaultPermissionTemplateId: null, branchType: 'Branch', address1: '200 W Vine St',   suite: '',           city: 'Lexington',  zip: '40507', contactPhone: '859-555-0310', startDate: '2021-11-12', lastNmlsSync: '2026-04-29T03:14:00Z' },
 
     // Commonwealth Mortgage Group (KY)
-    { id: 'br-006', companyId: 'co-003', name: 'Frankfort Office',      address: '702 Capital Ave, Frankfort, KY 40601',         state: 'KY', managingLO: 'user-016', userCount: 3, programs: [], status: 'pending', parentBranchId: null, nmlsId: '4290136-001', defaultPermissionTemplateId: null },
+    { id: 'br-006', companyId: 'co-003', name: 'Frankfort Office',      address: '702 Capital Ave, Frankfort, KY 40601',         state: 'KY', managingLO: 'user-016', userCount: 3, programs: [], status: 'pending', parentBranchId: null, nmlsId: '4290136-001', defaultPermissionTemplateId: null, branchType: 'Main',   address1: '702 Capital Ave', suite: '',           city: 'Frankfort',  zip: '40601', contactPhone: '502-555-0400', startDate: '2025-12-15', lastNmlsSync: '2026-04-29T03:14:00Z' },
+
+    // Beacon Mortgage Partners (Scenario 14 stress-test) — multi-market
+    { id: 'br-100', companyId: 'co-004', name: 'Branch A — Washington DC',   address: '900 16th St NW, Washington, DC 20006',           state: 'DC', managingLO: 'user-101', userCount: 2, programs: ['DC Dream Fund'],         status: 'active', parentBranchId: null, nmlsId: '5599001-001', defaultPermissionTemplateId: null, branchType: 'Main',   address1: '900 16th St NW',         suite: 'Floor 8',  city: 'Washington',     zip: '20006', contactPhone: '202-555-0901', startDate: '2024-03-01', lastNmlsSync: '2026-04-29T03:14:00Z' },
+    { id: 'br-101', companyId: 'co-004', name: 'Branch B — Louisville KY',   address: '500 W Jefferson St, Louisville, KY 40202',       state: 'KY', managingLO: 'user-102', userCount: 3, programs: ['Kentucky Dream Fund'], status: 'active', parentBranchId: null, nmlsId: '5599001-002', defaultPermissionTemplateId: null, branchType: 'Branch', address1: '500 W Jefferson St',     suite: 'Suite 401',city: 'Louisville',     zip: '40202', contactPhone: '502-555-0902', startDate: '2024-06-15', lastNmlsSync: '2026-04-29T03:14:00Z' },
+    { id: 'br-102', companyId: 'co-004', name: 'Branch C — Salt Lake UT',    address: '101 S Main St, Salt Lake City, UT 84111',        state: 'UT', managingLO: 'user-103', userCount: 1, programs: ['Utah Dream Fund'],     status: 'active', parentBranchId: null, nmlsId: '5599001-003', defaultPermissionTemplateId: null, branchType: 'Branch', address1: '101 S Main St',          suite: '',         city: 'Salt Lake City', zip: '84111', contactPhone: '801-555-0903', startDate: '2024-09-10', lastNmlsSync: '2026-04-29T03:14:00Z' },
+    { id: 'br-103', companyId: 'co-004', name: 'Branch D — Detroit MI',      address: '1145 Griswold St, Detroit, MI 48226',            state: 'MI', managingLO: 'user-104', userCount: 1, programs: ['Michigan Equity Pilot'], status: 'active', parentBranchId: null, nmlsId: '5599001-004', defaultPermissionTemplateId: null, branchType: 'Branch', address1: '1145 Griswold St',       suite: '',         city: 'Detroit',        zip: '48226', contactPhone: '313-555-0904', startDate: '2025-01-08', lastNmlsSync: '2026-04-29T03:14:00Z' },
+    { id: 'br-104', companyId: 'co-004', name: 'Branch E — Denver CO',       address: '1700 Lincoln St, Denver, CO 80203',              state: 'CO', managingLO: 'user-105', userCount: 1, programs: ['Colorado Mountain HEI'], status: 'active', parentBranchId: null, nmlsId: '5599001-005', defaultPermissionTemplateId: null, branchType: 'Branch', address1: '1700 Lincoln St',        suite: '',         city: 'Denver',         zip: '80203', contactPhone: '303-555-0905', startDate: '2025-04-22', lastNmlsSync: '2026-04-29T03:14:00Z' },
   ],
 
   /* ---- Users ---- */
@@ -77,8 +138,28 @@ const DEMO_DATA = {
 
     // Capital City Lending
     { id: 'user-003', companyId: 'co-001', branchId: 'br-001', firstName: 'Patricia', lastName: 'Owens',     email: 'powens@capitalcitylending.com',         role: 'prog_admin', onboardingStatus: 'active',               lastLogin: '2026-03-24', nmlsId: '2145678', phone: '202-555-0200', title: 'Program Administrator',  policies: ['prog_view', 'prog_invite'] },
-    { id: 'user-004', companyId: 'co-001', branchId: 'br-001', firstName: 'James',    lastName: 'Okafor',    email: 'jokafor@capitalcitylending.com',        role: 'lo',         onboardingStatus: 'active',               lastLogin: '2026-03-23', nmlsId: '3256789', phone: '202-555-0201', title: 'Senior Loan Officer',    policies: ['lo_standard'] },
-    { id: 'user-005', companyId: 'co-001', branchId: 'br-002', firstName: 'Dana',     lastName: 'Holloway',  email: 'dholloway@capitalcitylending.com',      role: 'lo',         onboardingStatus: 'active',               lastLogin: '2026-03-22', nmlsId: '4367890', phone: '202-555-0202', title: 'Loan Officer',           policies: ['lo_standard'] },
+    { id: 'user-004', companyId: 'co-001', branchId: 'br-001', firstName: 'James',    lastName: 'Okafor',    email: 'jokafor@capitalcitylending.com',        role: 'lo',         onboardingStatus: 'active',               lastLogin: '2026-03-23', nmlsId: '3256789', agentNmlsId: '3256789', phone: '202-555-0201', title: 'Senior Loan Officer',    policies: ['lo_standard'],
+      licenses: [
+        { id: 'lic-user-004-DC', marketId: 'mkt-DC', regulator: 'DC Department of Insurance, Securities and Banking', active: true, issueDate: '2024-08-12', renewalDate: '2026-08-31', lastSync: '2026-04-29T03:14:00Z' },
+      ],
+      branchAssignments: [
+        { branchId: 'br-001', userType: 'lo', flags: { branchManager: false }, allowNewOriginations: true, allowAccessToAllBranchActivity: false, eligibleLoanProductIds: ['lp-dc', 'lp-multi'],
+          loAssignments: [
+            { scope: 'personal', loIds: [], level: 'full', subflags: { canCreate: true, canSubmit: true, canWithdraw: true } },
+          ] },
+      ]
+    },
+    { id: 'user-005', companyId: 'co-001', branchId: 'br-002', firstName: 'Dana',     lastName: 'Holloway',  email: 'dholloway@capitalcitylending.com',      role: 'lo',         onboardingStatus: 'active',               lastLogin: '2026-03-22', nmlsId: '4367890', agentNmlsId: '4367890', phone: '202-555-0202', title: 'Loan Officer',           policies: ['lo_standard'],
+      licenses: [
+        { id: 'lic-user-005-DC', marketId: 'mkt-DC', regulator: 'DC Department of Insurance, Securities and Banking', active: true, issueDate: '2023-11-04', renewalDate: '2026-06-15', lastSync: '2026-04-29T03:14:00Z' },
+      ],
+      branchAssignments: [
+        { branchId: 'br-002', userType: 'lo', flags: { branchManager: true }, allowNewOriginations: true, allowAccessToAllBranchActivity: true, eligibleLoanProductIds: ['lp-dc', 'lp-multi'],
+          loAssignments: [
+            { scope: 'all_los', loIds: [], level: 'full', subflags: { canCreate: true, canSubmit: true, canWithdraw: true } },
+          ] },
+      ]
+    },
     { id: 'user-006', companyId: 'co-001', branchId: 'br-001', firstName: 'Kevin',    lastName: 'Park',      email: 'kpark@capitalcitylending.com',          role: 'lp',         onboardingStatus: 'active',               lastLogin: '2026-03-21', nmlsId: null,      phone: '202-555-0203', title: 'Loan Processor',         policies: ['lp_standard'] },
     { id: 'user-007', companyId: 'co-001', branchId: 'br-003', firstName: 'Alicia',   lastName: 'Grant',     email: 'agrant@capitalcitylending.com',         role: 'lo',         onboardingStatus: 'verification_pending', lastLogin: null,         nmlsId: '5478901', phone: '202-555-0204', title: 'Loan Officer',           policies: ['lo_standard'] },
     { id: 'user-008', companyId: 'co-001', branchId: 'br-002', firstName: 'DeShawn',  lastName: 'Carter',    email: 'dcarter@capitalcitylending.com',        role: 'lp',         onboardingStatus: '2fa_complete',         lastLogin: null,         nmlsId: null,      phone: '202-555-0205', title: 'Loan Processor',         policies: [] },
@@ -101,6 +182,156 @@ const DEMO_DATA = {
 
     // Investor Prospect
     { id: 'user-019', companyId: null,     branchId: null,    firstName: 'Sarah',     lastName: 'Chen',      email: 'schen@prospectcapital.com',             role: 'investor_prospect', onboardingStatus: 'active',        lastLogin: '2026-04-10', nmlsId: null,      phone: '415-555-0600', title: 'Managing Director',      policies: ['prospect_view'] },
+
+    // ---- Beacon Mortgage Partners (Scenario 14 stress-test users) ----
+    // user-100: Standard User across 5 branches with mixed per-LO permissions (spec §5 Scenario 14)
+    {
+      id: 'user-100', companyId: 'co-004', branchId: 'br-100', firstName: 'Riley', lastName: 'Sundberg',
+      email: 'rsundberg@beaconmortgage.com', role: 'lp', onboardingStatus: 'active', lastLogin: '2026-04-28',
+      nmlsId: null, agentNmlsId: null, phone: '202-555-0910', title: 'Multi-Branch Operations Lead',
+      policies: [], licenses: [],
+      branchAssignments: [
+        { branchId: 'br-100', userType: 'standard', flags: { branchManager: false }, allowNewOriginations: false, allowAccessToAllBranchActivity: false, eligibleLoanProductIds: [],
+          loAssignments: [
+            { scope: 'all_los', loIds: [], level: 'full', subflags: { canCreate: true, canSubmit: true, canWithdraw: true } },
+          ] },
+        { branchId: 'br-101', userType: 'standard', flags: { branchManager: false }, allowNewOriginations: false, allowAccessToAllBranchActivity: false, eligibleLoanProductIds: [],
+          loAssignments: [
+            { scope: 'specific_los', loIds: ['user-102'], level: 'full', subflags: { canCreate: true, canSubmit: true, canWithdraw: true } },
+            { scope: 'specific_los', loIds: ['user-107'], level: 'edit', subflags: { canCreate: true, canSubmit: false, canWithdraw: true } },
+          ] },
+        { branchId: 'br-102', userType: 'standard', flags: { branchManager: false }, allowNewOriginations: false, allowAccessToAllBranchActivity: false, eligibleLoanProductIds: [],
+          loAssignments: [
+            { scope: 'specific_los', loIds: ['user-103'], level: 'edit', subflags: { canCreate: false, canSubmit: false, canWithdraw: false } },
+            { scope: 'all_los', loIds: [], level: 'no_access', subflags: {} },
+          ] },
+        { branchId: 'br-103', userType: 'standard', flags: { branchManager: false }, allowNewOriginations: false, allowAccessToAllBranchActivity: false, eligibleLoanProductIds: [],
+          loAssignments: [
+            { scope: 'all_los', loIds: [], level: 'edit', subflags: { canCreate: false, canSubmit: true, canWithdraw: false } },
+          ] },
+        { branchId: 'br-104', userType: 'standard', flags: { branchManager: false }, allowNewOriginations: false, allowAccessToAllBranchActivity: false, eligibleLoanProductIds: [],
+          loAssignments: [
+            { scope: 'all_los', loIds: [], level: 'view', subflags: {} },
+          ] },
+      ]
+    },
+    // user-101: Mixed-type user — LO at A, Standard at B (spec §5.3 footnote)
+    {
+      id: 'user-101', companyId: 'co-004', branchId: 'br-100', firstName: 'Maya', lastName: 'Caldera',
+      email: 'mcaldera@beaconmortgage.com', role: 'lo', onboardingStatus: 'active', lastLogin: '2026-04-27',
+      nmlsId: '5512001', agentNmlsId: '5512001', phone: '202-555-0911', title: 'Senior Loan Officer',
+      policies: ['lo_standard'],
+      licenses: [
+        { id: 'lic-user-101-DC', marketId: 'mkt-DC', regulator: 'DC Department of Insurance, Securities and Banking', active: true, issueDate: '2024-01-15', renewalDate: '2026-08-31', lastSync: '2026-04-29T03:14:00Z' },
+        { id: 'lic-user-101-KY', marketId: 'mkt-KY', regulator: 'Kentucky Department of Financial Institutions',     active: true, issueDate: '2024-04-12', renewalDate: '2026-09-15', lastSync: '2026-04-29T03:14:00Z' },
+      ],
+      branchAssignments: [
+        { branchId: 'br-100', userType: 'lo', flags: { branchManager: false }, allowNewOriginations: true, allowAccessToAllBranchActivity: false, eligibleLoanProductIds: ['lp-dc', 'lp-multi'],
+          loAssignments: [
+            { scope: 'personal', loIds: [], level: 'full', subflags: { canCreate: true, canSubmit: true, canWithdraw: true } },
+          ] },
+        { branchId: 'br-101', userType: 'standard', flags: { branchManager: false }, allowNewOriginations: false, allowAccessToAllBranchActivity: false, eligibleLoanProductIds: [],
+          loAssignments: [
+            { scope: 'all_los', loIds: [], level: 'view', subflags: {} },
+          ] },
+      ]
+    },
+    // user-102: LO at B (branch with multiple per-LO scopes from user-100)
+    {
+      id: 'user-102', companyId: 'co-004', branchId: 'br-101', firstName: 'Devon', lastName: 'Kapoor',
+      email: 'dkapoor@beaconmortgage.com', role: 'lo', onboardingStatus: 'active', lastLogin: '2026-04-26',
+      nmlsId: '5512002', agentNmlsId: '5512002', phone: '502-555-0912', title: 'Loan Officer',
+      policies: ['lo_standard'],
+      licenses: [
+        { id: 'lic-user-102-KY', marketId: 'mkt-KY', regulator: 'Kentucky Department of Financial Institutions', active: true, issueDate: '2024-06-01', renewalDate: '2026-10-30', lastSync: '2026-04-29T03:14:00Z' },
+      ],
+      branchAssignments: [
+        { branchId: 'br-101', userType: 'lo', flags: { branchManager: false }, allowNewOriginations: true, allowAccessToAllBranchActivity: false, eligibleLoanProductIds: ['lp-ky', 'lp-multi'],
+          loAssignments: [
+            { scope: 'personal', loIds: [], level: 'full', subflags: { canCreate: true, canSubmit: true, canWithdraw: true } },
+          ] },
+      ]
+    },
+    // user-103: LO at C
+    {
+      id: 'user-103', companyId: 'co-004', branchId: 'br-102', firstName: 'Anika', lastName: 'Bishara',
+      email: 'abishara@beaconmortgage.com', role: 'lo', onboardingStatus: 'active', lastLogin: '2026-04-25',
+      nmlsId: '5512003', agentNmlsId: '5512003', phone: '801-555-0913', title: 'Loan Officer',
+      policies: ['lo_standard'],
+      licenses: [
+        { id: 'lic-user-103-UT', marketId: 'mkt-UT', regulator: 'Utah Department of Financial Institutions', active: true, issueDate: '2024-08-20', renewalDate: '2026-11-12', lastSync: '2026-04-29T03:14:00Z' },
+      ],
+      branchAssignments: [
+        { branchId: 'br-102', userType: 'lo', flags: { branchManager: false }, allowNewOriginations: true, allowAccessToAllBranchActivity: false, eligibleLoanProductIds: ['lp-utah', 'lp-multi'],
+          loAssignments: [
+            { scope: 'personal', loIds: [], level: 'full', subflags: { canCreate: true, canSubmit: true, canWithdraw: true } },
+          ] },
+      ]
+    },
+    // user-104: LO at D
+    {
+      id: 'user-104', companyId: 'co-004', branchId: 'br-103', firstName: 'Theo', lastName: 'Vesper',
+      email: 'tvesper@beaconmortgage.com', role: 'lo', onboardingStatus: 'active', lastLogin: '2026-04-24',
+      nmlsId: '5512004', agentNmlsId: '5512004', phone: '313-555-0914', title: 'Loan Officer',
+      policies: ['lo_standard'],
+      licenses: [
+        { id: 'lic-user-104-MI', marketId: 'mkt-MI', regulator: 'Michigan Department of Insurance and Financial Services', active: true, issueDate: '2024-11-05', renewalDate: '2026-05-22', lastSync: '2026-04-29T03:14:00Z' },
+      ],
+      branchAssignments: [
+        { branchId: 'br-103', userType: 'lo', flags: { branchManager: false }, allowNewOriginations: true, allowAccessToAllBranchActivity: false, eligibleLoanProductIds: ['lp-mi', 'lp-multi'],
+          loAssignments: [
+            { scope: 'personal', loIds: [], level: 'full', subflags: { canCreate: true, canSubmit: true, canWithdraw: true } },
+          ] },
+      ]
+    },
+    // user-105: LO at E
+    {
+      id: 'user-105', companyId: 'co-004', branchId: 'br-104', firstName: 'Imani', lastName: 'Drewes',
+      email: 'idrewes@beaconmortgage.com', role: 'lo', onboardingStatus: 'active', lastLogin: '2026-04-23',
+      nmlsId: '5512005', agentNmlsId: '5512005', phone: '303-555-0915', title: 'Loan Officer',
+      policies: ['lo_standard'],
+      licenses: [
+        { id: 'lic-user-105-CO', marketId: 'mkt-CO', regulator: 'Colorado Division of Real Estate', active: true, issueDate: '2025-02-18', renewalDate: '2026-12-02', lastSync: '2026-04-29T03:14:00Z' },
+      ],
+      branchAssignments: [
+        { branchId: 'br-104', userType: 'lo', flags: { branchManager: false }, allowNewOriginations: true, allowAccessToAllBranchActivity: false, eligibleLoanProductIds: ['lp-co', 'lp-multi'],
+          loAssignments: [
+            { scope: 'personal', loIds: [], level: 'full', subflags: { canCreate: true, canSubmit: true, canWithdraw: true } },
+          ] },
+      ]
+    },
+    // user-106: LO + BM stacked at branch B (spec §5 Scenario 5 — invariants test)
+    {
+      id: 'user-106', companyId: 'co-004', branchId: 'br-101', firstName: 'Cara', lastName: 'Volk',
+      email: 'cvolk@beaconmortgage.com', role: 'lo', onboardingStatus: 'active', lastLogin: '2026-04-28',
+      nmlsId: '5512006', agentNmlsId: '5512006', phone: '502-555-0916', title: 'Branch Manager + Loan Officer',
+      policies: ['lo_standard'],
+      licenses: [
+        { id: 'lic-user-106-KY', marketId: 'mkt-KY', regulator: 'Kentucky Department of Financial Institutions', active: true, issueDate: '2023-09-12', renewalDate: '2026-07-08', lastSync: '2026-04-29T03:14:00Z' },
+      ],
+      branchAssignments: [
+        { branchId: 'br-101', userType: 'lo', flags: { branchManager: true }, allowNewOriginations: true, allowAccessToAllBranchActivity: true, eligibleLoanProductIds: ['lp-ky', 'lp-multi'],
+          loAssignments: [
+            { scope: 'all_los', loIds: [], level: 'view', subflags: {} },
+          ] },
+      ]
+    },
+    // user-107: Second LO at B (referenced by user-100's specific_los tuple)
+    {
+      id: 'user-107', companyId: 'co-004', branchId: 'br-101', firstName: 'Hugo', lastName: 'Tiernan',
+      email: 'htiernan@beaconmortgage.com', role: 'lo', onboardingStatus: 'active', lastLogin: '2026-04-22',
+      nmlsId: '5512007', agentNmlsId: '5512007', phone: '502-555-0917', title: 'Loan Officer',
+      policies: ['lo_standard'],
+      licenses: [
+        { id: 'lic-user-107-KY', marketId: 'mkt-KY', regulator: 'Kentucky Department of Financial Institutions', active: true, issueDate: '2024-12-03', renewalDate: '2026-05-25', lastSync: '2026-04-29T03:14:00Z' },
+      ],
+      branchAssignments: [
+        { branchId: 'br-101', userType: 'lo', flags: { branchManager: false }, allowNewOriginations: true, allowAccessToAllBranchActivity: false, eligibleLoanProductIds: ['lp-ky'],
+          loAssignments: [
+            { scope: 'personal', loIds: [], level: 'full', subflags: { canCreate: true, canSubmit: true, canWithdraw: true } },
+          ] },
+      ]
+    },
   ],
 
   /* ---- Loans / Originations ---- */
@@ -346,6 +577,113 @@ const DEMO_DATA = {
     { id: 'al-003', actorId: 'user-003', action: 'template_assigned',       entityType: 'user',    entityId: 'user-004', detail: 'Patricia Owens assigned "Branch Manager — Full" to Downtown DC', timestamp: '2026-04-03T16:40:00Z' },
     { id: 'al-004', actorId: 'user-001', action: 'company_default_changed', entityType: 'company', entityId: 'co-002', detail: 'Company default template set to "LO — Own Loans Only"', timestamp: '2026-04-02T09:05:00Z' },
   ],
+
+  /* ============================================================
+     RBAC Spec v1.2 — new core tables
+     Spec §1.1: Markets are system-defined geography units. Loan
+     Programs declare which Markets they CAN exist in. The (program ×
+     market) pair is the atomic enablement unit ("LPM"). OC and Branch
+     enablement are independent records; effective access is the
+     runtime intersection (spec §1.3).
+     ============================================================ */
+
+  /* ---- Markets (system-defined; Platform-locked) ---- */
+  markets: [
+    { id: 'mkt-DC', code: 'DC', name: 'District of Columbia', kind: 'state',  supported: true,  comingSoon: false },
+    { id: 'mkt-KY', code: 'KY', name: 'Kentucky',             kind: 'state',  supported: true,  comingSoon: false },
+    { id: 'mkt-UT', code: 'UT', name: 'Utah',                 kind: 'state',  supported: true,  comingSoon: false },
+    { id: 'mkt-MI', code: 'MI', name: 'Michigan',             kind: 'state',  supported: true,  comingSoon: false },
+    { id: 'mkt-CO', code: 'CO', name: 'Colorado',             kind: 'state',  supported: true,  comingSoon: false },
+    { id: 'mkt-CA', code: 'CA', name: 'California',           kind: 'state',  supported: false, comingSoon: true  },
+    { id: 'mkt-NY', code: 'NY', name: 'New York',             kind: 'state',  supported: false, comingSoon: true  },
+  ],
+
+  /* ---- Loan Programs (Platform-defined) ----
+     allowedMarketIds: which Markets the program CAN exist in. The
+     Platform Operator picks the eligible subset per OC. */
+  loanPrograms: [
+    { id: 'lp-dc',    name: 'DC Dream Fund',         code: 'DC',  status: 'active', token: 'HOM', allowedMarketIds: ['mkt-DC'] },
+    { id: 'lp-ky',    name: 'Kentucky Dream Fund',   code: 'KY',  status: 'active', token: 'HOM', allowedMarketIds: ['mkt-KY'] },
+    { id: 'lp-utah',  name: 'Utah Dream Fund',       code: 'UD',  status: 'active', token: 'HK',  allowedMarketIds: ['mkt-UT'] },
+    { id: 'lp-mi',    name: 'Michigan Equity Pilot', code: 'MI',  status: 'active', token: 'HOM', allowedMarketIds: ['mkt-MI'] },
+    { id: 'lp-co',    name: 'Colorado Mountain HEI', code: 'CO',  status: 'active', token: 'HOM', allowedMarketIds: ['mkt-CO'] },
+    { id: 'lp-multi', name: 'Multi-State HEI Pool',  code: 'MS',  status: 'active', token: 'HOM', allowedMarketIds: ['mkt-DC','mkt-KY','mkt-UT','mkt-MI','mkt-CO'] },
+  ],
+
+  /* ---- LoanProgram-Market (LPM) ---- atomic enablement unit ---- */
+  loanProgramMarkets: [
+    { id: 'lpm-lp-dc-DC',     programId: 'lp-dc',    marketId: 'mkt-DC' },
+    { id: 'lpm-lp-ky-KY',     programId: 'lp-ky',    marketId: 'mkt-KY' },
+    { id: 'lpm-lp-utah-UT',   programId: 'lp-utah',  marketId: 'mkt-UT' },
+    { id: 'lpm-lp-mi-MI',     programId: 'lp-mi',    marketId: 'mkt-MI' },
+    { id: 'lpm-lp-co-CO',     programId: 'lp-co',    marketId: 'mkt-CO' },
+    { id: 'lpm-lp-multi-DC',  programId: 'lp-multi', marketId: 'mkt-DC' },
+    { id: 'lpm-lp-multi-KY',  programId: 'lp-multi', marketId: 'mkt-KY' },
+    { id: 'lpm-lp-multi-UT',  programId: 'lp-multi', marketId: 'mkt-UT' },
+    { id: 'lpm-lp-multi-MI',  programId: 'lp-multi', marketId: 'mkt-MI' },
+    { id: 'lpm-lp-multi-CO',  programId: 'lp-multi', marketId: 'mkt-CO' },
+  ],
+
+  /* ---- OC Enablement (set by Platform Operator) ---- */
+  ocEnablement: [
+    { ocId: 'co-001', lpmIds: ['lpm-lp-dc-DC', 'lpm-lp-multi-DC'] },
+    { ocId: 'co-002', lpmIds: ['lpm-lp-ky-KY', 'lpm-lp-multi-KY'] },
+    { ocId: 'co-003', lpmIds: [] },
+    { ocId: 'co-004', lpmIds: ['lpm-lp-dc-DC', 'lpm-lp-ky-KY', 'lpm-lp-utah-UT', 'lpm-lp-mi-MI', 'lpm-lp-co-CO', 'lpm-lp-multi-DC', 'lpm-lp-multi-KY', 'lpm-lp-multi-UT', 'lpm-lp-multi-MI', 'lpm-lp-multi-CO'] },
+  ],
+
+  /* ---- Branch Enablement (independent record per spec §1.3) ---- */
+  branchEnablement: [
+    { branchId: 'br-001', lpmIds: ['lpm-lp-dc-DC'] },
+    { branchId: 'br-002', lpmIds: ['lpm-lp-dc-DC', 'lpm-lp-multi-DC'] },
+    { branchId: 'br-003', lpmIds: ['lpm-lp-dc-DC'] },
+    { branchId: 'br-004', lpmIds: ['lpm-lp-ky-KY', 'lpm-lp-multi-KY'] },
+    { branchId: 'br-005', lpmIds: ['lpm-lp-ky-KY'] },
+    { branchId: 'br-006', lpmIds: [] },
+    { branchId: 'br-100', lpmIds: ['lpm-lp-dc-DC', 'lpm-lp-multi-DC'] },
+    { branchId: 'br-101', lpmIds: ['lpm-lp-ky-KY', 'lpm-lp-multi-KY'] },
+    { branchId: 'br-102', lpmIds: ['lpm-lp-utah-UT', 'lpm-lp-multi-UT'] },
+    { branchId: 'br-103', lpmIds: ['lpm-lp-mi-MI', 'lpm-lp-multi-MI'] },
+    { branchId: 'br-104', lpmIds: ['lpm-lp-co-CO', 'lpm-lp-multi-CO'] },
+  ],
+
+  /* ---- NMLS lookup table (used by the OC onboarding wizard) ----
+     Pre-populated; no live API. The wizard treats these as if NMLS
+     just returned them. */
+  nmlsCompanyLookup: {
+    '5599001': {
+      name: 'Skyline Funding LLC', stateOfIncorporation: 'FL',
+      address1: '600 Brickell Ave', address2: 'Suite 2400', city: 'Miami', state: 'FL', zip: '33131',
+      contactPhone: '305-555-0701', website: 'https://skylinefunding.com',
+      branches: [
+        { nmlsId: '5599001-001', name: 'Miami HQ',     branchType: 'Main',   address1: '600 Brickell Ave', city: 'Miami',       state: 'FL', zip: '33131', startDate: '2019-04-12' },
+        { nmlsId: '5599001-002', name: 'Atlanta',      branchType: 'Branch', address1: '1180 Peachtree St NE', city: 'Atlanta',  state: 'GA', zip: '30309', startDate: '2021-08-01' },
+        { nmlsId: '5599001-003', name: 'Birmingham',   branchType: 'Branch', address1: '1901 6th Ave N',   city: 'Birmingham',  state: 'AL', zip: '35203', startDate: '2022-11-15' },
+        { nmlsId: '5599001-004', name: 'Tampa Office', branchType: 'Branch', address1: '101 E Kennedy Blvd', city: 'Tampa',     state: 'FL', zip: '33602', startDate: '2024-03-01' },
+      ],
+    },
+    '6603400': {
+      name: 'Cascadia Mortgage Co', stateOfIncorporation: 'OR',
+      address1: '1211 SW 5th Ave', address2: '', city: 'Portland', state: 'OR', zip: '97204',
+      contactPhone: '503-555-0702', website: 'https://cascadiamortgage.com',
+      branches: [
+        { nmlsId: '6603400-001', name: 'Portland HQ', branchType: 'Main',   address1: '1211 SW 5th Ave', city: 'Portland', state: 'OR', zip: '97204', startDate: '2017-10-20' },
+        { nmlsId: '6603400-002', name: 'Seattle',     branchType: 'Branch', address1: '1201 3rd Ave',    city: 'Seattle',  state: 'WA', zip: '98101', startDate: '2020-06-15' },
+      ],
+    },
+    '7711200': {
+      name: 'Ironwood Capital Lending', stateOfIncorporation: 'MI',
+      address1: '500 Woodward Ave', address2: 'Suite 1100', city: 'Detroit', state: 'MI', zip: '48226',
+      contactPhone: '313-555-0703', website: 'https://ironwoodlending.com',
+      branches: [
+        { nmlsId: '7711200-001', name: 'Detroit HQ',     branchType: 'Main',   address1: '500 Woodward Ave', city: 'Detroit',     state: 'MI', zip: '48226', startDate: '2016-02-08' },
+        { nmlsId: '7711200-002', name: 'Grand Rapids',   branchType: 'Branch', address1: '38 Commerce Ave SW', city: 'Grand Rapids', state: 'MI', zip: '49503', startDate: '2018-09-12' },
+        { nmlsId: '7711200-003', name: 'Cleveland',      branchType: 'Branch', address1: '200 Public Sq',   city: 'Cleveland',   state: 'OH', zip: '44114', startDate: '2021-04-22' },
+        { nmlsId: '7711200-004', name: 'Indianapolis',   branchType: 'Branch', address1: '111 Monument Cir', city: 'Indianapolis', state: 'IN', zip: '46204', startDate: '2022-12-01' },
+        { nmlsId: '7711200-005', name: 'Toledo',         branchType: 'Branch', address1: '1 Government Center', city: 'Toledo',  state: 'OH', zip: '43604', startDate: '2024-05-10' },
+      ],
+    },
+  },
 
   /* ---- Activity Log ---- */
   activityLog: [

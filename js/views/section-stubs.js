@@ -146,9 +146,12 @@ const InvestorsView = {
    Platform Operations View
    ============================================================ */
 const PlatformOpsView = {
+  // Spec v1.2: legacy Permissions tab dropped. RBAC v1.2 is configured
+  // per-OC under /origination-companies/:id → Access (OCAccessView) and
+  // per-user on the Profile screen. This section now hosts platform-side
+  // user management only.
   TABS: [
-    { key: 'users',       label: 'Users',       path: '/platform' },
-    { key: 'permissions', label: 'Permissions', path: '/platform/permissions' },
+    { key: 'users', label: 'Users', path: '/platform' },
   ],
 
   render(fullPath) {
@@ -159,14 +162,7 @@ const PlatformOpsView = {
             onclick="Router.navigate('${t.path}')">${t.label}</div>`
     ).join('');
 
-    // UsersView and PermissionsView return full HTML with their own page-header,
-    // so we only wrap with section-tabs (no extra page-header from shell)
-    let content;
-    switch (tab) {
-      case 'users':       content = UsersView.render({ platformOnly: true }); break;
-      case 'permissions': content = PermissionsView.render({ roles: ['sys_admin', 'operator'] }); break;
-      default:            content = UsersView.render({ platformOnly: true });
-    }
+    const content = UsersView.render({ platformOnly: true });
 
     return `
       <div class="page-header">
@@ -192,22 +188,29 @@ const PlatformOpsView = {
    System Configuration View
    ============================================================ */
 const SystemConfigView = {
+  // Spec §1.1: Markets are system-defined geography units. Loan Programs
+  // declare which Markets they CAN exist in (the platform-allowed LPM
+  // matrix). OC- and Branch-level enablement happens elsewhere.
   TABS: [
+    { key: 'markets',          label: 'Markets',          path: '/system-config/markets' },
     { key: 'loan-programs',    label: 'Loan Programs',    path: '/system-config' },
     { key: 'fees',             label: 'Fees',             path: '/system-config/fees' },
     { key: 'title-companies',  label: 'Title Companies',  path: '/system-config/title-companies' },
   ],
 
+  _expandedProgramId: null,
+
   render(fullPath) {
     const tab = this._parseTab(fullPath || '/system-config');
     let content;
     switch (tab) {
+      case 'markets':         content = this._renderMarkets(); break;
       case 'loan-programs':   content = this._renderLoanPrograms(); break;
       case 'fees':            content = renderStubContent('💰', 'Fee Configuration', 'Regulated fee structures with MISMO-level handling will be configured here.'); break;
       case 'title-companies': content = renderStubContent('🏢', 'Title Companies', 'Title company records and integrations will be managed here.'); break;
       default:                content = this._renderLoanPrograms();
     }
-    return renderSectionShell('System Configuration', 'Loan programs, fees, and platform-wide settings', this.TABS, tab, content);
+    return renderSectionShell('System Configuration', 'Markets, loan programs, fees, and platform-wide settings', this.TABS, tab, content);
   },
 
   _parseTab(path) {
@@ -215,50 +218,168 @@ const SystemConfigView = {
     return sub || 'loan-programs';
   },
 
-  _renderLoanPrograms() {
+  _renderMarkets() {
+    const markets = State.getMarkets();
+    const lpms = State.getLPMs();
+    const ocEnab = markets.map(m => {
+      const lpmIdsForMkt = new Set(lpms.filter(l => l.marketId === m.id).map(l => l.id));
+      const ocCount = State.getCompanies().reduce((acc, c) => {
+        const has = State.getOcEnablement(c.id).some(id => lpmIdsForMkt.has(id));
+        return acc + (has ? 1 : 0);
+      }, 0);
+      const programCount = State.getLoanPrograms().filter(p => p.allowedMarketIds?.includes(m.id)).length;
+      return { m, ocCount, programCount };
+    });
+    const rows = ocEnab.map(({ m, ocCount, programCount }) => `
+      <tr>
+        <td><span style="color:var(--color-text-muted);margin-right:6px" title="System-defined market — locked">🔒</span><strong>${m.code}</strong></td>
+        <td>${m.name}</td>
+        <td><span class="tag" style="text-transform:capitalize">${m.kind}</span></td>
+        <td><span class="badge ${m.supported ? 'badge-active' : 'badge-pending'}">${m.supported ? 'Supported' : 'Not Live'}</span></td>
+        <td>
+          <label style="display:inline-flex;align-items:center;gap:6px;font-size:12px;cursor:pointer">
+            <input type="checkbox" ${m.comingSoon ? 'checked' : ''} onchange="State.setMarketComingSoon('${m.id}', this.checked);App.renderView(Router.getCurrentPath())">
+            Coming Soon
+          </label>
+        </td>
+        <td>${ocCount}</td>
+        <td>${programCount}</td>
+      </tr>`).join('');
     return `
       <div class="table-container">
-        <div class="table-toolbar" style="justify-content:flex-end">
-          <button class="btn btn-primary btn-sm" disabled>+ Add New Loan Program</button>
+        <div class="filter-toolbar">
+          <div style="font-size:12px;color:var(--color-text-muted)">
+            Markets are system-defined and cannot be deleted. Use <strong>Coming Soon</strong> to flag a market that is in pipeline but not yet live.
+          </div>
         </div>
         <table>
           <thead><tr>
-            <th>ID</th><th>Status</th><th>Program Name</th><th>Program Code</th><th>Legal Entity</th><th>Token</th><th>Enabled Markets</th><th>Actions</th>
+            <th>Code</th><th>Market</th><th>Kind</th><th>Supported</th><th>Coming Soon</th><th>OCs Enabled</th><th>Programs</th>
           </tr></thead>
-          <tbody>
-            <tr>
-              <td>01</td>
-              <td><span class="badge badge-active">Active</span></td>
-              <td class="cell-primary">Utah Dream Fund</td>
-              <td>UD</td>
-              <td class="text-secondary">—</td>
-              <td class="text-secondary">HK</td>
-              <td class="text-secondary">UT</td>
-              <td class="text-secondary">—</td>
-            </tr>
-            <tr>
-              <td>02</td>
-              <td><span class="badge badge-active">Active</span></td>
-              <td class="cell-primary">DC Dream Fund</td>
-              <td>TH</td>
-              <td class="text-secondary">—</td>
-              <td class="text-secondary">HOM</td>
-              <td class="text-secondary">DC</td>
-              <td class="text-secondary">—</td>
-            </tr>
-            <tr>
-              <td>03</td>
-              <td><span class="badge badge-active">Active</span></td>
-              <td class="cell-primary">Kentucky Dream Fund</td>
-              <td>KY</td>
-              <td class="text-secondary">—</td>
-              <td class="text-secondary">HOM</td>
-              <td class="text-secondary">KY</td>
-              <td class="text-secondary">—</td>
-            </tr>
-          </tbody>
+          <tbody>${rows}</tbody>
         </table>
-        <div class="table-footer"><span class="table-count">3 programs</span></div>
+        <div class="table-footer"><span class="table-count">${markets.length} markets</span></div>
       </div>`;
+  },
+
+  _renderLoanPrograms() {
+    const programs = State.getLoanPrograms();
+    const markets = State.getMarkets();
+    const lpms = State.getLPMs();
+
+    const rows = programs.map((p, idx) => {
+      const allowedMarkets = (p.allowedMarketIds || []).map(id => State.getMarket(id)).filter(Boolean);
+      const lpmsForProgram = lpms.filter(l => l.programId === p.id);
+      const ocCount = State.getCompanies().reduce((acc, c) => {
+        const lpmIdSet = new Set(lpmsForProgram.map(l => l.id));
+        const has = State.getOcEnablement(c.id).some(id => lpmIdSet.has(id));
+        return acc + (has ? 1 : 0);
+      }, 0);
+      return `
+        <tr>
+          <td>${String(idx + 1).padStart(2, '0')}</td>
+          <td><span class="badge badge-active">${p.status === 'active' ? 'Active' : p.status}</span></td>
+          <td class="cell-primary">${p.name}</td>
+          <td>${p.code}</td>
+          <td class="text-secondary">${p.token}</td>
+          <td>${allowedMarkets.map(m => `<span class="tag" style="margin-right:4px">${m.code}</span>`).join('') || '<span class="text-muted">—</span>'}</td>
+          <td>${lpmsForProgram.length}</td>
+          <td>${ocCount}</td>
+          <td>
+            <button class="btn btn-ghost btn-xs" onclick="SystemConfigView.toggleProgramEditor('${p.id}')">Configure Markets</button>
+          </td>
+        </tr>
+        ${this._expandedProgramId === p.id ? `
+        <tr><td colspan="9" style="background:var(--color-surface);padding:14px 18px">
+          <div style="font-size:12px;color:var(--color-text-muted);margin-bottom:8px"><strong>${p.name}</strong> — Pick which Markets this program can exist in. Cells the platform allows here become available for OC-level enablement.</div>
+          <div style="display:flex;flex-wrap:wrap;gap:10px">
+            ${markets.map(m => `
+              <label style="display:inline-flex;align-items:center;gap:6px;font-size:13px;padding:5px 10px;border:1px solid var(--color-border);border-radius:6px;background:var(--color-card);cursor:pointer">
+                <input type="checkbox" ${(p.allowedMarketIds || []).includes(m.id) ? 'checked' : ''} ${!m.supported ? 'disabled' : ''}
+                       onchange="SystemConfigView._toggleProgramMarket('${p.id}', '${m.id}', this.checked)">
+                <span>${m.code}</span><span style="color:var(--color-text-muted)">${m.name}</span>${!m.supported ? '<span class="tag" style="margin-left:4px;font-size:10px">soon</span>' : ''}
+              </label>`).join('')}
+          </div>
+        </td></tr>` : ''}`;
+    }).join('');
+
+    return `
+      <div class="table-container">
+        <div class="table-toolbar" style="justify-content:flex-end">
+          <button class="btn btn-primary btn-sm" onclick="SystemConfigView.openAddProgramModal()">+ Add New Loan Program</button>
+        </div>
+        <table>
+          <thead><tr>
+            <th>ID</th><th>Status</th><th>Program Name</th><th>Code</th><th>Token</th><th>Allowed Markets</th><th>LPMs</th><th>OCs</th><th>Actions</th>
+          </tr></thead>
+          <tbody>${rows}</tbody>
+        </table>
+        <div class="table-footer"><span class="table-count">${programs.length} programs</span></div>
+        <div id="loan-program-modal-container"></div>
+      </div>`;
+  },
+
+  toggleProgramEditor(programId) {
+    this._expandedProgramId = this._expandedProgramId === programId ? null : programId;
+    App.renderView(Router.getCurrentPath());
+  },
+
+  _toggleProgramMarket(programId, marketId, on) {
+    const p = State.getLoanProgram(programId);
+    if (!p) return;
+    const next = new Set(p.allowedMarketIds || []);
+    if (on) next.add(marketId); else next.delete(marketId);
+    State.updateLoanProgramMarkets(programId, [...next]);
+    App.renderView(Router.getCurrentPath());
+  },
+
+  openAddProgramModal() {
+    const markets = State.getMarkets().filter(m => m.supported);
+    const html = `
+      <div class="modal-overlay" onclick="SystemConfigView.closeAddProgramModal()"></div>
+      <div class="modal" style="max-width:520px">
+        <div class="modal-header">
+          <div><div class="modal-title">New Loan Program</div></div>
+          <button class="modal-close" onclick="SystemConfigView.closeAddProgramModal()">×</button>
+        </div>
+        <div class="modal-body">
+          <div class="form-grid">
+            <div class="form-group form-full"><label>Program Name</label><input id="lp-name" class="input" placeholder="e.g. Texas Equity Pilot"></div>
+            <div class="form-group"><label>Code</label><input id="lp-code" class="input" placeholder="TX"></div>
+            <div class="form-group"><label>Token</label><input id="lp-token" class="input" value="HOM"></div>
+            <div class="form-group form-full">
+              <label>Allowed Markets</label>
+              <div style="display:flex;flex-wrap:wrap;gap:8px;margin-top:6px">
+                ${markets.map(m => `
+                  <label style="display:inline-flex;align-items:center;gap:5px;font-size:13px;padding:4px 9px;border:1px solid var(--color-border);border-radius:5px">
+                    <input type="checkbox" data-market-id="${m.id}" class="lp-mkt-pick"> ${m.code}
+                  </label>`).join('')}
+              </div>
+            </div>
+          </div>
+        </div>
+        <div class="modal-footer">
+          <button class="btn btn-secondary" onclick="SystemConfigView.closeAddProgramModal()">Cancel</button>
+          <button class="btn btn-primary" onclick="SystemConfigView.submitAddProgram()">Create Program</button>
+        </div>
+      </div>`;
+    const c = document.getElementById('loan-program-modal-container');
+    if (c) c.innerHTML = html;
+  },
+
+  closeAddProgramModal() {
+    const c = document.getElementById('loan-program-modal-container');
+    if (c) c.innerHTML = '';
+  },
+
+  submitAddProgram() {
+    const name = document.getElementById('lp-name')?.value?.trim();
+    const code = document.getElementById('lp-code')?.value?.trim();
+    const token = document.getElementById('lp-token')?.value?.trim() || 'HOM';
+    const markets = [...document.querySelectorAll('.lp-mkt-pick:checked')].map(el => el.getAttribute('data-market-id'));
+    if (!name || !code) { alert('Name and Code are required.'); return; }
+    State.addLoanProgram({ name, code, token, allowedMarketIds: markets });
+    this.closeAddProgramModal();
+    App.renderView(Router.getCurrentPath());
   },
 };

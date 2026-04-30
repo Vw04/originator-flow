@@ -9,11 +9,9 @@ const ProfileView = {
     const u = State.getUser(userId);
     if (!u) return;
 
-    const currentRole = State.getRole();
     const canEdit = State.can('editAny') || State.can('manageUsers');
     const co = State.getCompany(u.companyId);
     const br = State.getBranch(u.branchId);
-    const policies = u.policies.map(pid => State.getPolicies().find(p => p.id === pid)).filter(Boolean);
     const loans = State.getLoansByLO(u.id);
 
     const stepBars = this._renderFlowchart(u, 'compact');
@@ -75,36 +73,10 @@ const ProfileView = {
             ${stepBars}
           </div>
 
-          <!-- Policies -->
-          <div class="section-title">Assigned Policies</div>
-          <div style="display:flex;flex-wrap:wrap;gap:6px;margin-bottom:20px">
-            ${policies.length
-              ? policies.map(p => `<a class="tag" style="cursor:pointer;text-decoration:none" onclick="ProfileView.close();PermissionsView._expandedPolicy='${p.id}';PermissionsView._roleTab='${p.roleTarget}';App.renderView('/permissions')">${p.name}</a>`).join('')
-              : '<span style="font-size:12px;color:var(--color-text-muted)">No policies assigned</span>'}
-          </div>
-
-          <!-- Branch Assignments -->
-          ${(() => {
-            const assignments = State.getAssignmentsByUser(u.id);
-            if (!assignments.length) return '';
-            const rows = assignments.map(a => {
-              const br = State.getBranch(a.branchId);
-              const tmpl = a.templateId ? State.getTemplate(a.templateId) : null;
-              const badgeLabel = tmpl ? tmpl.name : 'Inherited';
-              const badgeClass = tmpl ? 'badge-active' : 'badge-neutral';
-              const tagsHtml = a.tags.length
-                ? a.tags.map(t => `<span style="background:var(--color-surface);border:1px solid var(--color-border);border-radius:10px;padding:1px 7px;font-size:11px">${t}</span>`).join(' ')
-                : '';
-              return `<div style="display:flex;align-items:center;gap:8px;padding:6px 0;border-bottom:1px solid var(--color-border-light)">
-                <div style="flex:1;font-size:13px;font-weight:500">${br ? br.name : a.branchId}</div>
-                <span class="badge ${badgeClass}" style="font-size:11px">${badgeLabel}</span>
-                ${tagsHtml}
-              </div>`;
-            }).join('');
-            return `
-              <div class="section-title">Branch Assignments</div>
-              <div style="margin-bottom:20px">${rows}</div>`;
-          })()}
+          <!-- RBAC v1.2 — Branch assignments + permission tuples -->
+          ${this._renderEligibilityLine(u)}
+          ${this._renderBranchAssignmentCards(u)}
+          ${this._renderLicenseRecords(u)}
 
           <!-- Loans (LO/LP only) -->
           ${(u.role === 'lo' || u.role === 'lp') && loans.length ? `
@@ -276,29 +248,179 @@ const ProfileView = {
           ${this._renderFlowchart(u)}
         </div>
 
-        ${(() => {
-          const assignments = State.getAssignmentsByUser(u.id);
-          if (!assignments.length) return '';
-          const rows = assignments.map(a => {
-            const brn = State.getBranch(a.branchId);
-            const tmpl = a.templateId ? State.getTemplate(a.templateId) : null;
-            const badgeLabel = tmpl ? tmpl.name : 'Inherited';
-            const badgeClass = tmpl ? 'badge-active' : 'badge-neutral';
-            const tagsHtml = a.tags.length
-              ? a.tags.map(t => `<span style="background:var(--color-surface);border:1px solid var(--color-border);border-radius:10px;padding:1px 7px;font-size:11px">${t}</span>`).join(' ')
-              : '';
-            return `<div style="display:flex;align-items:center;gap:8px;padding:8px 0;border-bottom:1px solid var(--color-border-light)">
-              <div style="flex:1;font-size:13px;font-weight:500">${brn ? brn.name : a.branchId}</div>
-              <span class="badge ${badgeClass}" style="font-size:11px">${badgeLabel}</span>
-              ${tagsHtml}
-            </div>`;
-          }).join('');
-          return `
-            <div class="card" style="margin-top:20px">
-              <div class="card-title" style="margin-bottom:12px">Branch Assignments</div>
-              ${rows}
-            </div>`;
-        })()}
+        <div style="margin-top:20px">
+          ${this._renderEligibilityLine(u, true)}
+          ${this._renderBranchAssignmentCards(u, true)}
+          ${this._renderLicenseRecords(u, true)}
+        </div>
+      </div>`;
+  },
+
+  /* ---- RBAC v1.2 §1.4 effective access summary ---- */
+  _renderEligibilityLine(u, fullPage) {
+    const assignments = State.getBranchAssignments(u.id);
+    if (!assignments.length) return '';
+    const isLO = assignments.some(a => a.userType === 'lo');
+    const allLpms = new Set();
+    const blockedLicense = new Set();
+    const blockedOcOrBranch = new Set();
+    assignments.forEach(a => {
+      const eff = State.effectiveAccess(u.id, a.branchId);
+      eff.lpmIds.forEach(id => allLpms.add(id));
+      (eff.blockedBy.license || []).forEach(id => blockedLicense.add(id));
+      [...(eff.blockedBy.oc || []), ...(eff.blockedBy.branch || [])].forEach(id => blockedOcOrBranch.add(id));
+    });
+    const eligible = [...allLpms].map(id => {
+      const lpm = State.getLPM(id);
+      const p = State.getLoanProgram(lpm?.programId);
+      const m = State.getMarket(lpm?.marketId);
+      return p && m ? `${p.name} — ${m.code}` : null;
+    }).filter(Boolean);
+    const blocked = [...blockedLicense].map(id => {
+      const lpm = State.getLPM(id);
+      const p = State.getLoanProgram(lpm?.programId);
+      const m = State.getMarket(lpm?.marketId);
+      return p && m ? `${p.name} — ${m.code} (license missing)` : null;
+    }).filter(Boolean);
+    const cls = fullPage ? 'card' : '';
+    const wrap = fullPage ? `style="padding:14px 16px;margin-bottom:16px;font-size:13px"` : `style="padding:10px 12px;margin-bottom:16px;background:var(--color-surface);border-radius:6px;font-size:12px"`;
+    return `
+      <div class="${cls}" ${wrap}>
+        <div style="font-size:11px;font-weight:600;color:var(--color-text-muted);text-transform:uppercase;letter-spacing:.05em;margin-bottom:6px">Effective Access (§1.4 gate)</div>
+        <div style="margin-bottom:4px"><strong>Eligible to ${isLO ? 'originate' : 'access'} in:</strong> ${eligible.length ? eligible.join(' · ') : '<span style="color:var(--color-text-muted)">none</span>'}${!isLO ? ' <span style="color:var(--color-text-muted);font-weight:400">(license dim n/a — Standard User)</span>' : ''}</div>
+        ${blocked.length ? `<div style="color:var(--color-warning)"><strong>Blocked:</strong> ${blocked.join(' · ')}</div>` : ''}
+        ${blockedOcOrBranch.size ? `<div style="color:var(--color-text-muted);font-size:11px;margin-top:2px">${blockedOcOrBranch.size} LPM(s) blocked at OC or branch level — see assignment cards below.</div>` : ''}
+      </div>`;
+  },
+
+  /* ---- Branch Assignment cards (spec §3 composite tuple) ---- */
+  _renderBranchAssignmentCards(u, fullPage) {
+    const assignments = State.getBranchAssignments(u.id);
+    if (!assignments.length) return '';
+    const today = new Date();
+    const cls = fullPage ? 'card' : '';
+    const wrap = fullPage ? `style="padding:14px 16px;margin-bottom:16px"` : '';
+
+    const cards = assignments.map(a => {
+      const branch = State.getBranch(a.branchId);
+      if (!branch) return '';
+      const eff = State.effectiveAccess(u.id, a.branchId);
+      const futureGrant = State.hasFutureGrant(u.id, a.branchId);
+      const eligibleLPMs = eff.lpmIds.map(id => {
+        const lpm = State.getLPM(id);
+        const p = State.getLoanProgram(lpm?.programId);
+        const m = State.getMarket(lpm?.marketId);
+        return p && m ? `${p.code}/${m.code}` : null;
+      }).filter(Boolean);
+      const utBadge = a.userType === 'lo'
+        ? '<span class="tag" style="background:#e6f4ec;color:#1f6f43;font-weight:600">Loan Officer</span>'
+        : '<span class="tag">Standard User</span>';
+      const bmBadge = a.flags?.branchManager ? '<span class="tag" style="background:#fff7e6;color:#a35c00;font-weight:600;margin-left:4px">Branch Manager</span>' : '';
+
+      const tupleRows = (a.loAssignments || []).map(t => {
+        const scopeLabel = t.scope === 'personal' ? 'Personal Only'
+          : t.scope === 'specific_los' ? `Specific LOs (${(t.loIds || []).length})`
+          : 'All LOs';
+        const levelLabel = { no_access: 'No Access', view: 'View Only', edit: 'Can Edit', full: 'Full Access' }[t.level];
+        const subflagsLabel = t.level === 'edit'
+          ? Object.entries(t.subflags || {}).filter(([k, v]) => v).map(([k]) => k.replace('can', '')).join(' · ') || '—'
+          : '—';
+        const floorNote = a.userType === 'lo' && t.scope === 'personal'
+          ? '<span style="color:var(--color-text-muted);font-size:10px">LO-on-own (locked Full)</span>'
+          : a.flags?.branchManager && t.scope === 'all_los'
+          ? '<span style="color:var(--color-text-muted);font-size:10px">BM floor (≥ View)</span>'
+          : '';
+        return `
+          <tr>
+            <td style="padding:6px 8px;font-size:12px">${scopeLabel}</td>
+            <td style="padding:6px 8px;font-size:12px;font-weight:500">${levelLabel}</td>
+            <td style="padding:6px 8px;font-size:11px;color:var(--color-text-muted)">${subflagsLabel}</td>
+            <td style="padding:6px 8px">${floorNote}</td>
+          </tr>`;
+      }).join('') || '<tr><td colspan="4" style="padding:8px;color:var(--color-text-muted);font-size:11px;text-align:center">No tuples configured.</td></tr>';
+
+      const togglesRow = a.userType === 'lo' ? `
+        <div style="display:flex;gap:14px;margin-top:10px;font-size:11px;color:var(--color-text-muted)">
+          <label style="display:flex;align-items:center;gap:4px"><input type="checkbox" ${a.allowNewOriginations !== false ? 'checked' : ''} disabled> Allow new originations</label>
+          <label style="display:flex;align-items:center;gap:4px"><input type="checkbox" ${a.allowAccessToAllBranchActivity ? 'checked' : ''} disabled> All-branch activity</label>
+        </div>` : '';
+
+      return `
+        <div style="border:1px solid var(--color-border);border-radius:8px;padding:12px;margin-bottom:10px;background:var(--color-card)">
+          <div style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:6px;margin-bottom:8px">
+            <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap">
+              <strong style="font-size:13px">${branch.name}</strong>
+              ${utBadge}${bmBadge}
+            </div>
+            ${branch.lastNmlsSync ? `<span style="font-size:10px;color:var(--color-text-muted)"><span class="status-dot" style="display:inline-block;width:5px;height:5px;border-radius:50%;background:var(--color-success);margin-right:3px"></span>NMLS sync ${Display.relativeTime(branch.lastNmlsSync)}</span>` : ''}
+          </div>
+          <div style="font-size:11px;color:var(--color-text-muted);margin-bottom:8px">
+            Eligible: ${eligibleLPMs.length ? eligibleLPMs.join(', ') : '<span style="color:var(--color-warning)">—</span>'}
+            ${(eff.blockedBy.oc?.length || eff.blockedBy.branch?.length) ? `· <span style="color:var(--color-warning)">${(eff.blockedBy.oc?.length || 0) + (eff.blockedBy.branch?.length || 0)} blocked at OC/branch</span>` : ''}
+            ${eff.blockedBy.license?.length ? `· <span style="color:var(--color-warning)">${eff.blockedBy.license.length} blocked by license</span>` : ''}
+          </div>
+          <table style="width:100%;border-collapse:collapse;background:var(--color-surface);border-radius:6px;overflow:hidden">
+            <thead><tr style="font-size:10px;color:var(--color-text-muted);text-transform:uppercase;letter-spacing:.04em">
+              <th style="padding:6px 8px;text-align:left">LO Assignment</th>
+              <th style="padding:6px 8px;text-align:left">Permission Level</th>
+              <th style="padding:6px 8px;text-align:left">Subflags</th>
+              <th style="padding:6px 8px;text-align:left">Floor invariant</th>
+            </tr></thead>
+            <tbody>${tupleRows}</tbody>
+          </table>
+          ${togglesRow}
+          ${futureGrant ? `<div style="font-size:10px;color:var(--color-text-muted);margin-top:6px">+ Auto-inherits new LOs added to this branch (spec §3.7 future grant)</div>` : ''}
+        </div>`;
+    }).join('');
+
+    return `
+      <div class="${cls}" ${wrap}>
+        <div class="${fullPage ? 'card-title' : 'section-title'}" style="margin-bottom:10px">Branch Assignments <span style="color:var(--color-text-muted);font-weight:400;font-size:12px">${assignments.length} branch${assignments.length === 1 ? '' : 'es'}</span></div>
+        ${cards}
+      </div>`;
+  },
+
+  /* ---- License Records (LO sub-layer) ---- */
+  _renderLicenseRecords(u, fullPage) {
+    const licenses = u.licenses || [];
+    if (!licenses.length) return '';
+    const today = new Date();
+    const rows = licenses.map(l => {
+      const m = State.getMarket(l.marketId);
+      const status = State.getLicenseExpiryStatus(l, today);
+      const tier = status?.tier || 'ok';
+      let pillClass = 'badge-active';
+      let pillLabel = 'Active';
+      if (tier === 'inactive') { pillClass = 'badge-suspended'; pillLabel = 'Inactive'; }
+      else if (tier === 'expired') { pillClass = 'badge-failed'; pillLabel = `Expired ${-status.days}d ago`; }
+      else if (tier === 'critical') { pillClass = 'badge-failed'; pillLabel = `${status.days}d critical`; }
+      else if (tier === 'warning') { pillClass = 'badge-pending'; pillLabel = `${status.days}d warning`; }
+      else if (tier === 'soon') { pillClass = 'badge-2fa'; pillLabel = `${status.days}d`; }
+      return `
+        <tr>
+          <td style="padding:6px 8px;font-weight:500">${m?.code || '—'}</td>
+          <td style="padding:6px 8px;font-size:11px;color:var(--color-text-muted)">${l.regulator || '—'}</td>
+          <td style="padding:6px 8px"><span class="status-pill ${pillClass}"><span class="status-dot"></span>${pillLabel}</span></td>
+          <td style="padding:6px 8px;font-size:11px">${Display.date(l.renewalDate)}</td>
+          <td style="padding:6px 8px;font-size:10px;color:var(--color-text-muted)">${l.lastSync ? Display.relativeTime(l.lastSync) : '—'}</td>
+        </tr>`;
+    }).join('');
+    const cls = fullPage ? 'card' : '';
+    const wrap = fullPage ? `style="padding:14px 16px;margin-bottom:16px"` : '';
+    return `
+      <div class="${cls}" ${wrap}>
+        <div class="${fullPage ? 'card-title' : 'section-title'}" style="margin-bottom:6px">Licenses <span style="color:var(--color-text-muted);font-weight:400;font-size:11px">NMLS-sourced · daily sync</span></div>
+        <div style="font-size:11px;color:var(--color-text-muted);margin-bottom:8px">${licenses.length} state${licenses.length === 1 ? '' : 's'} licensed</div>
+        <table style="width:100%;border-collapse:collapse">
+          <thead><tr style="font-size:10px;color:var(--color-text-muted);text-transform:uppercase;letter-spacing:.04em">
+            <th style="padding:6px 8px;text-align:left">Market</th>
+            <th style="padding:6px 8px;text-align:left">Regulator</th>
+            <th style="padding:6px 8px;text-align:left">Status</th>
+            <th style="padding:6px 8px;text-align:left">Renewal</th>
+            <th style="padding:6px 8px;text-align:left">Last Sync</th>
+          </tr></thead>
+          <tbody>${rows}</tbody>
+        </table>
       </div>`;
   },
 

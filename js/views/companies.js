@@ -49,6 +49,22 @@ const CompaniesView = {
       const users    = State.getUsersByCompany(c.id);
       const pending  = users.filter(u => ['invited','email_verified','2fa_complete','verification_pending'].includes(u.onboardingStatus));
 
+      // Per spec §1.4: enabled (program × market) pairs at the OC level
+      const ocLpms = State.getOcEnablement(c.id);
+      const enabledProgramIds = new Set(ocLpms.map(id => State.getLPM(id)?.programId).filter(Boolean));
+      const enabledPrograms = State.getLoanPrograms().filter(p => enabledProgramIds.has(p.id));
+      // License expiry roll-up: count licenses on this OC's branch users expiring within 30d
+      const branchIds = new Set(branches.map(b => b.id));
+      const today = new Date();
+      let expSoon = 0;
+      users.forEach(u => {
+        const assignments = State.getBranchAssignments(u.id);
+        if (!assignments.some(a => branchIds.has(a.branchId))) return;
+        (u.licenses || []).forEach(lic => {
+          const s = State.getLicenseExpiryStatus(lic, today);
+          if (s && (s.tier === 'critical' || s.tier === 'warning' || s.tier === 'expired')) expSoon++;
+        });
+      });
       return `
         <tr class="clickable" onclick="${this._clickMode === 'navigate' ? `Router.navigate('/origination-companies/${c.id}')` : `CompaniesView.openDetail('${c.id}')`}">
           <td>
@@ -62,8 +78,12 @@ const CompaniesView = {
             ${users.length}
             ${pending.length ? `<span class="badge badge-pending" style="margin-left:6px">${pending.length} pending</span>` : ''}
           </td>
-          <td>${c.programs.length ? c.programs.map(p => `<span class="tag">${p}</span>`).join(' ') : '<span class="text-muted">—</span>'}</td>
+          <td>${enabledPrograms.length ? enabledPrograms.map(p => `<span class="tag">${p.name}</span>`).join(' ') : '<span class="text-muted">—</span>'}</td>
           <td><span class="badge ${c.status === 'active' ? 'badge-active' : 'badge-pending'}">${c.status === 'active' ? 'Active' : 'Pending Setup'}</span></td>
+          <td style="font-size:11px;color:var(--color-text-muted)">
+            ${c.lastNmlsSync ? `<span class="status-dot" style="display:inline-block;width:6px;height:6px;border-radius:50%;background:var(--color-success);margin-right:4px"></span>${Display.relativeTime(c.lastNmlsSync)}` : '—'}
+            ${expSoon ? `<div style="color:var(--color-warning);font-weight:600;margin-top:2px">${expSoon} lic ≤30d</div>` : ''}
+          </td>
           <td>
             <button class="btn btn-ghost btn-xs" onclick="event.stopPropagation();${this._clickMode === 'navigate' ? `Router.navigate('/origination-companies/${c.id}')` : `CompaniesView.openDetail('${c.id}')`}">View</button>
           </td>
@@ -79,7 +99,7 @@ const CompaniesView = {
           </div>
           ${canEdit ? `
             <div class="page-header-actions">
-              <button class="btn btn-primary btn-sm" onclick="CompaniesView.openAddModal()">+ Add Origination Company</button>
+              <button class="btn btn-primary btn-sm" onclick="Router.navigate('/origination-companies/new')">+ New Origination Company</button>
             </div>` : ''}
         </div>
       </div>
@@ -108,7 +128,7 @@ const CompaniesView = {
           ${companies.length ? `
             <table>
               <thead><tr>
-                <th class="${thClass('name')}" onclick="CompaniesView.setSort('name')">Company</th><th>NMLS ID</th><th>State</th><th>Branches</th><th>Users</th><th>Programs</th><th class="${thClass('status')}" onclick="CompaniesView.setSort('status')">Status</th><th></th>
+                <th class="${thClass('name')}" onclick="CompaniesView.setSort('name')">Company</th><th>NMLS ID</th><th>State</th><th>Branches</th><th>Users</th><th>Programs Enabled</th><th class="${thClass('status')}" onclick="CompaniesView.setSort('status')">Status</th><th>NMLS Sync</th><th></th>
               </tr></thead>
               <tbody>${rows}</tbody>
             </table>

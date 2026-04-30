@@ -1293,7 +1293,24 @@ const DataPlatformView = {
 
     const role = State.getRole();
     const allLoans = State.getLoansForRole();
-    const canCreate = ['lo', 'sys_admin', 'operator'].includes(role);
+    // Spec §1.4 + §3.5: gate the New Application CTA on the runtime
+    // intersection of OC × Branch enablement and (for LO) license coverage.
+    const currentUser = State.getCurrentUser();
+    let canCreate = ['sys_admin', 'operator'].includes(role);
+    let createGateReason = null;
+    let createGateBranchId = null;
+    if (role === 'lo' && currentUser) {
+      const assignments = State.getBranchAssignments(currentUser.id);
+      const loAssignment = assignments.find(a => a.userType === 'lo');
+      if (!loAssignment) {
+        createGateReason = 'must_be_lo';
+      } else {
+        createGateBranchId = loAssignment.branchId;
+        const gate = State.canCreateApplication(currentUser.id, loAssignment.branchId);
+        canCreate = gate.ok;
+        if (!gate.ok) createGateReason = gate.reason;
+      }
+    }
 
     // Filter tabs
     const needsAction = allLoans.filter(l => this._daysInStage(l) > 14 && l.status !== 'completed' && l.status !== 'draft');
@@ -1452,10 +1469,19 @@ const DataPlatformView = {
           </div>
           <div class="page-header-actions" style="display:flex;align-items:center;gap:12px">
             ${toggleHtml}
-            ${canCreate ? `<button class="btn btn-primary btn-sm" onclick="DataPlatformView._openNewAppModal()">+ New Application</button>` : ''}
+            ${canCreate
+              ? `<button class="btn btn-primary btn-sm" onclick="DataPlatformView._openNewAppModal()">+ New Application</button>`
+              : (role === 'lo' && createGateReason
+                  ? `<button class="btn btn-secondary btn-sm" disabled title="${this._gateReasonLabel(createGateReason, createGateBranchId)}" style="cursor:not-allowed">+ New Application (blocked)</button>`
+                  : '')}
           </div>
         </div>
       </div>
+      ${role === 'lo' && createGateReason ? `
+      <div class="alert alert-warning" style="margin:0 0 12px;padding:10px 14px;background:#fff7e6;border-left:3px solid var(--color-warning);border-radius:6px;font-size:12px">
+        <strong>New applications are blocked:</strong> ${this._gateReasonLabel(createGateReason, createGateBranchId)}
+        <span style="color:var(--color-text-muted);margin-left:6px">Spec §1.4 — ask your Program Admin to fix.</span>
+      </div>` : ''}
       ${kpiHtml}
       ${filterBarHtml}
       ${someChecked ? `
@@ -3286,6 +3312,21 @@ const DataPlatformView = {
   /* ================================================================
      NEW APPLICATION MODAL
   ================================================================ */
+  /* Spec §1.4 / §3.5 — human-readable reason why the New Application
+     CTA is disabled. */
+  _gateReasonLabel(reason, branchId) {
+    const branch = branchId ? State.getBranch(branchId) : null;
+    const branchLabel = branch ? ` at ${branch.name}` : '';
+    const labels = {
+      must_be_lo:         `You are not a Loan Officer${branchLabel}.`,
+      oc_not_enabled:     `OC has not enabled any (program × market) pairs${branchLabel} yet.`,
+      branch_not_enabled: `Branch enablement is empty${branchLabel} — Program Admin needs to enable program/market pairs.`,
+      license_missing:    `No active NMLS license matches the branch's enabled markets${branchLabel}.`,
+      no_can_create:      'Your assignment does not include "Can Create" (subflag).',
+    };
+    return labels[reason] || 'Access blocked';
+  },
+
   _openNewAppModal() {
     const el = document.getElementById('dp-modal');
     if (!el) return;

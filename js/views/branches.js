@@ -53,25 +53,12 @@ const BranchesView = {
     }
     if (f.companyId) filtered = filtered.filter(b => b.companyId === f.companyId);
     if (f.state)     filtered = filtered.filter(b => b.state === f.state);
-    if (f.program)   filtered = filtered.filter(b => b.programs.includes(f.program));
+    if (f.program)   filtered = filtered.filter(b => (b.programs || []).includes(f.program));
     if (f.status)    filtered = filtered.filter(b => b.status === f.status);
 
-    // Build hierarchical order: parents first, then their sub-branches indented
-    const parents    = filtered.filter(b => !b.parentBranchId);
-    const subs       = filtered.filter(b => !!b.parentBranchId);
-    const ordered    = [];
-    parents.forEach(p => {
-      ordered.push({ branch: p, isChild: false });
-      subs.filter(s => s.parentBranchId === p.id).forEach(s => ordered.push({ branch: s, isChild: true }));
-    });
-    // Any sub-branches whose parent was filtered out still appear
-    subs.filter(s => !parents.find(p => p.id === s.parentBranchId)).forEach(s => ordered.push({ branch: s, isChild: false }));
-
-    const companyOptions = companies.map(c => `<option value="${c.id}" ${f.companyId===c.id?'selected':''}>${c.name}</option>`).join('');
-
-    // Collect unique programs from all branches for filter
-    const allPrograms = [...new Set(allBranches.flatMap(b => b.programs))];
-    const programOptions = allPrograms.map(p => `<option value="${p}" ${f.program===p?'selected':''}>${p}</option>`).join('');
+    // Spec §9 #14: branches are flat (no nested sub-branches). Render as a
+    // flat ordered list — no parent/child indentation.
+    const ordered = filtered.map(b => ({ branch: b, isChild: false }));
 
     const s = this._sort;
     if (s.col) {
@@ -84,28 +71,28 @@ const BranchesView = {
     }
     const thClass = (col) => `sortable${s.col === col ? ' sort-' + s.dir : ''}`;
 
-    const rows = ordered.map(({ branch: b, isChild }) => {
+    const rows = ordered.map(({ branch: b }) => {
       const co     = State.getCompany(b.companyId);
       const mgr    = b.managingLO ? State.getUser(b.managingLO) : null;
       const users  = State.getUsersByBranch(b.id);
-      const programs = b.programs.length ? b.programs.map(p => `<span class="tag">${p}</span>`).join(' ') : '<span class="text-muted">None</span>';
-      const indent = isChild ? `<span class="subbranch-indicator">└</span>` : '';
+      const ocLpms = State.getOcEnablement(b.companyId);
+      const brLpms = State.getBranchEnablement(b.id);
+      const narrowed = brLpms.length < ocLpms.length;
       return `
-        <tr class="clickable ${isChild ? 'subbranch-row' : ''}" onclick="BranchesView.openDetail('${b.id}')">
+        <tr class="clickable" onclick="BranchesView.openDetail('${b.id}')">
           <td>
-            <div style="display:flex;align-items:flex-start;gap:4px">
-              ${indent}
-              <div>
-                <div class="cell-primary">${b.name}</div>
-                <div class="cell-secondary">${b.address}</div>
-              </div>
+            <div>
+              <div class="cell-primary">${b.name}</div>
+              <div class="cell-secondary">${b.address1 || b.address || ''}</div>
             </div>
           </td>
           ${(role !== 'prog_admin' && !scope?.companyId) ? `<td class="text-secondary">${co ? co.name : '—'}</td>` : ''}
+          <td><span class="tag">${b.branchType || 'Branch'}</span></td>
           <td>${b.state}</td>
           <td>${mgr ? Display.fullName(mgr) : '<span class="text-muted">N/A</span>'}</td>
           <td>${users.length}</td>
-          <td>${programs}</td>
+          <td><span class="tag" style="${narrowed ? 'background:#fff7e6;color:#a35c00' : ''}">${brLpms.length} / ${ocLpms.length}${narrowed ? ' · narrowed' : ''}</span></td>
+          <td style="font-size:11px;color:var(--color-text-muted)">${b.lastNmlsSync ? Display.relativeTime(b.lastNmlsSync) : '—'}</td>
           <td><span class="status-pill ${b.status === 'active' ? 'badge-active' : 'badge-pending'}"><span class="status-dot"></span>${b.status === 'active' ? 'Active' : 'Setup incomplete'}</span></td>
         </tr>`;
     }).join('');
@@ -168,10 +155,12 @@ const BranchesView = {
               <thead><tr>
                 <th class="${thClass('name')}" onclick="BranchesView.setSort('name')">Branch</th>
                 ${(role !== 'prog_admin' && !scope?.companyId) ? '<th>Company</th>' : ''}
+                <th>Type</th>
                 <th>State</th>
                 <th>Managing LO</th>
                 <th>Users</th>
-                <th>Programs</th>
+                <th>LPMs</th>
+                <th>NMLS Sync</th>
                 <th class="${thClass('status')}" onclick="BranchesView.setSort('status')">Status</th>
               </tr></thead>
               <tbody>${rows}</tbody>
@@ -220,24 +209,48 @@ const BranchesView = {
     const co      = State.getCompany(b.companyId);
     const mgr     = b.managingLO ? State.getUser(b.managingLO) : null;
     const users   = State.getUsersByBranch(b.id);
-    const subBranches = State.getBranches().filter(x => x.parentBranchId === b.id);
     const canEdit = State.can('editAny') || State.can('manageCompany');
 
-    const userRows = users.map(u => `
-      <div style="display:flex;align-items:center;gap:8px;padding:6px 0;border-bottom:1px solid var(--color-border);cursor:pointer" onclick="ProfileView.open('${u.id}')">
-        <div class="avatar avatar-sm" style="background:${avatarColor(u.role)};flex-shrink:0">${Display.initials(u)}</div>
-        <div style="flex:1;min-width:0">
-          <div style="font-size:13px;font-weight:500;color:var(--color-text)">${Display.fullName(u)}</div>
-          <div style="font-size:11px;color:var(--color-text-muted)">${Display.roleName(u.role)}</div>
-        </div>
-        <span class="status-pill ${Display.onboardingStatusClass(u.onboardingStatus)}" style="font-size:10px"><span class="status-dot"></span>${Display.onboardingStatusLabel(u.onboardingStatus)}</span>
-      </div>`).join('') || '<p style="font-size:13px;color:var(--color-text-muted)">No users in this branch.</p>';
+    // Spec §1.3 enablement intersection — render a mini program × market grid
+    // showing OC-allowed cells and which the branch has enabled.
+    const ocLpms = State.getOcEnablement(b.companyId);
+    const brLpms = State.getBranchEnablement(b.id);
+    const ocSet = new Set(ocLpms);
+    const brSet = new Set(brLpms);
+    const programs = State.getLoanPrograms();
+    const markets = State.getMarkets().filter(m => m.supported);
+    const lpms = State.getLPMs();
 
-    const subRows = subBranches.map(s => `
-      <div style="padding:6px 0;border-bottom:1px solid var(--color-border)">
-        <div style="font-size:13px;font-weight:500;color:var(--color-text)">${s.name}</div>
-        <div style="font-size:11px;color:var(--color-text-muted)">${s.address}</div>
-      </div>`).join('') || '';
+    const enablementGrid = (() => {
+      const rows = programs.map(p => {
+        const cells = markets.map(m => {
+          const lpm = lpms.find(l => l.programId === p.id && l.marketId === m.id);
+          if (!lpm) return `<td style="text-align:center;padding:5px;color:var(--color-text-muted);font-size:11px">—</td>`;
+          if (!ocSet.has(lpm.id)) return `<td style="text-align:center;padding:5px;background:var(--color-surface)" title="Not enabled at OC level"><svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="var(--color-text-muted)" stroke-width="1.5"><rect x="5" y="11" width="14" height="9" rx="1.5"/><path d="M8 11V7a4 4 0 0 1 8 0v4"/></svg></td>`;
+          return `<td style="text-align:center;padding:5px"><input type="checkbox" ${brSet.has(lpm.id) ? 'checked' : ''} ${canEdit ? '' : 'disabled'} onchange="BranchesView._toggleBranchLpm('${b.id}', '${lpm.id}', this.checked)" style="width:14px;height:14px;cursor:${canEdit ? 'pointer' : 'not-allowed'}"></td>`;
+        }).join('');
+        return `<tr><td style="padding:5px 8px;font-size:12px">${p.name}</td>${cells}</tr>`;
+      }).join('');
+      const header = `<tr><th style="text-align:left;font-size:10px;color:var(--color-text-muted);padding:5px 8px">Program</th>${markets.map(m => `<th style="font-size:10px;color:var(--color-text-muted);padding:5px 6px;text-align:center">${m.code}</th>`).join('')}</tr>`;
+      return `<table style="width:100%;border-collapse:collapse;border:1px solid var(--color-border);border-radius:6px;overflow:hidden;font-size:12px"><thead style="background:var(--color-surface)">${header}</thead><tbody>${rows}</tbody></table>`;
+    })();
+
+    const userRows = users.map(u => {
+      const a = State.getBranchAssignments(u.id).find(x => x.branchId === b.id);
+      const userTypeBadge = a?.userType === 'lo'
+        ? '<span class="tag" style="background:#e6f4ec;color:#1f6f43">LO</span>'
+        : '<span class="tag">Standard</span>';
+      const bmBadge = a?.flags?.branchManager ? '<span class="tag" style="background:#fff7e6;color:#a35c00;margin-left:4px">BM</span>' : '';
+      return `
+        <div style="display:flex;align-items:center;gap:8px;padding:6px 0;border-bottom:1px solid var(--color-border);cursor:pointer" onclick="ProfileView.open('${u.id}')">
+          <div class="avatar avatar-sm" style="background:${avatarColor(u.role)};flex-shrink:0">${Display.initials(u)}</div>
+          <div style="flex:1;min-width:0">
+            <div style="font-size:13px;font-weight:500;color:var(--color-text)">${Display.fullName(u)}</div>
+            <div style="font-size:11px;color:var(--color-text-muted)">${userTypeBadge}${bmBadge}</div>
+          </div>
+          <span class="status-pill ${Display.onboardingStatusClass(u.onboardingStatus)}" style="font-size:10px"><span class="status-dot"></span>${Display.onboardingStatusLabel(u.onboardingStatus)}</span>
+        </div>`;
+    }).join('') || '<p style="font-size:13px;color:var(--color-text-muted)">No users in this branch.</p>';
 
     document.getElementById('branch-panel-container').innerHTML = `
       <div class="side-panel-overlay" onclick="if(event.target===this)BranchesView.closePanel()">
@@ -245,7 +258,7 @@ const BranchesView = {
           <div class="side-panel-header">
             <div>
               <div class="side-panel-title">${b.name}</div>
-              <div class="side-panel-subtitle">${co ? co.name : '—'}</div>
+              <div class="side-panel-subtitle">${co ? co.name : '—'}${b.branchType ? ' · ' + b.branchType : ''}${b.lastNmlsSync ? ' · NMLS sync ' + Display.relativeTime(b.lastNmlsSync) : ''}</div>
             </div>
             <button class="modal-close" onclick="BranchesView.closePanel()">×</button>
           </div>
@@ -253,25 +266,25 @@ const BranchesView = {
 
             <div class="panel-section">
               <div class="panel-section-label">Branch Details</div>
-              <div class="panel-field"><span class="panel-field-label">Address</span><span>${b.address}</span></div>
-              <div class="panel-field"><span class="panel-field-label">State</span><span>${b.state}</span></div>
+              <div class="panel-field"><span class="panel-field-label">Address</span><span>${b.address1 ? `${b.address1}${b.suite ? ', ' + b.suite : ''}, ${b.city}, ${b.state} ${b.zip}` : (b.address || '—')}</span></div>
+              <div class="panel-field"><span class="panel-field-label">Branch Type</span><span><span class="tag">${b.branchType || 'Branch'}</span></span></div>
               <div class="panel-field"><span class="panel-field-label">Status</span><span class="status-pill ${b.status==='active'?'badge-active':'badge-pending'}"><span class="status-dot"></span>${b.status==='active'?'Active':'Setup incomplete'}</span></div>
               <div class="panel-field"><span class="panel-field-label">NMLS</span><span>${b.nmlsId || '—'}</span></div>
+              <div class="panel-field"><span class="panel-field-label">Phone</span><span>${b.contactPhone || '—'}</span></div>
               <div class="panel-field"><span class="panel-field-label">Managing LO</span><span>${mgr ? Display.fullName(mgr) : '<span class="text-muted">N/A</span>'}</span></div>
-              <div class="panel-field"><span class="panel-field-label">Programs</span><span>${b.programs.length ? b.programs.map(p=>`<span class="tag">${p}</span>`).join(' ') : '<span class="text-muted">None</span>'}</span></div>
-              ${b.parentBranchId ? `<div class="panel-field"><span class="panel-field-label">Parent Branch</span><span>${State.getBranch(b.parentBranchId)?.name || b.parentBranchId}</span></div>` : ''}
+              <div class="panel-field"><span class="panel-field-label">Start Date</span><span>${b.startDate ? Display.date(b.startDate) : '—'}</span></div>
+            </div>
+
+            <div class="panel-section">
+              <div class="panel-section-label">Enablement <span style="color:var(--color-text-muted);font-weight:400">(${brLpms.length} of ${ocLpms.length} OC LPMs)</span></div>
+              <div style="font-size:11px;color:var(--color-text-muted);margin-bottom:8px">Greyed cells indicate (program × market) pairs not enabled at the OC level.</div>
+              ${enablementGrid}
             </div>
 
             <div class="panel-section">
               <div class="panel-section-label">Users (${users.length})</div>
               ${userRows}
             </div>
-
-            ${subBranches.length ? `
-            <div class="panel-section">
-              <div class="panel-section-label">Sub-Branches (${subBranches.length})</div>
-              ${subRows}
-            </div>` : ''}
 
           </div>
           ${canEdit ? `
@@ -299,18 +312,13 @@ const BranchesView = {
     const scopedCompanyId = this._scope?.companyId || (role === 'prog_admin' ? currentUser?.companyId : null);
     const companyOptions = companies.map(c => `<option value="${c.id}">${c.name}</option>`).join('');
 
-    // Parent branch options — scoped to company if within a company context
-    let parentBranches = State.getBranches().filter(b => !b.parentBranchId);
-    if (scopedCompanyId) parentBranches = parentBranches.filter(b => b.companyId === scopedCompanyId);
-    const parentOptions = parentBranches.map(b => `<option value="${b.id}">${b.name}</option>`).join('');
-
     document.getElementById('branch-modal-container').innerHTML = `
       <div class="modal-overlay" onclick="if(event.target===this)BranchesView.closeModal()">
         <div class="modal">
           <div class="modal-header">
             <div>
               <div class="modal-title">Add Branch</div>
-              <div class="modal-subtitle">Create a new branch location</div>
+              <div class="modal-subtitle">Create a new branch location (flat — no nested sub-branches per spec §9 #14)</div>
             </div>
             <button class="modal-close" onclick="BranchesView.closeModal()">×</button>
           </div>
@@ -340,21 +348,16 @@ const BranchesView = {
                 </select>
               </div>
               <div class="form-group">
-                <label>NMLS Branch ID</label>
-                <input class="input" id="br-nmls" placeholder="e.g. 2045871-001" />
-              </div>
-              <div class="form-group form-full">
-                <label>Parent Branch <span style="font-weight:400;color:var(--color-text-muted)">(optional — creates a sub-branch)</span></label>
-                <select class="select-input" id="br-parent">
-                  <option value="">None (top-level branch)</option>${parentOptions}
+                <label>Branch Type</label>
+                <select class="select-input" id="br-type">
+                  <option value="Branch">Branch</option>
+                  <option value="Main">Main</option>
                 </select>
               </div>
               <div class="form-group form-full">
-                <label>Enabled Programs</label>
-                <div style="display:flex;gap:16px;flex-wrap:wrap;margin-top:4px">
-                  <label class="checkbox-group"><input type="checkbox" id="br-prog-dc" value="DC Dream Fund" /> DC Dream Fund</label>
-                  <label class="checkbox-group"><input type="checkbox" id="br-prog-ky" value="Kentucky Dream Fund" /> Kentucky Dream Fund</label>
-                </div>
+                <label>NMLS Branch ID</label>
+                <input class="input" id="br-nmls" placeholder="e.g. 2045871-001" />
+                <div class="form-hint">Enabled (program × market) pairs are configured under <strong>Access</strong> on the OC detail screen.</div>
               </div>
             </div>
           </div>
@@ -368,22 +371,19 @@ const BranchesView = {
   },
 
   submitAdd() {
-    const name           = document.getElementById('br-name')?.value.trim();
-    const companyId      = document.getElementById('br-company')?.value;
-    const address        = document.getElementById('br-address')?.value.trim();
-    const state          = document.getElementById('br-state')?.value;
-    const nmlsId         = document.getElementById('br-nmls')?.value.trim() || null;
-    const parentBranchId = document.getElementById('br-parent')?.value || null;
-    const programs       = [];
-    if (document.getElementById('br-prog-dc')?.checked) programs.push('DC Dream Fund');
-    if (document.getElementById('br-prog-ky')?.checked) programs.push('Kentucky Dream Fund');
+    const name       = document.getElementById('br-name')?.value.trim();
+    const companyId  = document.getElementById('br-company')?.value;
+    const address    = document.getElementById('br-address')?.value.trim();
+    const state      = document.getElementById('br-state')?.value;
+    const nmlsId     = document.getElementById('br-nmls')?.value.trim() || null;
+    const branchType = document.getElementById('br-type')?.value || 'Branch';
 
     if (!name || !companyId || !address || !state) {
       alert('Please fill in all required fields.');
       return;
     }
 
-    State.addBranch({ name, companyId, address, state, nmlsId, managingLO: null, programs, parentBranchId });
+    State.addBranch({ name, companyId, address, state, nmlsId, branchType, managingLO: null, lastNmlsSync: new Date().toISOString() });
     this.closeModal();
     UsersView.showSuccess(`Branch "${name}" created`);
     BranchesView._rerender();
@@ -394,7 +394,6 @@ const BranchesView = {
     if (!b) return;
 
     const companyUsers = b.companyId ? State.getUsersByCompany(b.companyId) : State.getUsers();
-    const subBranches  = State.getBranches().filter(x => x.parentBranchId === b.id);
 
     const loRows = companyUsers.map(u => `
       <div class="perm-user-row" id="lo-row-${u.id}">
@@ -408,12 +407,6 @@ const BranchesView = {
           Managing LO
         </label>
       </div>`).join('') || '<p style="font-size:12px;color:var(--color-text-muted)">No users in this company.</p>';
-
-    const subRows = subBranches.map(s => `
-      <div style="display:flex;align-items:center;justify-content:space-between;padding:5px 0;border-bottom:1px solid var(--color-border-light);font-size:12px">
-        <span>${s.name}</span>
-        <button class="btn btn-ghost btn-xs" onclick="BranchesView._removeSubBranch('${s.id}')">Remove</button>
-      </div>`).join('') || '';
 
     document.getElementById('branch-modal-container').innerHTML = `
       <div class="modal-overlay" onclick="if(event.target===this)BranchesView.closeModal()">
@@ -455,13 +448,6 @@ const BranchesView = {
                 </select>
               </div>
               <div class="form-group form-full">
-                <label>Enabled Programs</label>
-                <div style="display:flex;gap:16px;flex-wrap:wrap;margin-top:4px">
-                  <label class="checkbox-group"><input type="checkbox" id="edit-br-prog-dc" ${b.programs.includes('DC Dream Fund')?'checked':''} /> DC Dream Fund</label>
-                  <label class="checkbox-group"><input type="checkbox" id="edit-br-prog-ky" ${b.programs.includes('Kentucky Dream Fund')?'checked':''} /> Kentucky Dream Fund</label>
-                </div>
-              </div>
-              <div class="form-group form-full">
                 <label>Branch Users</label>
                 <input class="input input-sm" id="edit-br-lo-search" placeholder="Search users…" oninput="BranchesView._filterBranchUsers(this.value)" style="margin-bottom:8px" />
                 <div id="edit-br-lo-list" style="max-height:160px;overflow-y:auto;border:1px solid var(--color-border);border-radius:var(--radius);padding:4px">
@@ -473,13 +459,8 @@ const BranchesView = {
                     </label>
                   </div>
                 </div>
+                <div class="form-hint">Enabled (program × market) pairs are managed under <strong>Access</strong> on the OC detail screen.</div>
               </div>
-              ${subBranches.length || true ? `
-              <div class="form-group form-full">
-                <label>Sub-Branches</label>
-                <div id="edit-br-sub-list" style="margin-bottom:8px">${subRows}</div>
-                <button class="btn btn-secondary btn-sm" onclick="BranchesView._addSubBranchInline('${b.id}')">+ Add Sub-branch</button>
-              </div>` : ''}
             </div>
           </div>
 
@@ -503,19 +484,13 @@ const BranchesView = {
     });
   },
 
-  _removeSubBranch(subId) {
-    State.updateBranch(subId, { parentBranchId: null });
-    const row = document.querySelector(`#edit-br-sub-list [onclick*="${subId}"]`)?.closest('div');
-    if (row) row.remove();
-  },
-
-  _addSubBranchInline(parentId) {
-    const name = prompt('Sub-branch name:');
-    if (!name || !name.trim()) return;
-    const parent = State.getBranch(parentId);
-    State.addBranch({ name: name.trim(), companyId: parent.companyId, address: '', state: parent.state, managingLO: null, programs: [], parentBranchId: parentId });
-    UsersView.showSuccess(`Sub-branch "${name.trim()}" added`);
-    this.openEditModal(parentId);
+  // Branch enablement editor toggle (called from the side panel mini-grid)
+  _toggleBranchLpm(branchId, lpmId, on) {
+    const cur = new Set(State.getBranchEnablement(branchId));
+    if (on) cur.add(lpmId); else cur.delete(lpmId);
+    State.setBranchEnablement(branchId, [...cur]);
+    if (this._detailId === branchId) this.openDetail(branchId);
+    BranchesView._rerender();
   },
 
   submitEdit(branchId) {
@@ -524,13 +499,10 @@ const BranchesView = {
     const nmlsId     = document.getElementById('edit-br-nmls')?.value.trim() || null;
     const state      = document.getElementById('edit-br-state')?.value;
     const status     = document.getElementById('edit-br-status')?.value;
-    const programs = [];
-    if (document.getElementById('edit-br-prog-dc')?.checked) programs.push('DC Dream Fund');
-    if (document.getElementById('edit-br-prog-ky')?.checked) programs.push('Kentucky Dream Fund');
     const loRadio = document.querySelector('input[name="edit-br-lo"]:checked');
     const managingLO = loRadio?.value || null;
 
-    State.updateBranch(branchId, { name, address, nmlsId, state, status, programs, managingLO });
+    State.updateBranch(branchId, { name, address, nmlsId, state, status, managingLO });
     this.closeModal();
     if (this._detailId === branchId) this.openDetail(branchId);
     UsersView.showSuccess('Branch updated');
