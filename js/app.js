@@ -71,7 +71,17 @@ const App = {
   },
 
   renderRole() {
-    document.getElementById('app').innerHTML = RoleSelectView.render();
+    document.getElementById('app').innerHTML = LoginView.render();
+  },
+
+  signOut() {
+    // Tear down any wizard overlay first
+    const overlay = document.getElementById('onboarding-flow-overlay');
+    if (overlay) overlay.remove();
+    if (State.isImpersonating()) State.stopImpersonation();
+    State.setRole(null);
+    LoginView._state = null;
+    Router.navigate('/', { replace: true });
   },
 
   renderMobileShell(content) {
