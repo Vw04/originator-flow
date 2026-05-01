@@ -675,6 +675,45 @@ const DEMO_DATA = {
     },
   },
 
+  /* ---- NMLS Authority Index (per-LO, used by onboarding wizard's NMLS link step) ----
+     Mock authority record: which company-branch NMLS IDs an individual NMLS license is
+     authorized to operate under, and which states the LO is licensed in. The wizard
+     looks up the user-entered NMLS ID; matched IDs grant branch-authorization and
+     populate user.licenses for product/market gating. Unknown IDs verify but with
+     empty arrays — exposes the failure path for demo. */
+  nmlsAuthorityIndex: {
+    // James Okafor — Capital City Lending DC (covers all 3 DC branches)
+    '3256789': {
+      fullName: 'James Okafor',
+      authorizedBranchNmlsIds: ['2045871-001', '2045871-002', '2045871-003'],
+      licensedStates: ['DC', 'VA', 'MD'],
+    },
+    // Dana Holloway — Capital City Lending DC (subset: only Capitol Hill + Adams Morgan)
+    '4367890': {
+      fullName: 'Dana Holloway',
+      authorizedBranchNmlsIds: ['2045871-002', '2045871-003'],
+      licensedStates: ['DC'],
+    },
+    // Tamara Fletcher — Bluegrass Home Finance KY
+    '7690123': {
+      fullName: 'Tamara Fletcher',
+      authorizedBranchNmlsIds: ['3178904-001', '3178904-002'],
+      licensedStates: ['KY'],
+    },
+    // Demo broad-coverage LO for Beacon (multi-state)
+    '8801234': {
+      fullName: 'Riley Cross',
+      authorizedBranchNmlsIds: ['5599001-001', '5599001-002', '5599001-003', '5599001-004', '5599001-005'],
+      licensedStates: ['DC', 'KY', 'UT', 'MI', 'CO'],
+    },
+    // Demo limited-coverage LO — only DC, useful for showing partial product gates
+    '9912345': {
+      fullName: 'Jordan Reeves',
+      authorizedBranchNmlsIds: ['2045871-001'],
+      licensedStates: ['DC'],
+    },
+  },
+
   /* ---- Activity Log ---- */
   activityLog: [
     { userId: 'user-001', action: 'invited',        subject: 'Yolanda Simmons',         subjectType: 'user',    time: '2 hours ago',  companyId: 'co-001' },

@@ -120,9 +120,15 @@ const RoleSelectView = {
       Router.navigate('/profile', { replace: true });
       return;
     }
-    // Reset demo user to invited so the wizard starts from step 0
+    // Reset demo user's credentials so the wizard runs end-to-end every time
     const user = State.getCurrentUser();
-    if (user) State.updateUser(user.id, { onboardingStatus: 'invited' });
+    if (user) {
+      State.updateUser(user.id, {
+        onboardingStatus: 'invited',
+        kyc: { status: 'not_started', vendor: null, referenceId: null, verifiedAt: null },
+        nmlsLink: { status: 'not_linked', nmlsId: user.nmlsId || user.agentNmlsId || null, linkedAt: null, authorizedBranchNmlsIds: [], licensedStates: [] },
+      });
+    }
     if (State.getViewMode() === 'mobile') {
       Router.navigate('/m/home', { replace: true });
     } else {

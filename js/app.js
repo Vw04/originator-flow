@@ -168,6 +168,14 @@ const App = {
   startImpersonation(userId) {
     State.startImpersonation(userId);
     ProfileView.close();
+    const target = State.getCurrentUser();
+    // If the impersonated user hasn't finished onboarding yet, open the wizard
+    // for them. This drives the bulk-invite → impersonate → wizard demo flow.
+    if (target && target.onboardingStatus !== 'active' && target.onboardingStatus !== 'suspended') {
+      this.renderShell('<div style="padding:40px;text-align:center;color:var(--color-text-muted)">Loading invite onboarding…</div>');
+      OnboardingFlowView.open(target.role || 'lo', { userId: target.id });
+      return;
+    }
     DataPlatformView._activeTab = 'analytics';
     this.renderShell(DataPlatformView.render());
     Nav.setActive('/data/analytics');

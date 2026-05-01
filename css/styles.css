@@ -2527,6 +2527,58 @@ label { font-size: 12px; font-weight: 600; color: var(--color-text); }
   padding: 24px; text-align: center; margin-bottom: 16px;
 }
 
+/* ---- Loading-screen wizard pieces ---- */
+.ob-loading-card { text-align: center; }
+.ob-vendor-tag {
+  display: inline-block;
+  font-size: 10px; font-weight: 700; letter-spacing: 0.08em; text-transform: uppercase;
+  border: 1px solid currentColor; border-radius: 99px;
+  padding: 3px 10px; margin-bottom: 22px;
+}
+.ob-spinner {
+  width: 56px; height: 56px; margin: 0 auto;
+  border: 3px solid var(--color-border);
+  border-top-color: var(--color-primary);
+  border-radius: 50%;
+  animation: ob-spin 1s linear infinite;
+}
+@keyframes ob-spin { to { transform: rotate(360deg); } }
+.ob-checklist {
+  margin-top: 24px;
+  border-top: 1px solid var(--color-border-light);
+  padding-top: 16px;
+  text-align: left;
+}
+.ob-checklist-item {
+  display: flex; align-items: center; gap: 10px;
+  padding: 8px 4px;
+  font-size: 13px;
+  transition: color 0.3s ease;
+}
+.ob-checklist-item.pending { color: var(--color-text-muted); }
+.ob-checklist-item.done    { color: var(--color-success); font-weight: 600; }
+.ob-checklist-icon {
+  display: inline-flex; align-items: center; justify-content: center;
+  width: 22px; height: 22px; border-radius: 50%;
+  background: var(--color-surface); flex-shrink: 0;
+  font-size: 13px;
+  transition: background 0.3s ease;
+}
+.ob-checklist-item.done .ob-checklist-icon {
+  background: var(--color-success);
+  color: #fff;
+}
+
+.ob-gates-table {
+  width: 100%; border-collapse: collapse;
+  margin: 8px 0 18px;
+  border-top: 1px solid var(--color-border-light);
+  border-bottom: 1px solid var(--color-border-light);
+}
+.ob-gates-table tr:not(:last-child) td {
+  border-bottom: 1px solid var(--color-border-light);
+}
+
 /* ============================================================
    COMPANY PERMISSIONS WORKBENCH
    ============================================================ */

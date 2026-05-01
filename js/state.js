@@ -30,6 +30,35 @@ const State = (() => {
   let _lpms             = JSON.parse(JSON.stringify(DEMO_DATA.loanProgramMarkets || []));
   let _ocEnablement     = JSON.parse(JSON.stringify(DEMO_DATA.ocEnablement || []));
   const _nmlsLookup     = DEMO_DATA.nmlsCompanyLookup || {};
+  const _nmlsAuthority  = DEMO_DATA.nmlsAuthorityIndex || {};
+
+  /* ---- Credential backfill ----
+     Seeded users predate user-level KYC + NMLS link credentials. We populate
+     them here so existing demo data remains "in" the app: any user with
+     onboardingStatus='active' is treated as KYC-verified, and any user with
+     a non-null nmlsId is treated as NMLS-linked. Users with non-active status
+     (invited / 2fa_complete / verification_pending) are left unverified —
+     these are the cohort the new wizard runs through. */
+  _users.forEach(u => {
+    if (!u.kyc) {
+      u.kyc = u.onboardingStatus === 'active'
+        ? { status: 'verified', vendor: 'securitize', referenceId: `SCR-${u.id.replace('user-', '').padStart(5, '0')}`, verifiedAt: '2026-01-15T12:00:00Z' }
+        : { status: 'not_started', vendor: null, referenceId: null, verifiedAt: null };
+    }
+    if (!u.nmlsLink) {
+      const seedNmls = u.nmlsId || u.agentNmlsId || null;
+      const authority = seedNmls ? _nmlsAuthority[seedNmls] : null;
+      u.nmlsLink = (seedNmls && u.onboardingStatus === 'active')
+        ? {
+            status: 'verified',
+            nmlsId: seedNmls,
+            linkedAt: '2026-01-15T12:00:00Z',
+            authorizedBranchNmlsIds: authority?.authorizedBranchNmlsIds || (u.branchId ? [_branches.find(b => b.id === u.branchId)?.nmlsId].filter(Boolean) : []),
+            licensedStates: authority?.licensedStates || [],
+          }
+        : { status: 'not_linked', nmlsId: seedNmls, linkedAt: null, authorizedBranchNmlsIds: [], licensedStates: [] };
+    }
+  });
 
   let _currentRole = null;  // role key: 'sys_admin' | 'operator' | 'prog_admin' | 'lo' | 'lp' | 'investor'
   let _currentUser = null;  // user object (simulated logged-in user per role)
@@ -181,8 +210,11 @@ const State = (() => {
         onboardingStatus: 'invited',
         lastLogin: null,
         policies: [],
+        kyc: { status: 'not_started', vendor: null, referenceId: null, verifiedAt: null },
+        nmlsLink: { status: 'not_linked', nmlsId: data.agentNmlsId || data.nmlsId || null, linkedAt: null, authorizedBranchNmlsIds: [], licensedStates: [] },
         ...data,
       };
+      // If caller passed in their own kyc / nmlsLink, ...data overrides — fine.
       _users.push(user);
       const co = _companies.find(c => c.id === data.companyId);
       if (co) co.userCount = (_users.filter(u => u.companyId === co.id)).length;
@@ -495,6 +527,128 @@ const State = (() => {
       if (!u) return;
       u.branchAssignments = JSON.parse(JSON.stringify(assignments));
       notify();
+    },
+
+    /* ---- KYC + NMLS link (user-level credentials) ---- */
+    getKyc(userId) {
+      const u = _users.find(x => x.id === userId);
+      return u?.kyc || { status: 'not_started', vendor: null, referenceId: null, verifiedAt: null };
+    },
+    setKycVerified(userId, vendor = 'securitize') {
+      const u = _users.find(x => x.id === userId);
+      if (!u) return;
+      const ref = 'SCR-' + Math.random().toString(36).slice(2, 8).toUpperCase();
+      u.kyc = { status: 'verified', vendor, referenceId: ref, verifiedAt: new Date().toISOString() };
+      notify();
+      return u.kyc;
+    },
+
+    getNmlsLink(userId) {
+      const u = _users.find(x => x.id === userId);
+      return u?.nmlsLink || { status: 'not_linked', nmlsId: null, linkedAt: null, authorizedBranchNmlsIds: [], licensedStates: [] };
+    },
+    /* Mock NMLS lookup. Returns the authority record (or null) without mutating user. */
+    lookupNmlsAuthority(nmlsId) {
+      const id = (nmlsId || '').trim();
+      return id && _nmlsAuthority[id] ? { ..._nmlsAuthority[id] } : null;
+    },
+    /* Apply an NMLS link: sets user.nmlsLink to verified, populates authority data,
+       and seeds user.licenses for each licensed state from the authority record.
+       Unknown IDs verify with empty arrays — exposes the branch-auth failure path. */
+    setNmlsLinkVerified(userId, nmlsId) {
+      const u = _users.find(x => x.id === userId);
+      if (!u) return;
+      const id = (nmlsId || '').trim();
+      const authority = id ? _nmlsAuthority[id] : null;
+      const now = new Date().toISOString();
+      u.nmlsLink = {
+        status: 'verified',
+        nmlsId: id,
+        linkedAt: now,
+        authorizedBranchNmlsIds: authority?.authorizedBranchNmlsIds ? [...authority.authorizedBranchNmlsIds] : [],
+        licensedStates: authority?.licensedStates ? [...authority.licensedStates] : [],
+      };
+      // Mirror to legacy fields so downstream views keep working
+      u.nmlsId = id;
+      u.agentNmlsId = id;
+      // Seed licenses from authority's licensed states (one per market)
+      const existing = Array.isArray(u.licenses) ? u.licenses : [];
+      const statesNow = new Set(existing.map(l => {
+        const m = _markets.find(x => x.id === l.marketId);
+        return m?.code;
+      }).filter(Boolean));
+      (authority?.licensedStates || []).forEach(stateCode => {
+        if (statesNow.has(stateCode)) return;
+        const market = _markets.find(m => m.code === stateCode);
+        if (!market) return;
+        existing.push({
+          id: `lic-${u.id}-${stateCode}`,
+          marketId: market.id,
+          regulator: `${stateCode} Department of Insurance, Securities and Banking`,
+          active: true,
+          issueDate: now.split('T')[0],
+          renewalDate: new Date(Date.now() + 365 * 24 * 60 * 60 * 1000).toISOString().split('T')[0],
+          lastSync: now,
+        });
+      });
+      u.licenses = existing;
+      notify();
+      return u.nmlsLink;
+    },
+
+    /* ---- Onboarding gate helpers ----
+       Pure derivations — no new state. The wizard calls getActiveAtBranchGates
+       at the gates stage; standard users only need the KYC gate. */
+    getKycGate(userId) {
+      const kyc = State.getKyc(userId);
+      const ok = kyc.status === 'verified';
+      return { status: kyc.status, ok, label: ok ? `Identity verified (${kyc.vendor || 'Securitize'})` : 'Identity not yet verified' };
+    },
+    getNmlsGate(userId) {
+      const link = State.getNmlsLink(userId);
+      const ok = link.status === 'verified';
+      return { status: link.status, ok, label: ok ? `NMLS license linked (${link.nmlsId})` : 'NMLS license not linked' };
+    },
+    /* Branch authorization: branch.nmlsId must be in the user's authorizedBranchNmlsIds. */
+    getBranchAuthGate(userId, branchId) {
+      const branch = _branches.find(b => b.id === branchId);
+      const link = State.getNmlsLink(userId);
+      if (!branch) return { ok: false, label: 'Branch not found' };
+      const ok = !!branch.nmlsId && link.authorizedBranchNmlsIds.includes(branch.nmlsId);
+      return {
+        ok,
+        label: ok ? `Authorized at ${branch.name}` : `Not authorized at ${branch.name}`,
+        branchNmlsId: branch.nmlsId,
+      };
+    },
+    /* Product+market licensing: for each branch program, the user must hold an active
+       license in the branch's state. Returns ok=true only if all programs are covered. */
+    getProductLicensingGate(userId, branchId) {
+      const u = _users.find(x => x.id === userId);
+      const branch = _branches.find(b => b.id === branchId);
+      if (!u || !branch) return { ok: false, missing: [], label: 'Branch not found' };
+      const programs = branch.programs || [];
+      if (programs.length === 0) return { ok: true, missing: [], label: 'No programs to license' };
+      const market = _markets.find(m => m.code === branch.state);
+      const hasMarketLicense = !!market && (u.licenses || []).some(l => l.marketId === market.id && l.active);
+      // For the demo, all branch programs share the branch's state → all-or-nothing on market license
+      const missing = hasMarketLicense ? [] : [...programs];
+      return {
+        ok: missing.length === 0,
+        missing,
+        label: missing.length === 0
+          ? `Licensed for ${programs.join(', ')}`
+          : `Missing license for ${missing.join(', ')}`,
+      };
+    },
+    /* Composite gate for an LO at a specific branch — all four must pass. */
+    getActiveAtBranchGates(userId, branchId) {
+      const kyc = State.getKycGate(userId);
+      const nmls = State.getNmlsGate(userId);
+      const branchAuth = State.getBranchAuthGate(userId, branchId);
+      const productLicensing = State.getProductLicensingGate(userId, branchId);
+      const allPass = kyc.ok && nmls.ok && branchAuth.ok && productLicensing.ok;
+      return { kyc, nmls, branchAuth, productLicensing, allPass };
     },
 
     /* ---- Licenses (LO sub-layer; NMLS-sourced, pre-populated) ---- */

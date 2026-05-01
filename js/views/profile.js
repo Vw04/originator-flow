@@ -67,6 +67,9 @@ const ProfileView = {
             <div class="info-row"><div class="info-label">Last Login</div><div class="info-value">${u.lastLogin ? Display.date(u.lastLogin) : 'Never'}</div></div>
           </div>
 
+          <!-- Credentials (KYC + NMLS) -->
+          ${this._renderCredentialChips(u)}
+
           <!-- Onboarding progress -->
           <div class="section-title">Onboarding Progress</div>
           <div style="margin-bottom:20px">
@@ -89,8 +92,8 @@ const ProfileView = {
           ${canEdit ? `
             <button class="btn btn-secondary" onclick="ProfileView.close()">Close</button>
             <button class="btn btn-ghost btn-sm btn-danger-ghost" onclick="ProfileView.suspend('${u.id}')" ${u.onboardingStatus === 'suspended' ? 'disabled' : ''}>Suspend</button>
-            ${State.can('impersonate') && u.id !== State.getCurrentUser()?.id && u.onboardingStatus === 'active'
-              ? `<button class="btn btn-impersonate btn-sm" onclick="App.startImpersonation('${u.id}')">Impersonate</button>`
+            ${State.can('impersonate') && u.id !== State.getCurrentUser()?.id && u.onboardingStatus !== 'suspended'
+              ? `<button class="btn btn-impersonate btn-sm" onclick="App.startImpersonation('${u.id}')">${u.onboardingStatus === 'active' ? 'Impersonate' : 'Run as invitee →'}</button>`
               : ''}
             <button class="btn btn-primary" onclick="ProfileView.openEditModal('${u.id}')">Edit</button>
           ` : `<button class="btn btn-secondary" onclick="ProfileView.close()">Close</button>`}
@@ -249,10 +252,67 @@ const ProfileView = {
         </div>
 
         <div style="margin-top:20px">
+          ${this._renderCredentialChips(u, true)}
           ${this._renderEligibilityLine(u, true)}
           ${this._renderBranchAssignmentCards(u, true)}
           ${this._renderLicenseRecords(u, true)}
         </div>
+      </div>`;
+  },
+
+  /* ---- KYC + NMLS credential chips ---- */
+  _renderCredentialChips(u, fullPage) {
+    const kyc = u.kyc || State.getKyc(u.id);
+    const link = u.nmlsLink || State.getNmlsLink(u.id);
+    const isLO = u.role === 'lo' || (u.branchAssignments || []).some(a => a.userType === 'lo');
+    const isSelf = State.getCurrentUser()?.id === u.id;
+
+    const chip = ({ ok, pending, label, sub }) => {
+      const bg = ok ? '#DCFCE7' : pending ? '#FEF3C7' : '#F3F4F6';
+      const fg = ok ? '#166534' : pending ? '#8A5A00' : 'var(--color-text-muted)';
+      const icon = ok ? '✓' : pending ? '⏳' : '—';
+      return `
+        <div style="display:inline-flex;flex-direction:column;gap:2px;padding:8px 12px;border-radius:8px;background:${bg};color:${fg};min-width:180px">
+          <div style="font-size:11px;font-weight:700;letter-spacing:.04em;text-transform:uppercase;display:flex;align-items:center;gap:6px">${icon} ${label}</div>
+          <div style="font-size:11px;color:${fg};opacity:.85">${sub}</div>
+        </div>`;
+    };
+
+    const kycChip = chip({
+      ok: kyc.status === 'verified',
+      pending: kyc.status === 'pending',
+      label: 'Identity (KYC)',
+      sub: kyc.status === 'verified'
+        ? `Securitize · ${kyc.referenceId || 'verified'}`
+        : kyc.status === 'pending' ? 'Verification in progress' : 'Not started',
+    });
+
+    const nmlsChip = chip({
+      ok: link.status === 'verified',
+      pending: link.status === 'pending',
+      label: 'NMLS license',
+      sub: link.status === 'verified'
+        ? `${link.nmlsId || ''} · ${(link.licensedStates || []).length} state${(link.licensedStates || []).length === 1 ? '' : 's'}`
+        : link.nmlsId ? `${link.nmlsId} · not yet linked` : 'Not linked',
+    });
+
+    const linkBtn = (isSelf && isLO && link.status !== 'verified') ? `
+      <button class="btn btn-ghost btn-xs" style="margin-left:8px;align-self:center" onclick="OnboardingFlowView.open('${u.role}', { userId: '${u.id}' })">Link NMLS →</button>` : '';
+
+    const outerStyle = fullPage
+      ? 'display:flex;flex-wrap:wrap;gap:10px;align-items:stretch;margin-bottom:20px'
+      : 'display:flex;flex-wrap:wrap;gap:8px;align-items:stretch;margin-bottom:18px';
+
+    const sectionTitle = fullPage
+      ? '<div class="section-title" style="font-size:12px;font-weight:700;text-transform:uppercase;letter-spacing:.06em;color:var(--color-text-muted);margin-bottom:10px">Credentials</div>'
+      : '<div class="section-title">Credentials</div>';
+
+    return `
+      ${sectionTitle}
+      <div style="${outerStyle}">
+        ${kycChip}
+        ${nmlsChip}
+        ${linkBtn}
       </div>`;
   },
 
