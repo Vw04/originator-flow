@@ -67,46 +67,42 @@ const OnboardingFlowView = {
     const status = u?.onboardingStatus || 'invited';
     const isLO = this._isLO();
     const branchId = this._branchId;
-    const profileComplete = !!(u?.firstName && u?.lastName && u?.phone);
-    const roleBranchSet = !!u?.role && (!isLO || !!branchId);
+    const profileComplete = !!(u?.firstName && u?.lastName && u?.phone && u?.role && (!isLO || !!branchId));
     const kycDone = u?.kyc?.status === 'verified';
     const nmlsDone = u?.nmlsLink?.status === 'verified';
 
     const steps = [];
 
-    // Stage A — account setup (skip if already past 2fa_complete)
-    const accountIdx = ['invited', 'email_verified', '2fa_complete', 'verification_pending', 'active'].indexOf(status);
-    if (accountIdx <= 0)                       steps.push('welcome');
-    if (accountIdx <= 0)                       steps.push('verify-email');
-    if (accountIdx <= 1)                       steps.push('password');
-    if (accountIdx <= 1)                       steps.push('twofa');
+    // Stage A — auth: magic-link 2FA via email, then password.
+    // Only shown if onboardingStatus hasn't passed 2fa_complete yet.
+    const authIdx = ['invited', 'email_verified', '2fa_complete', 'verification_pending', 'active'].indexOf(status);
+    if (authIdx <= 1)                          steps.push('verify-email');
+    if (authIdx <= 1)                          steps.push('password');
 
-    // Stage B — profile + role/branch (only if missing)
-    if (!profileComplete)                      steps.push('profile');
-    if (!roleBranchSet)                        steps.push('role-branch');
+    // Stage B — unified profile (name, role, branch, NMLS, phone, title).
+    // Pre-filled from invite where available; everything is editable.
+    if (!profileComplete)                      steps.push('unified-profile');
 
-    // Stage C — KYC (LO + investor only; standard / processor / admin skip)
+    // Stage C — LO verification (NMLS first, then KYC). LO-only.
+    if (isLO && !nmlsDone) {
+      steps.push('nmls-loading');
+      steps.push('nmls-success');
+    }
+    // KYC (Securitize) — LOs and investors only. OC standard users skip entirely.
     if (this._needsKyc() && !kycDone) {
       steps.push('kyc-intro');
       steps.push('kyc-loading');
       steps.push('kyc-success');
     }
 
-    // Stage D — NMLS (LO only)
-    if (isLO && !nmlsDone) {
-      steps.push('nmls-intro');
-      steps.push('nmls-loading');
-      steps.push('nmls-success');
-    }
-
-    // Stage E — branch + product gates (LO + branch)
+    // Stage D — branch + product gates (LO + branch only)
     if (isLO && branchId) {
       steps.push('branch-loading');
       steps.push('product-loading');
       steps.push('gates-summary');
     }
 
-    // Stage F — finish (always)
+    // Stage E — finish (always)
     steps.push('finish');
 
     return steps;
@@ -162,16 +158,12 @@ const OnboardingFlowView = {
   /* ---- Step renderers ---- */
   _renderStep(stepId) {
     switch (stepId) {
-      case 'welcome':         return this._renderWelcome();
       case 'verify-email':    return this._renderVerifyEmail();
       case 'password':        return this._renderPassword();
-      case 'twofa':            return this._renderTwoFA();
-      case 'profile':         return this._renderProfile();
-      case 'role-branch':     return this._renderRoleBranch();
+      case 'unified-profile': return this._renderUnifiedProfile();
       case 'kyc-intro':       return this._renderKycIntro();
       case 'kyc-loading':     return this._renderKycLoading();
       case 'kyc-success':     return this._renderKycSuccess();
-      case 'nmls-intro':      return this._renderNmlsIntro();
       case 'nmls-loading':    return this._renderNmlsLoading();
       case 'nmls-success':    return this._renderNmlsSuccess();
       case 'branch-loading':  return this._renderBranchLoading();
@@ -182,40 +174,30 @@ const OnboardingFlowView = {
     }
   },
 
-  /* ---- Stage A: account ---- */
-  _renderWelcome() {
+  /* ---- Stage A: auth (magic-link 2FA via email + password) ---- */
+  _renderVerifyEmail() {
+    // Single screen: magic link landing + 6-digit code field. The code IS the
+    // 2FA via email — no separate password-then-2FA pair, since any flow that
+    // proves email control is already 2FA-grade for first login.
     return `
       <div class="ob-card">
         <div class="ob-icon" style="background:#E8F4FF;color:#2563EB">
           <svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><rect x="2" y="4" width="20" height="16" rx="2"/><path d="m2 7 10 7 10-7"/></svg>
         </div>
-        <div class="ob-title">Check your email</div>
-        <div class="ob-subtitle">We sent a welcome email to <strong>${this._email}</strong>. Click the magic link to continue.</div>
-        <div style="text-align:center;margin-bottom:20px">
+        <div class="ob-title">Welcome to Homium</div>
+        <div class="ob-subtitle">We sent a magic link and a 6-digit code to <strong>${this._email}</strong>. Enter the code below to verify.</div>
+        <div style="text-align:center;margin-bottom:18px">
           <div class="ob-email-chip">
             <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="2" y="4" width="20" height="16" rx="2"/><path d="m2 7 10 7 10-7"/></svg>
             ${this._email}
           </div>
-          <div style="font-size:12px;color:var(--color-text-muted)">Check your inbox for an email from <strong>noreply@homium.com</strong></div>
         </div>
-        <button class="ob-btn-primary" onclick="OnboardingFlowView.next()">Open Email &amp; Click Link →</button>
-      </div>`;
-  },
-
-  _renderVerifyEmail() {
-    return `
-      <div class="ob-card">
-        <div class="ob-icon" style="background:#EDE8F0;color:#6B3FA0">
-          <svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><rect x="5" y="2" width="14" height="20" rx="2"/><path d="M9 7h6M9 11h6M9 15h4"/></svg>
-        </div>
-        <div class="ob-title">Verify your email</div>
-        <div class="ob-subtitle">Enter the 6-digit code from your email.</div>
         <div class="ob-code-row" id="ob-code-row">
           ${[1,2,3,4,5,6].map((d, i) => `<input class="ob-code-input" maxlength="1" value="${d}" id="ob-code-${i}"
             oninput="OnboardingFlowView._codeInput(this, ${i})"
             onkeydown="OnboardingFlowView._codeKey(event, ${i})" />`).join('')}
         </div>
-        <button class="ob-btn-primary" onclick="OnboardingFlowView.next()">Verify Email →</button>
+        <button class="ob-btn-primary" onclick="OnboardingFlowView._submitVerifyEmail()">Verify &amp; Continue →</button>
       </div>`;
   },
 
@@ -243,96 +225,76 @@ const OnboardingFlowView = {
       </div>`;
   },
 
-  _renderTwoFA() {
-    return `
-      <div class="ob-card">
-        <div class="ob-icon" style="background:#FEF3C7;color:#D97706">
-          <svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>
-        </div>
-        <div class="ob-title">Set up two-factor auth</div>
-        <div class="ob-subtitle">We sent a verification code to <strong>${this._email}</strong>. Enter it below to enable 2FA.</div>
-        <div style="text-align:center;margin-bottom:16px;font-size:13px;color:var(--color-text-muted)">
-          Code sent to <strong>${this._email}</strong>
-        </div>
-        <div class="ob-code-row">
-          ${[8,4,2,7,1,3].map((d, i) => `<input class="ob-code-input" maxlength="1" value="${d}" id="ob-2fa-${i}"
-            oninput="OnboardingFlowView._codeInput(this, ${i + 10})"
-            onkeydown="OnboardingFlowView._codeKey(event, ${i + 10})" />`).join('')}
-        </div>
-        <button class="ob-btn-primary" onclick="OnboardingFlowView._submitTwoFA()">Verify Code →</button>
-      </div>`;
-  },
-
-  /* ---- Stage B: profile + role/branch ---- */
-  _renderProfile() {
-    const u = this._user() || {};
-    return `
-      <div class="ob-card">
-        <div class="ob-icon" style="background:#E8F4FF;color:#2563EB">
-          <svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><circle cx="12" cy="8" r="4"/><path d="M4 20c0-4 3.6-7 8-7s8 3 8 7"/></svg>
-        </div>
-        <div class="ob-title">Tell us about yourself</div>
-        <div class="ob-subtitle">A few details we need before you can access the platform.</div>
-        <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:12px">
-          <div>
-            <div class="ob-field-label">First Name</div>
-            <input class="input" id="ob-first" value="${u.firstName || ''}" style="width:100%;box-sizing:border-box" />
-          </div>
-          <div>
-            <div class="ob-field-label">Last Name</div>
-            <input class="input" id="ob-last" value="${u.lastName || ''}" style="width:100%;box-sizing:border-box" />
-          </div>
-        </div>
-        <div style="margin-bottom:12px">
-          <div class="ob-field-label">Phone</div>
-          <input class="input" id="ob-phone" value="${u.phone || ''}" placeholder="e.g. (202) 555-0123" style="width:100%;box-sizing:border-box" />
-        </div>
-        <div style="margin-bottom:20px">
-          <div class="ob-field-label">Title</div>
-          <input class="input" id="ob-title" value="${u.title || ''}" placeholder="e.g. Senior Loan Officer" style="width:100%;box-sizing:border-box" />
-        </div>
-        <button class="ob-btn-primary" onclick="OnboardingFlowView._submitProfile()">Continue →</button>
-      </div>`;
-  },
-
-  _renderRoleBranch() {
+  /* ---- Stage B: unified profile (name, role, branch, NMLS, phone, title) ---- */
+  _renderUnifiedProfile() {
     const u = this._user() || {};
     const isLO = this._isLO();
     const companyId = u.companyId;
     const branches = companyId ? State.getBranchesByCompany(companyId) : [];
     return `
-      <div class="ob-card">
-        <div class="ob-icon" style="background:#E8F0EB;color:var(--color-primary)">
-          <svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><rect x="3" y="3" width="18" height="18" rx="2"/><path d="M3 9h18M9 21V9"/></svg>
+      <div class="ob-card" style="max-width:520px">
+        <div class="ob-icon" style="background:#E8F4FF;color:#2563EB">
+          <svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><circle cx="12" cy="8" r="4"/><path d="M4 20c0-4 3.6-7 8-7s8 3 8 7"/></svg>
         </div>
-        <div class="ob-title">Your role</div>
-        <div class="ob-subtitle">Choose how you'll work in the platform. Loan Officers go through additional verification.</div>
+        <div class="ob-title">Set up your profile</div>
+        <div class="ob-subtitle">Confirm or fill in the details below. Anything pre-filled was provided by your program admin.</div>
+
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:12px">
+          <div>
+            <div class="ob-field-label">First Name *</div>
+            <input class="input" id="ob-first" value="${u.firstName || ''}" style="width:100%;box-sizing:border-box" />
+          </div>
+          <div>
+            <div class="ob-field-label">Last Name *</div>
+            <input class="input" id="ob-last" value="${u.lastName || ''}" style="width:100%;box-sizing:border-box" />
+          </div>
+        </div>
+
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:12px">
+          <div>
+            <div class="ob-field-label">Phone *</div>
+            <input class="input" id="ob-phone" value="${u.phone || ''}" placeholder="(202) 555-0123" style="width:100%;box-sizing:border-box" />
+          </div>
+          <div>
+            <div class="ob-field-label">Title</div>
+            <input class="input" id="ob-title" value="${u.title || ''}" placeholder="Senior Loan Officer" style="width:100%;box-sizing:border-box" />
+          </div>
+        </div>
+
+        <div class="ob-field-label" style="margin-top:6px">Role *</div>
         <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:14px">
-          <label style="display:flex;align-items:flex-start;gap:8px;padding:12px 14px;border:2px solid ${isLO ? 'var(--color-primary)' : 'var(--color-border)'};border-radius:8px;cursor:pointer;background:${isLO ? 'rgba(29,61,42,0.04)' : 'var(--color-card)'}">
+          <label style="display:flex;align-items:flex-start;gap:8px;padding:10px 12px;border:2px solid ${isLO ? 'var(--color-primary)' : 'var(--color-border)'};border-radius:8px;cursor:pointer;background:${isLO ? 'rgba(29,61,42,0.04)' : 'var(--color-card)'}">
             <input type="radio" name="ob-role" value="lo" ${isLO ? 'checked' : ''} onchange="OnboardingFlowView._setRole('lo')" style="margin-top:2px">
             <div>
               <div style="font-size:13px;font-weight:600">Loan Officer</div>
-              <div style="font-size:11px;color:var(--color-text-muted);margin-top:2px">Originates applications. Requires NMLS license.</div>
+              <div style="font-size:11px;color:var(--color-text-muted);margin-top:2px">Originates applications. NMLS + KYC required.</div>
             </div>
           </label>
-          <label style="display:flex;align-items:flex-start;gap:8px;padding:12px 14px;border:2px solid ${!isLO ? 'var(--color-primary)' : 'var(--color-border)'};border-radius:8px;cursor:pointer;background:${!isLO ? 'rgba(29,61,42,0.04)' : 'var(--color-card)'}">
+          <label style="display:flex;align-items:flex-start;gap:8px;padding:10px 12px;border:2px solid ${!isLO ? 'var(--color-primary)' : 'var(--color-border)'};border-radius:8px;cursor:pointer;background:${!isLO ? 'rgba(29,61,42,0.04)' : 'var(--color-card)'}">
             <input type="radio" name="ob-role" value="standard" ${!isLO ? 'checked' : ''} onchange="OnboardingFlowView._setRole('standard')" style="margin-top:2px">
             <div>
               <div style="font-size:13px;font-weight:600">Standard User</div>
-              <div style="font-size:11px;color:var(--color-text-muted);margin-top:2px">Loan Processor, Branch Support, etc. No NMLS required.</div>
+              <div style="font-size:11px;color:var(--color-text-muted);margin-top:2px">Loan Processor, Branch Support. No NMLS / KYC.</div>
             </div>
           </label>
         </div>
-        ${isLO && branches.length ? `
-        <div style="margin-bottom:18px">
-          <div class="ob-field-label">Branch</div>
-          <select class="select-input" id="ob-branch" style="width:100%;box-sizing:border-box">
-            <option value="">— No branch yet —</option>
+
+        ${isLO ? `
+        <div style="margin-bottom:14px">
+          <div class="ob-field-label">Branch ${branches.length ? '*' : ''}</div>
+          <select class="select-input" id="ob-branch" style="width:100%;box-sizing:border-box" ${branches.length === 0 ? 'disabled' : ''}>
+            <option value="">${branches.length ? '— Select branch —' : 'No branches available'}</option>
             ${branches.map(b => `<option value="${b.id}" ${this._branchId === b.id ? 'selected' : ''}>${b.name}</option>`).join('')}
           </select>
-          <div class="form-hint" style="font-size:11px;margin-top:4px">If unsure, leave blank. You can be assigned to a branch later.</div>
-        </div>` : ''}
-        <button class="ob-btn-primary" onclick="OnboardingFlowView._submitRoleBranch()">Continue →</button>
+        </div>
+
+        <div style="margin-bottom:20px">
+          <div class="ob-field-label">NMLS ID *</div>
+          <input class="input" id="ob-nmls" value="${this._pendingNmlsId}" placeholder="e.g. 3256789" style="width:100%;box-sizing:border-box;font-family:'JetBrains Mono', monospace" />
+          <div class="form-hint" style="font-size:11px;margin-top:6px">We'll verify this with NMLS in the next step.</div>
+        </div>` : '<div style="margin-bottom:20px"></div>'}
+
+        <button class="ob-btn-primary" onclick="OnboardingFlowView._submitUnifiedProfile()">${isLO ? 'Submit & Verify NMLS →' : 'Submit & Enter Platform →'}</button>
       </div>`;
   },
 
@@ -381,24 +343,7 @@ const OnboardingFlowView = {
       </div>`;
   },
 
-  /* ---- Stage D: NMLS ---- */
-  _renderNmlsIntro() {
-    return `
-      <div class="ob-card">
-        <div class="ob-icon" style="background:#FEF3C7;color:#D97706">
-          <svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M12 2 4 6v6c0 5 3.5 9 8 10 4.5-1 8-5 8-10V6l-8-4z"/></svg>
-        </div>
-        <div class="ob-title">Link your NMLS license</div>
-        <div class="ob-subtitle">As a Loan Officer, we verify your NMLS record before you can originate.</div>
-        <div style="margin-bottom:16px">
-          <div class="ob-field-label">NMLS ID</div>
-          <input class="input" id="ob-nmls" value="${this._pendingNmlsId}" placeholder="e.g. 3256789" style="width:100%;box-sizing:border-box;font-family:'JetBrains Mono', monospace" />
-          <div class="form-hint" style="font-size:11px;margin-top:6px">We pull your authorized branches and state licenses straight from NMLS.</div>
-        </div>
-        <button class="ob-btn-primary" onclick="OnboardingFlowView._submitNmls()">Link my NMLS license →</button>
-      </div>`;
-  },
-
+  /* ---- Stage C: NMLS verification (LO only) ---- */
   _renderNmlsLoading() {
     return this._renderLoadingCard({
       vendor: 'NMLS',
@@ -620,72 +565,86 @@ const OnboardingFlowView = {
   },
 
   /* ---- Submit handlers ---- */
+  /* Verify-email is the magic-link 2FA via email — collapses the old
+     welcome+verify+2FA triple into one screen. We jump status straight
+     to 2fa_complete since this single proof of email control covers both. */
+  _submitVerifyEmail() {
+    if (this._userId) State.updateUser(this._userId, { onboardingStatus: '2fa_complete' });
+    this.next();
+  },
+
   _submitPassword() {
     const checked = document.getElementById('ob-tos-check');
     if (checked && !checked.checked) {
       checked.style.outline = '2px solid var(--color-danger)';
       return;
     }
-    if (this._userId) State.advanceOnboarding(this._userId); // → email_verified
     this.next();
   },
 
-  _submitTwoFA() {
-    if (this._userId) {
-      State.advanceOnboarding(this._userId); // → 2fa_complete
-    }
-    this.next();
+  /* Switching role re-renders so the LO-only fields (branch + NMLS) appear/hide. */
+  _setRole(value) {
+    this._role = value === 'lo' ? 'lo' : 'lp';
+    // Persist tentatively so _isLO() reads the new value before the form is submitted
+    if (this._userId) State.updateUser(this._userId, { role: this._role });
+    this._render();
   },
 
-  _submitProfile() {
+  /* One submit covers everything on the unified profile screen:
+     identity + role + branch (if LO) + NMLS (if LO). */
+  _submitUnifiedProfile() {
     if (!this._userId) { this.next(); return; }
     const firstName = document.getElementById('ob-first')?.value.trim();
     const lastName  = document.getElementById('ob-last')?.value.trim();
     const phone     = document.getElementById('ob-phone')?.value.trim();
-    const title     = document.getElementById('ob-title')?.value.trim();
+    const title     = document.getElementById('ob-title')?.value.trim() || '';
     if (!firstName || !lastName || !phone) {
       alert('Please fill in your name and phone.');
       return;
     }
-    State.updateUser(this._userId, { firstName, lastName, phone, title });
-    this.next();
-  },
 
-  _setRole(value) {
-    this._role = value === 'lo' ? 'lo' : 'lp';
-    this._render();
-  },
-
-  _submitRoleBranch() {
-    if (!this._userId) { this.next(); return; }
     const isLO = this._isLO();
-    const branchSel = document.getElementById('ob-branch');
-    const branchId = branchSel?.value || null;
-    this._branchId = branchId;
-    const u = this._user();
-    const companyId = u?.companyId;
     const role = isLO ? 'lo' : 'lp';
+    let branchId = null;
+    let nmlsId = '';
+    if (isLO) {
+      const branchSel = document.getElementById('ob-branch');
+      branchId = branchSel?.value || null;
+      const branches = State.getBranchesByCompany(this._user()?.companyId || '');
+      if (branches.length && !branchId) {
+        alert('Loan Officers must select a branch.');
+        return;
+      }
+      nmlsId = document.getElementById('ob-nmls')?.value.trim() || '';
+      if (!nmlsId) {
+        alert('Loan Officers must provide an NMLS ID. We\'ll verify it next.');
+        return;
+      }
+      this._branchId = branchId;
+      this._pendingNmlsId = nmlsId;
+    }
 
-    const branchAssignments = branchId ? [{
+    const branchAssignments = (isLO && branchId) ? [{
       branchId,
-      userType: isLO ? 'lo' : 'standard',
+      userType: 'lo',
       flags: { branchManager: false },
-      loAssignments: isLO
-        ? [{ scope: 'personal', loIds: [], level: 'full', subflags: { canCreate: true, canSubmit: true, canWithdraw: true } }]
-        : [{ scope: 'all_los', loIds: [], level: 'view', subflags: {} }],
-      allowNewOriginations: isLO,
+      loAssignments: [{ scope: 'personal', loIds: [], level: 'full', subflags: { canCreate: true, canSubmit: true, canWithdraw: true } }],
+      allowNewOriginations: true,
       allowAccessToAllBranchActivity: false,
       eligibleLoanProductIds: [],
     }] : [];
 
-    State.updateUser(this._userId, { role, branchId, branchAssignments });
-    this.next();
-  },
+    State.updateUser(this._userId, {
+      firstName, lastName, phone, title, role,
+      ...(branchId ? { branchId } : {}),
+      ...(branchAssignments.length ? { branchAssignments } : {}),
+      ...(nmlsId ? {
+        nmlsId,
+        agentNmlsId: nmlsId,
+        nmlsLink: { ...(this._user()?.nmlsLink || {}), nmlsId, status: 'not_linked' },
+      } : {}),
+    });
 
-  _submitNmls() {
-    const v = document.getElementById('ob-nmls')?.value.trim() || '';
-    if (!v) { alert('Please enter an NMLS ID.'); return; }
-    this._pendingNmlsId = v;
     this.next();
   },
 
