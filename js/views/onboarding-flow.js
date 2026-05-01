@@ -50,6 +50,15 @@ const OnboardingFlowView = {
     return false;
   },
 
+  /* KYC (Securitize) is required only for Loan Officers and investors.
+     OC-side standard users (loan processors, branch support, prog admins)
+     and platform staff (sys_admin, operator) skip the KYC stage entirely. */
+  _needsKyc() {
+    const u = this._user();
+    const role = u?.role || this._role;
+    return this._isLO() || role === 'investor';
+  },
+
   /* ---- Step graph ----
      Returns the active step IDs based on the user's current credential state.
      Steps already passed are skipped (idempotent — wizard can resume). */
@@ -76,8 +85,8 @@ const OnboardingFlowView = {
     if (!profileComplete)                      steps.push('profile');
     if (!roleBranchSet)                        steps.push('role-branch');
 
-    // Stage C — KYC (all users)
-    if (!kycDone) {
+    // Stage C — KYC (LO + investor only; standard / processor / admin skip)
+    if (this._needsKyc() && !kycDone) {
       steps.push('kyc-intro');
       steps.push('kyc-loading');
       steps.push('kyc-success');
@@ -727,7 +736,7 @@ const OnboardingFlowView = {
   _skipAll() {
     if (this._userId) {
       // Apply all credential effects so the demo lands in a fully verified state
-      State.setKycVerified(this._userId);
+      if (this._needsKyc()) State.setKycVerified(this._userId);
       if (this._isLO()) {
         State.setNmlsLinkVerified(this._userId, this._pendingNmlsId || '3256789');
         // Force branch authorization for whichever branch is selected

@@ -266,11 +266,13 @@ const ProfileView = {
     const link = u.nmlsLink || State.getNmlsLink(u.id);
     const isLO = u.role === 'lo' || (u.branchAssignments || []).some(a => a.userType === 'lo');
     const isSelf = State.getCurrentUser()?.id === u.id;
+    // KYC is required only for LOs and investors. OC standard users + platform staff skip it.
+    const needsKyc = isLO || u.role === 'investor';
 
-    const chip = ({ ok, pending, label, sub }) => {
-      const bg = ok ? '#DCFCE7' : pending ? '#FEF3C7' : '#F3F4F6';
-      const fg = ok ? '#166534' : pending ? '#8A5A00' : 'var(--color-text-muted)';
-      const icon = ok ? '✓' : pending ? '⏳' : '—';
+    const chip = ({ ok, pending, label, sub, muted }) => {
+      const bg = muted ? '#F3F4F6' : ok ? '#DCFCE7' : pending ? '#FEF3C7' : '#F3F4F6';
+      const fg = muted ? 'var(--color-text-muted)' : ok ? '#166534' : pending ? '#8A5A00' : 'var(--color-text-muted)';
+      const icon = muted ? '–' : ok ? '✓' : pending ? '⏳' : '—';
       return `
         <div style="display:inline-flex;flex-direction:column;gap:2px;padding:8px 12px;border-radius:8px;background:${bg};color:${fg};min-width:180px">
           <div style="font-size:11px;font-weight:700;letter-spacing:.04em;text-transform:uppercase;display:flex;align-items:center;gap:6px">${icon} ${label}</div>
@@ -278,13 +280,17 @@ const ProfileView = {
         </div>`;
     };
 
-    const kycChip = chip({
+    const kycChip = needsKyc ? chip({
       ok: kyc.status === 'verified',
       pending: kyc.status === 'pending',
       label: 'Identity (KYC)',
       sub: kyc.status === 'verified'
         ? `Securitize · ${kyc.referenceId || 'verified'}`
         : kyc.status === 'pending' ? 'Verification in progress' : 'Not started',
+    }) : chip({
+      muted: true,
+      label: 'Identity (KYC)',
+      sub: 'Not required for this user type',
     });
 
     const nmlsChip = chip({
