@@ -1,0 +1,542 @@
+
+<style>
+*{box-sizing:border-box;margin:0;padding:0}
+body{font-family:var(--font-sans);font-size:14px;color:var(--color-text-primary)}
+.app{display:flex;height:640px;border:0.5px solid var(--color-border-tertiary);border-radius:var(--border-radius-lg);overflow:hidden}
+.sidebar{width:160px;min-width:160px;border-right:0.5px solid var(--color-border-tertiary);background:var(--color-background-secondary);display:flex;flex-direction:column}
+.sidebar-top{padding:12px;border-bottom:0.5px solid var(--color-border-tertiary)}
+.nav-item{padding:9px 16px;cursor:pointer;font-size:13px;color:var(--color-text-secondary);border-left:2px solid transparent}
+.nav-item:hover{background:var(--color-background-primary);color:var(--color-text-primary)}
+.nav-item.active{color:var(--color-text-primary);font-weight:500;border-left-color:#7F77DD;background:var(--color-background-primary)}
+.main{flex:1;overflow-y:auto;display:flex;flex-direction:column}
+.topbar{border-bottom:0.5px solid var(--color-border-tertiary);padding:10px 16px;min-height:42px;background:var(--color-background-primary)}
+.breadcrumb{font-size:12px;display:flex;align-items:center;gap:4px}
+.breadcrumb a{color:var(--color-text-info);cursor:pointer}
+.breadcrumb a:hover{text-decoration:underline}
+.breadcrumb span{color:var(--color-text-secondary)}
+.sep{color:var(--color-text-tertiary)}
+.content{flex:1;padding:16px}
+.page-header{display:flex;justify-content:space-between;align-items:center;margin-bottom:16px}
+.page-title{font-size:16px;font-weight:500}
+.btn{padding:5px 12px;border:0.5px solid var(--color-border-secondary);border-radius:var(--border-radius-md);cursor:pointer;font-size:12px;background:var(--color-background-primary);color:var(--color-text-primary)}
+.btn:hover{background:var(--color-background-secondary)}
+.btn-primary{background:#7F77DD;color:#fff;border-color:#7F77DD}
+.btn-primary:hover{background:#534AB7;border-color:#534AB7}
+.btn-sm{padding:3px 8px;font-size:11px}
+.btn-link{background:none;border:none;color:var(--color-text-info);cursor:pointer;font-size:11px;padding:0}
+.btn-link:hover{text-decoration:underline}
+.tabs{display:flex;border-bottom:0.5px solid var(--color-border-tertiary);margin-bottom:16px;flex-wrap:wrap}
+.tab{padding:6px 14px;font-size:13px;cursor:pointer;color:var(--color-text-secondary);border-bottom:2px solid transparent;margin-bottom:-0.5px}
+.tab:hover{color:var(--color-text-primary)}
+.tab.active{color:#534AB7;border-bottom-color:#7F77DD;font-weight:500}
+.table{width:100%;border-collapse:collapse;font-size:13px}
+.table th{text-align:left;font-weight:500;font-size:11px;color:var(--color-text-tertiary);padding:6px 8px;border-bottom:0.5px solid var(--color-border-tertiary);text-transform:uppercase;letter-spacing:.04em}
+.table td{padding:8px;border-bottom:0.5px solid var(--color-border-tertiary);vertical-align:middle}
+.table tr:last-child td{border-bottom:none}
+.table tr:hover td{background:var(--color-background-secondary)}
+.table td a,.link{color:var(--color-text-info);cursor:pointer}
+.badge{display:inline-block;padding:2px 7px;border-radius:99px;font-size:11px;font-weight:500}
+.badge-green{background:#EAF3DE;color:#3B6D11}
+.badge-gray{background:var(--color-background-secondary);color:var(--color-text-secondary)}
+.badge-blue{background:#E6F1FB;color:#185FA5}
+.badge-amber{background:#FAEEDA;color:#854F0B}
+.form-grid{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+.form-full{grid-column:1/-1}
+.field{display:flex;flex-direction:column;gap:4px}
+.field label{font-size:11px;font-weight:500;color:var(--color-text-secondary);text-transform:uppercase;letter-spacing:.04em}
+.field input,.field select{padding:6px 8px;border:0.5px solid var(--color-border-secondary);border-radius:var(--border-radius-md);font-size:13px;background:var(--color-background-primary);color:var(--color-text-primary)}
+.field input[readonly]{background:var(--color-background-secondary);color:var(--color-text-secondary)}
+.section-card{border:0.5px solid var(--color-border-tertiary);border-radius:var(--border-radius-md);margin-bottom:12px;overflow:hidden}
+.section-head{padding:8px 12px;background:var(--color-background-secondary);font-size:12px;font-weight:500;color:var(--color-text-secondary);border-bottom:0.5px solid var(--color-border-tertiary);display:flex;justify-content:space-between;align-items:center}
+.section-body{padding:12px}
+.info-row{display:flex;gap:24px;font-size:12px;color:var(--color-text-secondary);padding:8px 0;border-bottom:0.5px solid var(--color-border-tertiary);margin-bottom:12px;flex-wrap:wrap}
+.info-row .val{font-weight:500;color:var(--color-text-primary)}
+.chip{display:inline-block;padding:2px 8px;border:0.5px solid var(--color-border-secondary);border-radius:4px;font-size:11px;margin:2px}
+.state-grid{display:flex;flex-wrap:wrap;gap:4px;padding:4px 0}
+.state-chip{padding:3px 8px;border:0.5px solid var(--color-border-secondary);border-radius:4px;font-size:11px;cursor:default;color:var(--color-text-tertiary);background:var(--color-background-secondary)}
+.state-chip.available{cursor:pointer;color:var(--color-text-secondary);background:var(--color-background-primary)}
+.state-chip.sel{background:#EEEDFE;border-color:#7F77DD;color:#3C3489;cursor:pointer}
+.prog-row{display:flex;align-items:center;gap:10px;padding:7px 0;border-bottom:0.5px solid var(--color-border-tertiary)}
+.prog-row:last-child{border-bottom:none}
+.prog-row input[type=checkbox]{width:14px;height:14px;accent-color:#7F77DD}
+.prog-name{font-size:13px}
+.prog-abbr-tag{font-size:10px;font-family:var(--font-mono);color:var(--color-text-tertiary);margin-left:auto;padding:1px 5px;border:0.5px solid var(--color-border-tertiary);border-radius:3px}
+.prog-locked{font-size:11px;color:var(--color-text-tertiary);margin-left:auto;font-style:italic}
+.add-user-panel{border:0.5px solid var(--color-border-secondary);border-radius:var(--border-radius-md);padding:12px;margin-top:10px;background:var(--color-background-secondary)}
+.add-user-opts{display:flex;gap:8px;margin-bottom:12px}
+.opt-btn{flex:1;padding:8px 12px;border:0.5px solid var(--color-border-secondary);border-radius:var(--border-radius-md);cursor:pointer;font-size:12px;background:var(--color-background-primary);color:var(--color-text-secondary);text-align:center}
+.opt-btn.active{border-color:#7F77DD;color:#534AB7;background:#EEEDFE}
+.lic-table{width:100%;border-collapse:collapse;font-size:12px}
+.lic-table th{text-align:left;padding:5px 8px;border-bottom:0.5px solid var(--color-border-tertiary);font-weight:500;font-size:11px;color:var(--color-text-tertiary);text-transform:uppercase;letter-spacing:.04em;white-space:nowrap}
+.lic-table td{padding:7px 8px;border-bottom:0.5px solid var(--color-border-tertiary);vertical-align:top;font-size:12px}
+.lic-detail-row td{background:var(--color-background-secondary);padding:8px 12px}
+.lic-detail-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:8px 16px;font-size:11px}
+.lic-detail-grid .lbl{color:var(--color-text-tertiary);margin-bottom:2px}
+.lic-detail-grid .val{font-weight:500;color:var(--color-text-primary)}
+.lic-sub{margin-top:8px;padding-top:8px;border-top:0.5px solid var(--color-border-tertiary)}
+.empty-state{padding:24px;text-align:center;color:var(--color-text-tertiary);font-size:12px;border:0.5px dashed var(--color-border-tertiary);border-radius:var(--border-radius-md)}
+/* permissions matrix */
+.pm-wrap{overflow-x:auto}
+.pm-table{width:100%;border-collapse:collapse;font-size:12px;min-width:480px}
+.pm-table th{text-align:left;padding:6px 10px;border-bottom:0.5px solid var(--color-border-tertiary);font-weight:500;font-size:11px;color:var(--color-text-tertiary);text-transform:uppercase;letter-spacing:.04em;white-space:nowrap;background:var(--color-background-secondary)}
+.pm-table th.center,.pm-table td.center{text-align:center}
+.pm-table td{padding:7px 10px;border-bottom:0.5px solid var(--color-border-tertiary);vertical-align:middle}
+.pm-table tbody tr:last-child td{border-bottom:none}
+.pm-table tbody tr:hover td{background:var(--color-background-secondary)}
+.pm-select{font-size:11px;padding:3px 6px;border:0.5px solid var(--color-border-secondary);border-radius:4px;background:var(--color-background-primary);color:var(--color-text-primary);cursor:pointer;width:110px}
+.pm-select.full{border-color:#7F77DD;color:#3C3489;background:#EEEDFE}
+.pm-select.edit{border-color:#185FA5;color:#185FA5;background:#E6F1FB}
+.pm-select.view{border-color:var(--color-border-secondary);color:var(--color-text-secondary)}
+.pm-select.none{border-color:var(--color-border-tertiary);color:var(--color-text-tertiary)}
+.pm-check{width:14px;height:14px;accent-color:#7F77DD;cursor:pointer;display:block;margin:0 auto}
+.pm-dash{color:var(--color-text-tertiary);display:block;text-align:center}
+.access-legend{display:flex;gap:12px;margin-bottom:10px;flex-wrap:wrap}
+.legend-item{display:flex;align-items:center;gap:4px;font-size:11px;color:var(--color-text-secondary)}
+.legend-dot{width:8px;height:8px;border-radius:2px;flex-shrink:0}
+.lo-accordion{border-top:0.5px solid var(--color-border-tertiary)}
+.lo-acc-head{padding:9px 12px;cursor:pointer;display:flex;justify-content:space-between;align-items:center;background:var(--color-background-primary)}
+.lo-acc-head:hover{background:var(--color-background-secondary)}
+.lo-acc-head .lo-name{font-size:13px;font-weight:500}
+.lo-acc-head .lo-meta{font-size:11px;color:var(--color-text-tertiary);margin-left:8px}
+.lo-acc-head .caret{font-size:11px;color:var(--color-text-tertiary)}
+.lo-acc-body{border-top:0.5px solid var(--color-border-tertiary);background:var(--color-background-secondary)}
+.lo-acc-body.collapsed{display:none}
+.role-pill{display:inline-block;font-size:10px;padding:1px 5px;border-radius:3px;font-weight:500;vertical-align:middle;margin-left:4px}
+.rp-lo{background:#E6F1FB;color:#185FA5}
+.rp-mgr{background:#FAEEDA;color:#854F0B}
+.rp-proc{background:var(--color-background-secondary);color:var(--color-text-secondary);border:0.5px solid var(--color-border-secondary)}
+</style>
+
+<h2 class="sr-only">RBAC management wireframe — companies, branches, and users</h2>
+
+<div class="app">
+  <div class="sidebar">
+    <div class="sidebar-top"><div style="font-size:12px;font-weight:500;color:var(--color-text-secondary)">Admin Console</div></div>
+    <div style="padding:8px 0">
+      <div class="nav-item" onclick="show('co-list','co')">Companies</div>
+      <div class="nav-item active" onclick="show('br-list','br')">Branches</div>
+      <div class="nav-item" onclick="show('u-list','u')">Users</div>
+    </div>
+  </div>
+  <div class="main" id="main"></div>
+</div>
+
+<script>
+const PROGRAMS=[{id:'udf',name:'Utah Dream Fund',abbr:'UDF'},{id:'ddf',name:'Detroit Dream Fund',abbr:'DDF'},{id:'dcdf',name:'DC Dream Fund',abbr:'DCDF'},{id:'kef',name:"Kentucky Employees Fund",abbr:'KEF'}];
+const US_STATES=['AL','AK','AZ','AR','CA','CO','CT','DE','FL','GA','HI','ID','IL','IN','IA','KS','KY','LA','ME','MD','MA','MI','MN','MS','MO','MT','NE','NV','NH','NJ','NM','NY','NC','ND','OH','OK','OR','PA','RI','SC','SD','TN','TX','UT','VT','VA','WA','WV','WI','WY'];
+const SAMPLE_USERS=['Jordan Lee','Maria Santos','Alex Kim','Chris Patel','Sam Rivera','Dana Park'];
+const APEX_STATES=['CA','OR','WA','NV','AZ'];
+const APEX_PROGRAMS=['udf','dcdf'];
+const BRANCH_STATES=['CA','OR'];
+const BRANCH_PROGRAMS=['udf'];
+let currentSection='br';
+
+function stateGrid(id,available,selected,editable){
+  const el=document.getElementById(id);if(!el)return;el.innerHTML='';
+  US_STATES.forEach(s=>{
+    const avail=available.includes(s),sel=selected.includes(s);
+    const c=document.createElement('div');
+    c.className='state-chip'+(sel?' sel':avail?' available':'');
+    c.textContent=s;
+    if(editable&&avail)c.onclick=()=>c.classList.toggle('sel');
+    el.appendChild(c);
+  });
+}
+function progList(id,available,selected,editable){
+  const el=document.getElementById(id);if(!el)return;el.innerHTML='';
+  PROGRAMS.forEach(p=>{
+    const avail=available.includes(p.id),sel=selected.includes(p.id);
+    const row=document.createElement('div');row.className='prog-row';
+    const cb=document.createElement('input');cb.type='checkbox';cb.checked=sel;cb.disabled=!editable||!avail;
+    const nm=document.createElement('span');nm.className='prog-name';nm.textContent=p.name;
+    const tag=document.createElement('span');
+    if(!avail){tag.className='prog-locked';tag.textContent='not enabled at company';}
+    else{tag.className='prog-abbr-tag';tag.textContent=p.abbr;}
+    row.appendChild(cb);row.appendChild(nm);row.appendChild(tag);el.appendChild(row);
+  });
+}
+function userSelect(id){
+  const el=document.getElementById(id);if(!el)return;
+  el.innerHTML='<option>— select user —</option>'+SAMPLE_USERS.map(u=>`<option>${u}</option>`).join('');
+}
+function setNav(s){
+  currentSection=s;
+  document.querySelectorAll('.nav-item').forEach((n,i)=>n.classList.toggle('active',['co','br','u'][i]===s));
+}
+function setTab(el,page,tab){
+  el.parentElement.querySelectorAll('.tab').forEach(t=>t.classList.remove('active'));
+  el.classList.add('active');
+  document.querySelectorAll('[data-tab-page="'+page+'"]').forEach(e=>e.style.display='none');
+  const t=document.querySelector('[data-tab-page="'+page+'"][data-tab="'+tab+'"]');
+  if(t)t.style.display='';
+  postTabInit(page,tab);
+}
+function postTabInit(page,tab){
+  if(page==='co-detail'&&tab==='details'){stateGrid('co-detail-states',US_STATES,APEX_STATES,false);progList('co-detail-progs',PROGRAMS.map(p=>p.id),APEX_PROGRAMS,false);}
+  if(page==='br-detail'&&tab==='mkt')stateGrid('br-mkt-states',APEX_STATES,BRANCH_STATES,true);
+  if(page==='br-detail'&&tab==='progs')progList('br-progs-list',APEX_PROGRAMS,BRANCH_PROGRAMS,true);
+}
+function toggleAddUser(){
+  const p=document.getElementById('add-user-panel');
+  if(p)p.style.display=p.style.display==='none'?'':'none';
+}
+function selectAddMode(mode){
+  document.querySelectorAll('.opt-btn').forEach(b=>b.classList.remove('active'));
+  document.querySelector(`.opt-btn[data-mode="${mode}"]`).classList.add('active');
+  document.getElementById('add-existing-form').style.display=mode==='existing'?'':'none';
+  document.getElementById('add-new-form').style.display=mode==='new'?'':'none';
+}
+function toggleLicRow(id){
+  const el=document.getElementById(id);if(!el)return;
+  const vis=el.style.display!=='none';el.style.display=vis?'none':'';
+  const btn=document.querySelector(`[data-lic-toggle="${id}"]`);
+  if(btn)btn.textContent=vis?'[+] View Details':'[−] Hide Details';
+}
+function toggleLO(id){
+  const body=document.getElementById(id);if(!body)return;
+  const collapsed=body.classList.toggle('collapsed');
+  const caret=document.querySelector(`[data-lo-toggle="${id}"] .caret`);
+  if(caret)caret.textContent=collapsed?'▶':'▼';
+}
+function pmSelectClass(v){return v==='full'?'full':v==='edit'?'edit':v==='view'?'view':'none';}
+function updatePmRow(sel){
+  const row=sel.closest('tr');const level=sel.value;
+  sel.className='pm-select '+pmSelectClass(level);
+  row.querySelectorAll('.subflag').forEach(td=>{
+    if(level==='full'){td.innerHTML='<input type="checkbox" class="pm-check" checked disabled>';}
+    else if(level==='edit'){const was=td.querySelector('input');td.innerHTML=`<input type="checkbox" class="pm-check" ${was&&was.checked?'checked':''}>`;}
+    else{td.innerHTML='<span class="pm-dash">—</span>';}
+  });
+}
+function pmSel(val,uid){
+  const c=pmSelectClass(val);
+  return`<select class="pm-select ${c}" onchange="updatePmRow(this)" id="pm-${uid}">
+    <option value="none" ${val==='none'?'selected':''}>No access</option>
+    <option value="view" ${val==='view'?'selected':''}>View only</option>
+    <option value="edit" ${val==='edit'?'selected':''}>Can edit</option>
+    <option value="full" ${val==='full'?'selected':''}>Full access</option>
+  </select>`;
+}
+function pmRow(user,rolePill,level,flags,uid){
+  const show=level==='edit'||level==='full';
+  const dis=level==='full';
+  return`<tr>
+    <td><span style="font-size:12px">${user}</span>${rolePill?`<span class="role-pill ${rolePill.cls}">${rolePill.label}</span>`:''}</td>
+    <td>${pmSel(level,uid)}</td>
+    <td class="center subflag">${show?`<input type="checkbox" class="pm-check" ${(flags[0]||dis)?'checked':''} ${dis?'disabled':''}>`:'<span class="pm-dash">—</span>'}</td>
+    <td class="center subflag">${show?`<input type="checkbox" class="pm-check" ${(flags[1]||dis)?'checked':''} ${dis?'disabled':''}>`:'<span class="pm-dash">—</span>'}</td>
+    <td class="center subflag">${show?`<input type="checkbox" class="pm-check" ${(flags[2]||dis)?'checked':''} ${dis?'disabled':''}>`:'<span class="pm-dash">—</span>'}</td>
+    <td><button class="btn-link" style="color:var(--color-text-tertiary)">Remove</button></td>
+  </tr>`;
+}
+
+const branchPermsHtml=`
+  <div class="access-legend">
+    <div class="legend-item"><div class="legend-dot" style="background:#EEEDFE;border:0.5px solid #7F77DD"></div>Full access — all edit flags included automatically</div>
+    <div class="legend-item"><div class="legend-dot" style="background:#E6F1FB;border:0.5px solid #185FA5"></div>Can edit — set create / submit / withdraw flags manually</div>
+    <div class="legend-item"><div class="legend-dot" style="background:var(--color-background-secondary);border:0.5px solid var(--color-border-secondary)"></div>View only / No access</div>
+  </div>
+
+  <div class="section-card">
+    <div class="section-head">Branch level permissions <button class="btn btn-sm">+ Add user</button></div>
+    <div class="pm-wrap"><table class="pm-table">
+      <thead><tr><th style="width:170px">User</th><th style="width:120px">Access level</th><th class="center" style="width:80px">Can create</th><th class="center" style="width:80px">Can submit</th><th class="center" style="width:85px">Can withdraw</th><th style="width:60px"></th></tr></thead>
+      <tbody>
+        ${pmRow('Jordan Lee',{cls:'rp-lo',label:'LO'},'full',[true,true,true],'brjordan')}
+        ${pmRow('Sam Rivera',{cls:'rp-lo',label:'LO'},'view',[],'brsam')}
+        ${pmRow('Dana Park',{cls:'rp-mgr',label:'Mgr'},'edit',[true,true,false],'brdana')}
+        ${pmRow('Maria Santos',{cls:'rp-proc',label:'Proc'},'edit',[true,false,true],'brmaria')}
+        ${pmRow('Alex Kim',{cls:'rp-proc',label:'Proc'},'view',[],'bralex')}
+      </tbody>
+    </table></div>
+  </div>
+
+  <div class="section-card">
+    <div class="section-head">Loan officer permissions</div>
+    <div class="lo-accordion">
+
+      <div class="lo-acc-head" data-lo-toggle="lo-jordan" onclick="toggleLO('lo-jordan')">
+        <div style="display:flex;align-items:center"><span class="lo-name">Jordan Lee</span><span class="lo-meta">LO · NMLS NML-44210</span></div>
+        <span class="caret">▼</span>
+      </div>
+      <div class="lo-acc-body" id="lo-jordan">
+        <div style="padding:6px 12px 4px;font-size:11px;color:var(--color-text-tertiary)">Controls what other branch members can do on Jordan Lee's applications</div>
+        <div class="pm-wrap"><table class="pm-table">
+          <thead><tr><th style="width:170px">User</th><th style="width:120px">Access level</th><th class="center" style="width:80px">Can create</th><th class="center" style="width:80px">Can submit</th><th class="center" style="width:85px">Can withdraw</th><th style="width:60px"></th></tr></thead>
+          <tbody>
+            ${pmRow('Sam Rivera',{cls:'rp-lo',label:'LO'},'none',[],'loj-sam')}
+            ${pmRow('Dana Park',{cls:'rp-mgr',label:'Mgr'},'view',[],'loj-dana')}
+            ${pmRow('Maria Santos',{cls:'rp-proc',label:'Proc'},'edit',[true,false,true],'loj-maria')}
+            ${pmRow('Alex Kim',{cls:'rp-proc',label:'Proc'},'view',[],'loj-alex')}
+          </tbody>
+        </table></div>
+        <div style="padding:8px 12px"><button class="btn btn-sm">+ Add user</button></div>
+      </div>
+
+      <div class="lo-acc-head" data-lo-toggle="lo-sam" onclick="toggleLO('lo-sam')">
+        <div style="display:flex;align-items:center"><span class="lo-name">Sam Rivera</span><span class="lo-meta">LO · NMLS NML-55320</span></div>
+        <span class="caret">▶</span>
+      </div>
+      <div class="lo-acc-body collapsed" id="lo-sam">
+        <div style="padding:6px 12px 4px;font-size:11px;color:var(--color-text-tertiary)">Controls what other branch members can do on Sam Rivera's applications</div>
+        <div class="pm-wrap"><table class="pm-table">
+          <thead><tr><th style="width:170px">User</th><th style="width:120px">Access level</th><th class="center" style="width:80px">Can create</th><th class="center" style="width:80px">Can submit</th><th class="center" style="width:85px">Can withdraw</th><th style="width:60px"></th></tr></thead>
+          <tbody>
+            ${pmRow('Jordan Lee',{cls:'rp-lo',label:'LO'},'none',[],'los-jordan')}
+            ${pmRow('Dana Park',{cls:'rp-mgr',label:'Mgr'},'view',[],'los-dana')}
+            ${pmRow('Maria Santos',{cls:'rp-proc',label:'Proc'},'view',[],'los-maria')}
+            ${pmRow('Alex Kim',{cls:'rp-proc',label:'Proc'},'none',[],'los-alex')}
+          </tbody>
+        </table></div>
+        <div style="padding:8px 12px"><button class="btn btn-sm">+ Add user</button></div>
+      </div>
+
+    </div>
+  </div>
+  <div style="display:flex;justify-content:flex-end"><button class="btn btn-primary">Save changes</button></div>
+`;
+
+const pages={
+'co-list':{section:'co',bc:[{label:'Companies',onclick:"show('co-list','co')"},'All companies'],html:`
+  <div class="page-header"><div class="page-title">Companies</div><button class="btn btn-primary" onclick="show('co-new','co')">+ New company</button></div>
+  <table class="table"><thead><tr><th>Company name</th><th>NMLS #</th><th>Enabled programs</th><th>Branches</th><th>Users</th><th>Status</th><th></th></tr></thead>
+  <tbody>
+    <tr><td><a onclick="show('co-detail','co')">Apex Home Finance</a></td><td>123456</td><td style="font-size:11px;font-family:var(--font-mono)">UDF, DCDF</td><td>4</td><td>22</td><td><span class="badge badge-green">Active</span></td><td><button class="btn btn-sm" onclick="show('co-detail','co')">View</button></td></tr>
+    <tr><td><a onclick="show('co-detail','co')">Summit Lending Group</a></td><td>789012</td><td style="font-size:11px;font-family:var(--font-mono)">UDF, DDF, KEF</td><td>2</td><td>11</td><td><span class="badge badge-green">Active</span></td><td><button class="btn btn-sm" onclick="show('co-detail','co')">View</button></td></tr>
+    <tr><td><a onclick="show('co-detail','co')">Riverstone Mortgage</a></td><td>334455</td><td style="font-size:11px;font-family:var(--font-mono)">DCDF</td><td>1</td><td>5</td><td><span class="badge badge-gray">Inactive</span></td><td><button class="btn btn-sm" onclick="show('co-detail','co')">View</button></td></tr>
+  </tbody></table>`},
+
+'co-new':{section:'co',bc:[{label:'Companies',onclick:"show('co-list','co')"},'Create new company'],html:`
+  <div class="page-header"><div class="page-title">Create company</div><div style="display:flex;gap:8px"><button class="btn" onclick="show('co-list','co')">Cancel</button><button class="btn btn-primary">Save</button></div></div>
+  <div class="section-card"><div class="section-head">Headquarters information</div><div class="section-body"><div class="form-grid">
+    <div class="field form-full"><label>Company name</label><input placeholder="From NMLS: Authorized to Represent"></div>
+    <div class="field"><label>Company NMLS #</label><input placeholder="NMLS Company ID"></div>
+    <div class="field"><label>Contact phone</label><input placeholder=""></div>
+    <div class="field"><label>Address 1</label><input placeholder=""></div>
+    <div class="field"><label>Address 2</label><input placeholder=""></div>
+    <div class="field"><label>City</label><input placeholder=""></div>
+    <div class="field"><label>State / State of Inc</label><select><option>— select —</option></select></div>
+    <div class="field"><label>Zip</label><input placeholder=""></div>
+    <div class="field"><label>Website</label><input placeholder=""></div>
+    <div class="field"><label>Program admin</label><select id="co-new-admin"></select></div>
+    <div class="field form-full"><label>CC email addresses</label><input placeholder="Comma-separated"></div>
+  </div></div></div>
+  <div class="section-card"><div class="section-head">Eligible programs</div><div class="section-body"><div id="co-new-progs"></div></div></div>
+  <div class="section-card"><div class="section-head">Market enablements</div><div class="section-body"><div class="state-grid" id="co-new-states"></div></div></div>`},
+
+'co-detail':{section:'co',bc:[{label:'Companies',onclick:"show('co-list','co')"},'Apex Home Finance'],html:`
+  <div class="page-header"><div class="page-title">Apex Home Finance</div><button class="btn">Edit</button></div>
+  <div class="info-row"><div>NMLS # <span class="val">123456</span></div><div>Phone <span class="val">(415) 555-0100</span></div><div>Program admin <span class="val">Jordan Lee</span></div><div>Status <span class="badge badge-green">Active</span></div></div>
+  <div class="tabs"><div class="tab active" onclick="setTab(this,'co-detail','details')">Details</div><div class="tab" onclick="setTab(this,'co-detail','branches')">Branches</div></div>
+  <div data-tab-page="co-detail" data-tab="details">
+    <div class="section-card"><div class="section-head">Headquarters information</div><div class="section-body"><div class="form-grid">
+      <div class="field"><label>Company name</label><input value="Apex Home Finance" readonly></div>
+      <div class="field"><label>Company NMLS #</label><input value="123456" readonly></div>
+      <div class="field"><label>Address 1</label><input value="100 Market St" readonly></div>
+      <div class="field"><label>City / State / Zip</label><input value="San Francisco, CA 94105" readonly></div>
+      <div class="field"><label>Contact phone</label><input value="(415) 555-0100" readonly></div>
+      <div class="field"><label>Website</label><input value="apexhomefinance.com" readonly></div>
+      <div class="field"><label>Program admin</label><input value="Jordan Lee" readonly></div>
+      <div class="field form-full"><label>CC email addresses</label><input value="ops@apexhomefinance.com" readonly></div>
+    </div></div></div>
+    <div class="section-card"><div class="section-head">Eligible programs</div><div class="section-body"><div id="co-detail-progs"></div></div></div>
+    <div class="section-card"><div class="section-head">Market enablements</div><div class="section-body"><div class="state-grid" id="co-detail-states"></div></div></div>
+  </div>
+  <div data-tab-page="co-detail" data-tab="branches" style="display:none">
+    <div class="page-header" style="margin-top:4px"><div style="font-size:13px;color:var(--color-text-secondary)">4 branches</div><button class="btn btn-primary btn-sm" onclick="show('br-new','br')">+ New branch</button></div>
+    <table class="table"><thead><tr><th>Branch name</th><th>NMLS #</th><th>State</th><th>Manager</th><th>Users</th><th></th></tr></thead>
+    <tbody>
+      <tr><td><a onclick="show('br-detail','br')">SF Main</a></td><td>100001</td><td>CA</td><td>Jordan Lee</td><td>8</td><td><button class="btn btn-sm" onclick="show('br-detail','br')">View</button></td></tr>
+      <tr><td><a onclick="show('br-detail','br')">Oakland Branch</a></td><td>100002</td><td>CA</td><td>Maria Santos</td><td>5</td><td><button class="btn btn-sm" onclick="show('br-detail','br')">View</button></td></tr>
+    </tbody></table>
+  </div>`},
+
+'br-list':{section:'br',bc:[{label:'Branches',onclick:"show('br-list','br')"},'All branches'],html:`
+  <div class="page-header"><div class="page-title">Branches — Apex Home Finance</div><button class="btn btn-primary" onclick="show('br-new','br')">+ New branch</button></div>
+  <table class="table"><thead><tr><th>Branch name</th><th>NMLS #</th><th>State</th><th>Manager</th><th>Users</th><th></th></tr></thead>
+  <tbody>
+    <tr><td><a onclick="show('br-detail','br')">SF Main</a></td><td>100001</td><td>CA</td><td>Jordan Lee</td><td>8</td><td><button class="btn btn-sm" onclick="show('br-detail','br')">View</button></td></tr>
+    <tr><td><a onclick="show('br-detail','br')">Oakland Branch</a></td><td>100002</td><td>CA</td><td>Maria Santos</td><td>5</td><td><button class="btn btn-sm" onclick="show('br-detail','br')">View</button></td></tr>
+    <tr><td><a onclick="show('br-detail','br')">San Jose Branch</a></td><td>100003</td><td>CA</td><td>—</td><td>6</td><td><button class="btn btn-sm" onclick="show('br-detail','br')">View</button></td></tr>
+  </tbody></table>`},
+
+'br-new':{section:'br',bc:[{label:'Branches',onclick:"show('br-list','br')"},'Create new branch'],html:`
+  <div class="page-header"><div class="page-title">Create branch</div><div style="display:flex;gap:8px"><button class="btn" onclick="show('br-list','br')">Cancel</button><button class="btn btn-primary">Save</button></div></div>
+  <div class="section-card"><div class="section-head">Branch information</div><div class="section-body"><div class="form-grid">
+    <div class="field"><label>Branch name</label><input placeholder="From NMLS: Office Locations → Company"></div>
+    <div class="field"><label>Branch NMLS #</label><input placeholder="NMLS: Office Locations → NMLS ID"></div>
+    <div class="field"><label>Branch manager</label><select id="br-new-mgr"></select></div>
+    <div class="field"><label>Address 1</label><input placeholder="NMLS: Street Address"></div>
+    <div class="field"><label>Address 2</label><input placeholder=""></div>
+    <div class="field"><label>Suite #</label><input placeholder=""></div>
+    <div class="field"><label>City</label><input placeholder="NMLS: City"></div>
+    <div class="field"><label>State</label><select><option>— select —</option></select></div>
+    <div class="field"><label>Zip</label><input placeholder="NMLS: Zip Code"></div>
+    <div class="field"><label>Contact phone</label><input placeholder=""></div>
+  </div></div></div>
+  <div class="section-card"><div class="section-head">Eligible programs</div><div class="section-body"><div id="br-new-progs"></div></div></div>
+  <div class="section-card"><div class="section-head">Market enablements</div><div class="section-body"><div class="state-grid" id="br-new-states"></div></div></div>`},
+
+'br-detail':{section:'br',bc:[{label:'Branches',onclick:"show('br-list','br')"},'SF Main'],html:`
+  <div class="page-header"><div class="page-title">SF Main</div><button class="btn">Edit</button></div>
+  <div class="info-row"><div>NMLS # <span class="val">100001</span></div><div>State <span class="val">CA</span></div><div>Manager <span class="val">Jordan Lee</span></div></div>
+  <div class="tabs">
+    <div class="tab active" onclick="setTab(this,'br-detail','details')">Details</div>
+    <div class="tab" onclick="setTab(this,'br-detail','users')">Users</div>
+    <div class="tab" onclick="setTab(this,'br-detail','perms')">Permissions</div>
+    <div class="tab" onclick="setTab(this,'br-detail','mkt')">Market enablements</div>
+    <div class="tab" onclick="setTab(this,'br-detail','progs')">Eligible programs</div>
+  </div>
+  <div data-tab-page="br-detail" data-tab="details">
+    <div class="section-card"><div class="section-head">Branch information</div><div class="section-body"><div class="form-grid">
+      <div class="field"><label>Branch name</label><input value="SF Main" readonly></div>
+      <div class="field"><label>Branch NMLS #</label><input value="100001" readonly></div>
+      <div class="field"><label>Branch manager</label><input value="Jordan Lee" readonly></div>
+      <div class="field"><label>Address 1</label><input value="100 Market St" readonly></div>
+      <div class="field"><label>Suite #</label><input value="Suite 400" readonly></div>
+      <div class="field"><label>City</label><input value="San Francisco" readonly></div>
+      <div class="field"><label>State</label><input value="CA" readonly></div>
+      <div class="field"><label>Zip</label><input value="94105" readonly></div>
+      <div class="field"><label>Contact phone</label><input value="(415) 555-0200" readonly></div>
+    </div></div></div>
+  </div>
+  <div data-tab-page="br-detail" data-tab="users" style="display:none">
+    <div class="page-header" style="margin-top:4px"><div style="font-size:13px;color:var(--color-text-secondary)">5 users</div><button class="btn btn-primary btn-sm" onclick="toggleAddUser()">+ Add user</button></div>
+    <div id="add-user-panel" style="display:none">
+      <div class="add-user-panel">
+        <div style="font-size:12px;font-weight:500;margin-bottom:10px;color:var(--color-text-secondary)">Add user to SF Main</div>
+        <div class="add-user-opts">
+          <div class="opt-btn active" data-mode="existing" onclick="selectAddMode('existing')">Add existing user</div>
+          <div class="opt-btn" data-mode="new" onclick="selectAddMode('new')">Create new user</div>
+        </div>
+        <div id="add-existing-form">
+          <div class="field" style="max-width:280px"><label>Select user</label><select id="existing-user-select"></select></div>
+          <div style="margin-top:10px;display:flex;gap:8px"><button class="btn btn-primary btn-sm">Add to branch</button><button class="btn btn-sm" onclick="toggleAddUser()">Cancel</button></div>
+        </div>
+        <div id="add-new-form" style="display:none">
+          <div style="font-size:12px;color:var(--color-text-secondary);margin-bottom:8px">Create a new user and assign them to this branch.</div>
+          <div style="display:flex;gap:8px"><button class="btn btn-primary btn-sm" onclick="show('u-new','u')">Go to create user →</button><button class="btn btn-sm" onclick="toggleAddUser()">Cancel</button></div>
+        </div>
+      </div>
+    </div>
+    <table class="table" style="margin-top:8px"><thead><tr><th>Name</th><th>Role</th><th>Email</th><th>Status</th><th></th></tr></thead>
+    <tbody>
+      <tr><td><a onclick="show('u-detail','u')">Jordan Lee</a></td><td><span class="badge badge-blue">LO</span></td><td>jlee@apex.com</td><td><span class="badge badge-green">Active</span></td><td><button class="btn btn-sm" onclick="show('u-detail','u')">View</button></td></tr>
+      <tr><td><a onclick="show('u-detail','u')">Sam Rivera</a></td><td><span class="badge badge-blue">LO</span></td><td>srivera@apex.com</td><td><span class="badge badge-green">Active</span></td><td><button class="btn btn-sm" onclick="show('u-detail','u')">View</button></td></tr>
+      <tr><td><a onclick="show('u-detail','u')">Dana Park</a></td><td><span class="badge badge-amber">Mgr</span></td><td>dpark@apex.com</td><td><span class="badge badge-green">Active</span></td><td><button class="btn btn-sm" onclick="show('u-detail','u')">View</button></td></tr>
+      <tr><td><a onclick="show('u-detail','u')">Maria Santos</a></td><td><span class="badge badge-gray">Processor</span></td><td>msantos@apex.com</td><td><span class="badge badge-green">Active</span></td><td><button class="btn btn-sm" onclick="show('u-detail','u')">View</button></td></tr>
+      <tr><td><a onclick="show('u-detail','u')">Alex Kim</a></td><td><span class="badge badge-gray">Processor</span></td><td>akim@apex.com</td><td><span class="badge badge-green">Active</span></td><td><button class="btn btn-sm" onclick="show('u-detail','u')">View</button></td></tr>
+    </tbody></table>
+  </div>
+  <div data-tab-page="br-detail" data-tab="perms" style="display:none">${branchPermsHtml}</div>
+  <div data-tab-page="br-detail" data-tab="mkt" style="display:none">
+    <div style="font-size:12px;color:var(--color-text-secondary);margin-bottom:10px">Active states for this branch. Only states enabled at Apex Home Finance are selectable.</div>
+    <div class="state-grid" id="br-mkt-states"></div>
+    <div style="margin-top:12px"><button class="btn btn-primary btn-sm">Save</button></div>
+  </div>
+  <div data-tab-page="br-detail" data-tab="progs" style="display:none">
+    <div style="font-size:12px;color:var(--color-text-secondary);margin-bottom:10px">Programs eligible for this branch. Only programs enabled at Apex Home Finance are selectable.</div>
+    <div id="br-progs-list"></div>
+    <div style="margin-top:12px"><button class="btn btn-primary btn-sm">Save</button></div>
+  </div>`},
+
+'u-list':{section:'u',bc:[{label:'Users',onclick:"show('u-list','u')"},'All users'],html:`
+  <div class="page-header"><div class="page-title">Users</div><button class="btn btn-primary" onclick="show('u-new','u')">+ New user</button></div>
+  <table class="table"><thead><tr><th>Name</th><th>Role</th><th>Company</th><th>Branches</th><th>Status</th><th></th></tr></thead>
+  <tbody>
+    <tr><td><a onclick="show('u-detail','u')">Jordan Lee</a></td><td><span class="badge badge-blue">LO</span></td><td>Apex Home Finance</td><td>SF Main, Oakland</td><td><span class="badge badge-green">Active</span></td><td><button class="btn btn-sm" onclick="show('u-detail','u')">View</button></td></tr>
+    <tr><td><a onclick="show('u-detail','u')">Sam Rivera</a></td><td><span class="badge badge-blue">LO</span></td><td>Apex Home Finance</td><td>SF Main</td><td><span class="badge badge-green">Active</span></td><td><button class="btn btn-sm" onclick="show('u-detail','u')">View</button></td></tr>
+    <tr><td><a onclick="show('u-detail','u')">Dana Park</a></td><td><span class="badge badge-amber">Manager</span></td><td>Apex Home Finance</td><td>SF Main</td><td><span class="badge badge-green">Active</span></td><td><button class="btn btn-sm" onclick="show('u-detail','u')">View</button></td></tr>
+    <tr><td><a onclick="show('u-detail','u')">Maria Santos</a></td><td><span class="badge badge-gray">Processor</span></td><td>Apex Home Finance</td><td>SF Main</td><td><span class="badge badge-green">Active</span></td><td><button class="btn btn-sm" onclick="show('u-detail','u')">View</button></td></tr>
+  </tbody></table>`},
+
+'u-new':{section:'u',bc:[{label:'Users',onclick:"show('u-list','u')"},'Create new user'],html:`
+  <div class="page-header"><div class="page-title">Create user</div><div style="display:flex;gap:8px"><button class="btn" onclick="show('u-list','u')">Cancel</button><button class="btn btn-primary">Save</button></div></div>
+  <div class="section-card"><div class="section-head">User information</div><div class="section-body"><div class="form-grid">
+    <div class="field"><label>First name</label><input placeholder=""></div>
+    <div class="field"><label>Last name</label><input placeholder=""></div>
+    <div class="field form-full"><label>Email</label><input type="email" placeholder=""></div>
+    <div class="field"><label>Role</label><select><option>— select —</option><option>Loan Officer</option><option>Processor</option><option>Manager</option><option>Admin</option></select></div>
+    <div class="field"><label>Managed state</label><select><option>— select —</option></select></div>
+    <div class="field"><label>Account manager</label><select><option>— select —</option></select></div>
+    <div class="field"><label>Timezone</label><select><option>— select —</option></select></div>
+  </div></div></div>
+  <div class="section-card" style="opacity:0.4"><div class="section-head">Loan officer details <span style="font-size:11px;font-weight:400">(visible when Role = LO)</span></div><div class="section-body"><div class="form-grid">
+    <div class="field"><label>Agent NMLS #</label><input placeholder="NMLS: Individual ID"></div>
+    <div class="field"><label>Allow new originations</label><select><option>Yes</option><option>No</option></select></div>
+    <div class="field"><label>Market enablement</label><input placeholder=""></div>
+    <div class="field"><label>Allow access to all branch activity</label><select><option>No</option><option>Yes</option></select></div>
+  </div></div></div>`},
+
+'u-detail':{section:'u',bc:[{label:'Users',onclick:"show('u-list','u')"},'Jordan Lee'],html:`
+  <div class="page-header"><div class="page-title">Jordan Lee</div><button class="btn">Edit</button></div>
+  <div class="info-row"><div>Role <span class="badge badge-blue">LO</span></div><div>NMLS # <span class="val">NML-44210</span></div><div>Timezone <span class="val">PT</span></div><div>Status <span class="badge badge-green">Active</span></div></div>
+  <div class="tabs"><div class="tab active" onclick="setTab(this,'u-detail','details')">Details</div><div class="tab" onclick="setTab(this,'u-detail','branches')">Companies / Branches</div></div>
+  <div data-tab-page="u-detail" data-tab="details">
+    <div class="section-card"><div class="section-head">User information</div><div class="section-body"><div class="form-grid">
+      <div class="field"><label>First name</label><input value="Jordan" readonly></div>
+      <div class="field"><label>Last name</label><input value="Lee" readonly></div>
+      <div class="field"><label>Email</label><input value="jlee@apex.com" readonly></div>
+      <div class="field"><label>Role</label><input value="Loan Officer" readonly></div>
+      <div class="field"><label>Managed state</label><input value="California" readonly></div>
+      <div class="field"><label>Account manager</label><input value="—" readonly></div>
+      <div class="field"><label>Timezone</label><input value="America/Los_Angeles" readonly></div>
+    </div></div></div>
+    <div class="section-card"><div class="section-head">Loan officer details</div><div class="section-body">
+      <div class="form-grid" style="margin-bottom:12px">
+        <div class="field"><label>Agent NMLS #</label><input value="NML-44210" readonly></div>
+        <div class="field"><label>Allow new originations</label><input value="Yes" readonly></div>
+        <div class="field"><label>Market enablement</label><input value="CA, OR, WA" readonly></div>
+        <div class="field"><label>Allow access to all branch activity</label><input value="No" readonly></div>
+      </div>
+      <div style="border-top:0.5px solid var(--color-border-tertiary);padding-top:12px">
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px">
+          <div style="font-size:12px;font-weight:500;color:var(--color-text-secondary)">State licenses / registrations <span style="font-weight:400;color:var(--color-text-tertiary)">(5 Active of 6 Total)</span></div>
+          <div style="display:flex;gap:6px"><button class="btn btn-sm">[+] View all</button><button class="btn btn-primary btn-sm">+ Add license</button></div>
+        </div>
+        <table class="lic-table">
+          <thead><tr><th>Regulator</th><th>Lic/Reg name</th><th>Lic/Reg #</th><th>Status</th><th>Auth. to conduct business</th><th></th></tr></thead>
+          <tbody>
+            <tr><td><a class="link">Arizona</a></td><td>Loan Originator License</td><td>LO-1033086</td><td><span class="badge badge-green">Approved</span></td><td>Yes</td><td><button class="btn-link" data-lic-toggle="lic-az" onclick="toggleLicRow('lic-az')">[−] Hide Details</button></td></tr>
+            <tr id="lic-az" class="lic-detail-row"><td colspan="6"><div class="lic-detail-grid"><div><div class="lbl">Original issue date</div><div class="val">01/19/2022</div></div><div><div class="lbl">Status date</div><div class="val">02/27/2024</div></div><div><div class="lbl">Renewed through</div><div class="val">2026</div></div></div><div class="lic-sub"><div style="font-size:11px;color:var(--color-text-tertiary);margin-bottom:4px">Currently authorized to represent</div><div style="font-size:12px">Company: <a class="link">Guild Mortgage Company LLC</a></div><div style="font-size:12px;color:var(--color-text-secondary);margin-top:2px">NMLS ID: 3274 &nbsp;·&nbsp; Start date: 02/25/2024</div></div></td></tr>
+            <tr><td><a class="link">Arkansas</a></td><td>Mortgage Loan Officer License</td><td>—</td><td><span class="badge badge-green">Approved</span></td><td>Yes</td><td><button class="btn-link" data-lic-toggle="lic-ar" onclick="toggleLicRow('lic-ar')">[+] View Details</button></td></tr>
+            <tr id="lic-ar" style="display:none" class="lic-detail-row"><td colspan="6"><div class="lic-detail-grid"><div><div class="lbl">Original issue date</div><div class="val">—</div></div><div><div class="lbl">Status date</div><div class="val">—</div></div><div><div class="lbl">Renewed through</div><div class="val">—</div></div></div></td></tr>
+            <tr><td><a class="link">Idaho</a></td><td>Mortgage Loan Originator License</td><td>—</td><td><span class="badge badge-green">Approved</span></td><td>Yes</td><td><button class="btn-link" data-lic-toggle="lic-id" onclick="toggleLicRow('lic-id')">[+] View Details</button></td></tr>
+            <tr id="lic-id" style="display:none" class="lic-detail-row"><td colspan="6"><div class="lic-detail-grid"><div><div class="lbl">Original issue date</div><div class="val">—</div></div><div><div class="lbl">Status date</div><div class="val">—</div></div><div><div class="lbl">Renewed through</div><div class="val">—</div></div></div></td></tr>
+            <tr><td><a class="link">Texas - SML</a></td><td>Mortgage Loan Originator</td><td>—</td><td><span class="badge badge-green">Approved</span></td><td>Yes</td><td><button class="btn-link" data-lic-toggle="lic-tx" onclick="toggleLicRow('lic-tx')">[+] View Details</button></td></tr>
+            <tr id="lic-tx" style="display:none" class="lic-detail-row"><td colspan="6"><div class="lic-detail-grid"><div><div class="lbl">Original issue date</div><div class="val">—</div></div><div><div class="lbl">Status date</div><div class="val">—</div></div><div><div class="lbl">Renewed through</div><div class="val">—</div></div></div></td></tr>
+            <tr><td><a class="link">Utah-DRE</a></td><td>Mortgage Loan Originator License</td><td>—</td><td><span class="badge badge-green">Approved</span></td><td>Yes</td><td><button class="btn-link" data-lic-toggle="lic-ut" onclick="toggleLicRow('lic-ut')">[+] View Details</button></td></tr>
+            <tr id="lic-ut" style="display:none" class="lic-detail-row"><td colspan="6"><div class="lic-detail-grid"><div><div class="lbl">Original issue date</div><div class="val">—</div></div><div><div class="lbl">Status date</div><div class="val">—</div></div><div><div class="lbl">Renewed through</div><div class="val">—</div></div></div></td></tr>
+          </tbody>
+        </table>
+      </div>
+    </div></div>
+  </div>
+  <div data-tab-page="u-detail" data-tab="branches" style="display:none">
+    <div style="font-size:12px;color:var(--color-text-secondary);margin-bottom:12px">User can be assigned to multiple branches. Permissions are managed at the branch level.</div>
+    <table class="table"><thead><tr><th>Company</th><th>Branch</th><th>Primary</th><th></th></tr></thead>
+    <tbody>
+      <tr><td>Apex Home Finance</td><td><a onclick="show('br-detail','br')">SF Main</a></td><td><span class="badge badge-green">Yes</span></td><td><button class="btn btn-sm" onclick="show('br-detail','br')">Go to branch permissions →</button></td></tr>
+      <tr><td>Apex Home Finance</td><td><a onclick="show('br-detail','br')">Oakland Branch</a></td><td><span class="badge badge-gray">No</span></td><td><button class="btn btn-sm" onclick="show('br-detail','br')">Go to branch permissions →</button></td></tr>
+    </tbody></table>
+    <button class="btn btn-sm" style="margin-top:10px">+ Assign to branch</button>
+  </div>`}
+};
+
+function show(id,section){
+  const pg=pages[id];if(!pg)return;
+  setNav(section||pg.section||currentSection);
+  const items=pg.bc.map((item,i)=>{
+    if(i===pg.bc.length-1)return`<span>${item.label||item}</span>`;
+    const oc=item.onclick?`onclick="${item.onclick}"`:'';
+    return`<a ${oc}>${item.label||item}</a>`;
+  }).join('<span class="sep"> / </span>');
+  document.getElementById('main').innerHTML=`<div class="topbar"><div class="breadcrumb">${items}</div></div><div class="content">${pg.html}</div>`;
+  if(id==='co-new'){userSelect('co-new-admin');progList('co-new-progs',PROGRAMS.map(p=>p.id),[],true);stateGrid('co-new-states',US_STATES,[],true);}
+  if(id==='co-detail'){stateGrid('co-detail-states',US_STATES,APEX_STATES,false);progList('co-detail-progs',PROGRAMS.map(p=>p.id),APEX_PROGRAMS,false);}
+  if(id==='br-new'){userSelect('br-new-mgr');progList('br-new-progs',APEX_PROGRAMS,[],true);stateGrid('br-new-states',APEX_STATES,[],true);}
+  if(id==='br-detail')userSelect('existing-user-select');
+}
+
+show('br-detail','br');
+</script>

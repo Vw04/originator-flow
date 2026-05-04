@@ -46,9 +46,13 @@ const App = {
     Router.register('/system-config',         (path) => this.renderShell(SystemConfigView.render(path)));
     Router.register('/bulk-invite',           (path) => this.renderShell(BulkInviteView.render(path)));
 
-    // Legacy redirects
+    // Legacy redirects + branch detail
     Router.register('/companies',    () => Router.navigate('/origination-companies', { replace: true }));
-    Router.register('/branches',     () => Router.navigate('/origination-companies', { replace: true }));
+    Router.register('/branches',     (path) => {
+      const segs = path.replace('/branches', '').split('/').filter(Boolean);
+      if (!segs.length) return Router.navigate('/origination-companies', { replace: true });
+      this.renderShell(BranchesView.renderDetailPage(segs[0]));
+    });
     Router.register('/users',        () => Router.navigate('/origination-companies', { replace: true }));
     Router.register('/permissions',  () => Router.navigate('/platform/permissions', { replace: true }));
 

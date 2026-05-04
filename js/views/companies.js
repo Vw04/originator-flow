@@ -7,6 +7,7 @@ const CompaniesView = {
   _filter: { search: '', status: '' },
   _sort: { col: null, dir: 'asc' },
   _clickMode: 'panel',  // 'panel' (side panel) | 'navigate' (drill-down)
+  _headless: false,     // true → omit own page-header (used when embedded under a hub)
 
   setSort(col) {
     if (this._sort.col === col) {
@@ -90,7 +91,7 @@ const CompaniesView = {
         </tr>`;
     }).join('');
 
-    return `
+    const header = this._headless ? '' : `
       <div class="page-header">
         <div class="page-header-inner">
           <div class="page-header-left">
@@ -102,9 +103,14 @@ const CompaniesView = {
               <button class="btn btn-primary btn-sm" onclick="Router.navigate('/origination-companies/new')">+ New Origination Company</button>
             </div>` : ''}
         </div>
-      </div>
+      </div>`;
 
-      <div class="page-body">
+    const bodyOpen  = this._headless ? '' : '<div class="page-body">';
+    const bodyClose = this._headless ? '' : '</div>';
+
+    return `
+      ${header}
+      ${bodyOpen}
         <div class="table-container">
           <div class="filter-toolbar">
             <input class="filter-search" placeholder="Search companies…"
@@ -140,7 +146,7 @@ const CompaniesView = {
               <p>No companies match your search.</p>
             </div>`}
         </div>
-      </div>
+      ${bodyClose}
 
       <div id="company-modal-container"></div>
       <div id="company-panel-container"></div>`;

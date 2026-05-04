@@ -29,6 +29,14 @@ const State = (() => {
   let _loanPrograms     = JSON.parse(JSON.stringify(DEMO_DATA.loanPrograms || []));
   let _lpms             = JSON.parse(JSON.stringify(DEMO_DATA.loanProgramMarkets || []));
   let _ocEnablement     = JSON.parse(JSON.stringify(DEMO_DATA.ocEnablement || []));
+  /* Round 3: per-branch enablement subsets (markets + programs) and
+     branch-level / per-LO permission records. Branches without a record
+     inherit the OC's full set (permissive default — preserves prior
+     observable behavior for any branch the admin hasn't visited yet). */
+  let _branchStateEnablement   = JSON.parse(JSON.stringify(DEMO_DATA.branchStateEnablement   || []));
+  let _branchProgramEnablement = JSON.parse(JSON.stringify(DEMO_DATA.branchProgramEnablement || []));
+  let _branchPermissions       = JSON.parse(JSON.stringify(DEMO_DATA.branchPermissions       || []));
+  let _loPermissions           = JSON.parse(JSON.stringify(DEMO_DATA.loPermissions           || []));
   const _nmlsLookup     = DEMO_DATA.nmlsCompanyLookup || {};
   const _nmlsAuthority  = DEMO_DATA.nmlsAuthorityIndex || {};
 
@@ -475,6 +483,18 @@ const State = (() => {
       const next = [...new Set(lpmIds)];
       if (idx >= 0) _ocEnablement[idx].lpmIds = next;
       else _ocEnablement.push({ ocId, lpmIds: next });
+      // Cascade prune: drop any branch subsets that reference lpms /
+      // markets the OC no longer has enabled. Without this, branches
+      // keep stale opt-ins that disappear from the UI but linger in state.
+      const ocBranchIds = new Set(_branches.filter(b => b.companyId === ocId).map(b => b.id));
+      const validLpms = new Set(next);
+      const validMarkets = new Set(next.map(id => _lpms.find(l => l.id === id)?.marketId).filter(Boolean));
+      _branchProgramEnablement.forEach(rec => {
+        if (ocBranchIds.has(rec.branchId)) rec.lpmIds = rec.lpmIds.filter(id => validLpms.has(id));
+      });
+      _branchStateEnablement.forEach(rec => {
+        if (ocBranchIds.has(rec.branchId)) rec.marketIds = rec.marketIds.filter(id => validMarkets.has(id));
+      });
       _auditLog.unshift({
         id: `al-${Date.now()}`,
         actorId: _currentUser?.id,
@@ -487,14 +507,150 @@ const State = (() => {
       notify();
     },
 
-    /* ---- Branch enablement (round 2: branches inherit OC enablement) ----
-       Spec §6 says self-administer branch enablement is OFF in v1. Returning
-       the OC's set keeps internal validation honest while letting the UI
-       drop the per-branch matrix entirely. */
+    /* ---- Branch enablement (legacy: OC inheritance) ----
+       Returns the OC's full lpm set. Used by validation / runtime gating
+       paths (users.js, effectiveAccess) that need to know what the OC has
+       enabled regardless of the branch's chosen subset. New admin-UI
+       paths should call getBranchEnabledMarkets / getBranchEnabledPrograms
+       (subset getters) or getBranchEffectiveEnablement (intersection). */
     getBranchEnablement(branchId) {
       const branch = _branches.find(b => b.id === branchId);
       if (!branch) return [];
       return State.getOcEnablement(branch.companyId);
+    },
+
+    /* ---- Per-branch market enablement (Round 3) ----
+       Returns the subset marketIds the branch has selected, falling
+       back to the OC's enabled markets if no record exists. */
+    getBranchEnabledMarkets(branchId) {
+      const branch = _branches.find(b => b.id === branchId);
+      if (!branch) return [];
+      const rec = _branchStateEnablement.find(x => x.branchId === branchId);
+      if (rec) return [...rec.marketIds];
+      // Fallback: OC's enabled markets (inferred from OC's lpms)
+      const ocLpms = State.getOcEnablement(branch.companyId);
+      return [...new Set(ocLpms.map(id => _lpms.find(l => l.id === id)?.marketId).filter(Boolean))];
+    },
+    setBranchEnabledMarkets(branchId, marketIds) {
+      const branch = _branches.find(b => b.id === branchId);
+      if (!branch) return;
+      // Bound to OC's enabled markets
+      const ocLpms = State.getOcEnablement(branch.companyId);
+      const ocMarkets = new Set(ocLpms.map(id => _lpms.find(l => l.id === id)?.marketId).filter(Boolean));
+      const next = [...new Set(marketIds)].filter(id => ocMarkets.has(id));
+      const idx = _branchStateEnablement.findIndex(x => x.branchId === branchId);
+      if (idx >= 0) _branchStateEnablement[idx].marketIds = next;
+      else _branchStateEnablement.push({ branchId, marketIds: next });
+      // Auto-prune branch programs whose market is no longer enabled
+      const progRec = _branchProgramEnablement.find(x => x.branchId === branchId);
+      if (progRec) {
+        progRec.lpmIds = progRec.lpmIds.filter(id => {
+          const lpm = _lpms.find(l => l.id === id);
+          return lpm && next.includes(lpm.marketId);
+        });
+      }
+      _auditLog.unshift({
+        id: `al-${Date.now()}`, actorId: _currentUser?.id,
+        action: 'branch_markets_changed', entityType: 'branch', entityId: branchId,
+        detail: `Branch market enablement set to ${next.length} market(s)`,
+        timestamp: new Date().toISOString(),
+      });
+      notify();
+    },
+
+    /* ---- Per-branch program enablement (Round 3) ----
+       Returns the subset of OC's lpmIds the branch has selected. */
+    getBranchEnabledPrograms(branchId) {
+      const branch = _branches.find(b => b.id === branchId);
+      if (!branch) return [];
+      const rec = _branchProgramEnablement.find(x => x.branchId === branchId);
+      if (rec) return [...rec.lpmIds];
+      return State.getOcEnablement(branch.companyId);
+    },
+    setBranchEnabledPrograms(branchId, lpmIds) {
+      const branch = _branches.find(b => b.id === branchId);
+      if (!branch) return;
+      const ocSet = new Set(State.getOcEnablement(branch.companyId));
+      const enabledMarkets = new Set(State.getBranchEnabledMarkets(branchId));
+      const next = [...new Set(lpmIds)].filter(id => {
+        if (!ocSet.has(id)) return false;
+        const lpm = _lpms.find(l => l.id === id);
+        return lpm && enabledMarkets.has(lpm.marketId);
+      });
+      const idx = _branchProgramEnablement.findIndex(x => x.branchId === branchId);
+      if (idx >= 0) _branchProgramEnablement[idx].lpmIds = next;
+      else _branchProgramEnablement.push({ branchId, lpmIds: next });
+      _auditLog.unshift({
+        id: `al-${Date.now()}`, actorId: _currentUser?.id,
+        action: 'branch_programs_changed', entityType: 'branch', entityId: branchId,
+        detail: `Branch program enablement set to ${next.length} program-market(s)`,
+        timestamp: new Date().toISOString(),
+      });
+      notify();
+    },
+
+    /* ---- Effective branch enablement (OC ∩ branch subset ∩ branch markets) ---- */
+    getBranchEffectiveEnablement(branchId) {
+      const ocLpms = State.getBranchEnablement(branchId);
+      const branchLpms = new Set(State.getBranchEnabledPrograms(branchId));
+      const branchMarkets = new Set(State.getBranchEnabledMarkets(branchId));
+      return ocLpms.filter(id => {
+        if (!branchLpms.has(id)) return false;
+        const lpm = _lpms.find(l => l.id === id);
+        return lpm && branchMarkets.has(lpm.marketId);
+      });
+    },
+
+    /* ---- Branch-level user permissions (Round 3) ----
+       Mock-only: matrix updates persist in state but no downstream
+       loan-list / atrium filter consumes them yet (follow-up wiring). */
+    getBranchPermissions(branchId) {
+      return JSON.parse(JSON.stringify(_branchPermissions.filter(p => p.branchId === branchId)));
+    },
+    setBranchPermission(branchId, userId, perm) {
+      const flags = perm.accessLevel === 'full'
+        ? { canCreate: true, canSubmit: true, canWithdraw: true }
+        : (perm.accessLevel === 'edit'
+            ? { canCreate: !!perm.flags?.canCreate, canSubmit: !!perm.flags?.canSubmit, canWithdraw: !!perm.flags?.canWithdraw }
+            : { canCreate: false, canSubmit: false, canWithdraw: false });
+      const idx = _branchPermissions.findIndex(p => p.branchId === branchId && p.userId === userId);
+      const rec = { branchId, userId, accessLevel: perm.accessLevel, flags };
+      if (idx >= 0) _branchPermissions[idx] = rec;
+      else _branchPermissions.push(rec);
+      notify();
+    },
+    removeBranchPermission(branchId, userId) {
+      _branchPermissions = _branchPermissions.filter(p => !(p.branchId === branchId && p.userId === userId));
+      notify();
+    },
+
+    /* ---- Per-LO permissions (Round 3) ---- */
+    getLoPermissions(branchId, loUserId) {
+      const block = _loPermissions.find(b => b.branchId === branchId && b.loUserId === loUserId);
+      return block ? JSON.parse(JSON.stringify(block.entries || [])) : [];
+    },
+    setLoPermission(branchId, loUserId, userId, perm) {
+      const flags = perm.accessLevel === 'full'
+        ? { canCreate: true, canSubmit: true, canWithdraw: true }
+        : (perm.accessLevel === 'edit'
+            ? { canCreate: !!perm.flags?.canCreate, canSubmit: !!perm.flags?.canSubmit, canWithdraw: !!perm.flags?.canWithdraw }
+            : { canCreate: false, canSubmit: false, canWithdraw: false });
+      let block = _loPermissions.find(b => b.branchId === branchId && b.loUserId === loUserId);
+      if (!block) {
+        block = { branchId, loUserId, entries: [] };
+        _loPermissions.push(block);
+      }
+      const idx = block.entries.findIndex(e => e.userId === userId);
+      const rec = { userId, accessLevel: perm.accessLevel, flags };
+      if (idx >= 0) block.entries[idx] = rec;
+      else block.entries.push(rec);
+      notify();
+    },
+    removeLoPermission(branchId, loUserId, userId) {
+      const block = _loPermissions.find(b => b.branchId === branchId && b.loUserId === loUserId);
+      if (!block) return;
+      block.entries = block.entries.filter(e => e.userId !== userId);
+      notify();
     },
 
     /* ---- NMLS lookup (used by OC onboarding wizard) ----

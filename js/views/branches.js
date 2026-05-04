@@ -6,6 +6,7 @@ const BranchesView = {
   _filter: { search: '', companyId: '', state: '', program: '', status: '' },
   _sort: { col: null, dir: 'asc' },
   _detailId: null,
+  _branchTab: 'details',  // 'details' | 'users' | 'permissions' | 'markets' | 'programs'
 
   _scope: null,
 
@@ -27,7 +28,7 @@ const BranchesView = {
     }
   },
 
-  /* scope: optional { companyId } for section-scoped rendering */
+  /* scope: optional { companyId } | { acrossAll: true } for section-scoped rendering */
   render(scope) {
     this._scope = scope || null;
     const role        = State.getRole();
@@ -38,6 +39,12 @@ const BranchesView = {
       ? State.getBranchesByCompany(scope.companyId)
       : State.getBranches();
     let companies   = State.getCompanies();
+
+    // prog_admin auto-scopes even when acrossAll is requested
+    if (scope?.acrossAll && role === 'prog_admin' && currentUser?.companyId) {
+      allBranches = allBranches.filter(b => b.companyId === currentUser.companyId);
+      companies   = companies.filter(c => c.id === currentUser.companyId);
+    }
 
     // Legacy scope for prog_admin (when no explicit scope)
     if (!scope && role === 'prog_admin' && currentUser?.companyId) {
@@ -87,7 +94,7 @@ const BranchesView = {
         ? ocPrograms.map(p => `<span class="tag" style="margin-right:4px">${p.name}</span>`).join('')
         : '<span class="text-muted" style="font-size:11px">Not enabled</span>';
       return `
-        <tr class="clickable" onclick="BranchesView.openDetail('${b.id}')">
+        <tr class="clickable" onclick="Router.navigate('/branches/${b.id}')">
           <td>
             <div>
               <div class="cell-primary">${b.name}</div>
@@ -295,6 +302,524 @@ const BranchesView = {
     const pc = document.getElementById('branch-panel-container');
     if (pc) pc.innerHTML = '';
     this._detailId = null;
+  },
+
+  /* ============================================================
+     BRANCH DETAIL PAGE (Round 3)
+     Tabs: Details / Users / Permissions / Market Enablements / Eligible Programs
+     ============================================================ */
+  renderDetailPage(branchId) {
+    const b = State.getBranch(branchId);
+    if (!b) return '<div class="page-body"><p>Branch not found.</p></div>';
+    const co = State.getCompany(b.companyId);
+    const role = State.getRole();
+    const canEdit = State.can('editAny') || State.can('manageCompany');
+    const showBack = role !== 'prog_admin';
+
+    const tabs = [
+      { key: 'details',     label: 'Details' },
+      { key: 'users',       label: 'Users' },
+      { key: 'permissions', label: 'Permissions' },
+      { key: 'markets',     label: 'Market Enablements' },
+      { key: 'programs',    label: 'Eligible Programs' },
+    ];
+    if (!tabs.find(t => t.key === this._branchTab)) this._branchTab = 'details';
+
+    const tabsHtml = tabs.map(t =>
+      `<div class="section-tab ${t.key === this._branchTab ? 'active' : ''}"
+            onclick="BranchesView.switchBranchTab('${t.key}')">${t.label}</div>`
+    ).join('');
+
+    let content;
+    switch (this._branchTab) {
+      case 'details':     content = this._renderBranchDetails(b, co, canEdit); break;
+      case 'users':       content = this._renderBranchUsers(b, canEdit); break;
+      case 'permissions': content = this._renderBranchPermissions(b, canEdit); break;
+      case 'markets':     content = this._renderBranchMarkets(b, canEdit); break;
+      case 'programs':    content = this._renderBranchPrograms(b, canEdit); break;
+      default:            content = this._renderBranchDetails(b, co, canEdit);
+    }
+
+    const breadcrumb = showBack ? `
+      <div class="breadcrumb">
+        <span class="breadcrumb-link" onclick="Router.navigate('/origination-companies')">Origination Companies</span>
+        <span class="breadcrumb-sep">/</span>
+        <span class="breadcrumb-link" onclick="Router.navigate('/origination-companies/${b.companyId}')">${co ? co.name : 'Company'}</span>
+        <span class="breadcrumb-sep">/</span>
+        <span class="breadcrumb-current">${b.name}</span>
+      </div>` : '';
+
+    return `
+      ${breadcrumb}
+      <div class="page-header">
+        <div class="page-header-inner">
+          <div class="page-header-left">
+            <div class="page-title">${b.name}</div>
+            <div class="page-subtitle">${co ? co.name : '—'} · NMLS <span class="mono">${b.nmlsId || '—'}</span> · ${b.state}</div>
+          </div>
+          <div class="page-header-actions">
+            ${canEdit ? `<button class="btn btn-primary btn-sm" onclick="BranchesView.openEditModal('${b.id}')">Edit Branch</button>` : ''}
+          </div>
+        </div>
+      </div>
+      <div class="section-tabs">${tabsHtml}</div>
+      <div class="page-body">${content}</div>
+      <div id="branch-modal-container"></div>`;
+  },
+
+  switchBranchTab(tab) {
+    this._branchTab = tab;
+    App.renderView(Router.getCurrentPath());
+  },
+
+  /* ---- Details tab ---- */
+  _renderBranchDetails(b, co, canEdit) {
+    const mgr = b.managingLO ? State.getUser(b.managingLO) : null;
+    const users = State.getUsersByBranch(b.id);
+    const lastSync = b.lastNmlsSync ? Display.relativeTime(b.lastNmlsSync) : '—';
+    return `
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:20px">
+        <div class="card">
+          <div class="card-title" style="margin-bottom:14px;display:flex;align-items:center;justify-content:space-between">
+            <span>Branch Details</span>
+            <span style="font-size:11px;color:var(--color-text-muted);font-weight:500">
+              <span class="status-dot" style="background:var(--color-success);display:inline-block;width:8px;height:8px;border-radius:50%;margin-right:6px"></span>
+              NMLS sync: ${lastSync}
+            </span>
+          </div>
+          <div class="info-grid">
+            <div class="info-row"><div class="info-label">Status</div><div class="info-value"><span class="badge ${b.status === 'active' ? 'badge-active' : 'badge-pending'}">${b.status === 'active' ? 'Active' : 'Setup incomplete'}</span></div></div>
+            <div class="info-row"><div class="info-label">Company</div><div class="info-value">${co ? `<a class="breadcrumb-link" onclick="Router.navigate('/origination-companies/${co.id}')">${co.name}</a>` : '—'}</div></div>
+            <div class="info-row"><div class="info-label">Branch Type</div><div class="info-value"><span class="tag">${b.branchType || 'Branch'}</span></div></div>
+            <div class="info-row"><div class="info-label">NMLS Branch ID</div><div class="info-value mono">${b.nmlsId || '—'}</div></div>
+            <div class="info-row"><div class="info-label">Address</div><div class="info-value">${b.address1 ? `${b.address1}${b.suite ? ', ' + b.suite : ''}, ${b.city}, ${b.state} ${b.zip}` : (b.address || '—')}</div></div>
+            <div class="info-row"><div class="info-label">Phone</div><div class="info-value">${b.contactPhone || '—'}</div></div>
+            <div class="info-row"><div class="info-label">Managing LO</div><div class="info-value">${mgr ? Display.fullName(mgr) : '<span class="text-muted">N/A</span>'}</div></div>
+            <div class="info-row"><div class="info-label">Start Date</div><div class="info-value">${b.startDate ? Display.date(b.startDate) : '—'}</div></div>
+          </div>
+        </div>
+
+        <div class="card">
+          <div class="card-title" style="margin-bottom:14px">At a Glance</div>
+          <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:12px;text-align:center">
+            <div>
+              <div style="font-size:24px;font-weight:700;color:var(--color-primary)">${users.length}</div>
+              <div style="font-size:11px;color:var(--color-text-secondary)">Users</div>
+            </div>
+            <div>
+              <div style="font-size:24px;font-weight:700;color:var(--color-primary)">${State.getBranchEnabledMarkets(b.id).length}</div>
+              <div style="font-size:11px;color:var(--color-text-secondary)">Markets</div>
+            </div>
+            <div>
+              <div style="font-size:24px;font-weight:700;color:var(--color-primary)">${State.getBranchEnabledPrograms(b.id).length}</div>
+              <div style="font-size:11px;color:var(--color-text-secondary)">Programs</div>
+            </div>
+          </div>
+          ${canEdit ? `<div style="margin-top:18px;display:flex;gap:8px;justify-content:flex-end"><button class="btn btn-ghost btn-sm" onclick="BranchesView.switchBranchTab('permissions')">Manage permissions →</button></div>` : ''}
+        </div>
+      </div>`;
+  },
+
+  /* ---- Users tab ---- */
+  _renderBranchUsers(b, canEdit) {
+    const users = State.getUsersByBranch(b.id);
+    if (!users.length) {
+      return `<div class="card"><div style="text-align:center;color:var(--color-text-muted);padding:32px;font-size:13px">No users assigned to this branch.${canEdit ? ' <button class="btn btn-ghost btn-xs" onclick="BulkInviteView.start({ companyId: \'' + b.companyId + '\', returnPath: \'' + Router.getCurrentPath() + '\' })">+ Invite User</button>' : ''}</div></div>`;
+    }
+    const rows = users.map(u => {
+      const a = State.getBranchAssignments(u.id).find(x => x.branchId === b.id);
+      const userTypeBadge = a?.userType === 'lo'
+        ? '<span class="role-chip role-lo">Loan Officer</span>'
+        : '<span class="role-chip">Standard</span>';
+      const bmBadge = a?.flags?.branchManager ? '<span class="tag" style="background:#fff7e6;color:#a35c00;margin-left:4px;font-size:10px">BM</span>' : '';
+      return `
+        <tr class="clickable" onclick="ProfileView.open('${u.id}')">
+          <td>
+            <div style="display:flex;align-items:center;gap:10px">
+              <div class="avatar avatar-sm" style="background:${avatarColor(u.role)}">${Display.initials(u)}</div>
+              <div>
+                <div class="cell-primary">${Display.fullName(u)}</div>
+                <div class="cell-secondary">${u.email}</div>
+              </div>
+            </div>
+          </td>
+          <td>${userTypeBadge}${bmBadge}</td>
+          <td><span class="role-chip ${Display.roleClass(u.role)}">${Display.roleName(u.role)}</span></td>
+          <td><span class="status-pill ${Display.onboardingStatusClass(u.onboardingStatus)}"><span class="status-dot"></span>${Display.onboardingStatusLabel(u.onboardingStatus)}</span></td>
+          <td class="text-secondary">${u.lastLogin ? Display.date(u.lastLogin) : '<span class="text-muted">Never</span>'}</td>
+        </tr>`;
+    }).join('');
+    return `
+      <div class="card" style="padding:0;overflow:hidden">
+        <div style="padding:14px 18px;border-bottom:1px solid var(--color-border);display:flex;justify-content:space-between;align-items:center">
+          <div>
+            <div class="card-title" style="margin-bottom:2px">Users (${users.length})</div>
+            <div style="font-size:12px;color:var(--color-text-muted)">Members assigned to this branch. Click a row to view their profile.</div>
+          </div>
+          ${canEdit ? `<button class="btn btn-primary btn-sm" onclick="BulkInviteView.start({ companyId: '${b.companyId}', returnPath: '${Router.getCurrentPath()}' })">+ Invite User</button>` : ''}
+        </div>
+        <table>
+          <thead><tr><th>User</th><th>Branch Role</th><th>Platform Role</th><th>Status</th><th>Last Login</th></tr></thead>
+          <tbody>${rows}</tbody>
+        </table>
+      </div>`;
+  },
+
+  /* ============================================================
+     Permissions tab (Round 3 — novel build, mock-only persistence)
+     - Branch-level matrix: rows = users, columns = level + flags
+     - Per-LO accordion: one block per LO; controls what other branch
+       members can do on THAT LO's applications.
+     ============================================================ */
+  _renderBranchPermissions(b, canEdit) {
+    return `
+      <div style="font-size:12px;color:var(--color-text-muted);margin-bottom:12px;padding:10px 12px;background:var(--color-surface);border:1px solid var(--color-border);border-radius:6px">
+        <strong>Access levels:</strong>
+        <span class="admin-pm-level-pill level-full" style="margin-left:6px">Full</span> all flags forced on ·
+        <span class="admin-pm-level-pill level-edit">Can edit</span> set create/submit/withdraw individually ·
+        <span class="admin-pm-level-pill level-view">View only</span> /
+        <span class="admin-pm-level-pill level-none">No access</span> flags hidden.
+      </div>
+      ${this._renderBranchPermMatrix(b, canEdit)}
+      ${this._renderLoAccordions(b, canEdit)}`;
+  },
+
+  _accessLabels: { none: 'No access', view: 'View only', edit: 'Can edit', full: 'Full access' },
+
+  _accessSelect(level, onChangeJs, disabled) {
+    const cls = `admin-pm-select level-${level}`;
+    const dis = disabled ? 'disabled' : '';
+    const opts = ['none', 'view', 'edit', 'full'].map(lv =>
+      `<option value="${lv}" ${lv === level ? 'selected' : ''}>${this._accessLabels[lv]}</option>`
+    ).join('');
+    return `<select class="${cls}" ${dis} onchange="${onChangeJs}">${opts}</select>`;
+  },
+
+  _flagCell(level, flag, on, onChangeJs, disabled) {
+    if (level === 'none' || level === 'view') {
+      return `<td class="admin-pm-flag"><span class="admin-pm-dash">—</span></td>`;
+    }
+    const lockedOn = level === 'full';
+    const checked = lockedOn ? 'checked' : (on ? 'checked' : '');
+    const dis = (disabled || lockedOn) ? 'disabled' : '';
+    return `<td class="admin-pm-flag"><input type="checkbox" class="admin-pm-check" ${checked} ${dis} onchange="${onChangeJs}" data-flag="${flag}"></td>`;
+  },
+
+  _renderBranchPermMatrix(b, canEdit) {
+    const records = State.getBranchPermissions(b.id);
+    const recById = new Map(records.map(r => [r.userId, r]));
+    const branchUsers = State.getUsersByBranch(b.id);
+    // Show users who either are assigned at this branch OR already have a perm record
+    const userIds = new Set([...branchUsers.map(u => u.id), ...records.map(r => r.userId)]);
+    const rowsHtml = [...userIds].map(uid => {
+      const u = State.getUser(uid);
+      if (!u) return '';
+      const rec = recById.get(uid) || { accessLevel: 'none', flags: { canCreate: false, canSubmit: false, canWithdraw: false } };
+      const level = rec.accessLevel;
+      const lvlChange = `BranchesView._updateBranchPermLevel('${b.id}', '${uid}', this.value)`;
+      const flagChange = (flag) => `BranchesView._updateBranchPermFlag('${b.id}', '${uid}', '${flag}', this.checked)`;
+      return `
+        <tr>
+          <td>
+            <div style="display:flex;align-items:center;gap:10px">
+              <div class="avatar avatar-sm" style="background:${avatarColor(u.role)}">${Display.initials(u)}</div>
+              <div>
+                <div class="cell-primary">${Display.fullName(u)}</div>
+                <div class="cell-secondary">${u.email}</div>
+              </div>
+            </div>
+          </td>
+          <td><span class="role-chip ${Display.roleClass(u.role)}">${Display.roleName(u.role)}</span></td>
+          <td>${this._accessSelect(level, lvlChange, !canEdit)}</td>
+          ${this._flagCell(level, 'canCreate',   rec.flags?.canCreate,   flagChange('canCreate'),   !canEdit)}
+          ${this._flagCell(level, 'canSubmit',   rec.flags?.canSubmit,   flagChange('canSubmit'),   !canEdit)}
+          ${this._flagCell(level, 'canWithdraw', rec.flags?.canWithdraw, flagChange('canWithdraw'), !canEdit)}
+          <td>${canEdit ? `<button class="btn btn-ghost btn-xs" onclick="BranchesView._removeBranchPerm('${b.id}', '${uid}')">Remove</button>` : ''}</td>
+        </tr>`;
+    }).join('');
+
+    const candidatesForAdd = branchUsers.filter(u => !recById.has(u.id));
+    return `
+      <div class="card admin-pm-section-card">
+        <div class="admin-pm-section-head">
+          <div>
+            <div class="card-title" style="margin-bottom:2px">Branch-level permissions</div>
+            <div style="font-size:12px;color:var(--color-text-muted)">Default rights each branch member has on applications at this branch.</div>
+          </div>
+          ${canEdit && candidatesForAdd.length ? `
+            <div style="position:relative">
+              <button class="btn btn-ghost btn-sm" onclick="BranchesView._toggleAddBranchPerm(event)">+ Add user</button>
+              <div class="admin-pm-popover" id="admin-pm-add-branch" style="display:none">
+                ${candidatesForAdd.map(u => `<div class="admin-pm-popover-item" onclick="BranchesView._addBranchPerm('${b.id}', '${u.id}')">${Display.fullName(u)} <span style="color:var(--color-text-muted);font-size:11px;margin-left:6px">${Display.roleName(u.role)}</span></div>`).join('')}
+              </div>
+            </div>` : ''}
+        </div>
+        ${userIds.size ? `
+          <table class="admin-pm-matrix">
+            <thead><tr>
+              <th>User</th><th>Platform Role</th><th style="width:140px">Access level</th>
+              <th style="width:90px;text-align:center">Can create</th>
+              <th style="width:90px;text-align:center">Can submit</th>
+              <th style="width:100px;text-align:center">Can withdraw</th>
+              <th style="width:80px"></th>
+            </tr></thead>
+            <tbody>${rowsHtml}</tbody>
+          </table>` : `<div style="text-align:center;color:var(--color-text-muted);padding:24px;font-size:13px">No users assigned to this branch yet.</div>`}
+      </div>`;
+  },
+
+  _renderLoAccordions(b, canEdit) {
+    const branchUsers = State.getUsersByBranch(b.id);
+    // LOs at this branch (per branch assignment, not just role)
+    const los = branchUsers.filter(u => {
+      const a = State.getBranchAssignments(u.id).find(x => x.branchId === b.id);
+      return a?.userType === 'lo';
+    });
+    if (!los.length) {
+      return `<div class="card admin-pm-section-card" style="margin-top:14px">
+        <div class="admin-pm-section-head"><div><div class="card-title" style="margin-bottom:2px">Loan officer permissions</div><div style="font-size:12px;color:var(--color-text-muted)">No loan officers assigned to this branch yet.</div></div></div>
+      </div>`;
+    }
+    const blocks = los.map(lo => this._renderLoAccordion(b, lo, canEdit)).join('');
+    return `
+      <div class="card admin-pm-section-card" style="margin-top:14px;padding:0;overflow:hidden">
+        <div class="admin-pm-section-head" style="padding:14px 18px;border-bottom:1px solid var(--color-border)">
+          <div>
+            <div class="card-title" style="margin-bottom:2px">Loan officer permissions</div>
+            <div style="font-size:12px;color:var(--color-text-muted)">Per-LO overrides. Controls what other branch members can do on each LO's applications.</div>
+          </div>
+        </div>
+        ${blocks}
+      </div>`;
+  },
+
+  _renderLoAccordion(b, lo, canEdit) {
+    const accId = `admin-pm-lo-${lo.id}`;
+    const entries = State.getLoPermissions(b.id, lo.id);
+    const recById = new Map(entries.map(e => [e.userId, e]));
+    const branchUsers = State.getUsersByBranch(b.id).filter(u => u.id !== lo.id);
+    const candidates = branchUsers.filter(u => !recById.has(u.id));
+    const configuredCount = entries.filter(e => e.accessLevel !== 'none').length;
+
+    const rowsHtml = entries.map(e => {
+      const u = State.getUser(e.userId);
+      if (!u) return '';
+      const lvlChange = `BranchesView._updateLoPermLevel('${b.id}', '${lo.id}', '${e.userId}', this.value)`;
+      const flagChange = (flag) => `BranchesView._updateLoPermFlag('${b.id}', '${lo.id}', '${e.userId}', '${flag}', this.checked)`;
+      return `
+        <tr>
+          <td>
+            <div style="display:flex;align-items:center;gap:10px">
+              <div class="avatar avatar-sm" style="background:${avatarColor(u.role)}">${Display.initials(u)}</div>
+              <div><div class="cell-primary">${Display.fullName(u)}</div><div class="cell-secondary">${Display.roleName(u.role)}</div></div>
+            </div>
+          </td>
+          <td>${this._accessSelect(e.accessLevel, lvlChange, !canEdit)}</td>
+          ${this._flagCell(e.accessLevel, 'canCreate',   e.flags?.canCreate,   flagChange('canCreate'),   !canEdit)}
+          ${this._flagCell(e.accessLevel, 'canSubmit',   e.flags?.canSubmit,   flagChange('canSubmit'),   !canEdit)}
+          ${this._flagCell(e.accessLevel, 'canWithdraw', e.flags?.canWithdraw, flagChange('canWithdraw'), !canEdit)}
+          <td>${canEdit ? `<button class="btn btn-ghost btn-xs" onclick="BranchesView._removeLoPerm('${b.id}', '${lo.id}', '${e.userId}')">Remove</button>` : ''}</td>
+        </tr>`;
+    }).join('');
+
+    return `
+      <div class="admin-pm-acc">
+        <div class="admin-pm-acc-head" onclick="BranchesView._toggleLoAcc('${accId}')">
+          <div style="display:flex;align-items:center;gap:10px">
+            <div class="avatar avatar-sm" style="background:${avatarColor(lo.role)}">${Display.initials(lo)}</div>
+            <div>
+              <div style="font-size:13px;font-weight:600;color:var(--color-text)">${Display.fullName(lo)}</div>
+              <div style="font-size:11px;color:var(--color-text-muted)">LO · NMLS <span class="mono">${lo.agentNmlsId || lo.nmlsId || '—'}</span> · ${configuredCount} peer${configuredCount === 1 ? '' : 's'} configured</div>
+            </div>
+          </div>
+          <span class="admin-pm-acc-caret">▾</span>
+        </div>
+        <div class="admin-pm-acc-body" id="${accId}">
+          <div style="padding:8px 16px;font-size:11px;color:var(--color-text-muted)">Controls what other branch members can do on ${Display.fullName(lo)}'s applications.</div>
+          ${entries.length ? `
+            <table class="admin-pm-matrix">
+              <thead><tr>
+                <th>User</th><th style="width:140px">Access level</th>
+                <th style="width:90px;text-align:center">Can create</th>
+                <th style="width:90px;text-align:center">Can submit</th>
+                <th style="width:100px;text-align:center">Can withdraw</th>
+                <th style="width:80px"></th>
+              </tr></thead>
+              <tbody>${rowsHtml}</tbody>
+            </table>` : `<div style="text-align:center;color:var(--color-text-muted);padding:18px;font-size:12px">No per-user overrides yet.</div>`}
+          ${canEdit && candidates.length ? `
+            <div style="padding:10px 16px;border-top:1px solid var(--color-border-light);position:relative">
+              <button class="btn btn-ghost btn-sm" onclick="BranchesView._toggleAddLoPerm(event, '${accId}')">+ Add user</button>
+              <div class="admin-pm-popover" id="${accId}-add" style="display:none;left:16px;top:42px">
+                ${candidates.map(u => `<div class="admin-pm-popover-item" onclick="BranchesView._addLoPerm('${b.id}', '${lo.id}', '${u.id}')">${Display.fullName(u)} <span style="color:var(--color-text-muted);font-size:11px;margin-left:6px">${Display.roleName(u.role)}</span></div>`).join('')}
+              </div>
+            </div>` : ''}
+        </div>
+      </div>`;
+  },
+
+  /* ---- Permission state mutations ---- */
+  _updateBranchPermLevel(branchId, userId, level) {
+    const cur = State.getBranchPermissions(branchId).find(p => p.userId === userId) || { flags: { canCreate: false, canSubmit: false, canWithdraw: false } };
+    State.setBranchPermission(branchId, userId, { accessLevel: level, flags: cur.flags });
+    App.renderView(Router.getCurrentPath());
+  },
+  _updateBranchPermFlag(branchId, userId, flag, on) {
+    const cur = State.getBranchPermissions(branchId).find(p => p.userId === userId);
+    if (!cur) return;
+    const flags = { ...cur.flags, [flag]: !!on };
+    State.setBranchPermission(branchId, userId, { accessLevel: cur.accessLevel, flags });
+  },
+  _removeBranchPerm(branchId, userId) {
+    State.removeBranchPermission(branchId, userId);
+    App.renderView(Router.getCurrentPath());
+  },
+  _addBranchPerm(branchId, userId) {
+    State.setBranchPermission(branchId, userId, { accessLevel: 'view', flags: {} });
+    App.renderView(Router.getCurrentPath());
+  },
+  _toggleAddBranchPerm(e) {
+    e.stopPropagation();
+    const el = document.getElementById('admin-pm-add-branch');
+    if (!el) return;
+    const open = el.style.display !== 'none';
+    el.style.display = open ? 'none' : 'block';
+    if (!open) setTimeout(() => document.addEventListener('click', () => { el.style.display = 'none'; }, { once: true }), 0);
+  },
+  _updateLoPermLevel(branchId, loUserId, userId, level) {
+    const cur = State.getLoPermissions(branchId, loUserId).find(e => e.userId === userId) || { flags: { canCreate: false, canSubmit: false, canWithdraw: false } };
+    State.setLoPermission(branchId, loUserId, userId, { accessLevel: level, flags: cur.flags });
+    App.renderView(Router.getCurrentPath());
+  },
+  _updateLoPermFlag(branchId, loUserId, userId, flag, on) {
+    const cur = State.getLoPermissions(branchId, loUserId).find(e => e.userId === userId);
+    if (!cur) return;
+    const flags = { ...cur.flags, [flag]: !!on };
+    State.setLoPermission(branchId, loUserId, userId, { accessLevel: cur.accessLevel, flags });
+  },
+  _removeLoPerm(branchId, loUserId, userId) {
+    State.removeLoPermission(branchId, loUserId, userId);
+    App.renderView(Router.getCurrentPath());
+  },
+  _addLoPerm(branchId, loUserId, userId) {
+    State.setLoPermission(branchId, loUserId, userId, { accessLevel: 'view', flags: {} });
+    App.renderView(Router.getCurrentPath());
+  },
+  _toggleAddLoPerm(e, accId) {
+    e.stopPropagation();
+    const el = document.getElementById(`${accId}-add`);
+    if (!el) return;
+    const open = el.style.display !== 'none';
+    el.style.display = open ? 'none' : 'block';
+    if (!open) setTimeout(() => document.addEventListener('click', () => { el.style.display = 'none'; }, { once: true }), 0);
+  },
+  _toggleLoAcc(accId) {
+    const el = document.getElementById(accId);
+    if (!el) return;
+    const head = el.previousElementSibling;
+    const open = el.classList.toggle('open');
+    if (head) {
+      const caret = head.querySelector('.admin-pm-acc-caret');
+      if (caret) caret.textContent = open ? '▾' : '▸';
+    }
+  },
+
+  /* ---- Market Enablements tab — branch subset of OC's enabled markets ---- */
+  _renderBranchMarkets(b, canEdit) {
+    const co = State.getCompany(b.companyId);
+    const ocLpms = State.getOcEnablement(b.companyId).map(id => State.getLPM(id)).filter(Boolean);
+    const ocMarketIds = [...new Set(ocLpms.map(l => l.marketId))];
+    const branchMarketIds = new Set(State.getBranchEnabledMarkets(b.id));
+    if (!ocMarketIds.length) {
+      return `<div class="card"><div style="text-align:center;color:var(--color-text-muted);padding:32px;font-size:13px">No markets enabled at <strong>${co ? co.name : 'the company'}</strong> yet. Configure under the company's <a class="breadcrumb-link" onclick="Router.navigate('/origination-companies/${b.companyId}')">Market Enablements</a> tab first.</div></div>`;
+    }
+    const chips = ocMarketIds.map(id => {
+      const m = State.getMarket(id);
+      if (!m) return '';
+      const on = branchMarketIds.has(id);
+      const cls = `admin-pm-chip${on ? ' is-on' : ''}${canEdit ? '' : ' is-readonly'}`;
+      const click = canEdit ? `onclick="BranchesView._toggleBranchMarket('${b.id}', '${id}', ${!on})"` : '';
+      return `<span class="${cls}" ${click}>${m.code} <span style="opacity:.7;font-weight:400;margin-left:4px">${m.name}</span></span>`;
+    }).join('');
+    return `
+      <div class="card admin-pm-section-card">
+        <div class="admin-pm-section-head">
+          <div>
+            <div class="card-title" style="margin-bottom:2px">Market Enablements</div>
+            <div style="font-size:12px;color:var(--color-text-muted)">States this branch operates in. Bounded by ${co ? co.name : 'the company'}'s enabled markets. Disabling a market here also removes any of its programs from the Eligible Programs list.</div>
+          </div>
+        </div>
+        <div class="admin-pm-chip-grid" style="padding:6px 0">${chips}</div>
+      </div>`;
+  },
+
+  _toggleBranchMarket(branchId, marketId, on) {
+    const cur = new Set(State.getBranchEnabledMarkets(branchId));
+    if (on) cur.add(marketId);
+    else    cur.delete(marketId);
+    State.setBranchEnabledMarkets(branchId, [...cur]);
+    App.renderView(Router.getCurrentPath());
+  },
+
+  /* ---- Eligible Programs tab — branch subset of OC's enabled programs ---- */
+  _renderBranchPrograms(b, canEdit) {
+    const co = State.getCompany(b.companyId);
+    const ocLpms = State.getOcEnablement(b.companyId);
+    if (!ocLpms.length) {
+      return `<div class="card"><div style="text-align:center;color:var(--color-text-muted);padding:32px;font-size:13px">No programs enabled at <strong>${co ? co.name : 'the company'}</strong> yet. Configure under the company's <a class="breadcrumb-link" onclick="Router.navigate('/origination-companies/${b.companyId}')">Eligible Programs</a> tab first.</div></div>`;
+    }
+    const enabledMarkets = new Set(State.getBranchEnabledMarkets(b.id));
+    const branchSet = new Set(State.getBranchEnabledPrograms(b.id));
+    // Group OC's lpms by program, but only those whose market the branch has on
+    const programs = State.getLoanPrograms();
+    const rows = programs.map(p => {
+      const ocLpmsForProg = State.getLPMsForProgram(p.id).filter(l => ocLpms.includes(l.id));
+      if (!ocLpmsForProg.length) return ''; // not enabled at OC — hide entirely per spec
+      // Per program, list each market the OC has enabled
+      const marketRows = ocLpmsForProg.map(lpm => {
+        const m = State.getMarket(lpm.marketId);
+        const reachable = enabledMarkets.has(lpm.marketId);
+        const on = branchSet.has(lpm.id) && reachable;
+        const dis = !canEdit || !reachable;
+        const note = !reachable ? `<span style="font-size:10px;color:var(--color-warning);margin-left:8px">market not enabled at branch</span>` : '';
+        return `
+          <label class="admin-pm-prog-row" style="opacity:${dis && !canEdit ? 1 : (reachable ? 1 : .5)}">
+            <input type="checkbox" ${on ? 'checked' : ''} ${dis ? 'disabled' : ''}
+                   onchange="BranchesView._toggleBranchProgram('${b.id}', '${lpm.id}', this.checked)">
+            <span style="flex:1">${m ? m.code + ' · ' + m.name : lpm.marketId}${note}</span>
+            <span class="mono" style="font-size:10px;color:var(--color-text-muted)">${p.code}-${m ? m.code : ''}</span>
+          </label>`;
+      }).join('');
+      return `
+        <div class="admin-pm-prog-card">
+          <div class="admin-pm-prog-card-head">
+            <div>
+              <div style="font-size:14px;font-weight:600;color:var(--color-text)">${p.name}</div>
+              <div style="font-size:11px;color:var(--color-text-muted);margin-top:2px">Available markets at OC: ${ocLpmsForProg.map(l => State.getMarket(l.marketId)?.code).filter(Boolean).join(', ')}</div>
+            </div>
+          </div>
+          <div>${marketRows}</div>
+        </div>`;
+    }).filter(Boolean).join('');
+
+    return `
+      <div class="card admin-pm-section-card">
+        <div class="admin-pm-section-head">
+          <div>
+            <div class="card-title" style="margin-bottom:2px">Eligible Programs</div>
+            <div style="font-size:12px;color:var(--color-text-muted)">Programs available at this branch. Only programs enabled at ${co ? co.name : 'the company'} are listed; only markets enabled at this branch are selectable.</div>
+          </div>
+        </div>
+        <div style="padding:4px 0">${rows || '<div style="text-align:center;color:var(--color-text-muted);padding:24px;font-size:13px">No programs match the branch\'s enabled markets.</div>'}</div>
+      </div>`;
+  },
+
+  _toggleBranchProgram(branchId, lpmId, on) {
+    const cur = new Set(State.getBranchEnabledPrograms(branchId));
+    if (on) cur.add(lpmId);
+    else    cur.delete(lpmId);
+    State.setBranchEnabledPrograms(branchId, [...cur]);
+    App.renderView(Router.getCurrentPath());
   },
 
   openAddModal() {

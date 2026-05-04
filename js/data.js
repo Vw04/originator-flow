@@ -637,6 +637,73 @@ const DEMO_DATA = {
      table was dropped. State.getBranchEnablement(branchId) returns the
      OC's set at runtime. */
 
+  /* ============================================================
+     Round 3 (RBAC admin restructure):
+     Branches actively select a subset of the OC's enabled markets
+     and programs. Records below seed a few demo branches; branches
+     without records inherit the OC's full set (permissive default).
+     ============================================================ */
+
+  /* ---- Branch market enablement (subset of OC's marketIds) ---- */
+  branchStateEnablement: [
+    { branchId: 'br-001', marketIds: ['mkt-DC'] },
+    { branchId: 'br-005', marketIds: ['mkt-KY'] },
+    { branchId: 'br-100', marketIds: ['mkt-DC'] },
+    { branchId: 'br-101', marketIds: ['mkt-KY'] },
+    { branchId: 'br-102', marketIds: ['mkt-UT'] },
+    { branchId: 'br-103', marketIds: ['mkt-MI'] },
+  ],
+
+  /* ---- Branch program enablement (subset of OC's lpmIds) ---- */
+  branchProgramEnablement: [
+    { branchId: 'br-001', lpmIds: ['lpm-lp-dc-DC', 'lpm-lp-multi-DC'] },
+    { branchId: 'br-005', lpmIds: ['lpm-lp-ky-KY'] },
+    { branchId: 'br-100', lpmIds: ['lpm-lp-dc-DC', 'lpm-lp-multi-DC'] },
+    { branchId: 'br-101', lpmIds: ['lpm-lp-ky-KY', 'lpm-lp-multi-KY'] },
+    { branchId: 'br-102', lpmIds: ['lpm-lp-utah-UT'] },
+    { branchId: 'br-103', lpmIds: ['lpm-lp-mi-MI'] },
+  ],
+
+  /* ---- Branch-level user permissions ----
+     accessLevel: 'none' | 'view' | 'edit' | 'full'
+     'full' forces all flags true; 'view'/'none' force them false. */
+  branchPermissions: [
+    { branchId: 'br-001', userId: 'user-003', accessLevel: 'full',
+      flags: { canCreate: true, canSubmit: true, canWithdraw: true } },
+    { branchId: 'br-001', userId: 'user-004', accessLevel: 'edit',
+      flags: { canCreate: true, canSubmit: true, canWithdraw: false } },
+    { branchId: 'br-001', userId: 'user-005', accessLevel: 'edit',
+      flags: { canCreate: true, canSubmit: false, canWithdraw: true } },
+    { branchId: 'br-001', userId: 'user-006', accessLevel: 'view',
+      flags: { canCreate: false, canSubmit: false, canWithdraw: false } },
+    { branchId: 'br-004', userId: 'user-011', accessLevel: 'full',
+      flags: { canCreate: true, canSubmit: true, canWithdraw: true } },
+    { branchId: 'br-004', userId: 'user-012', accessLevel: 'edit',
+      flags: { canCreate: true, canSubmit: true, canWithdraw: false } },
+    { branchId: 'br-004', userId: 'user-013', accessLevel: 'view',
+      flags: { canCreate: false, canSubmit: false, canWithdraw: false } },
+  ],
+
+  /* ---- Per-LO permissions ----
+     One block per (branchId, loUserId). entries[] are the rights
+     OTHER branch members have on applications owned by loUserId. */
+  loPermissions: [
+    { branchId: 'br-001', loUserId: 'user-003', entries: [
+      { userId: 'user-004', accessLevel: 'view', flags: { canCreate: false, canSubmit: false, canWithdraw: false } },
+      { userId: 'user-005', accessLevel: 'edit', flags: { canCreate: false, canSubmit: true, canWithdraw: false } },
+      { userId: 'user-006', accessLevel: 'none', flags: { canCreate: false, canSubmit: false, canWithdraw: false } },
+    ]},
+    { branchId: 'br-001', loUserId: 'user-004', entries: [
+      { userId: 'user-003', accessLevel: 'full', flags: { canCreate: true, canSubmit: true, canWithdraw: true } },
+      { userId: 'user-005', accessLevel: 'view', flags: { canCreate: false, canSubmit: false, canWithdraw: false } },
+      { userId: 'user-006', accessLevel: 'edit', flags: { canCreate: false, canSubmit: false, canWithdraw: true } },
+    ]},
+    { branchId: 'br-004', loUserId: 'user-011', entries: [
+      { userId: 'user-012', accessLevel: 'edit', flags: { canCreate: true, canSubmit: false, canWithdraw: false } },
+      { userId: 'user-013', accessLevel: 'view', flags: { canCreate: false, canSubmit: false, canWithdraw: false } },
+    ]},
+  ],
+
   /* ---- NMLS lookup table (used by the OC onboarding wizard) ----
      Pre-populated; no live API. The wizard treats these as if NMLS
      just returned them. */
