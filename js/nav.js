@@ -208,7 +208,7 @@ const Nav = (() => {
             </div>
           </div>`}
           <div class="topnav-user-info">
-            <div class="topnav-user-name">${userName}</div>
+            <div class="topnav-user-name">${(role === 'lo' || role === 'lp') && user?.firstName ? `Welcome back, ${user.firstName}` : userName}</div>
             <div class="topnav-role-label">${orgLine}</div>
           </div>
           <div class="topnav-profile" id="topnav-profile" onclick="Nav.toggleProfileMenu(event)">

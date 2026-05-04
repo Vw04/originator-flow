@@ -1271,15 +1271,9 @@ const DataPlatformView = {
       return this._renderApplicationDetail(this._selectedApplicationId);
     }
 
-    // ---- Artboard view modes — Institutional is now the default for Applications ----
-    // Exception: LO / LP / branch staff see the classic table by default. The
-    // institutional artboard is operator-grade UI; OC users belong on a simpler
-    // table (see CLAUDE.md scope decision in welcome plan).
-    const _role = State.getRole();
+    // ---- Artboard view modes — Institutional is the default for Applications ----
     let pageMode = State.getPageMode('applications');
-    if (pageMode === 'default') {
-      pageMode = (_role === 'lo' || _role === 'lp') ? 'classic' : 'institutional';
-    }
+    if (pageMode === 'default') pageMode = 'institutional';
     const toggleHtml = this._renderArtboardToggle('applications', [
       { id: 'institutional', label: 'Institutional' },
       { id: 'classic',       label: 'Classic table' },
@@ -1288,11 +1282,19 @@ const DataPlatformView = {
 
     if (pageMode === 'institutional' || pageMode === 'spatial') {
       const isInst = pageMode === 'institutional';
+      const _role = State.getRole();
+      const _user = State.getCurrentUser();
+      // What's-new banner floats over the artboard for LO/LP. The greeting
+      // strip was removed in favor of "Welcome back, {firstName}" in the topnav.
+      const whatsNewHtml = (_role === 'lo' || _role === 'lp')
+        ? this._renderWhatsNewBanner(_user)
+        : '';
       return `
         ${ArtboardMountView.render(pageMode, {
           height: 'calc(100vh - var(--topnav-height))',
           props: isInst ? { context: 'applications' } : {}
         })}
+        ${whatsNewHtml}
         <div class="artboard-floating-toggle" data-mode="${pageMode}">${toggleHtml}</div>
       `;
     }
@@ -1472,8 +1474,9 @@ const DataPlatformView = {
     const title = (role === 'lo' || role === 'lp') ? 'My Applications' : 'Applications';
     const isOcUser = role === 'lo' || role === 'lp';
 
-    // Greeting strip + what's-new banner — LO/LP only, sits above the page header.
-    const welcomeBandHtml = isOcUser ? this._renderApplicationsWelcomeBand(currentUser, allLoans) : '';
+    // What's-new banner — LO/LP only, floats over the page (also rendered in
+    // the institutional return block above for that view's overlay layout).
+    const whatsNewHtml = isOcUser ? this._renderWhatsNewBanner(currentUser) : '';
 
     // For OC users, route the "New Application" CTA through the placeholder stepper
     // (matches the welcome screen's first-app CTA and is the anchor for the coachmark tour).
@@ -1482,7 +1485,7 @@ const DataPlatformView = {
       : `DataPlatformView._openNewAppModal()`;
 
     return `
-      ${welcomeBandHtml}
+      ${whatsNewHtml}
       <div class="page-header">
         <div class="page-header-inner">
           <div class="page-header-left">
@@ -3349,10 +3352,10 @@ const DataPlatformView = {
     return labels[reason] || 'Access blocked';
   },
 
-  /* ---- Returning-user welcome band (LO/LP applications tab) ----
-     Slim greeting strip + dismissible "What's new" banner. Only renders
-     when welcomePrefs.welcomeSeen === true so the first-login flow stays
-     focused on the /welcome screen, not on a banner above the table. */
+  /* ---- Returning-user "what's new" banner (LO/LP applications tab) ----
+     Floats over the institutional artboard (and renders inline above the
+     classic table). Only shows after welcomePrefs.welcomeSeen so the
+     first-login flow stays focused on /welcome, not on a banner. */
   _WHATS_NEW: [
     {
       id: 'wn-2026-05-va-tx',
@@ -3361,30 +3364,16 @@ const DataPlatformView = {
       since: '2026-05-01',
     },
   ],
-  _renderApplicationsWelcomeBand(user, allLoans) {
+  _renderWhatsNewBanner(user) {
     if (!user) return '';
     const prefs = State.getWelcomePrefs(user.id);
     if (!prefs.welcomeSeen) return '';
 
-    const branch = user.branchId ? State.getBranch(user.branchId) : null;
-    const lpmIds = branch ? State.getOcEnablement(branch.companyId) : [];
-    const programCount = new Set(
-      lpmIds.map(id => State.getLPM(id)?.programId).filter(Boolean)
-    ).size;
-    const inFlight = allLoans.filter(l => l.status !== 'completed' && l.status !== 'draft').length;
-
-    const greetParts = [
-      `Welcome back, <b>${user.firstName || Display.fullName(user)}</b>`,
-      `${programCount} program${programCount === 1 ? '' : 's'} enabled`,
-      `${inFlight} application${inFlight === 1 ? '' : 's'} in flight`,
-    ];
-    const greetHtml = greetParts.map((s, i) =>
-      i === 0 ? s : `<span class="greet-strip-sep">·</span> ${s}`
-    ).join(' ');
-
     const update = this._WHATS_NEW.find(u => !(prefs.whatsNewDismissed || []).includes(u.id));
-    const bannerHtml = update ? `
-      <div class="whats-new-banner" data-cm="whats-new">
+    if (!update) return '';
+
+    return `
+      <div class="whats-new-banner whats-new-floating" data-cm="whats-new">
         <span class="whats-new-icon">i</span>
         <div class="whats-new-body">
           <div class="whats-new-title">${update.title}</div>
@@ -3394,16 +3383,6 @@ const DataPlatformView = {
           <button class="whats-new-close" title="Dismiss"
                   onclick="DataPlatformView._dismissWhatsNew('${update.id}')">×</button>
         </div>
-      </div>
-    ` : '';
-
-    return `
-      <div class="applications-welcome-band">
-        <div class="greet-strip">
-          <span class="greet-strip-dot"></span>
-          <span>${greetHtml}</span>
-        </div>
-        ${bannerHtml}
       </div>
     `;
   },

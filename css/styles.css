@@ -7470,42 +7470,10 @@ label { font-size: 12px; font-weight: 600; color: var(--color-text); }
 }
 
 /* ============================================================
-   APPLICATIONS — RETURNING-USER GREETING + WHAT'S-NEW BANNER
-   Sits above the data-platform applications-tab content.
+   APPLICATIONS — "WHAT'S NEW" UPDATE BANNER (LO / LP)
+   Floats over the institutional artboard, sits inline above the
+   classic table. Dismissed-per-update via welcomePrefs.
    ============================================================ */
-
-.applications-welcome-band {
-  margin: 0 0 14px;
-  display: flex;
-  flex-direction: column;
-  gap: 6px;
-}
-/* When the band sits above the page-header inside page-body, neutralize
-   the negative top-margin that page-header normally uses to bleed its
-   background to the viewport edge. */
-.page-body > .applications-welcome-band + .page-header {
-  margin-top: 0;
-}
-
-.greet-strip {
-  display: flex; align-items: center; gap: 10px;
-  padding: 8px 14px;
-  background: var(--color-primary-container);
-  color: var(--color-primary-dark);
-  border-radius: var(--radius);
-  font-size: 13px; font-weight: 500;
-  border: 1px solid rgba(0,33,16,0.06);
-}
-.greet-strip-dot {
-  width: 6px; height: 6px;
-  border-radius: 50%;
-  background: var(--color-primary);
-  flex: 0 0 auto;
-}
-.greet-strip-sep {
-  color: var(--color-primary-light);
-  opacity: 0.6;
-}
 
 .whats-new-banner {
   display: flex; align-items: flex-start; gap: 12px;
@@ -7514,6 +7482,32 @@ label { font-size: 12px; font-weight: 600; color: var(--color-text); }
   border: 1px solid var(--color-info-bg);
   border-left: 3px solid var(--color-info);
   border-radius: var(--radius);
+  margin: 0 0 14px;
+}
+/* Inline banner above .page-header inside .page-body: cancel the
+   page-header's -28px top margin so the two don't overlap. */
+.page-body > .whats-new-banner + .page-header { margin-top: 0; }
+/* Floating variant — used over the institutional artboard. Anchored
+   below the topnav at the left edge to mirror the artboard-floating-toggle
+   on the right. */
+.whats-new-banner.whats-new-floating {
+  position: fixed;
+  top: calc(var(--topnav-height) + 16px);
+  left: 24px;
+  right: auto;
+  z-index: 50;
+  width: 460px; max-width: calc(100vw - 48px);
+  margin: 0;
+  background: rgba(255,255,255,0.96);
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
+  box-shadow: var(--shadow-md);
+}
+@media (max-width: 760px) {
+  .whats-new-banner.whats-new-floating {
+    left: 12px; right: 12px; width: auto;
+    top: calc(var(--topnav-height) + 8px);
+  }
 }
 .whats-new-icon {
   width: 22px; height: 22px;
