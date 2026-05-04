@@ -6,6 +6,9 @@
    incomplete or to the role's home page otherwise.
    ============================================================ */
 
+const CHEVRON_RIGHT = `<svg class="btn-chevron" width="12" height="12" viewBox="0 0 12 12" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><polyline points="4.5 2.5 8 6 4.5 9.5"/></svg>`;
+const CHEVRON_LEFT  = `<svg class="btn-chevron" width="12" height="12" viewBox="0 0 12 12" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><polyline points="7.5 2.5 4 6 7.5 9.5"/></svg>`;
+
 const LoginView = {
   /* Same persona list that previously lived in role-select.js. The
      persona dropdown's source of truth — picking one auto-fills the
@@ -36,7 +39,7 @@ const LoginView = {
             <div class="login-logo">
               <img src="assets/branding/HomiumLogo_0721_Wordmark (Blue).png" alt="Homium" style="height:32px"
                    onerror="this.style.display='none';this.nextElementSibling.style.display='block'" />
-              <span style="display:none;font-size:24px;font-weight:700;color:var(--color-primary);font-family:Taviraj,serif">Homium</span>
+              <span style="display:none;font-size:24px;font-weight:700;color:var(--color-primary);font-family:var(--font-heading)">Homium</span>
             </div>
             ${this._state.stage === 'signin' ? this._renderSignInCard(persona) : this._render2FACard(persona)}
             <div class="login-footer-note">Interactive prototype — Q2 2026 · No real authentication</div>
@@ -74,7 +77,7 @@ const LoginView = {
           <span>Remember me on this device</span>
         </label>
 
-        <button class="btn btn-primary login-submit-btn" onclick="LoginView._submitSignIn()">Sign In →</button>
+        <button class="btn btn-primary login-submit-btn" onclick="LoginView._submitSignIn()">Sign In ${CHEVRON_RIGHT}</button>
 
         <div class="login-form-footnote">
           Trouble signing in? Contact your <a href="#" onclick="return false">platform administrator</a>.
@@ -94,9 +97,9 @@ const LoginView = {
             onkeydown="LoginView._codeKey(event, ${i})" />`).join('')}
         </div>
 
-        <button class="btn btn-primary login-submit-btn" onclick="LoginView._verify2FA()">Verify &amp; Continue →</button>
+        <button class="btn btn-primary login-submit-btn" onclick="LoginView._verify2FA()">Verify &amp; Continue ${CHEVRON_RIGHT}</button>
 
-        <button class="btn btn-ghost login-back-btn" onclick="LoginView._backToSignIn()">← Back to sign in</button>
+        <button class="btn btn-ghost login-back-btn" onclick="LoginView._backToSignIn()">${CHEVRON_LEFT} Back to sign in</button>
       </div>`;
   },
 
@@ -191,7 +194,7 @@ const LoginView = {
           <rect width="600" height="900" fill="url(#overlay-grad)"/>
 
           <!-- Brand watermark -->
-          <text x="40" y="850" fill="#1D3D2A" font-family="Taviraj, serif" font-size="22" font-weight="700" opacity="0.22">Homium</text>
+          <text x="40" y="850" fill="#1D3D2A" font-family="IvyPresto Display, Georgia, serif" font-size="22" font-weight="400" opacity="0.22">Homium</text>
           <text x="40" y="872" fill="#1D3D2A" font-family="Ubuntu, sans-serif" font-size="11" opacity="0.4">Originator Platform</text>
         </svg>
       </div>`;

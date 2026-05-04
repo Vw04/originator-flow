@@ -122,7 +122,7 @@ const OnboardingFlowView = {
         <div class="wiz-topbar-logo">
           <img src="assets/branding/HomiumLogo_0721_Wordmark (Blue).png" alt="Homium" style="height:24px"
                onerror="this.style.display='none';this.nextElementSibling.style.display='inline'" />
-          <span style="display:none;font-size:18px;font-weight:700;color:var(--color-primary);font-family:Taviraj,serif">Homium</span>
+          <span style="display:none;font-size:18px;font-weight:700;color:var(--color-primary);font-family:var(--font-heading)">Homium</span>
         </div>
         <div class="wiz-topbar-right">
           <span class="wiz-persona-pill">Welcome, ${personaName}</span>
@@ -164,20 +164,20 @@ const OnboardingFlowView = {
 
     let primaryBtn;
     if (isProfile) {
-      primaryBtn = `<button class="btn btn-primary" onclick="OnboardingFlowView._submitUnifiedProfile()">Submit →</button>`;
+      primaryBtn = `<button class="btn btn-primary" onclick="OnboardingFlowView._submitUnifiedProfile()">Submit ${CHEVRON_RIGHT}</button>`;
     } else if (isCert) {
-      primaryBtn = `<button class="btn btn-primary" onclick="OnboardingFlowView._advance()">Continue →</button>`;
+      primaryBtn = `<button class="btn btn-primary" onclick="OnboardingFlowView._advance()">Continue ${CHEVRON_RIGHT}</button>`;
     } else {
-      primaryBtn = `<button class="btn btn-primary" onclick="OnboardingFlowView._advance()">Continue →</button>`;
+      primaryBtn = `<button class="btn btn-primary" onclick="OnboardingFlowView._advance()">Continue ${CHEVRON_RIGHT}</button>`;
     }
 
     return `
       <div class="wiz-footer">
-        <button class="btn btn-secondary" onclick="OnboardingFlowView._back()" ${isFirst ? 'disabled' : ''}>← Back</button>
+        <button class="btn btn-secondary" onclick="OnboardingFlowView._back()" ${isFirst ? 'disabled' : ''}>${CHEVRON_LEFT} Back</button>
         <div class="wiz-footer-right">
           ${primaryBtn}
           <button class="btn btn-ghost btn-sm wiz-skip-btn" onclick="OnboardingFlowView._skipStep('${stepId}')" title="Demo: skip this step without waiting for batch verification">
-            Skip step (demo) →
+            Skip step (demo) ${CHEVRON_RIGHT}
           </button>
         </div>
       </div>`;
@@ -353,7 +353,7 @@ const OnboardingFlowView = {
       body = `<div style="font-size:12px;color:var(--color-text-secondary);line-height:1.5">
                 We use Securitize for ID capture, address verification, and sanctions screening. Click below to begin — you'll be guided through ID upload and a quick selfie.
               </div>`;
-      action = `<button class="btn btn-primary cert-card-action" onclick="OnboardingFlowView._openSecuritize()">Begin Securitize KYC →</button>`;
+      action = `<button class="btn btn-primary cert-card-action" onclick="OnboardingFlowView._openSecuritize()">Begin Securitize KYC ${CHEVRON_RIGHT}</button>`;
     }
 
     return `
@@ -511,8 +511,8 @@ const OnboardingFlowView = {
             <button class="btn btn-ghost btn-sm" onclick="OnboardingFlowView._closeSecuritize()">Cancel</button>
             <div style="font-size:11px;color:var(--color-text-muted)">Step ${step} of ${totalSteps}</div>
             ${isLast
-              ? `<button class="btn btn-primary" onclick="OnboardingFlowView._securitizeSubmit()" style="background:#1D4ED8">Submit for verification →</button>`
-              : `<button class="btn btn-primary" onclick="OnboardingFlowView._securitizeNext()" style="background:#1D4ED8">Continue →</button>`}
+              ? `<button class="btn btn-primary" onclick="OnboardingFlowView._securitizeSubmit()" style="background:#1D4ED8">Submit for verification ${CHEVRON_RIGHT}</button>`
+              : `<button class="btn btn-primary" onclick="OnboardingFlowView._securitizeNext()" style="background:#1D4ED8">Continue ${CHEVRON_RIGHT}</button>`}
           </div>
         </div>
       </div>`;
@@ -537,7 +537,7 @@ const OnboardingFlowView = {
         </div>
         <div class="card-title" style="font-size:22px;margin-bottom:8px">You're all set</div>
         <div style="font-size:14px;color:var(--color-text-muted);margin-bottom:24px;line-height:1.55">${roleWelcome[role] || 'Welcome to the Homium platform.'}</div>
-        <button class="btn btn-primary" style="min-width:200px" onclick="OnboardingFlowView._finish()">Enter Platform →</button>
+        <button class="btn btn-primary" style="min-width:200px" onclick="OnboardingFlowView._finish()">Enter Platform ${CHEVRON_RIGHT}</button>
       </div>`;
   },
 

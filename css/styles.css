@@ -6885,10 +6885,11 @@ label { font-size: 12px; font-weight: 600; color: var(--color-text); }
   background: var(--color-card);
 }
 .login-form-title {
-  font-size: 22px; font-weight: 700;
+  font-size: 24px; font-weight: 300;
   color: var(--color-text);
   text-align: center;
-  font-family: 'Taviraj', serif;
+  font-family: var(--font-heading);
+  letter-spacing: -0.02em;
   margin-bottom: 4px;
 }
 .login-form-subtitle {
@@ -6997,16 +6998,19 @@ label { font-size: 12px; font-weight: 600; color: var(--color-text); }
   font-weight: 500;
 }
 .wiz-header {
-  max-width: 1080px;
+  max-width: 720px;
   width: 100%;
-  margin: 32px auto 0;
+  margin: 36px auto 0;
   padding: 0 28px;
+  text-align: center;
 }
 .wiz-page-title {
-  font-size: 28px;
-  font-weight: 700;
+  font-size: 30px;
+  font-weight: 300;
   color: var(--color-text);
-  font-family: 'Taviraj', serif;
+  font-family: var(--font-heading);
+  letter-spacing: -0.02em;
+  line-height: 1.15;
   margin-bottom: 6px;
 }
 .wiz-page-subtitle {
@@ -7015,12 +7019,13 @@ label { font-size: 12px; font-weight: 600; color: var(--color-text); }
   margin-bottom: 24px;
 }
 .wiz-tabs {
-  max-width: 1080px;
+  max-width: 720px;
   width: 100%;
   margin: 0 auto;
   padding: 0 28px;
   background: transparent;
   border-bottom: 1px solid var(--color-border);
+  justify-content: center;
 }
 .wiz-tabs .section-tab.completed {
   color: var(--color-success);
@@ -7030,7 +7035,7 @@ label { font-size: 12px; font-weight: 600; color: var(--color-text); }
   margin-right: 2px;
 }
 .wiz-body {
-  max-width: 1080px;
+  max-width: 720px;
   width: 100%;
   margin: 24px auto 60px;
   padding: 0 28px;
@@ -7090,7 +7095,7 @@ label { font-size: 12px; font-weight: 600; color: var(--color-text); }
   display: grid;
   grid-template-columns: 1fr 1fr;
   gap: 18px;
-  max-width: 920px;
+  max-width: 720px;
   margin: 0 auto;
 }
 @media (max-width: 760px) {
@@ -7115,10 +7120,11 @@ label { font-size: 12px; font-weight: 600; color: var(--color-text); }
   margin: 6px 0 14px;
 }
 .cert-card-title {
-  font-size: 15px; font-weight: 700; color: var(--color-text);
+  font-size: 17px; font-weight: 400; color: var(--color-text);
   text-align: center;
   margin-bottom: 10px;
-  font-family: 'Taviraj', serif;
+  font-family: var(--font-heading);
+  letter-spacing: -0.01em;
 }
 .cert-card-action {
   margin-top: 16px;
@@ -7127,7 +7133,7 @@ label { font-size: 12px; font-weight: 600; color: var(--color-text); }
 }
 .cert-card-action:hover { background: #1E40AF; }
 .cert-helper {
-  max-width: 920px; margin: 22px auto 0;
+  max-width: 720px; margin: 22px auto 0;
   padding: 14px 16px;
   background: var(--color-surface); border: 1px solid var(--color-border); border-radius: 8px;
   font-size: 12px; color: var(--color-text-secondary); line-height: 1.55;
@@ -7206,10 +7212,11 @@ label { font-size: 12px; font-weight: 600; color: var(--color-text); }
   display: flex; align-items: center; justify-content: center;
 }
 .securitize-step-title {
-  font-size: 18px; font-weight: 700; color: var(--color-text);
+  font-size: 20px; font-weight: 400; color: var(--color-text);
   text-align: center;
   margin-bottom: 4px;
-  font-family: 'Taviraj', serif;
+  font-family: var(--font-heading);
+  letter-spacing: -0.01em;
 }
 .securitize-step-subtitle {
   font-size: 12px; color: var(--color-text-muted);
@@ -7275,4 +7282,26 @@ label { font-size: 12px; font-weight: 600; color: var(--color-text); }
   padding: 14px 20px;
   border-top: 1px solid var(--color-border);
   background: var(--color-card);
+}
+
+/* ---- Wizard / login button polish ---- */
+/* Tighten the global .btn letter-spacing inside focused setup screens
+   only — data pages keep the marketing-y 0.1em from .btn. */
+.wiz-page .btn,
+.securitize-modal .btn,
+.login-form-card .btn {
+  letter-spacing: 0.02em;
+}
+
+/* Inline chevron arrow used in primary/secondary buttons across the
+   wizard, login, and Securitize modal. Replaces the old unicode → / ←. */
+.btn-chevron {
+  display: inline-block;
+  vertical-align: middle;
+  margin-left: 4px;
+  opacity: 0.85;
+}
+.btn-chevron:first-child {
+  margin-left: 0;
+  margin-right: 4px;
 }
