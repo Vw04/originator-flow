@@ -221,44 +221,59 @@ const ProfileView = {
         </div>
       </div>
 
-      <div class="page-body" style="max-width:680px">
-        <div class="card" style="margin-bottom:20px">
-          <div style="display:flex;align-items:center;gap:16px;margin-bottom:20px">
-            <div class="avatar avatar-lg" style="background:${avatarColor(u.role)}">${Display.initials(u)}</div>
-            <div>
-              <div style="font-size:18px;font-weight:700;letter-spacing:-0.01em">${Display.fullName(u)}</div>
-              <div style="margin-top:4px;display:flex;gap:8px">
-                <span class="role-chip ${Display.roleClass(u.role)}">${Display.roleName(u.role)}</span>
-                <span class="status-pill ${Display.onboardingStatusClass(u.onboardingStatus)}"><span class="status-dot"></span>${Display.onboardingStatusLabel(u.onboardingStatus)}</span>
+      <div class="page-body profile-page">
+        <div class="profile-grid">
+          <div class="profile-col-left">
+
+            <!-- Identity card -->
+            <div class="card profile-identity-card">
+              <div class="profile-identity-head">
+                <div class="avatar avatar-lg" style="background:${avatarColor(u.role)}">${Display.initials(u)}</div>
+                <div class="profile-identity-text">
+                  <div class="profile-identity-name">${Display.fullName(u)}</div>
+                  <div class="profile-identity-chips">
+                    <span class="role-chip ${Display.roleClass(u.role)}">${Display.roleName(u.role)}</span>
+                    <span class="status-pill ${Display.onboardingStatusClass(u.onboardingStatus)}"><span class="status-dot"></span>${Display.onboardingStatusLabel(u.onboardingStatus)}</span>
+                  </div>
+                </div>
+              </div>
+              <hr class="divider" />
+              <div class="info-grid info-grid-compact">
+                <div class="info-row"><div class="info-label">Email</div><div class="info-value">${u.email}</div></div>
+                <div class="info-row"><div class="info-label">Phone</div><div class="info-value">${u.phone || '—'}</div></div>
+                <div class="info-row"><div class="info-label">Title</div><div class="info-value">${u.title || '—'}</div></div>
+                <div class="info-row"><div class="info-label">NMLS ID</div><div class="info-value">${u.nmlsId || '—'}</div></div>
+                <div class="info-row"><div class="info-label">Company</div><div class="info-value">${co ? co.name : '—'}</div></div>
+                <div class="info-row"><div class="info-label">Branch</div><div class="info-value">${br ? br.name : '—'}</div></div>
               </div>
             </div>
+
+            <!-- Help & tutorials (LO/LP only) -->
+            ${this._renderHelpAndTutorials(u)}
           </div>
 
-          <hr class="divider" />
+          <div class="profile-col-right">
 
-          <div class="info-grid">
-            <div class="info-row"><div class="info-label">Email</div><div class="info-value">${u.email}</div></div>
-            <div class="info-row"><div class="info-label">Phone</div><div class="info-value">${u.phone || '—'}</div></div>
-            <div class="info-row"><div class="info-label">Title</div><div class="info-value">${u.title || '—'}</div></div>
-            <div class="info-row"><div class="info-label">NMLS ID</div><div class="info-value">${u.nmlsId || '—'}</div></div>
-            <div class="info-row"><div class="info-label">Company</div><div class="info-value">${co ? co.name : '—'}</div></div>
-            <div class="info-row"><div class="info-label">Branch</div><div class="info-value">${br ? br.name : '—'}</div></div>
+            <!-- Onboarding progress + credentials -->
+            <div class="card profile-section">
+              <div class="profile-section-title">Account Onboarding</div>
+              ${this._renderFlowchart(u)}
+              <div class="profile-divider"></div>
+              ${this._renderCredentialChips(u, true)}
+            </div>
+
+            <!-- Effective access + branch assignments -->
+            <div class="card profile-section">
+              ${this._renderEligibilityLine(u, true)}
+              ${this._renderBranchAssignmentCards(u, true)}
+            </div>
+
+            <!-- License records -->
+            <div class="card profile-section">
+              ${this._renderLicenseRecords(u, true)}
+            </div>
           </div>
         </div>
-
-        <div class="card">
-          <div class="card-title" style="margin-bottom:16px">Account Onboarding</div>
-          ${this._renderFlowchart(u)}
-        </div>
-
-        <div style="margin-top:20px">
-          ${this._renderCredentialChips(u, true)}
-          ${this._renderEligibilityLine(u, true)}
-          ${this._renderBranchAssignmentCards(u, true)}
-          ${this._renderLicenseRecords(u, true)}
-        </div>
-
-        ${this._renderHelpAndTutorials(u)}
       </div>`;
   },
 

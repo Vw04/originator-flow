@@ -117,8 +117,8 @@ const LoginView = {
               <stop offset="100%" stop-color="#8FAE9A"/>
             </linearGradient>
             <linearGradient id="overlay-grad" x1="0" y1="0" x2="1" y2="1">
-              <stop offset="0%" stop-color="#1D3D2A" stop-opacity="0.08"/>
-              <stop offset="100%" stop-color="#001F0F" stop-opacity="0.18"/>
+              <stop offset="0%" stop-color="#0E2A47" stop-opacity="0.08"/>
+              <stop offset="100%" stop-color="#061629" stop-opacity="0.18"/>
             </linearGradient>
             <pattern id="grass" width="6" height="6" patternUnits="userSpaceOnUse">
               <rect width="6" height="6" fill="#A8C2B0"/>
@@ -194,8 +194,8 @@ const LoginView = {
           <rect width="600" height="900" fill="url(#overlay-grad)"/>
 
           <!-- Brand watermark -->
-          <text x="40" y="850" fill="#1D3D2A" font-family="IvyPresto Display, Georgia, serif" font-size="22" font-weight="400" opacity="0.22">Homium</text>
-          <text x="40" y="872" fill="#1D3D2A" font-family="Ubuntu, sans-serif" font-size="11" opacity="0.4">Originator Platform</text>
+          <text x="40" y="850" fill="#0E2A47" font-family="IvyPresto Display, Georgia, serif" font-size="22" font-weight="400" opacity="0.22">Homium</text>
+          <text x="40" y="872" fill="#0E2A47" font-family="Ubuntu, sans-serif" font-size="11" opacity="0.4">Originator Platform</text>
         </svg>
       </div>`;
   },

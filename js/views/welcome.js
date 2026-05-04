@@ -205,22 +205,20 @@ const WelcomeView = {
   _continue(opts = {}) {
     const u = State.getCurrentUser();
     if (u) {
-      const patch = { welcomeSeen: true };
-      // When the user takes the "Start your first application" CTA, jump
-      // the tour cursor past the apps-list intro steps so the coachmarks
-      // land on the stepper fields, not on the button the modal covers.
-      if (opts.openNewApp) {
-        const idx = (typeof Coachmarks !== 'undefined')
-          ? Coachmarks.TOUR.findIndex(s => s.id === 'newapp-borrower')
-          : -1;
-        if (idx > 0) patch.tourCursor = idx;
-      }
+      // Always reset the tour to step 1 when starting a fresh welcome flow.
+      // "Start your first application" is an action path — skip the tour for
+      // that and just open the stepper. "Continue to applications" runs the
+      // tour from the beginning.
+      const patch = {
+        welcomeSeen: true,
+        tourCursor: 0,
+        dismissedSteps: [],
+        tourCompleted: !!opts.openNewApp,
+      };
       State.setWelcomePrefs(u.id, patch);
     }
     if (opts.openNewApp && typeof NewApplicationStepperView !== 'undefined') {
       Router.navigate('/data/applications');
-      // Open stepper after the applications view mounts; coachmark engine
-      // (post-render hook in app.js, 50ms delay) will then anchor on it.
       setTimeout(() => NewApplicationStepperView.open(), 60);
       return;
     }
@@ -229,7 +227,13 @@ const WelcomeView = {
 
   _skip() {
     const u = State.getCurrentUser();
-    if (u) State.setWelcomePrefs(u.id, { welcomeSeen: true, tutorialsEnabled: false, tourCompleted: true });
+    if (u) State.setWelcomePrefs(u.id, {
+      welcomeSeen: true,
+      tutorialsEnabled: false,
+      tourCompleted: true,
+      tourCursor: 0,
+      dismissedSteps: [],
+    });
     Router.navigate('/data/applications');
   },
 };

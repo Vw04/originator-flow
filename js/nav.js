@@ -163,11 +163,8 @@ const Nav = (() => {
 
     const initials = user ? Display.initials(user) : 'HM';
     const userName  = user ? Display.fullName(user) : 'Demo User';
-    const company   = user && user.companyId ? State.getCompany(user.companyId) : null;
-    const branch    = user && user.branchId  ? State.getBranch(user.branchId)   : null;
-    const orgLine   = company
-      ? `${meta.label || role}${branch ? ' &middot; ' + branch.name : ''} <span style="opacity:0.65">@</span> ${company.name}`
-      : (meta.label || role);
+    // Topnav user-info now shows just the role label — no branch/company.
+    const orgLine   = meta.label || role;
 
     return `
       <nav class="topnav">
@@ -182,17 +179,17 @@ const Nav = (() => {
           ${navLinks}
           ${adminDropdown}
         </div>
-        <div class="topnav-search">
-          <button class="topnav-search-btn" onclick="Nav._openCmdK()" aria-label="Jump to loan or borrower">
-            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor"
-                 stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
-              <circle cx="11" cy="11" r="7"/><path d="M20 20l-3.5-3.5"/>
-            </svg>
-            <span class="topnav-search-text">Jump to loan, borrower, or address</span>
-            <kbd class="topnav-search-kbd">⌘K</kbd>
-          </button>
-        </div>
         <div class="topnav-right">
+          <div class="topnav-search">
+            <button class="topnav-search-btn" onclick="Nav._openCmdK()" aria-label="Jump to loan or borrower">
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                   stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+                <circle cx="11" cy="11" r="7"/><path d="M20 20l-3.5-3.5"/>
+              </svg>
+              <span class="topnav-search-text">Jump to loan, borrower, or address</span>
+              <kbd class="topnav-search-kbd">⌘K</kbd>
+            </button>
+          </div>
           ${role === 'investor_prospect' ? '' : `<div class="topnav-notif" id="topnav-notif" onclick="Nav.toggleNotifications(event)">
             <svg width="18" height="18" viewBox="0 0 18 18" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round">
               <path d="M9 1.5a5.5 5.5 0 0 1 5.5 5.5c0 3 1 4 1.5 5H2c.5-1 1.5-2 1.5-5A5.5 5.5 0 0 1 9 1.5z"/>

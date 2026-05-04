@@ -232,14 +232,14 @@ const OnboardingFlowView = {
 
         <div class="ob-field-label" style="margin-top:6px">Role *</div>
         <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:14px">
-          <label style="display:flex;align-items:flex-start;gap:8px;padding:10px 12px;border:2px solid ${isLO ? 'var(--color-primary)' : 'var(--color-border)'};border-radius:8px;cursor:pointer;background:${isLO ? 'rgba(29,61,42,0.04)' : 'var(--color-card)'}">
+          <label style="display:flex;align-items:flex-start;gap:8px;padding:10px 12px;border:2px solid ${isLO ? 'var(--color-primary)' : 'var(--color-border)'};border-radius:8px;cursor:pointer;background:${isLO ? 'rgba(14,42,71,0.04)' : 'var(--color-card)'}">
             <input type="radio" name="ob-role" value="lo" ${isLO ? 'checked' : ''} onchange="OnboardingFlowView._setRole('lo')" style="margin-top:2px">
             <div>
               <div style="font-size:13px;font-weight:600">Loan Officer</div>
               <div style="font-size:11px;color:var(--color-text-muted);margin-top:2px">Originates applications. NMLS + KYC required.</div>
             </div>
           </label>
-          <label style="display:flex;align-items:flex-start;gap:8px;padding:10px 12px;border:2px solid ${!isLO ? 'var(--color-primary)' : 'var(--color-border)'};border-radius:8px;cursor:pointer;background:${!isLO ? 'rgba(29,61,42,0.04)' : 'var(--color-card)'}">
+          <label style="display:flex;align-items:flex-start;gap:8px;padding:10px 12px;border:2px solid ${!isLO ? 'var(--color-primary)' : 'var(--color-border)'};border-radius:8px;cursor:pointer;background:${!isLO ? 'rgba(14,42,71,0.04)' : 'var(--color-card)'}">
             <input type="radio" name="ob-role" value="standard" ${!isLO ? 'checked' : ''} onchange="OnboardingFlowView._setRole('standard')" style="margin-top:2px">
             <div>
               <div style="font-size:13px;font-weight:600">Standard User</div>
@@ -690,6 +690,13 @@ const OnboardingFlowView = {
     const role = this._user()?.role || this._role;
     if (role === 'prog_admin') Router.navigate('/origination-companies');
     else if (role === 'lo' || role === 'lp') {
+      // Reset the tour to step 1 on every wizard completion. tourCompleted
+      // and tutorialsEnabled are preserved — users who already finished or
+      // opted out don't see the tour again, but users with a partial cursor
+      // from a prior session start fresh.
+      if (this._userId) {
+        State.setWelcomePrefs(this._userId, { tourCursor: 0, dismissedSteps: [] });
+      }
       const prefs = this._userId ? State.getWelcomePrefs(this._userId) : { welcomeSeen: false };
       Router.navigate(prefs.welcomeSeen ? '/data/applications' : '/welcome');
     }

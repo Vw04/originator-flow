@@ -267,21 +267,21 @@ const OCWizardView = {
         </div>
 
         <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:10px;margin-bottom:14px">
-          <label style="display:flex;align-items:flex-start;gap:8px;padding:10px 12px;border:2px solid ${skip ? 'var(--color-border)' : (isLO ? 'var(--color-primary)' : 'var(--color-border)')};border-radius:8px;cursor:pointer;background:${!skip && isLO ? 'rgba(29,61,42,0.04)' : 'var(--color-card)'}">
+          <label style="display:flex;align-items:flex-start;gap:8px;padding:10px 12px;border:2px solid ${skip ? 'var(--color-border)' : (isLO ? 'var(--color-primary)' : 'var(--color-border)')};border-radius:8px;cursor:pointer;background:${!skip && isLO ? 'rgba(14,42,71,0.04)' : 'var(--color-card)'}">
             <input type="radio" name="oc-wiz-utype" value="lo" ${!skip && isLO ? 'checked' : ''} onchange="OCWizardView._setAdminUserType('lo')">
             <div>
               <div style="font-size:13px;font-weight:600">Loan Officer</div>
               <div style="font-size:11px;color:var(--color-text-muted)">Originates apps. NMLS required.</div>
             </div>
           </label>
-          <label style="display:flex;align-items:flex-start;gap:8px;padding:10px 12px;border:2px solid ${skip ? 'var(--color-border)' : (!isLO ? 'var(--color-primary)' : 'var(--color-border)')};border-radius:8px;cursor:pointer;background:${!skip && !isLO ? 'rgba(29,61,42,0.04)' : 'var(--color-card)'}">
+          <label style="display:flex;align-items:flex-start;gap:8px;padding:10px 12px;border:2px solid ${skip ? 'var(--color-border)' : (!isLO ? 'var(--color-primary)' : 'var(--color-border)')};border-radius:8px;cursor:pointer;background:${!skip && !isLO ? 'rgba(14,42,71,0.04)' : 'var(--color-card)'}">
             <input type="radio" name="oc-wiz-utype" value="standard" ${!skip && !isLO ? 'checked' : ''} onchange="OCWizardView._setAdminUserType('standard')">
             <div>
               <div style="font-size:13px;font-weight:600">Standard User</div>
               <div style="font-size:11px;color:var(--color-text-muted)">Loan Processor, support, etc.</div>
             </div>
           </label>
-          <label style="display:flex;align-items:flex-start;gap:8px;padding:10px 12px;border:2px solid ${skip ? 'var(--color-primary)' : 'var(--color-border)'};border-radius:8px;cursor:pointer;background:${skip ? 'rgba(29,61,42,0.04)' : 'var(--color-card)'}">
+          <label style="display:flex;align-items:flex-start;gap:8px;padding:10px 12px;border:2px solid ${skip ? 'var(--color-primary)' : 'var(--color-border)'};border-radius:8px;cursor:pointer;background:${skip ? 'rgba(14,42,71,0.04)' : 'var(--color-card)'}">
             <input type="radio" name="oc-wiz-utype" value="skip" ${skip ? 'checked' : ''} onchange="OCWizardView._setAdminUserType('skip')">
             <div>
               <div style="font-size:13px;font-weight:600">Skip user invite</div>
@@ -305,12 +305,12 @@ const OCWizardView = {
           </div>
 
           <div style="margin-top:14px;display:flex;flex-wrap:wrap;gap:8px">
-            <label style="display:flex;align-items:center;gap:6px;padding:8px 12px;border:1px solid var(--color-border);border-radius:6px;font-size:13px;cursor:pointer;background:${a.isProgramAdmin ? 'rgba(29,61,42,0.04)' : 'var(--color-card)'}">
+            <label style="display:flex;align-items:center;gap:6px;padding:8px 12px;border:1px solid var(--color-border);border-radius:6px;font-size:13px;cursor:pointer;background:${a.isProgramAdmin ? 'rgba(14,42,71,0.04)' : 'var(--color-card)'}">
               <input type="checkbox" ${a.isProgramAdmin ? 'checked' : ''} onchange="OCWizardView._setAdminField('isProgramAdmin', this.checked)">
               <strong>Program Admin</strong>
               <span style="color:var(--color-text-muted);font-weight:400">— manage OC config & invite users</span>
             </label>
-            <label style="display:flex;align-items:center;gap:6px;padding:8px 12px;border:1px solid var(--color-border);border-radius:6px;font-size:13px;cursor:pointer;background:${a.isBranchManager ? 'rgba(29,61,42,0.04)' : 'var(--color-card)'}">
+            <label style="display:flex;align-items:center;gap:6px;padding:8px 12px;border:1px solid var(--color-border);border-radius:6px;font-size:13px;cursor:pointer;background:${a.isBranchManager ? 'rgba(14,42,71,0.04)' : 'var(--color-card)'}">
               <input type="checkbox" ${a.isBranchManager ? 'checked' : ''} onchange="OCWizardView._setAdminField('isBranchManager', this.checked)">
               <strong>Branch Manager</strong>
               <span style="color:var(--color-text-muted);font-weight:400">— min View on all branch loans</span>
