@@ -13,7 +13,20 @@ const App = {
       return this.renderShell(OnboardingView.render());
     });
     Router.register('/profile',      () => this.renderShell(ProfileView.renderMyProfile()));
+    Router.register('/welcome',      () => {
+      const r = State.getRole();
+      if (!['lo','lp'].includes(r)) {
+        // /welcome is OC-user-only; bounce others to their normal landing.
+        if (r === 'prog_admin') return Router.navigate('/origination-companies', { replace: true });
+        return Router.navigate('/data/analytics', { replace: true });
+      }
+      this.renderShell(WelcomeView.render());
+    });
     Router.register('/originations', (path) => {
+      // /originations is the Homium-internal operator workbench.
+      // OC users (LO/LP) must never land here — bounce to their applications view.
+      const r = State.getRole();
+      if (['lo','lp'].includes(r)) return Router.navigate('/data/applications', { replace: true });
       const match = path.match(/^\/originations\/(.+)$/);
       if (match) {
         OriginationsView._viewMode = 'detail';
@@ -112,6 +125,8 @@ const App = {
     if (typeof DataPlatformView._onAfterRender === 'function') DataPlatformView._onAfterRender();
     if (typeof OriginationsView._onAfterRender === 'function') OriginationsView._onAfterRender();
     if (typeof initColumnResize === 'function') initColumnResize();
+    // Resume the welcome coachmark tour if applicable
+    if (typeof Coachmarks !== 'undefined') setTimeout(() => Coachmarks.maybeStart(), 50);
   },
 
   renderView(path) {
@@ -127,7 +142,17 @@ const App = {
         return OnboardingView.render();
       },
       '/profile':                 () => ProfileView.renderMyProfile(),
+      '/welcome':                 () => {
+        const r = State.getRole();
+        if (!['lo','lp'].includes(r)) {
+          if (r === 'prog_admin') { Router.navigate('/origination-companies', { replace: true }); return ''; }
+          Router.navigate('/data/analytics', { replace: true }); return '';
+        }
+        return WelcomeView.render();
+      },
       '/originations':            () => {
+        const r = State.getRole();
+        if (['lo','lp'].includes(r)) { Router.navigate('/data/applications', { replace: true }); return ''; }
         const curPath = Router.getCurrentPath();
         const match = curPath.match(/^\/originations\/(.+)$/);
         if (match) {
@@ -165,6 +190,8 @@ const App = {
       if (typeof OriginationsView._onAfterRender === 'function') OriginationsView._onAfterRender();
       // Column resize on all tables
       if (typeof initColumnResize === 'function') initColumnResize(mainEl);
+      // Resume the welcome coachmark tour if applicable
+      if (typeof Coachmarks !== 'undefined') setTimeout(() => Coachmarks.maybeStart(), 50);
     }
   },
 

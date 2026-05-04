@@ -232,6 +232,27 @@ const State = (() => {
       }
     },
 
+    /* ---- Welcome / tutorial preferences (per-user, in-memory) ---- */
+    getWelcomePrefs(id) {
+      const u = _users.find(u => u.id === id);
+      const defaults = {
+        welcomeSeen: false,
+        tutorialsEnabled: true,
+        tourCompleted: false,
+        tourCursor: 0,           // index into Coachmarks.TOUR pages
+        dismissedSteps: [],
+        whatsNewDismissed: [],
+      };
+      return { ...defaults, ...(u?.welcomePrefs || {}) };
+    },
+    setWelcomePrefs(id, patch) {
+      const idx = _users.findIndex(u => u.id === id);
+      if (idx < 0) return;
+      const prev = _users[idx].welcomePrefs || {};
+      _users[idx] = { ..._users[idx], welcomePrefs: { ...prev, ...patch } };
+      notify();
+    },
+
     advanceOnboarding(id) {
       const user = _users.find(u => u.id === id);
       if (!user) return;

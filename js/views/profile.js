@@ -257,7 +257,65 @@ const ProfileView = {
           ${this._renderBranchAssignmentCards(u, true)}
           ${this._renderLicenseRecords(u, true)}
         </div>
+
+        ${this._renderHelpAndTutorials(u)}
       </div>`;
+  },
+
+  /* ---- Help & tutorials (welcome / coachmark replay) ---- */
+  _renderHelpAndTutorials(u) {
+    // Only OC users have a tour; hide for everyone else.
+    if (!['lo', 'lp'].includes(u.role)) return '';
+    const prefs = State.getWelcomePrefs(u.id);
+    const on = prefs.tutorialsEnabled !== false;
+    return `
+      <div class="help-tutorials-card" data-cm="tutorials-section">
+        <div class="card-title" style="margin-bottom:8px">Help &amp; tutorials</div>
+        <div class="help-tutorials-toggle">
+          <button class="toggle-switch ${on ? 'on' : ''}"
+                  aria-pressed="${on}"
+                  aria-label="Show guided tutorials"
+                  onclick="ProfileView._toggleTutorials()"></button>
+          <div>
+            <div style="font-weight:600">Show guided tutorials</div>
+            <div style="font-size:12px;color:var(--color-text-secondary);margin-top:2px">
+              When on, we'll walk you through new features as we ship them.
+            </div>
+          </div>
+        </div>
+        <div class="help-tutorials-actions">
+          <button class="btn btn-secondary btn-sm" onclick="ProfileView._replayWelcome()">Replay welcome screen</button>
+          <button class="btn btn-secondary btn-sm" onclick="ProfileView._replayTour()">Replay guided tour</button>
+        </div>
+      </div>`;
+  },
+
+  _toggleTutorials() {
+    const u = State.getCurrentUser();
+    if (!u) return;
+    const prefs = State.getWelcomePrefs(u.id);
+    State.setWelcomePrefs(u.id, { tutorialsEnabled: !prefs.tutorialsEnabled });
+    App.renderView('/profile');
+  },
+
+  _replayWelcome() {
+    const u = State.getCurrentUser();
+    if (!u) return;
+    State.setWelcomePrefs(u.id, { welcomeSeen: false });
+    Router.navigate('/welcome');
+  },
+
+  _replayTour() {
+    const u = State.getCurrentUser();
+    if (!u) return;
+    State.setWelcomePrefs(u.id, {
+      tourCompleted: false,
+      tourCursor: 0,
+      dismissedSteps: [],
+      tutorialsEnabled: true,
+      welcomeSeen: true,
+    });
+    Router.navigate('/data/applications');
   },
 
   /* ---- KYC + NMLS credential chips ---- */

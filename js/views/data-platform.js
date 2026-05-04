@@ -1272,8 +1272,14 @@ const DataPlatformView = {
     }
 
     // ---- Artboard view modes — Institutional is now the default for Applications ----
+    // Exception: LO / LP / branch staff see the classic table by default. The
+    // institutional artboard is operator-grade UI; OC users belong on a simpler
+    // table (see CLAUDE.md scope decision in welcome plan).
+    const _role = State.getRole();
     let pageMode = State.getPageMode('applications');
-    if (pageMode === 'default') pageMode = 'institutional';
+    if (pageMode === 'default') {
+      pageMode = (_role === 'lo' || _role === 'lp') ? 'classic' : 'institutional';
+    }
     const toggleHtml = this._renderArtboardToggle('applications', [
       { id: 'institutional', label: 'Institutional' },
       { id: 'classic',       label: 'Classic table' },
@@ -1296,7 +1302,10 @@ const DataPlatformView = {
     // Spec §1.4 + §3.5: gate the New Application CTA on the runtime
     // intersection of OC × Branch enablement and (for LO) license coverage.
     const currentUser = State.getCurrentUser();
-    let canCreate = ['sys_admin', 'operator'].includes(role);
+    // OC users (LO/LP) demo-only: always show the New Application CTA so the
+    // welcome flow + coachmark tour have a reachable entry point. The gate
+    // copy below still surfaces if the underlying assignment is missing.
+    let canCreate = ['sys_admin', 'operator', 'lo', 'lp'].includes(role);
     let createGateReason = null;
     let createGateBranchId = null;
     if (role === 'lo' && currentUser) {
@@ -1307,8 +1316,10 @@ const DataPlatformView = {
       } else {
         createGateBranchId = loAssignment.branchId;
         const gate = State.canCreateApplication(currentUser.id, loAssignment.branchId);
-        canCreate = gate.ok;
         if (!gate.ok) createGateReason = gate.reason;
+        // Demo override: LO always sees the CTA so the welcome flow can
+        // walk them through the placeholder stepper. Gate reasons still
+        // render in the warning strip below.
       }
     }
 
@@ -1413,7 +1424,7 @@ const DataPlatformView = {
       const addrLine2 = addrParts.slice(1).join(',').trim();
 
       return `
-        <tr class="${attn ? 'row-needs-attention' : ''}" style="cursor:pointer"
+        <tr class="${attn ? 'row-needs-attention' : ''}" data-cm="${i === 0 ? 'app-row' : ''}" style="cursor:pointer"
             onclick="DataPlatformView.openApplication('${l.id}')">
           <td onclick="event.stopPropagation()">
             <input type="checkbox" ${checked ? 'checked' : ''} style="accent-color:var(--color-primary)"
@@ -1459,8 +1470,19 @@ const DataPlatformView = {
     }</div>`;
 
     const title = (role === 'lo' || role === 'lp') ? 'My Applications' : 'Applications';
+    const isOcUser = role === 'lo' || role === 'lp';
+
+    // Greeting strip + what's-new banner — LO/LP only, sits above the page header.
+    const welcomeBandHtml = isOcUser ? this._renderApplicationsWelcomeBand(currentUser, allLoans) : '';
+
+    // For OC users, route the "New Application" CTA through the placeholder stepper
+    // (matches the welcome screen's first-app CTA and is the anchor for the coachmark tour).
+    const newAppOnclick = isOcUser
+      ? `NewApplicationStepperView.open()`
+      : `DataPlatformView._openNewAppModal()`;
 
     return `
+      ${welcomeBandHtml}
       <div class="page-header">
         <div class="page-header-inner">
           <div class="page-header-left">
@@ -1470,7 +1492,7 @@ const DataPlatformView = {
           <div class="page-header-actions" style="display:flex;align-items:center;gap:12px">
             ${toggleHtml}
             ${canCreate
-              ? `<button class="btn btn-primary btn-sm" onclick="DataPlatformView._openNewAppModal()">+ New Application</button>`
+              ? `<button class="btn btn-primary btn-sm" data-cm="new-app" onclick="${newAppOnclick}">+ New Application</button>`
               : (role === 'lo' && createGateReason
                   ? `<button class="btn btn-secondary btn-sm" disabled title="${this._gateReasonLabel(createGateReason, createGateBranchId)}" style="cursor:not-allowed">+ New Application (blocked)</button>`
                   : '')}
@@ -3325,6 +3347,74 @@ const DataPlatformView = {
       no_can_create:      'Your assignment does not include "Can Create" (subflag).',
     };
     return labels[reason] || 'Access blocked';
+  },
+
+  /* ---- Returning-user welcome band (LO/LP applications tab) ----
+     Slim greeting strip + dismissible "What's new" banner. Only renders
+     when welcomePrefs.welcomeSeen === true so the first-login flow stays
+     focused on the /welcome screen, not on a banner above the table. */
+  _WHATS_NEW: [
+    {
+      id: 'wn-2026-05-va-tx',
+      title: "You've been enabled for VA loans in new markets",
+      desc: "Talk to your branch admin if you'd like Texas added to your license coverage.",
+      since: '2026-05-01',
+    },
+  ],
+  _renderApplicationsWelcomeBand(user, allLoans) {
+    if (!user) return '';
+    const prefs = State.getWelcomePrefs(user.id);
+    if (!prefs.welcomeSeen) return '';
+
+    const branch = user.branchId ? State.getBranch(user.branchId) : null;
+    const lpmIds = branch ? State.getOcEnablement(branch.companyId) : [];
+    const programCount = new Set(
+      lpmIds.map(id => State.getLPM(id)?.programId).filter(Boolean)
+    ).size;
+    const inFlight = allLoans.filter(l => l.status !== 'completed' && l.status !== 'draft').length;
+
+    const greetParts = [
+      `Welcome back, <b>${user.firstName || Display.fullName(user)}</b>`,
+      `${programCount} program${programCount === 1 ? '' : 's'} enabled`,
+      `${inFlight} application${inFlight === 1 ? '' : 's'} in flight`,
+    ];
+    const greetHtml = greetParts.map((s, i) =>
+      i === 0 ? s : `<span class="greet-strip-sep">·</span> ${s}`
+    ).join(' ');
+
+    const update = this._WHATS_NEW.find(u => !(prefs.whatsNewDismissed || []).includes(u.id));
+    const bannerHtml = update ? `
+      <div class="whats-new-banner" data-cm="whats-new">
+        <span class="whats-new-icon">i</span>
+        <div class="whats-new-body">
+          <div class="whats-new-title">${update.title}</div>
+          <div class="whats-new-desc">${update.desc}</div>
+        </div>
+        <div class="whats-new-actions">
+          <button class="whats-new-close" title="Dismiss"
+                  onclick="DataPlatformView._dismissWhatsNew('${update.id}')">×</button>
+        </div>
+      </div>
+    ` : '';
+
+    return `
+      <div class="applications-welcome-band">
+        <div class="greet-strip">
+          <span class="greet-strip-dot"></span>
+          <span>${greetHtml}</span>
+        </div>
+        ${bannerHtml}
+      </div>
+    `;
+  },
+
+  _dismissWhatsNew(id) {
+    const u = State.getCurrentUser();
+    if (!u) return;
+    const prefs = State.getWelcomePrefs(u.id);
+    const next = [...(prefs.whatsNewDismissed || []), id];
+    State.setWelcomePrefs(u.id, { whatsNewDismissed: next });
+    App.renderView('/data/applications');
   },
 
   _openNewAppModal() {

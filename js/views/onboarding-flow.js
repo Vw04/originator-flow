@@ -689,7 +689,10 @@ const OnboardingFlowView = {
     this._teardown();
     const role = this._user()?.role || this._role;
     if (role === 'prog_admin') Router.navigate('/origination-companies');
-    else if (role === 'lo' || role === 'lp') Router.navigate('/originations');
+    else if (role === 'lo' || role === 'lp') {
+      const prefs = this._userId ? State.getWelcomePrefs(this._userId) : { welcomeSeen: false };
+      Router.navigate(prefs.welcomeSeen ? '/data/applications' : '/welcome');
+    }
     else Router.navigate('/data/analytics');
   },
 
