@@ -306,13 +306,16 @@ const LoginView = {
       return;
     }
 
-    // Reset demo user's credentials so the wizard runs end-to-end every time
+    // Reset demo user's credentials only if they had previously finished the wizard.
+    // Mid-wizard state (status='invited' with onboardingProgress saved) is preserved
+    // so the user lands on the step they signed out during.
     const user = State.getCurrentUser();
-    if (user) {
+    if (user && user.onboardingStatus === 'active') {
       State.updateUser(user.id, {
         onboardingStatus: 'invited',
         kyc: { status: 'not_started', vendor: null, referenceId: null, verifiedAt: null },
         nmlsLink: { status: 'not_linked', nmlsId: user.nmlsId || user.agentNmlsId || null, linkedAt: null, authorizedBranchNmlsIds: [], licensedStates: [] },
+        onboardingProgress: { step: 0, maxStep: 0 },
       });
     }
 

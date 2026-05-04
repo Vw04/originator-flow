@@ -7084,3 +7084,195 @@ label { font-size: 12px; font-weight: 600; color: var(--color-text); }
 .wiz-skip-btn:hover {
   color: var(--color-warning);
 }
+
+/* ---- External Certification Validation step (NMLS + Securitize KYC) ---- */
+.cert-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 18px;
+  max-width: 920px;
+  margin: 0 auto;
+}
+@media (max-width: 760px) {
+  .cert-grid { grid-template-columns: 1fr; }
+}
+.cert-card {
+  display: flex;
+  flex-direction: column;
+  padding: 22px 20px;
+}
+.cert-card-head {
+  display: flex; align-items: center; justify-content: space-between;
+  margin-bottom: 18px;
+}
+.cert-card-vendor {
+  display: inline-block;
+  font-size: 10px; font-weight: 700; letter-spacing: 0.08em; text-transform: uppercase;
+  padding: 4px 10px; border-radius: 99px;
+}
+.cert-card-icon {
+  display: flex; justify-content: center;
+  margin: 6px 0 14px;
+}
+.cert-card-title {
+  font-size: 15px; font-weight: 700; color: var(--color-text);
+  text-align: center;
+  margin-bottom: 10px;
+  font-family: 'Taviraj', serif;
+}
+.cert-card-action {
+  margin-top: 16px;
+  width: 100%;
+  background: #1D4ED8;
+}
+.cert-card-action:hover { background: #1E40AF; }
+.cert-helper {
+  max-width: 920px; margin: 22px auto 0;
+  padding: 14px 16px;
+  background: var(--color-surface); border: 1px solid var(--color-border); border-radius: 8px;
+  font-size: 12px; color: var(--color-text-secondary); line-height: 1.55;
+}
+.cert-helper strong { color: var(--color-text); }
+.cert-helper em { font-style: normal; font-weight: 600; color: var(--color-primary); }
+
+/* ---- Securitize KYC modal (5-step simulated flow) ---- */
+.securitize-overlay {
+  position: fixed; inset: 0; z-index: 500;
+  background: rgba(15, 23, 42, 0.55);
+  backdrop-filter: blur(3px);
+  display: flex; align-items: center; justify-content: center;
+  padding: 24px;
+  animation: fadeIn 0.18s ease;
+}
+.securitize-modal {
+  background: var(--color-card);
+  border-radius: 12px;
+  width: 100%; max-width: 520px;
+  max-height: 90vh;
+  display: flex; flex-direction: column;
+  overflow: hidden;
+  box-shadow: 0 20px 60px rgba(0, 0, 0, 0.25);
+  animation: slideUp 0.2s ease;
+}
+.securitize-header {
+  display: flex; align-items: center; justify-content: space-between;
+  padding: 16px 20px;
+  border-bottom: 1px solid var(--color-border);
+  background: linear-gradient(180deg, #F8FAFF 0%, var(--color-card) 100%);
+}
+.securitize-brand {
+  display: flex; align-items: center; gap: 10px;
+}
+.securitize-brand-mark {
+  width: 32px; height: 32px;
+  border-radius: 7px;
+  background: linear-gradient(135deg, #1D4ED8 0%, #3B82F6 100%);
+  color: #fff;
+  display: flex; align-items: center; justify-content: center;
+  font-weight: 800; font-size: 13px;
+  letter-spacing: -0.02em;
+}
+.securitize-close {
+  background: none; border: none;
+  font-size: 22px; line-height: 1;
+  color: var(--color-text-muted);
+  cursor: pointer;
+  width: 28px; height: 28px;
+  border-radius: 4px;
+}
+.securitize-close:hover { background: var(--color-surface); color: var(--color-text); }
+
+.securitize-progress {
+  display: flex; gap: 6px;
+  padding: 12px 20px 6px;
+  background: var(--color-card);
+}
+.securitize-progress-dot {
+  flex: 1; height: 4px; border-radius: 2px;
+  background: var(--color-border);
+  transition: background 0.2s;
+}
+.securitize-progress-dot.done { background: #1D4ED8; }
+
+.securitize-body {
+  padding: 24px 24px 28px;
+  overflow-y: auto;
+  flex: 1;
+}
+
+.securitize-step-icon {
+  width: 56px; height: 56px; border-radius: 50%;
+  margin: 0 auto 14px;
+  display: flex; align-items: center; justify-content: center;
+}
+.securitize-step-title {
+  font-size: 18px; font-weight: 700; color: var(--color-text);
+  text-align: center;
+  margin-bottom: 4px;
+  font-family: 'Taviraj', serif;
+}
+.securitize-step-subtitle {
+  font-size: 12px; color: var(--color-text-muted);
+  text-align: center;
+  margin-bottom: 18px;
+  line-height: 1.5;
+}
+.securitize-step-body {
+  font-size: 13px; color: var(--color-text-secondary); line-height: 1.55;
+}
+
+.securitize-doc-grid {
+  display: flex; flex-direction: column; gap: 8px;
+  margin-top: 8px;
+}
+.securitize-doc-card {
+  display: flex; align-items: center; gap: 10px;
+  padding: 12px 14px;
+  border: 1.5px solid var(--color-border); border-radius: 8px;
+  cursor: pointer;
+  transition: border-color 0.12s, background 0.12s;
+}
+.securitize-doc-card:hover { border-color: #1D4ED8; }
+.securitize-doc-card.selected { border-color: #1D4ED8; background: rgba(29, 78, 216, 0.04); }
+
+.securitize-upload-grid {
+  display: grid; grid-template-columns: 1fr 1fr; gap: 10px;
+  margin-top: 8px;
+}
+.securitize-upload-tile {
+  border: 1.5px dashed #16A34A;
+  background: #F0FDF4;
+  border-radius: 8px;
+  padding: 18px 12px;
+  text-align: center;
+}
+.securitize-selfie-tile {
+  border: 1.5px solid var(--color-border);
+  background: var(--color-surface);
+  border-radius: 12px;
+  padding: 28px 20px;
+  text-align: center;
+  margin-top: 10px;
+}
+
+.securitize-review {
+  margin-top: 8px;
+  border: 1px solid var(--color-border); border-radius: 8px;
+  overflow: hidden;
+}
+.securitize-review-row {
+  display: flex; justify-content: space-between; align-items: center;
+  padding: 10px 14px;
+  font-size: 13px;
+  color: var(--color-text-secondary);
+  border-bottom: 1px solid var(--color-border-light);
+}
+.securitize-review-row:last-child { border-bottom: none; }
+.securitize-review-row strong { color: var(--color-text); font-weight: 600; }
+
+.securitize-footer {
+  display: flex; align-items: center; justify-content: space-between; gap: 10px;
+  padding: 14px 20px;
+  border-top: 1px solid var(--color-border);
+  background: var(--color-card);
+}

@@ -212,6 +212,7 @@ const State = (() => {
         policies: [],
         kyc: { status: 'not_started', vendor: null, referenceId: null, verifiedAt: null },
         nmlsLink: { status: 'not_linked', nmlsId: data.agentNmlsId || data.nmlsId || null, linkedAt: null, authorizedBranchNmlsIds: [], licensedStates: [] },
+        onboardingProgress: { step: 0, maxStep: 0 },
         ...data,
       };
       // If caller passed in their own kyc / nmlsLink, ...data overrides — fine.
