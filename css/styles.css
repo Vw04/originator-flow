@@ -8193,3 +8193,89 @@ label { font-size: 12px; font-weight: 600; color: var(--color-text); }
   align-items: center;
   justify-content: space-between;
 }
+
+/* ============================================================
+   WELCOME MODAL — compact layout
+   Hero block carries the enablement strip in modal mode so the
+   modal fits a single viewport without scrolling.
+   ============================================================ */
+
+/* Folded enablement strip inside the hero (modal-only) */
+.welcome-hero-enablement {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px 12px;
+  margin-top: 14px;
+  padding-top: 14px;
+  border-top: 1px solid rgba(14, 42, 71, 0.08);
+}
+.welcome-hero-enablement-label {
+  font-size: 10px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: var(--color-text-muted, #6B7280);
+}
+.welcome-hero-enablement-progs { display: inline-flex; flex-wrap: wrap; gap: 6px; }
+.welcome-hero-program {
+  display: inline-flex;
+  align-items: center;
+  padding: 3px 9px;
+  border-radius: 99px;
+  background: #fff;
+  border: 1px solid rgba(14, 42, 71, 0.18);
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--color-primary, #0E2A47);
+}
+.welcome-hero-enablement-markets {
+  font-size: 11px;
+  color: var(--color-text-muted, #6B7280);
+  margin-left: auto;
+}
+
+/* Modal-mode tightening — kill the sub-card and resources side spacing
+   so everything fits without scroll on a 700-tall viewport. */
+.welcome-page-modal { padding: 24px 26px 18px; }
+.welcome-page-modal .welcome-hero {
+  padding: 18px 20px;
+  margin-bottom: 12px;
+}
+.welcome-page-modal .welcome-title {
+  font-size: 30px;
+  line-height: 1.05;
+  margin: 4px 0 4px;
+}
+.welcome-page-modal .welcome-subtitle { font-size: 13px; }
+.welcome-page-modal .welcome-checks { margin-top: 10px; }
+.welcome-page-modal .welcome-check { font-size: 11px; padding: 3px 9px; }
+.welcome-page-modal .welcome-card {
+  margin-bottom: 0;
+  padding: 14px 16px;
+}
+.welcome-page-modal .welcome-card-title-sm {
+  font-size: 11px;
+  margin-bottom: 8px;
+}
+.welcome-page-modal .welcome-resources {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 6px;
+}
+.welcome-page-modal .welcome-resource {
+  padding: 8px 10px;
+  gap: 8px;
+}
+.welcome-page-modal .welcome-resource-icon { font-size: 18px; }
+.welcome-page-modal .welcome-resource-title { font-size: 12px; font-weight: 600; }
+.welcome-page-modal .welcome-resource-desc { font-size: 11px; }
+.welcome-page-modal .welcome-footer {
+  margin-top: 12px;
+  padding-top: 12px;
+}
+
+/* Tour tooltip: Back+Next button group, sits to the right of the dots. */
+.cm-tooltip-nav { display: inline-flex; gap: 6px; }
+.cm-tooltip-nav .cm-back-btn { padding: 6px 10px; font-size: 12px; }
+.cm-tooltip-nav .cm-back-btn:disabled { opacity: 0.35; cursor: not-allowed; }

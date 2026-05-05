@@ -26,27 +26,117 @@ const Coachmarks = {
   // Tour definition. Each entry is one step. `route` is matched against
   // Router.getCurrentPath() at runtime. `trigger` runs before anchoring
   // so we can open modals or drawers as the tour progresses.
+  /* Tour structure (Round 4 redesign):
+       Phase 1 — Orient: what is this page, what's on it (4 steps)
+       Phase 2 — Walk a sample loan to teach the detail page (4 steps)
+       Phase 3 — Create a new application (5 steps)
+       Phase 4 — Notifications + how to replay (2 steps)
+
+     `requires`:  'app-list' | 'app-detail' — context the step expects.
+     `trigger`:   'open-sample-loan' | 'close-loan' | 'open-newapp' | 'close-newapp'
+     `optional`:  true → cascade-skip when anchor missing instead of pausing
+     `placement`: 'top' | 'bottom' | 'left' | 'right' (defaults to bottom)
+  */
   TOUR: [
+    /* ---------- Phase 1: orient ---------- */
     {
-      id: 'apps-newbtn',
+      id: 'apps-intro',
       route: '/data/applications',
-      target: '[data-cm="new-app"]',
-      title: 'Start a new application',
-      body: 'Click here whenever you want to begin originating a new loan. We\'ll walk through the form together in a moment.',
+      requires: 'app-list',
+      trigger: 'close-loan',
+      target: '[data-cm="apps-page"]',
+      title: 'Welcome to your Applications',
+      body: 'This is your loan-origination pipeline. Every application you start lives here — from prequalification through closing. Track progress, spot what needs attention, and create new applications.',
       placement: 'bottom',
     },
     {
-      id: 'apps-row',
+      id: 'apps-stats',
       route: '/data/applications',
-      target: '[data-cm="app-row"]',
-      title: 'Open an application',
-      body: 'Each row is one application in flight. Click into one to see status, documents, and any notes from underwriting.',
+      requires: 'app-list',
+      target: '[data-cm="apps-stats"]',
+      title: 'Your pipeline at a glance',
+      body: 'Top-line metrics: how many applications you have in flight, total committed value, average days in stage, and how many need your attention.',
+      placement: 'bottom',
+      optional: true,
+    },
+    {
+      id: 'apps-banner',
+      route: '/data/applications',
+      requires: 'app-list',
+      target: '[data-cm="apps-banner"]',
+      title: 'Aging & action items',
+      body: 'Loans sitting in a stage too long surface here as a flag — a personal nudge to keep deals moving.',
+      placement: 'bottom',
+      optional: true,
+    },
+    {
+      id: 'apps-table',
+      route: '/data/applications',
+      requires: 'app-list',
+      target: '[data-cm="apps-table"]',
+      title: 'Your loan list',
+      body: 'Every application you\'re working on. Sort by status or amount, filter, search by borrower or loan ID.',
       placement: 'top',
-      optional: true, // skipped automatically when there are no rows
+      optional: true,
+    },
+
+    /* ---------- Phase 2: walk a sample loan ---------- */
+    {
+      id: 'open-sample',
+      route: '/data/applications',
+      requires: 'app-list',
+      target: '[data-cm="app-row"]',
+      title: 'Open a loan to dig in',
+      body: 'Click any row to open its detail page. We\'ll click for you — Next →.',
+      placement: 'top',
+      optional: true,
+    },
+    {
+      id: 'loan-header',
+      route: '/data/applications',
+      requires: 'app-detail',
+      trigger: 'open-sample-loan',
+      target: '[data-cm="loan-header"]',
+      title: 'The loan-detail page',
+      body: 'The header shows where this loan is and the key data: address, loan ID, program, amount, LTV, FICO, and the borrower / loan officer of record.',
+      placement: 'bottom',
+    },
+    {
+      id: 'loan-action',
+      route: '/data/applications',
+      requires: 'app-detail',
+      target: '[data-cm="loan-action"]',
+      title: 'Next required action',
+      body: 'The most actionable item is surfaced at the top of the loan, with a deadline. Click the button to jump straight to that task.',
+      placement: 'bottom',
+      optional: true,
+    },
+    {
+      id: 'loan-deeper',
+      route: '/data/applications',
+      requires: 'app-detail',
+      target: '[data-cm="loan-tabs"]',
+      title: 'Dive deeper',
+      body: 'Tabs for Overview, Tasks, Documents, Parties, and History. The right-side panel keeps borrower info, key dates, and the active checklist within reach.',
+      placement: 'top',
+      optional: true,
+    },
+
+    /* ---------- Phase 3: create a new application ---------- */
+    {
+      id: 'apps-newbtn',
+      route: '/data/applications',
+      requires: 'app-list',
+      trigger: 'close-loan',
+      target: '[data-cm="new-app"]',
+      title: 'Start a new application',
+      body: 'Now let\'s start one from scratch. Click + New application — or hit Next and we\'ll open the form.',
+      placement: 'bottom',
     },
     {
       id: 'newapp-borrower',
       route: '/data/applications',
+      requires: 'app-list',
       trigger: 'open-newapp',
       stepperStep: 0,
       target: '[data-cm="field-borrower"]',
@@ -57,6 +147,7 @@ const Coachmarks = {
     {
       id: 'newapp-property',
       route: '/data/applications',
+      requires: 'app-list',
       trigger: 'open-newapp',
       stepperStep: 1,
       target: '[data-cm="field-property"]',
@@ -67,6 +158,7 @@ const Coachmarks = {
     {
       id: 'newapp-terms',
       route: '/data/applications',
+      requires: 'app-list',
       trigger: 'open-newapp',
       stepperStep: 2,
       target: '[data-cm="field-terms"]',
@@ -77,6 +169,7 @@ const Coachmarks = {
     {
       id: 'newapp-submit',
       route: '/data/applications',
+      requires: 'app-list',
       trigger: 'open-newapp',
       stepperStep: 3,
       target: '[data-cm="submit"]',
@@ -84,9 +177,12 @@ const Coachmarks = {
       body: 'Once submitted, this application is flagged to our underwriting team for review. If anything needs attention they\'ll add a note on the application — and you\'ll see a notification update.',
       placement: 'top',
     },
+
+    /* ---------- Phase 4: notifications + replay ---------- */
     {
       id: 'notif-bell',
       route: '/data/applications',
+      requires: 'app-list',
       trigger: 'close-newapp',
       target: '#topnav-notif',
       title: 'Updates land here',
@@ -154,6 +250,57 @@ const Coachmarks = {
     this._advance();
   },
 
+  back() {
+    const u = State.getCurrentUser();
+    if (!u) return;
+    const prefs = State.getWelcomePrefs(u.id);
+    let cursor = (prefs.tourCursor || 0) - 1;
+    // Skip over previously-dismissed steps so Back lands on the most
+    // recent step the user actually saw.
+    while (cursor >= 0 && (prefs.dismissedSteps || []).includes(this.TOUR[cursor]?.id)) {
+      cursor -= 1;
+    }
+    if (cursor < 0) return; // already at first
+    State.setWelcomePrefs(u.id, { tourCursor: cursor });
+    const prevStep = this.TOUR[cursor];
+    this._cascading = false;
+    // If the previous step lives on a different route, navigate back.
+    if (prevStep.route && prevStep.route !== Router.getCurrentPath()) {
+      this._teardown();
+      Router.navigate(prevStep.route);
+      return;
+    }
+    // Run any "reverse" trigger to put the page state back where the
+    // step expects (e.g. close the new-app modal so we can show the
+    // open-application step again).
+    this._runBackwardTrigger(prevStep);
+    this._teardown();
+    setTimeout(() => this.maybeStart(), 30);
+  },
+
+  /* When stepping backward, put the page state back into the shape the
+     previous step expects so its anchor is reachable. */
+  _runBackwardTrigger(prevStep) {
+    // Going back into a list-context step: close any open detail or stepper.
+    if (prevStep.requires === 'app-list') {
+      if (typeof NewApplicationStepperView !== 'undefined') NewApplicationStepperView.close();
+      if (typeof DataPlatformView !== 'undefined' && DataPlatformView._selectedApplicationId) {
+        DataPlatformView._selectedApplicationId = null;
+        App.renderView(Router.getCurrentPath());
+      }
+    }
+    // Going back into a detail-context step: ensure a sample loan is open
+    // and the stepper modal is closed.
+    if (prevStep.requires === 'app-detail') {
+      if (typeof NewApplicationStepperView !== 'undefined') NewApplicationStepperView.close();
+      if (typeof DataPlatformView !== 'undefined' && !DataPlatformView._selectedApplicationId) {
+        const loans = (typeof State !== 'undefined' && typeof State.getLoansForRole === 'function')
+          ? State.getLoansForRole() : [];
+        if (loans[0]) DataPlatformView.openApplication(loans[0].id);
+      }
+    }
+  },
+
   _advance() {
     const u = State.getCurrentUser();
     if (!u) return;
@@ -215,16 +362,21 @@ const Coachmarks = {
     const step = this.TOUR[cursor];
     if (!step) return;
 
-    // Cascade safety: never auto-open a modal when the engine is fast-
-    // forwarding past skipped steps. The user shouldn't get a surprise
-    // borrower form as their first impression. Skip the whole step instead.
+    // Cascade safety: never auto-open a modal/detail when the engine is
+    // fast-forwarding past skipped steps. The user shouldn't get a surprise
+    // borrower form (or detail page) as their first impression.
     const modalAlreadyOpen = !!document.getElementById('newapp-stepper-host');
+    const detailAlreadyOpen = typeof DataPlatformView !== 'undefined' && !!DataPlatformView._selectedApplicationId;
     if (this._cascading && step.trigger === 'open-newapp' && !modalAlreadyOpen) {
       this.dismissCurrent();
       return;
     }
+    if (this._cascading && step.trigger === 'open-sample-loan' && !detailAlreadyOpen) {
+      this.dismissCurrent();
+      return;
+    }
 
-    // Run trigger (open or close a modal etc.)
+    // Run trigger (open or close a modal / detail page etc.)
     if (step.trigger === 'open-newapp') {
       if (typeof NewApplicationStepperView !== 'undefined') {
         if (!modalAlreadyOpen) {
@@ -238,6 +390,29 @@ const Coachmarks = {
     }
     if (step.trigger === 'close-newapp') {
       if (typeof NewApplicationStepperView !== 'undefined') NewApplicationStepperView.close();
+    }
+    if (step.trigger === 'open-sample-loan') {
+      if (typeof DataPlatformView !== 'undefined' && !detailAlreadyOpen) {
+        // Pick the first loan in the user's list as the demo target.
+        const loans = (typeof State !== 'undefined' && typeof State.getLoansForRole === 'function')
+          ? State.getLoansForRole()
+          : [];
+        const sample = loans[0];
+        if (sample) {
+          DataPlatformView.openApplication(sample.id);
+          // openApplication re-renders, so resume after the next tick.
+          setTimeout(() => this.maybeStart(), 60);
+          return;
+        }
+      }
+    }
+    if (step.trigger === 'close-loan') {
+      if (typeof DataPlatformView !== 'undefined' && DataPlatformView._selectedApplicationId) {
+        DataPlatformView._selectedApplicationId = null;
+        App.renderView(Router.getCurrentPath());
+        setTimeout(() => this.maybeStart(), 60);
+        return;
+      }
     }
 
     // Wait one frame so any newly-opened modal lays out before we measure.
@@ -341,6 +516,7 @@ const Coachmarks = {
   _tooltipHtml(step, cursor) {
     const total = this.TOUR.length;
     const isLast = cursor === total - 1;
+    const isFirst = cursor === 0;
     const dots = this.TOUR.map((_, i) =>
       `<span class="cm-tooltip-dot ${i === cursor ? 'active' : ''}"></span>`
     ).join('');
@@ -353,7 +529,10 @@ const Coachmarks = {
       <div class="cm-tooltip-foot">
         <button class="btn btn-ghost" onclick="Coachmarks.skip()">Skip tour</button>
         <span class="cm-tooltip-dots">${dots}</span>
-        <button class="btn btn-primary" onclick="Coachmarks.next()">${isLast ? 'Done' : 'Next →'}</button>
+        <div class="cm-tooltip-nav">
+          <button class="btn btn-ghost cm-back-btn" ${isFirst ? 'disabled' : ''} onclick="Coachmarks.back()">← Back</button>
+          <button class="btn btn-primary" onclick="Coachmarks.next()">${isLast ? 'Done' : 'Next →'}</button>
+        </div>
       </div>
       <button class="cm-tooltip-disable" onclick="Coachmarks.disableForever()">Don't show me tutorials again</button>
     `;

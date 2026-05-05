@@ -63,13 +63,24 @@ const WelcomeView = {
     const loans = isLO ? State.getLoansByLO(u.id) : [];
     const isFirstApp = isLO && loans.length === 0;
 
+    if (asModal) {
+      // Compact modal layout: hero + folded enablement, then resources, then footer.
+      return `
+        <div class="welcome-page welcome-page-modal">
+          ${this._renderHero(u, role, branch, company, /* withEnablement */ enablement)}
+          ${this._renderResourcesCard()}
+          ${this._renderFooter(isLO, isFirstApp)}
+        </div>
+      `;
+    }
+
     return `
-      <div class="welcome-page${asModal ? ' welcome-page-modal' : ''}">
+      <div class="welcome-page">
         ${this._renderHero(u, role, branch, company)}
         ${this._renderFirstAppCta(isLO, isFirstApp, enablement)}
         ${this._renderEnablementCard(enablement, role, branch)}
         ${this._renderResourcesCard()}
-        ${this._renderFooter()}
+        ${this._renderFooter(isLO, isFirstApp)}
       </div>
     `;
   },
@@ -87,7 +98,7 @@ const WelcomeView = {
   },
 
   /* ---- Sections ---- */
-  _renderHero(u, role, branch, company) {
+  _renderHero(u, role, branch, company, enablement) {
     const fullName = Display.fullName(u);
     const firstName = u.firstName || fullName;
     const subtitleParts = [Display.roleName(role)];
@@ -105,6 +116,23 @@ const WelcomeView = {
       { ok: onbOk,  label: 'Onboarding complete' },
     ].filter(c => c.ok);
 
+    // Optional folded enablement strip (only used when modal compacting):
+    let enablementStrip = '';
+    if (enablement && enablement.programs && enablement.programs.length) {
+      const programChips = enablement.programs
+        .map(p => `<span class="welcome-hero-program">${p.name}</span>`)
+        .join('');
+      const marketLine = enablement.markets.length
+        ? enablement.markets.map(m => m.code).join(' · ')
+        : '—';
+      enablementStrip = `
+        <div class="welcome-hero-enablement">
+          <span class="welcome-hero-enablement-label">Enabled for</span>
+          <span class="welcome-hero-enablement-progs">${programChips}</span>
+          <span class="welcome-hero-enablement-markets">Active in ${marketLine}</span>
+        </div>`;
+    }
+
     return `
       <div class="welcome-hero">
         <div class="welcome-hero-row">
@@ -118,6 +146,7 @@ const WelcomeView = {
         <div class="welcome-checks">
           ${checks.map(c => `<span class="welcome-check"><span class="welcome-check-dot">✓</span>${c.label}</span>`).join('')}
         </div>
+        ${enablementStrip}
       </div>
     `;
   },
@@ -222,11 +251,17 @@ const WelcomeView = {
     `;
   },
 
-  _renderFooter() {
+  _renderFooter(isLO, isFirstApp) {
+    const startBtn = (isLO && isFirstApp)
+      ? `<button class="btn btn-secondary btn-sm" onclick="WelcomeView._continue({ openNewApp: true })">Start your first application →</button>`
+      : '';
     return `
       <div class="welcome-footer">
         <button class="btn btn-ghost" onclick="WelcomeView._skip()">Skip — don't show again</button>
-        <button class="btn btn-primary btn-lg" onclick="WelcomeView._continue()">Continue to applications →</button>
+        <div style="display:flex;gap:8px">
+          ${startBtn}
+          <button class="btn btn-primary btn-lg" onclick="WelcomeView._continue()">Continue to applications →</button>
+        </div>
       </div>
     `;
   },

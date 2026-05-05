@@ -104,7 +104,7 @@ const InstitutionalArtboard = ({ context = 'applications' } = {}) => {
   };
 
   return (
-    <div className="ab-institutional">
+    <div className="ab-institutional" data-cm={isUW ? null : 'apps-page'}>
       {/* `.inst-top` removed — the host app's topnav provides logo, nav, search,
           notifications, and user profile. The header below carries the
           page-specific framing instead. */}
@@ -123,7 +123,7 @@ const InstitutionalArtboard = ({ context = 'applications' } = {}) => {
         </div>
       </div>
 
-      <div className="inst-ai">
+      <div className="inst-ai" data-cm={isUW ? null : 'apps-banner'}>
         <div className="inst-ai-body" dangerouslySetInnerHTML={{__html: FRAME.aiBody}}/>
         <div className="inst-ai-actions">
           <button className="inst-ai-btn">Read drafts</button>
@@ -131,7 +131,7 @@ const InstitutionalArtboard = ({ context = 'applications' } = {}) => {
         </div>
       </div>
 
-      <div className="inst-stats">
+      <div className="inst-stats" data-cm={isUW ? null : 'apps-stats'}>
         {isUW ? (<>
           <div className="inst-stat">
             <div className="inst-stat-label">In queue</div>
@@ -222,7 +222,7 @@ const InstitutionalArtboard = ({ context = 'applications' } = {}) => {
         )}
       </div>
 
-      <div className="inst-table-wrap">
+      <div className="inst-table-wrap" data-cm={isUW ? null : 'apps-table'}>
         <table className="inst-table">
           <thead>
             <tr>

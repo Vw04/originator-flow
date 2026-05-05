@@ -1924,9 +1924,9 @@ const DataPlatformView = {
           <span class="ud-breadcrumb-sep">/</span>
           <span class="ud-breadcrumb-current">${addrPrimary} <span class="ud-breadcrumb-mono">${loan.id}</span></span>
         </div>
-        ${this._appContextHeader(loan, loName, proc, rateLockDate, estCloseDate)}
-        ${this._appActionBanner(loan, proc)}
-        <div class="ud-content-grid">
+        <div data-cm="loan-header">${this._appContextHeader(loan, loName, proc, rateLockDate, estCloseDate)}</div>
+        <div data-cm="loan-action">${this._appActionBanner(loan, proc)}</div>
+        <div class="ud-content-grid" data-cm="loan-tabs">
           <div>
             ${this._appContentTabs()}
             <div class="ud-content-main">${this._appTabContent(loan, proc, loName)}</div>
