@@ -1914,19 +1914,27 @@ const DataPlatformView = {
     const rateLockDate = loanId === 'DCDC000002' ? 'Apr 12, 2026' : 'Apr 30, 2026';
     const estCloseDate = loanId === 'DCDC000003' ? 'Mar 15, 2026' : 'May 15, 2026';
 
+    const addrPrimary = loan.phase === 'prequalification' ? 'Prequalification' : (loan.address.split(',')[0] || '').trim();
+
     return `
-      <div id="context-header-sentinel"></div>
-      <button class="ud-back-btn" onclick="DataPlatformView._backToApplications()">&#8592; Back to Applications</button>
-      ${this._appContextHeader(loan, loName, proc, rateLockDate, estCloseDate)}
-      ${this._appActionBanner(loan, proc)}
-      <div class="ud-content-grid">
-        <div>
-          ${this._appContentTabs()}
-          <div class="ud-content-main">${this._appTabContent(loan, proc, loName)}</div>
+      <div class="ud-detail ud-detail-app">
+        <div id="context-header-sentinel"></div>
+        <div class="ud-breadcrumb">
+          <span class="ud-breadcrumb-link" onclick="DataPlatformView._backToApplications()">Applications</span>
+          <span class="ud-breadcrumb-sep">/</span>
+          <span class="ud-breadcrumb-current">${addrPrimary} <span class="ud-breadcrumb-mono">${loan.id}</span></span>
         </div>
-        <div>${this._appSidebar(loan, loName, days, rateLockDate, estCloseDate)}</div>
-      </div>
-      <div id="dp-modal"></div>`;
+        ${this._appContextHeader(loan, loName, proc, rateLockDate, estCloseDate)}
+        ${this._appActionBanner(loan, proc)}
+        <div class="ud-content-grid">
+          <div>
+            ${this._appContentTabs()}
+            <div class="ud-content-main">${this._appTabContent(loan, proc, loName)}</div>
+          </div>
+          <div>${this._appSidebar(loan, loName, days, rateLockDate, estCloseDate)}</div>
+        </div>
+        <div id="dp-modal"></div>
+      </div>`;
   },
 
   /* ── App Detail: Owner tag helper ── */
@@ -3459,3 +3467,7 @@ const DataPlatformView = {
     if (el) el.innerHTML = '';
   },
 };
+
+// Expose DataPlatformView so the institutional artboard (Babel-eval scope) can
+// dispatch row clicks back into the application-detail view.
+window.DataPlatformView = DataPlatformView;

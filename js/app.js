@@ -596,19 +596,27 @@ const OriginationsView = {
     const lo = State.getUser(loan.loId);
     const loName = lo ? Display.fullName(lo) : '—';
 
+    const addrPrimary = loan.phase === 'prequalification' ? 'Prequalification' : (loan.address.split(',')[0] || '').trim();
+
     return `
-      <div id="context-header-sentinel"></div>
-      <button class="ud-back-btn" onclick="OriginationsView.backToList()">&#8592; Back to Originations</button>
-      ${this._udContextHeader(loan, loName, proc)}
-      ${this._udActionBanner(loan, proc)}
-      <div class="ud-content-grid">
-        <div>
-          ${this._udContentTabs()}
-          <div class="ud-content-main">${this._udTabContent(loan, proc, loName)}</div>
+      <div class="ud-detail ud-detail-orig">
+        <div id="context-header-sentinel"></div>
+        <div class="ud-breadcrumb">
+          <span class="ud-breadcrumb-link" onclick="OriginationsView.backToList()">Originations</span>
+          <span class="ud-breadcrumb-sep">/</span>
+          <span class="ud-breadcrumb-current">${addrPrimary} <span class="ud-breadcrumb-mono">${loan.id}</span></span>
         </div>
-        <div>${this._udSidebar(loan, proc, loName)}</div>
-      </div>
-      <div id="originations-modal"></div>`;
+        ${this._udContextHeader(loan, loName, proc)}
+        ${this._udActionBanner(loan, proc)}
+        <div class="ud-content-grid">
+          <div>
+            ${this._udContentTabs()}
+            <div class="ud-content-main">${this._udTabContent(loan, proc, loName)}</div>
+          </div>
+          <div>${this._udSidebar(loan, proc, loName)}</div>
+        </div>
+        <div id="originations-modal"></div>
+      </div>`;
   },
 
   /* ── Owner tag helper ── */

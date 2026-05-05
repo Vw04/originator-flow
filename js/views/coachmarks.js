@@ -143,7 +143,18 @@ const Coachmarks = {
     this._teardown();
   },
 
+  // Cascade flag: true while the engine is auto-advancing past steps
+  // whose anchors couldn't be found (vs. a user-driven Next click).
+  // While cascading, we suppress modal-popping triggers so the user
+  // doesn't get a surprise modal as their first impression.
+  _cascading: false,
+
   next() {
+    this._cascading = false;
+    this._advance();
+  },
+
+  _advance() {
     const u = State.getCurrentUser();
     if (!u) return;
     const prefs = State.getWelcomePrefs(u.id);
@@ -153,6 +164,7 @@ const Coachmarks = {
     if (cursor >= this.TOUR.length) {
       State.setWelcomePrefs(u.id, { tourCompleted: true });
       this._teardown();
+      this._cascading = false;
       // Close any modal the tour opened
       if (typeof NewApplicationStepperView !== 'undefined') NewApplicationStepperView.close();
       return;
@@ -192,7 +204,9 @@ const Coachmarks = {
       const dismissed = [...(prefs.dismissedSteps || []), cur.id];
       State.setWelcomePrefs(u.id, { dismissedSteps: dismissed });
     }
-    this.next();
+    // Engine-driven dismissal counts as a cascade. Public next() resets this.
+    this._cascading = true;
+    this._advance();
   },
 
   /* ── Internal ── */
@@ -201,10 +215,19 @@ const Coachmarks = {
     const step = this.TOUR[cursor];
     if (!step) return;
 
+    // Cascade safety: never auto-open a modal when the engine is fast-
+    // forwarding past skipped steps. The user shouldn't get a surprise
+    // borrower form as their first impression. Skip the whole step instead.
+    const modalAlreadyOpen = !!document.getElementById('newapp-stepper-host');
+    if (this._cascading && step.trigger === 'open-newapp' && !modalAlreadyOpen) {
+      this.dismissCurrent();
+      return;
+    }
+
     // Run trigger (open or close a modal etc.)
     if (step.trigger === 'open-newapp') {
       if (typeof NewApplicationStepperView !== 'undefined') {
-        if (!document.getElementById('newapp-stepper-host')) {
+        if (!modalAlreadyOpen) {
           NewApplicationStepperView.open();
         }
         if (typeof step.stepperStep === 'number') {
@@ -225,20 +248,15 @@ const Coachmarks = {
     this._teardown();
     const target = document.querySelector(step.target);
     if (!target) {
-      // Anchor missing. Only permanently dismiss explicitly-optional steps;
-      // for required steps, retry once on the next frame (handles layout
-      // races on first paint), then pause the tour. Pausing keeps the
-      // cursor in place so the next view re-render can resume — avoids
-      // cascade-skipping into a later step's modal-opening trigger.
-      if (step.optional) {
-        this.dismissCurrent();
-        return;
-      }
+      // Retry once on the next frame to absorb first-paint layout races.
       if (retry < 1) {
         requestAnimationFrame(() => this._render(step, cursor, retry + 1));
         return;
       }
-      // Still missing — pause without advancing.
+      // Still missing — advance past this step. dismissCurrent permanently
+      // marks it dismissed and calls next(). The cascade guard inside next()
+      // prevents any later step's modal-popping trigger from auto-firing.
+      this.dismissCurrent();
       return;
     }
 

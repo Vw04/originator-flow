@@ -12,18 +12,27 @@ const InstitutionalArtboard = ({ context = 'applications' } = {}) => {
   const STAGES = HOMIUM_DATA.STAGES;
   const PEOPLE = HOMIUM_DATA.PEOPLE;
 
-  // Row click → navigate to the classic full loan detail page. The drawer
-  // (quick-look) is reserved for the Command Center map / activity feed clicks.
+  // Row click → navigate to the loan detail. Applications tab stays scoped
+  // to /data/applications (pre-funding lifecycle, breadcrumbed to Applications);
+  // Originations tab opens the operator workbench (full lifecycle through
+  // funded + minted, breadcrumbed to Originations).
   const openLoan = (l) => {
-    if (window.OriginationsView && window.App) {
-      window.OriginationsView._viewMode = 'detail';
-      window.OriginationsView._selectedLoanId = l.id;
-      window.location.hash = '#/originations/' + l.id;
-      window.App.renderView('/originations/' + l.id);
+    if (isUW) {
+      if (window.OriginationsView && window.App) {
+        window.OriginationsView._viewMode = 'detail';
+        window.OriginationsView._selectedLoanId = l.id;
+        window.location.hash = '#/originations/' + l.id;
+        window.App.renderView('/originations/' + l.id);
+        return;
+      }
     } else {
-      // graceful fallback if host isn't wired
-      setSel(l); setDrawerOpen(true);
+      if (window.DataPlatformView && window.App) {
+        window.DataPlatformView.openApplication(l.id);
+        return;
+      }
     }
+    // graceful fallback if host isn't wired
+    setSel(l); setDrawerOpen(true);
   };
 
   // Underwriter view = post-doc loans only (UW + CDA + CTC + Funded)

@@ -7959,3 +7959,166 @@ label { font-size: 12px; font-weight: 600; color: var(--color-text); }
 .admin-pm-prog-row:hover { background: var(--color-surface); }
 .admin-pm-prog-row input[type="checkbox"] { width: 14px; height: 14px; accent-color: var(--color-primary); cursor: pointer; }
 .admin-pm-prog-row input[type="checkbox"]:disabled { cursor: not-allowed; }
+
+/* ============================================================
+   LOAN DETAIL — INSTITUTIONAL STYLE OVERLAY
+   Applies to both Applications-tab detail (.ud-detail-app) and
+   Originations-tab detail (.ud-detail-orig). Breadcrumb + serif
+   address + navy palette + mono IDs + paper bg, matching the
+   institutional artboard aesthetic.
+   ============================================================ */
+
+.ud-detail {
+  background: var(--h-paper, #FBFAF7);
+  min-height: 100%;
+  font-family: var(--font-sans, 'Inter', -apple-system, sans-serif);
+  color: var(--h-ink, #1A1A18);
+  padding-bottom: 24px;
+}
+
+/* Breadcrumb (replaces back button) */
+.ud-breadcrumb {
+  display: flex; align-items: center; gap: 8px;
+  padding: 14px 24px 0;
+  font-size: 12px;
+  color: var(--h-ink-2, #4B5563);
+}
+.ud-breadcrumb-link {
+  color: var(--h-green, #0E2A47);
+  cursor: pointer;
+  font-weight: 500;
+}
+.ud-breadcrumb-link:hover { text-decoration: underline; }
+.ud-breadcrumb-sep { color: var(--h-ink-3, #9CA3AF); }
+.ud-breadcrumb-current {
+  color: var(--h-ink, #1A1A18);
+  font-weight: 500;
+  display: inline-flex;
+  align-items: baseline;
+  gap: 8px;
+}
+.ud-breadcrumb-mono {
+  font-family: var(--font-mono, 'JetBrains Mono', monospace);
+  font-size: 11px;
+  color: var(--h-ink-3, #9CA3AF);
+  font-weight: 400;
+  letter-spacing: -0.01em;
+}
+
+/* Serif address — institutional-style headline */
+.ud-detail .ud-context-address {
+  font-family: var(--font-serif, 'IvyPresto Display', Georgia, serif);
+  font-weight: 300;
+  letter-spacing: -0.02em;
+  font-size: 32px;
+  line-height: 1.1;
+  color: var(--h-ink, #1A1A18);
+}
+.ud-detail .ud-context-sub {
+  color: var(--h-ink-3, #9CA3AF);
+  font-size: 12px;
+  margin-top: 4px;
+}
+
+/* Status pill — pick up navy + mint */
+.ud-detail .ud-status-pill {
+  background: var(--h-mint, #E6EDF5);
+  color: var(--h-green, #0E2A47);
+  border: 1px solid var(--h-green, #0E2A47);
+  font-weight: 600;
+}
+.ud-detail .ud-status-pill.completed {
+  background: #ECFDF5;
+  color: #065F46;
+  border-color: #10B981;
+}
+
+/* Chips — uppercase mono labels, ink values */
+.ud-detail .ud-chip-label {
+  font-family: var(--font-sans, 'Inter', sans-serif);
+  font-size: 10px;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--h-ink-3, #9CA3AF);
+  font-weight: 500;
+}
+.ud-detail .ud-chip-value {
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--h-ink, #1A1A18);
+}
+.ud-detail .ud-chip-value.warn { color: #B45309; }
+
+/* Loan ID chip uses mono treatment */
+.ud-detail .ud-chip:first-child .ud-chip-value {
+  font-family: var(--font-mono, 'JetBrains Mono', monospace);
+  font-size: 12px;
+  letter-spacing: -0.01em;
+}
+
+/* Context header card — paper card with subtle navy accent */
+.ud-detail .ud-context-header {
+  background: #FFFFFF;
+  border: 1px solid var(--h-line, #E5E7EB);
+  border-radius: 8px;
+  margin: 14px 24px 16px;
+  padding: 22px 24px;
+}
+
+/* Action banner — softer neutrals, navy left border */
+.ud-detail .ud-action-banner {
+  background: #FFFFFF;
+  border: 1px solid var(--h-line, #E5E7EB);
+  border-left: 3px solid var(--h-green, #0E2A47);
+  border-radius: 6px;
+  margin: 0 24px 14px;
+}
+.ud-detail .ud-action-banner.complete { border-left-color: #10B981; }
+
+/* Content tabs — institutional-style underline, navy active */
+.ud-detail .ud-content-tabs {
+  border-bottom: 1px solid var(--h-line, #E5E7EB);
+  padding: 0 4px;
+}
+.ud-detail .ud-content-tab {
+  font-size: 13px;
+  font-weight: 500;
+  color: var(--h-ink-2, #4B5563);
+  border-bottom: 2px solid transparent;
+  padding: 10px 14px;
+}
+.ud-detail .ud-content-tab.active {
+  color: var(--h-green, #0E2A47);
+  border-bottom-color: var(--h-green, #0E2A47);
+  font-weight: 600;
+}
+
+/* Sidebar / content cards */
+.ud-detail .ud-content-section,
+.ud-detail .ud-sidebar-section,
+.ud-detail .ud-content-main {
+  background: #FFFFFF;
+}
+.ud-detail .ud-section-title {
+  font-family: var(--font-serif, 'IvyPresto Display', Georgia, serif);
+  font-weight: 400;
+  letter-spacing: -0.01em;
+  font-size: 18px;
+  color: var(--h-ink, #1A1A18);
+}
+.ud-detail .ud-section-count {
+  font-family: var(--font-sans, 'Inter', sans-serif);
+  font-size: 11px;
+  color: var(--h-ink-3, #9CA3AF);
+  font-weight: 400;
+  letter-spacing: 0.02em;
+}
+
+/* Restyle the back-button (kept for fallback / a11y) so it doesn't
+   look out of place if it ever reappears. */
+.ud-detail .ud-back-btn {
+  color: var(--h-green, #0E2A47);
+  font-size: 12px;
+  font-weight: 500;
+  padding: 6px 0;
+}
