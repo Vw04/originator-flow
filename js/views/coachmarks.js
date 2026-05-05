@@ -221,12 +221,24 @@ const Coachmarks = {
     requestAnimationFrame(() => this._render(step, cursor));
   },
 
-  _render(step, cursor) {
+  _render(step, cursor, retry = 0) {
     this._teardown();
     const target = document.querySelector(step.target);
     if (!target) {
-      // Anchor missing — skip step.
-      this.dismissCurrent();
+      // Anchor missing. Only permanently dismiss explicitly-optional steps;
+      // for required steps, retry once on the next frame (handles layout
+      // races on first paint), then pause the tour. Pausing keeps the
+      // cursor in place so the next view re-render can resume — avoids
+      // cascade-skipping into a later step's modal-opening trigger.
+      if (step.optional) {
+        this.dismissCurrent();
+        return;
+      }
+      if (retry < 1) {
+        requestAnimationFrame(() => this._render(step, cursor, retry + 1));
+        return;
+      }
+      // Still missing — pause without advancing.
       return;
     }
 
