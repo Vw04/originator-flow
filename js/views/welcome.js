@@ -1,29 +1,59 @@
 /* ============================================================
    HOMIUM ORIGINATOR FLOW — Welcome / First-Login View
    Shown to LO and LP users right after KYC + onboarding completes
-   (and on demand via Profile → "Replay welcome screen"). Fronts the
-   first session with: greeting, verification proof, programs they're
-   enabled for, a first-application CTA (LO only when zero loans), and
-   a small set of orientation resources.
+   (and on demand via Profile → "Replay welcome screen").
 
-   Routing rules live in app.js:
-     - /welcome is registered there; non-LO/LP roles get bounced.
-     - OnboardingFlowView._finish() sends LO/LP to /welcome on first
-       run (welcomePrefs.welcomeSeen === false), else to
-       /data/applications.
-
-   Both footer CTAs flip welcomeSeen=true. "Continue" leaves
-   tutorialsEnabled at default true so the post-welcome coachmark tour
-   fires on the next page; "Skip" sets tutorialsEnabled=false to opt
-   the user out entirely.
+   Renders as a MODAL overlay on top of /data/applications so the
+   user sees their actual workspace behind the welcome card. Both
+   footer CTAs flip welcomeSeen=true and dismiss the modal.
+   "Continue to applications" then triggers the coachmark tour from
+   step 1; "Skip" sets tutorialsEnabled=false to opt the user out.
    ============================================================ */
 
 const WelcomeView = {
 
+  /* ---- Modal entry point ----
+     Mounts the welcome card as an overlay over the current page
+     (intended use: /data/applications). Idempotent — calling open
+     twice replaces existing content. */
+  openModal() {
+    const u = State.getCurrentUser();
+    if (!u) return;
+    let host = document.getElementById('welcome-modal-host');
+    if (!host) {
+      host = document.createElement('div');
+      host.id = 'welcome-modal-host';
+      document.body.appendChild(host);
+    }
+    host.innerHTML = this._renderModal(u);
+  },
+
+  closeModal() {
+    const host = document.getElementById('welcome-modal-host');
+    if (host) host.remove();
+  },
+
+  /* Page-style render kept as a fallback (replay-welcome from profile,
+     direct /welcome route). Routes its own CTAs through the modal flow
+     so behavior stays consistent. */
   render() {
     const u = State.getCurrentUser();
     if (!u) return '<div class="page-body">No user.</div>';
+    return this._renderInner(u, /* asModal */ false);
+  },
 
+  _renderModal(u) {
+    return `
+      <div class="welcome-modal-overlay" onclick="if(event.target===this)WelcomeView._skip()">
+        <div class="welcome-modal" role="dialog" aria-label="Welcome to Homium">
+          <button class="welcome-modal-close" aria-label="Close" onclick="WelcomeView._skip()">×</button>
+          ${this._renderInner(u, /* asModal */ true)}
+        </div>
+      </div>
+    `;
+  },
+
+  _renderInner(u, asModal) {
     const role = u.role;
     const isLO = role === 'lo';
     const branch = u.branchId ? State.getBranch(u.branchId) : null;
@@ -34,7 +64,7 @@ const WelcomeView = {
     const isFirstApp = isLO && loans.length === 0;
 
     return `
-      <div class="welcome-page">
+      <div class="welcome-page${asModal ? ' welcome-page-modal' : ''}">
         ${this._renderHero(u, role, branch, company)}
         ${this._renderFirstAppCta(isLO, isFirstApp, enablement)}
         ${this._renderEnablementCard(enablement, role, branch)}
@@ -201,28 +231,37 @@ const WelcomeView = {
     `;
   },
 
-  /* ---- Actions ---- */
+  /* ---- Actions ----
+     The user is already on /data/applications behind the modal; these
+     handlers dismiss the modal in place rather than re-navigating. */
   _continue(opts = {}) {
     const u = State.getCurrentUser();
     if (u) {
-      // Always reset the tour to step 1 when starting a fresh welcome flow.
-      // "Start your first application" is an action path — skip the tour for
-      // that and just open the stepper. "Continue to applications" runs the
-      // tour from the beginning.
-      const patch = {
+      // Reset the tour to step 0 every time we exit the welcome modal.
+      // "Start your first application" is an action path — skip the tour
+      // for that and just open the stepper. "Continue to applications"
+      // runs the tour from the first step.
+      State.setWelcomePrefs(u.id, {
         welcomeSeen: true,
         tourCursor: 0,
         dismissedSteps: [],
         tourCompleted: !!opts.openNewApp,
-      };
-      State.setWelcomePrefs(u.id, patch);
+      });
+    }
+    this.closeModal();
+    // If invoked from the legacy /welcome page route, get the user onto
+    // the applications page first so the tour anchors are present.
+    if (Router.getCurrentPath() !== '/data/applications') {
+      Router.navigate('/data/applications');
     }
     if (opts.openNewApp && typeof NewApplicationStepperView !== 'undefined') {
-      Router.navigate('/data/applications');
       setTimeout(() => NewApplicationStepperView.open(), 60);
       return;
     }
-    Router.navigate('/data/applications');
+    // Kick the tour after the artboard has had a chance to mount.
+    if (typeof Coachmarks !== 'undefined') {
+      setTimeout(() => Coachmarks.maybeStart(), 80);
+    }
   },
 
   _skip() {
@@ -234,7 +273,10 @@ const WelcomeView = {
       tourCursor: 0,
       dismissedSteps: [],
     });
-    Router.navigate('/data/applications');
+    this.closeModal();
+    if (Router.getCurrentPath() !== '/data/applications') {
+      Router.navigate('/data/applications');
+    }
   },
 };
 

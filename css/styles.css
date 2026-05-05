@@ -8122,3 +8122,74 @@ label { font-size: 12px; font-weight: 600; color: var(--color-text); }
   font-weight: 500;
   padding: 6px 0;
 }
+
+/* ============================================================
+   WELCOME MODAL
+   Mounts on top of /data/applications so the user sees their
+   actual workspace behind the welcome card.
+   ============================================================ */
+.welcome-modal-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(15, 23, 42, 0.45);
+  backdrop-filter: blur(2px);
+  -webkit-backdrop-filter: blur(2px);
+  display: flex;
+  align-items: flex-start;
+  justify-content: center;
+  padding: 5vh 24px 24px;
+  z-index: 1100;
+  overflow-y: auto;
+  animation: welcomeFadeIn 0.18s ease-out;
+}
+@keyframes welcomeFadeIn { from { opacity: 0; } to { opacity: 1; } }
+
+.welcome-modal {
+  position: relative;
+  background: #fff;
+  border-radius: 14px;
+  box-shadow: 0 24px 80px rgba(15, 23, 42, 0.25);
+  width: 100%;
+  max-width: 720px;
+  max-height: 90vh;
+  overflow-y: auto;
+  animation: welcomeSlideUp 0.22s ease-out;
+}
+@keyframes welcomeSlideUp {
+  from { opacity: 0; transform: translateY(12px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+
+.welcome-modal-close {
+  position: absolute;
+  top: 14px;
+  right: 18px;
+  width: 32px;
+  height: 32px;
+  border: none;
+  background: transparent;
+  font-size: 24px;
+  line-height: 1;
+  color: var(--color-text-muted);
+  cursor: pointer;
+  border-radius: 6px;
+  z-index: 2;
+}
+.welcome-modal-close:hover { background: var(--color-surface, #F3F4F6); color: var(--color-text); }
+
+/* When inside the modal, the welcome-page wrapper drops its outer max-width
+   constraint and tightens the spacing so it fits a card. */
+.welcome-page-modal {
+  padding: 28px 28px 22px;
+  max-width: none;
+}
+.welcome-page-modal .welcome-hero { margin-bottom: 14px; }
+.welcome-page-modal .welcome-card { margin-bottom: 12px; }
+.welcome-page-modal .welcome-footer {
+  margin-top: 14px;
+  padding-top: 14px;
+  border-top: 1px solid var(--color-border-light, #F0EEE8);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}

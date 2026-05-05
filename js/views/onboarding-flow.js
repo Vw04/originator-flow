@@ -697,8 +697,14 @@ const OnboardingFlowView = {
       if (this._userId) {
         State.setWelcomePrefs(this._userId, { tourCursor: 0, dismissedSteps: [] });
       }
+      // Always land on /data/applications. If welcome hasn't been seen,
+      // pop the welcome modal on top so the user gets oriented without
+      // leaving their workspace.
       const prefs = this._userId ? State.getWelcomePrefs(this._userId) : { welcomeSeen: false };
-      Router.navigate(prefs.welcomeSeen ? '/data/applications' : '/welcome');
+      Router.navigate('/data/applications');
+      if (!prefs.welcomeSeen) {
+        setTimeout(() => { if (typeof WelcomeView !== 'undefined') WelcomeView.openModal(); }, 80);
+      }
     }
     else Router.navigate('/data/analytics');
   },

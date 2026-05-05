@@ -248,14 +248,19 @@ const Coachmarks = {
     this._teardown();
     const target = document.querySelector(step.target);
     if (!target) {
-      // Retry once on the next frame to absorb first-paint layout races.
-      if (retry < 1) {
+      // Retry several frames to absorb first-paint layout races. The
+      // institutional artboard mounts via Babel/React and may not have
+      // its anchors in the DOM at the initial 50ms post-render hook.
+      // 6 RAFs ≈ 100ms — enough to cover React mount in practice
+      // without making a doomed step feel slow.
+      if (retry < 6) {
         requestAnimationFrame(() => this._render(step, cursor, retry + 1));
         return;
       }
       // Still missing — advance past this step. dismissCurrent permanently
-      // marks it dismissed and calls next(). The cascade guard inside next()
-      // prevents any later step's modal-popping trigger from auto-firing.
+      // marks it dismissed and calls _advance() under the cascade flag,
+      // which prevents any later step's modal-popping trigger from
+      // auto-firing.
       this.dismissCurrent();
       return;
     }

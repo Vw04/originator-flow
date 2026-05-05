@@ -317,7 +317,8 @@ const ProfileView = {
     const u = State.getCurrentUser();
     if (!u) return;
     State.setWelcomePrefs(u.id, { welcomeSeen: false });
-    Router.navigate('/welcome');
+    Router.navigate('/data/applications');
+    setTimeout(() => { if (typeof WelcomeView !== 'undefined') WelcomeView.openModal(); }, 80);
   },
 
   _replayTour() {

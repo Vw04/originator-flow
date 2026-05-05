@@ -93,7 +93,12 @@ const InstitutionalArtboard = ({ context = 'applications' } = {}) => {
       { id: 'sla',   label: `Stage aging (${slaAtRisk})` },
       { id: 'new',   label: 'New' },
     ],
-    primaryCta: { label: '+ New application', action: () => {} },
+    primaryCta: {
+      label: '+ New application',
+      action: () => {
+        if (window.NewApplicationStepperView) window.NewApplicationStepperView.open();
+      },
+    },
     ownerLabel: 'Originator',
     showActionAs: 'originator',
   };
@@ -208,7 +213,13 @@ const InstitutionalArtboard = ({ context = 'applications' } = {}) => {
           <button className="active">Table</button>
           <button>Board</button>
         </div>
-        {FRAME.primaryCta && <button className="inst-new-app">{FRAME.primaryCta.label}</button>}
+        {FRAME.primaryCta && (
+          <button className="inst-new-app"
+                  data-cm={isUW ? null : 'new-app'}
+                  onClick={FRAME.primaryCta.action}>
+            {FRAME.primaryCta.label}
+          </button>
+        )}
       </div>
 
       <div className="inst-table-wrap">
@@ -227,10 +238,14 @@ const InstitutionalArtboard = ({ context = 'applications' } = {}) => {
             </tr>
           </thead>
           <tbody>
-            {filteredLoans.map(loan => {
+            {filteredLoans.map((loan, idx) => {
               const queued = isUW && typeof State !== 'undefined' && State.getAtriumScope().includes(loan.id);
+              const isFirstAppRow = !isUW && idx === 0;
               return (
-              <tr key={loan.id} onClick={() => openLoan(loan)} style={{cursor: 'pointer'}}>
+              <tr key={loan.id}
+                  onClick={() => openLoan(loan)}
+                  data-cm={isFirstAppRow ? 'app-row' : null}
+                  style={{cursor: 'pointer'}}>
                 {isUW && (
                   <td onClick={(e) => e.stopPropagation()} style={{textAlign: 'center'}}>
                     <input

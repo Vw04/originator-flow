@@ -20,7 +20,11 @@ const App = {
         if (r === 'prog_admin') return Router.navigate('/origination-companies', { replace: true });
         return Router.navigate('/data/analytics', { replace: true });
       }
-      this.renderShell(WelcomeView.render());
+      // Welcome is a modal overlay on top of /data/applications now —
+      // route the user there and pop the modal so they see their actual
+      // workspace behind the welcome card.
+      Router.navigate('/data/applications', { replace: true });
+      setTimeout(() => { if (typeof WelcomeView !== 'undefined') WelcomeView.openModal(); }, 50);
     });
     Router.register('/originations', (path) => {
       // /originations is the Homium-internal operator workbench.
