@@ -7706,11 +7706,15 @@ label { font-size: 12px; font-weight: 600; color: var(--color-text); }
   margin-bottom: 14px;
 }
 .cm-tooltip-foot {
-  display: flex; align-items: center; justify-content: space-between;
-  gap: 8px;
+  display: flex; flex-direction: column; gap: 10px;
 }
 .cm-tooltip-dots {
   display: inline-flex; gap: 4px;
+  align-self: center;
+}
+.cm-tooltip-foot-actions {
+  display: flex; align-items: center; justify-content: space-between;
+  gap: 8px;
 }
 .cm-tooltip-dot {
   width: 6px; height: 6px; border-radius: 50%;

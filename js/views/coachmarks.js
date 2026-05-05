@@ -527,11 +527,13 @@ const Coachmarks = {
       </div>
       <div class="cm-tooltip-body">${step.body}</div>
       <div class="cm-tooltip-foot">
-        <button class="btn btn-ghost" onclick="Coachmarks.skip()">Skip tour</button>
         <span class="cm-tooltip-dots">${dots}</span>
-        <div class="cm-tooltip-nav">
-          <button class="btn btn-ghost cm-back-btn" ${isFirst ? 'disabled' : ''} onclick="Coachmarks.back()">← Back</button>
-          <button class="btn btn-primary" onclick="Coachmarks.next()">${isLast ? 'Done' : 'Next →'}</button>
+        <div class="cm-tooltip-foot-actions">
+          <button class="btn btn-ghost" onclick="Coachmarks.skip()">Skip tour</button>
+          <div class="cm-tooltip-nav">
+            <button class="btn btn-ghost cm-back-btn" ${isFirst ? 'disabled' : ''} onclick="Coachmarks.back()">← Back</button>
+            <button class="btn btn-primary" onclick="Coachmarks.next()">${isLast ? 'Done' : 'Next →'}</button>
+          </div>
         </div>
       </div>
       <button class="cm-tooltip-disable" onclick="Coachmarks.disableForever()">Don't show me tutorials again</button>
