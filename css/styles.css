@@ -7558,6 +7558,17 @@ label { font-size: 12px; font-weight: 600; color: var(--color-text); }
   max-width: 1280px;
   margin: 0 auto;
 }
+/* Match the Applications artboard's warm paper background so the profile
+   page reads as part of the same surface family rather than the cooler
+   --color-bg grey used by other admin pages. */
+.page-body.profile-page {
+  background: var(--h-paper, #FBFAF7);
+  max-width: none;
+}
+.page-body.profile-page > .profile-grid {
+  max-width: 1280px;
+  margin: 0 auto;
+}
 .profile-grid {
   display: grid;
   grid-template-columns: minmax(320px, 380px) 1fr;
