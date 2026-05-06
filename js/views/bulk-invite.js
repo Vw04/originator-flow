@@ -148,7 +148,9 @@ const BulkInviteView = {
       return {
         id: s.nextRowId,
         email,
-        role: 'lo',
+        // Role + branch are required; default to empty so the inviter must
+        // pick. Validation in _submitAll rejects rows missing either.
+        role: '',
         branchId: '',
         branchManager: false,
         agentNmlsId: '',
@@ -187,15 +189,14 @@ const BulkInviteView = {
       <div class="page-body">
         <div class="bulk-toolbar">
           <span class="bulk-toolbar-count">${selected} of ${total} selected</span>
+          <select class="select-input" onchange="BulkInviteView._bulkSetBranch(this.value); this.value=''">
+            <option value="">Set branch for selected…</option>
+            ${branchOptions}
+          </select>
           <select class="select-input" onchange="BulkInviteView._bulkSetRole(this.value); this.value=''">
             <option value="">Set role for selected…</option>
             <option value="lo">Loan Officer</option>
             <option value="standard">Standard</option>
-          </select>
-          <select class="select-input" onchange="BulkInviteView._bulkSetBranch(this.value); this.value=''">
-            <option value="">Set branch for selected…</option>
-            <option value="__none__">— None —</option>
-            ${branchOptions}
           </select>
           <label style="display:inline-flex;align-items:center;gap:6px;font-size:12px;color:var(--color-text-secondary, var(--color-text-muted))">
             <input type="checkbox" onchange="BulkInviteView._bulkSetBM(this.checked)">
@@ -209,8 +210,8 @@ const BulkInviteView = {
               <tr>
                 <th class="col-checkbox"><input type="checkbox" ${allSelected ? 'checked' : ''} onchange="BulkInviteView._setSelectAll(this.checked)"></th>
                 <th>Email</th>
-                <th>Role</th>
-                <th>Branch</th>
+                <th>Branch *</th>
+                <th>Role *</th>
                 <th>Branch Mgr</th>
                 <th>NMLS ID</th>
                 <th class="col-actions"></th>
@@ -231,9 +232,12 @@ const BulkInviteView = {
 
   _renderRow(row, branches) {
     const isLO = row.role === 'lo';
+    const isStd = row.role === 'standard';
     const branchOptions = branches.map(b =>
       `<option value="${b.id}" ${row.branchId === b.id ? 'selected' : ''}>${b.name}</option>`
     ).join('');
+    const branchMissing = !row.branchId;
+    const roleMissing = !row.role;
     return `
       <tr>
         <td class="col-checkbox">
@@ -242,15 +246,18 @@ const BulkInviteView = {
         </td>
         <td class="cell-primary">${row.email}</td>
         <td>
-          <select class="select-input" onchange="BulkInviteView._setRow(${row.id}, 'role', this.value)">
-            <option value="lo" ${isLO ? 'selected' : ''}>Loan Officer</option>
-            <option value="standard" ${!isLO ? 'selected' : ''}>Standard</option>
+          <select class="select-input" style="${branchMissing ? 'border-color:var(--color-danger,#DC2626)' : ''}"
+                  onchange="BulkInviteView._setRow(${row.id}, 'branchId', this.value)">
+            <option value="">— Select branch —</option>
+            ${branchOptions}
           </select>
         </td>
         <td>
-          <select class="select-input" onchange="BulkInviteView._setRow(${row.id}, 'branchId', this.value)">
-            <option value="">— None —</option>
-            ${branchOptions}
+          <select class="select-input" style="${roleMissing ? 'border-color:var(--color-danger,#DC2626)' : ''}"
+                  onchange="BulkInviteView._setRow(${row.id}, 'role', this.value)">
+            <option value="" ${roleMissing ? 'selected' : ''}>— Select role —</option>
+            <option value="lo" ${isLO ? 'selected' : ''}>Loan Officer</option>
+            <option value="standard" ${isStd ? 'selected' : ''}>Standard</option>
           </select>
         </td>
         <td style="text-align:center">
@@ -259,7 +266,7 @@ const BulkInviteView = {
         </td>
         <td>
           ${isLO
-            ? `<input class="input" value="${row.agentNmlsId}" placeholder="e.g. 3256789"
+            ? `<input class="input" value="${row.agentNmlsId}" placeholder="optional"
                  oninput="BulkInviteView._setRow(${row.id}, 'agentNmlsId', this.value)">`
             : ''}
         </td>
@@ -312,11 +319,9 @@ const BulkInviteView = {
 
   _bulkSetBranch(value) {
     if (!value) return;
-    const branchId = value === '__none__' ? '' : value;
     this._state.rows.forEach(r => {
       if (!r.selected) return;
-      r.branchId = branchId;
-      if (!branchId) r.branchManager = false;
+      r.branchId = value;
     });
     this._rerender();
   },
@@ -379,6 +384,16 @@ const BulkInviteView = {
     const s = this._state;
     if (!s.rows.length) return;
     const companyId = s.companyId;
+
+    // Branch + Role are required for every row.
+    const missing = s.rows.filter(r => !r.branchId || !r.role);
+    if (missing.length) {
+      alert(`Set Branch and Role on every row before sending. ${missing.length} row${missing.length === 1 ? '' : 's'} missing one or both.`);
+      // Mark missing rows as selected so the inviter can spot them
+      this._state.rows.forEach(r => { r.selected = (!r.branchId || !r.role); });
+      this._rerender();
+      return;
+    }
 
     s.rows.forEach(row => {
       const { firstName, lastName } = this._deriveName(row.email);

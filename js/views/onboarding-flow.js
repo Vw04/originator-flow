@@ -132,9 +132,10 @@ const OnboardingFlowView = {
   },
 
   _renderHeader() {
+    const title = this._isLO() ? 'New Loan Officer Onboarding' : 'New User Onboarding';
     return `
       <div class="wiz-header">
-        <div class="wiz-page-title">New User Onboarding</div>
+        <div class="wiz-page-title">${title}</div>
         <div class="wiz-page-subtitle">Verify your identity and credentials to access the Homium platform.</div>
       </div>`;
   },
@@ -197,15 +198,25 @@ const OnboardingFlowView = {
   _renderUnifiedProfile() {
     const u = this._user() || {};
     const isLO = this._isLO();
-    const companyId = u.companyId;
-    const branches = companyId ? State.getBranchesByCompany(companyId) : [];
+
+    // Inviter (program admin / system admin) sets role + branch at invite time;
+    // the user just confirms profile details here. NMLS field stays for LOs since
+    // we verify it in the next step.
+    const branchName = this._branchId ? (State.getBranch(this._branchId)?.name || '—') : (u.branchId ? State.getBranch(u.branchId)?.name : null);
+    const inviteSummary = (isLO || branchName)
+      ? `<div style="font-size:12px;color:var(--color-text-secondary);margin-bottom:14px;padding:10px 12px;background:var(--color-surface);border:1px solid var(--color-border);border-radius:6px">
+           <strong>Invited as:</strong> ${isLO ? 'Loan Officer' : 'Standard User'}${branchName ? ` · <strong>${branchName}</strong>` : ''}
+         </div>`
+      : '';
 
     return `
       <div class="card wiz-card">
         <div class="card-title" style="margin-bottom:6px">Set up your profile</div>
-        <div style="font-size:13px;color:var(--color-text-muted);margin-bottom:18px">
+        <div style="font-size:13px;color:var(--color-text-muted);margin-bottom:14px">
           Confirm or fill in your details. Anything pre-filled was provided by your program admin and is editable.
         </div>
+
+        ${inviteSummary}
 
         <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:12px">
           <div>
@@ -230,33 +241,8 @@ const OnboardingFlowView = {
           </div>
         </div>
 
-        <div class="ob-field-label" style="margin-top:6px">Role *</div>
-        <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:14px">
-          <label style="display:flex;align-items:flex-start;gap:8px;padding:10px 12px;border:2px solid ${isLO ? 'var(--color-primary)' : 'var(--color-border)'};border-radius:8px;cursor:pointer;background:${isLO ? 'rgba(14,42,71,0.04)' : 'var(--color-card)'}">
-            <input type="radio" name="ob-role" value="lo" ${isLO ? 'checked' : ''} onchange="OnboardingFlowView._setRole('lo')" style="margin-top:2px">
-            <div>
-              <div style="font-size:13px;font-weight:600">Loan Officer</div>
-              <div style="font-size:11px;color:var(--color-text-muted);margin-top:2px">Originates applications. NMLS + KYC required.</div>
-            </div>
-          </label>
-          <label style="display:flex;align-items:flex-start;gap:8px;padding:10px 12px;border:2px solid ${!isLO ? 'var(--color-primary)' : 'var(--color-border)'};border-radius:8px;cursor:pointer;background:${!isLO ? 'rgba(14,42,71,0.04)' : 'var(--color-card)'}">
-            <input type="radio" name="ob-role" value="standard" ${!isLO ? 'checked' : ''} onchange="OnboardingFlowView._setRole('standard')" style="margin-top:2px">
-            <div>
-              <div style="font-size:13px;font-weight:600">Standard User</div>
-              <div style="font-size:11px;color:var(--color-text-muted);margin-top:2px">Loan Processor, Branch Support. No NMLS / KYC.</div>
-            </div>
-          </label>
-        </div>
-
         ${isLO ? `
-        <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:8px">
-          <div>
-            <div class="ob-field-label">Branch ${branches.length ? '*' : ''}</div>
-            <select class="select-input" id="ob-branch" style="width:100%;box-sizing:border-box" ${branches.length === 0 ? 'disabled' : ''}>
-              <option value="">${branches.length ? '— Select branch —' : 'No branches available'}</option>
-              ${branches.map(b => `<option value="${b.id}" ${this._branchId === b.id ? 'selected' : ''}>${b.name}</option>`).join('')}
-            </select>
-          </div>
+        <div style="display:grid;grid-template-columns:1fr;gap:12px;margin-bottom:8px">
           <div>
             <div class="ob-field-label">NMLS ID *</div>
             <input class="input" id="ob-nmls" value="${this._pendingNmlsId}" placeholder="e.g. 3256789" style="width:100%;box-sizing:border-box;font-family:'JetBrains Mono', monospace" />
@@ -549,12 +535,16 @@ const OnboardingFlowView = {
   },
 
   _readUnifiedProfileFields() {
+    // Branch + role are now set by the inviter (no ob-branch / ob-role on this
+    // page). Pull branchId from current state so _saveProfile can still build
+    // a branchAssignment for invited LOs.
+    const u = this._user() || {};
     return {
       firstName: document.getElementById('ob-first')?.value.trim() || '',
       lastName:  document.getElementById('ob-last')?.value.trim() || '',
       phone:     document.getElementById('ob-phone')?.value.trim() || '',
       title:     document.getElementById('ob-title')?.value.trim() || '',
-      branchId:  document.getElementById('ob-branch')?.value || null,
+      branchId:  this._branchId || u.branchId || null,
       nmlsId:    document.getElementById('ob-nmls')?.value.trim() || '',
     };
   },
