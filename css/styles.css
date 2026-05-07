@@ -8742,27 +8742,38 @@ label { font-size: 12px; font-weight: 600; color: var(--color-text); }
   border: 1px dashed var(--h-line); display: inline-block; vertical-align: middle;
 }
 
-/* Permission select — pill-shaped to mirror institutional aesthetic */
+/* Permission select — generous pill, centered text, custom chevron.
+   Visual hierarchy comes from text color/weight, not background fills. */
 .rb-ps {
   font-family: var(--font-sans);
-  font-size: 11px;
-  padding: 4px 22px 4px 10px;
+  font-size: 12px;
+  font-weight: 500;
+  padding: 8px 28px 8px 16px;
   border: 1px solid var(--h-line);
   border-radius: 999px;
-  background: #fff;
-  color: var(--h-ink-2);
+  background-color: #fff;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='10' viewBox='0 0 10 10' fill='none' stroke='%239CA3AF' stroke-width='1.6' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M2 3.5l3 3 3-3'/%3E%3C/svg%3E");
+  background-repeat: no-repeat;
+  background-position: right 12px center;
+  color: var(--h-ink);
   cursor: pointer;
-  width: 130px;
-  appearance: auto;
+  width: 140px;
+  appearance: none;
+  -webkit-appearance: none;
+  text-align: center;
+  text-align-last: center;
   outline: none;
+  transition: border-color .12s, color .12s;
 }
-.rb-ps:disabled { opacity: 0.4; cursor: not-allowed; }
-.rb-ps:focus { box-shadow: 0 0 0 3px rgba(14,42,71,0.15); }
-.rb-ps.pf { border-color: var(--h-green); color: var(--h-green); background: var(--h-mint); font-weight: 600; }
-.rb-ps.pe { border-color: var(--h-info);  color: var(--h-info);  background: rgba(3,105,161,0.08); font-weight: 600; }
-.rb-ps.pv { border-color: var(--h-line);  color: var(--h-ink-2); background: var(--h-paper); }
-.rb-ps.pn { border-color: var(--h-line);  color: var(--h-ink-3); background: #fff; }
-.rb-ps.ps-inh { opacity: 0.65; }
+.rb-ps option { text-align: left; color: var(--h-ink); }
+.rb-ps:hover:not(:disabled) { border-color: var(--h-ink-3); }
+.rb-ps:focus { border-color: var(--h-green); box-shadow: 0 0 0 3px rgba(14,42,71,0.12); }
+.rb-ps:disabled { opacity: 0.45; cursor: not-allowed; }
+.rb-ps.pf { color: var(--h-ink);   font-weight: 600; }
+.rb-ps.pe { color: var(--h-ink);   font-weight: 600; }
+.rb-ps.pv { color: var(--h-ink);   font-weight: 500; }
+.rb-ps.pn { color: var(--h-ink-3); font-weight: 400; }
+.rb-ps.ps-inh { opacity: 0.55; }
 
 /* Toggle */
 .rb-tog { display: inline-flex; align-items: center; gap: 8px; }
