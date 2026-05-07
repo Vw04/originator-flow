@@ -144,42 +144,28 @@ const InvestorsView = {
 
 /* ============================================================
    Platform Operations View
+   Thin shell — gates on sys_admin and delegates to PlatformRbacView,
+   which owns the full Platform Operations Users surface (roster +
+   per-entity permission matrix + audit log).
    ============================================================ */
 const PlatformOpsView = {
-  // Spec v1.2: legacy Permissions tab dropped. RBAC v1.2 is configured
-  // per-OC under /origination-companies/:id → Access (OCAccessView) and
-  // per-user on the Profile screen. This section now hosts platform-side
-  // user management only.
-  TABS: [
-    { key: 'users', label: 'Users', path: '/platform' },
-  ],
-
   render(fullPath) {
-    const tab = this._parseTab(fullPath || '/platform');
-
-    const tabsHtml = this.TABS.map(t =>
-      `<div class="section-tab ${t.key === tab ? 'active' : ''}"
-            onclick="Router.navigate('${t.path}')">${t.label}</div>`
-    ).join('');
-
-    const content = UsersView.render({ platformOnly: true });
-
-    return `
-      <div class="page-header">
-        <div class="page-header-inner">
-          <div class="page-header-left">
-            <div class="page-title">Platform Operations</div>
-            <div class="page-subtitle">Internal platform users and system configuration</div>
+    if (State.getRole() !== 'sys_admin') {
+      return `
+        <div class="page-header">
+          <div class="page-header-inner">
+            <div class="page-header-left">
+              <div class="page-title">Platform Operations</div>
+              <div class="page-subtitle">Restricted area</div>
+            </div>
           </div>
         </div>
-      </div>
-      <div class="section-tabs">${tabsHtml}</div>
-      <div class="page-body">${content}</div>`;
-  },
-
-  _parseTab(path) {
-    const sub = path.replace('/platform', '').replace(/^\//, '');
-    return sub || 'users';
+        <div class="page-body">
+          ${renderStubContent('🔒', 'Restricted',
+            'Platform Operations Users is available to System Admins only. Contact your System Admin to request access.')}
+        </div>`;
+    }
+    return PlatformRbacView.render(fullPath || '/platform');
   },
 };
 

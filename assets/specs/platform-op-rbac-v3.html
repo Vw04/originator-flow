@@ -1,0 +1,1038 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Homium — Platform Ops</title>
+<style>
+/* ── TOKENS ─────────────────────────────────────────────────────── */
+:root{
+  --hbg: #f0ece5;         /* page background — warm cream */
+  --surf: #ffffff;        /* card surface */
+  --navy: #0d3630;        /* primary — dark teal */
+  --navy2: #1b5045;       /* hover teal */
+  --t0: #0d2b26;          /* primary text */
+  --t1: #4d6b62;          /* secondary text */
+  --t2: #8fa49c;          /* muted text */
+  --ti: #185fa5;          /* link/info blue */
+  --bdr: rgba(13,54,48,0.10);
+  --bdr2: rgba(13,54,48,0.20);
+  --r4:4px;--r6:6px;--r8:8px;--r12:12px;
+  /* permission colour tokens — blue (not purple) */
+  --pu:#1a6bbf;--pu-dk:#1352A0;--pu-bg:#deeaf7;--pu-t:#185FA5;
+  --am:#F59E0B;--am-bg:#FFFBF0;--am-t:#854F0B;--am-b:rgba(245,158,11,0.28);
+  --bl-bg:#E6F1FB;--bl-t:#185FA5;
+  --gn-bg:#EAF3DE;--gn-t:#3B6D11;
+  --rd-bg:#FEE2E2;--rd-t:#B91C1C;
+  /* re-map v3 vars used by permission controls */
+  --bg0:#ffffff;--bg1:#f5f2ed;--b0:rgba(13,54,48,0.08);--b1:rgba(13,54,48,0.18);
+}
+*{box-sizing:border-box;margin:0;padding:0;}
+html,body{height:100%;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;font-size:13px;color:var(--t0);background:var(--hbg);}
+
+/* ── NAV ─────────────────────────────────────────────────────────── */
+.hm-nav{position:sticky;top:0;z-index:200;background:var(--surf);border-bottom:1px solid var(--bdr);height:54px;}
+.hm-nav-inner{max-width:1440px;margin:0 auto;padding:0 28px;height:100%;display:flex;align-items:center;gap:0;}
+.hm-logo{font-size:19px;font-weight:700;color:var(--navy);font-family:Georgia,'Times New Roman',serif;margin-right:36px;letter-spacing:-0.3px;cursor:default;flex-shrink:0;}
+.hm-nav-links{display:flex;align-items:stretch;flex:1;height:100%;}
+.hm-nl{padding:0 16px;display:flex;align-items:center;font-size:13px;color:var(--t1);cursor:pointer;border-bottom:2px solid transparent;transition:color .1s;user-select:none;text-decoration:none;white-space:nowrap;position:relative;}
+.hm-nl:hover{color:var(--t0);}
+.hm-nl.active{color:var(--navy);font-weight:600;border-bottom-color:var(--navy);}
+.hm-dd-wrap{position:relative;display:flex;align-items:stretch;}
+.hm-dd{position:absolute;top:calc(100% + 1px);left:0;min-width:210px;background:var(--surf);border:1px solid var(--bdr2);border-radius:var(--r8);box-shadow:0 6px 24px rgba(0,0,0,0.10);padding:4px 0;display:none;z-index:300;}
+.hm-dd.open{display:block;}
+.hm-dd-item{padding:9px 14px;font-size:13px;color:var(--t0);cursor:pointer;transition:background .08s;}
+.hm-dd-item:hover{background:var(--hbg);}
+.hm-dd-divider{height:1px;background:var(--bdr);margin:4px 0;}
+.hm-nav-right{display:flex;align-items:center;gap:14px;margin-left:auto;flex-shrink:0;}
+.hm-bell{position:relative;width:32px;height:32px;display:flex;align-items:center;justify-content:center;cursor:pointer;color:var(--t1);}
+.hm-bell svg{width:18px;height:18px;}
+.hm-badge{position:absolute;top:3px;right:3px;min-width:14px;height:14px;background:#e03e3e;color:#fff;border-radius:99px;font-size:8px;font-weight:700;display:flex;align-items:center;justify-content:center;padding:0 3px;}
+.hm-user-chip{display:flex;align-items:center;gap:8px;cursor:pointer;padding:5px 8px;border-radius:var(--r6);transition:background .1s;}
+.hm-user-chip:hover{background:var(--hbg);}
+.hm-av-sm{width:28px;height:28px;border-radius:50%;background:var(--navy);color:#fff;display:flex;align-items:center;justify-content:center;font-size:10px;font-weight:700;flex-shrink:0;}
+.hm-un{font-size:12px;font-weight:600;color:var(--t0);line-height:1.2;}
+.hm-ur{font-size:10px;color:var(--t2);line-height:1.2;}
+
+/* ── PAGE LAYOUT ─────────────────────────────────────────────────── */
+.hm-page{display:none;}
+.hm-page.active{display:block;}
+.hm-container{max-width:1200px;margin:0 auto;padding:28px 28px 48px;}
+.hm-container-wide{max-width:1440px;margin:0 auto;padding:28px 28px 48px;}
+.hm-card{background:var(--surf);border:1px solid var(--bdr);border-radius:var(--r12);overflow:hidden;}
+
+/* Home blank page */
+.home-empty{display:flex;flex-direction:column;align-items:center;justify-content:center;min-height:60vh;color:var(--t2);font-size:13px;gap:6px;}
+.home-empty-logo{font-size:32px;font-weight:700;color:var(--bdr2);font-family:Georgia,serif;margin-bottom:8px;}
+
+/* ── BREADCRUMB / BACK ───────────────────────────────────────────── */
+.back-link{display:inline-flex;align-items:center;gap:5px;font-size:12px;color:var(--t1);cursor:pointer;margin-bottom:14px;transition:color .1s;}
+.back-link:hover{color:var(--navy);}
+.back-link svg{width:14px;height:14px;}
+
+/* ── LIST PAGE ───────────────────────────────────────────────────── */
+.list-head{display:flex;align-items:flex-end;justify-content:space-between;padding:20px 24px 16px;gap:16px;border-bottom:1px solid var(--bdr);}
+.list-title{font-size:34px;font-weight:400;color:#111;font-family:Georgia,'Times New Roman',serif;letter-spacing:-0.5px;line-height:1.15;}
+.list-subtitle{font-size:12px;color:var(--t2);margin-top:3px;}
+.list-actions{display:flex;align-items:center;gap:8px;flex-shrink:0;padding-top:2px;}
+.list-foot{padding:10px 24px;font-size:11px;color:var(--t2);border-top:1px solid var(--bdr);}
+.list-search{padding:10px 24px;border-bottom:1px solid var(--bdr);background:#fafaf8;}
+.list-search input{width:100%;max-width:280px;padding:6px 10px 6px 28px;border:1px solid var(--bdr2);border-radius:var(--r6);font-size:12px;color:var(--t0);background:var(--surf);outline:none;background-image:url("data:image/svg+xml,%3Csvg width='13' height='13' viewBox='0 0 13 13' fill='none' xmlns='http://www.w3.org/2000/svg'%3E%3Ccircle cx='5.5' cy='5.5' r='4' stroke='%238fa49c' stroke-width='1.3'/%3E%3Cpath d='M9 9l2.5 2.5' stroke='%238fa49c' stroke-width='1.3' stroke-linecap='round'/%3E%3C/svg%3E");background-repeat:no-repeat;background-position:9px center;}
+.list-search input::placeholder{color:var(--t2);}
+.hm-table{width:100%;border-collapse:collapse;}
+.hm-table thead tr{border-bottom:1px solid var(--bdr);}
+.hm-table th{text-align:left;padding:9px 20px;font-size:10px;font-weight:600;color:var(--t2);letter-spacing:.06em;text-transform:uppercase;background:#f8f7f4;}
+.hm-table td{padding:11px 20px;border-bottom:1px solid var(--bdr);vertical-align:middle;}
+.hm-table tbody tr:last-child td{border-bottom:none;}
+.hm-table tbody tr{cursor:pointer;transition:background .08s;}
+.hm-table tbody tr:hover td{background:#f5f4f0;}
+.hm-user-cell{display:flex;align-items:center;gap:10px;}
+.hm-av{width:34px;height:34px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:700;flex-shrink:0;}
+.hm-uname{font-size:13px;font-weight:500;color:var(--t0);}
+.hm-uemail{font-size:11px;color:var(--t2);margin-top:1px;}
+.hm-company{font-size:12px;color:var(--t0);}
+
+/* Invite panel */
+.inv-panel{padding:14px 24px;border-bottom:1px solid var(--bdr);background:#fafaf8;display:none;}
+.inv-panel.show{display:block;}
+.inv-panel-inner{display:flex;gap:12px;align-items:flex-end;flex-wrap:wrap;}
+.inv-f{display:flex;flex-direction:column;gap:4px;}
+.inv-f label{font-size:10px;font-weight:700;color:var(--t2);text-transform:uppercase;letter-spacing:.05em;}
+.inv-f input,.inv-f select{padding:6px 9px;border:1px solid var(--bdr2);border-radius:var(--r6);font-size:12px;color:var(--t0);background:var(--surf);outline:none;min-width:160px;}
+
+/* ── DETAIL PAGE ─────────────────────────────────────────────────── */
+.detail-head{padding:18px 24px 16px;border-bottom:1.5px solid var(--bdr);display:flex;align-items:flex-start;gap:14px;background:var(--hbg);}
+.detail-av{width:48px;height:48px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:16px;font-weight:700;flex-shrink:0;}
+.detail-info{flex:1;min-width:0;}
+.detail-name{font-size:28px;font-weight:400;color:#111;font-family:Georgia,'Times New Roman',serif;letter-spacing:-0.4px;line-height:1.2;}
+.detail-email{font-size:12px;color:var(--t1);margin-top:2px;}
+.detail-title-wrap{display:flex;align-items:center;gap:4px;margin-top:4px;}
+.detail-title-inp{font-size:11px;color:var(--t1);border:none;outline:none;background:transparent;padding:0;min-width:80px;max-width:260px;}
+.detail-title-inp::placeholder{color:var(--bdr2);}
+.detail-head-right{display:flex;flex-direction:column;align-items:flex-end;gap:8px;flex-shrink:0;}
+.detail-status-row{display:flex;align-items:center;gap:8px;}
+.type-row{display:flex;align-items:center;gap:6px;}
+.type-lbl{font-size:10px;color:var(--t2);white-space:nowrap;}
+
+/* User type dropdown */
+.type-sel{font-size:12px;font-weight:500;padding:5px 8px;border:1px solid var(--bdr2);border-radius:var(--r6);background:var(--surf);color:var(--t0);cursor:pointer;outline:none;}
+.type-sel.ta{background:#FEF3C7;color:#854F0B;border-color:rgba(245,158,11,0.35);}
+.type-sel.tm{background:var(--bl-bg);color:var(--bl-t);border-color:rgba(24,95,165,0.28);}
+.type-sel.tv{background:var(--hbg);color:var(--t1);border-color:var(--bdr2);}
+
+/* User type badge */
+.utb{font-size:10px;font-weight:600;padding:2px 7px;border-radius:99px;white-space:nowrap;}
+.utb-admin{background:#FEF3C7;color:#854F0B;border:1px solid rgba(245,158,11,0.35);}
+.utb-member{background:var(--bl-bg);color:var(--bl-t);}
+.utb-view{background:var(--hbg);color:var(--t1);border:1px solid var(--bdr2);}
+
+/* Section headers */
+.section-hd{padding:16px 24px 13px;border-bottom:1px solid var(--bdr);background:var(--surf);}
+.section-hd-title{font-size:13px;font-weight:600;color:var(--t0);line-height:1.3;}
+.section-hd-sub{font-size:11px;color:var(--t2);margin-top:2px;}
+
+/* User details section */
+.detail-info-section{padding:16px 24px 18px;border-bottom:1px solid var(--bdr);background:var(--surf);}
+
+/* View-only bar */
+.vo-bar{padding:7px 24px;font-size:11px;color:var(--bl-t);background:var(--bl-bg);border-bottom:1px solid rgba(24,95,165,0.15);display:none;align-items:center;gap:5px;}
+.vo-bar.show{display:flex;}
+
+/* Platform config section */
+.pc-section{padding:14px 24px 16px;border-bottom:1.5px solid var(--bdr);background:#f4f1eb;}
+.pc-section-lbl{font-size:10px;font-weight:700;color:var(--t1);text-transform:uppercase;letter-spacing:.07em;margin-bottom:10px;display:flex;align-items:center;gap:6px;}
+.pc-section-lbl::after{content:'';flex:1;height:1px;background:var(--bdr);}
+.pc-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(240px,1fr));gap:6px 24px;}
+.pc-row{display:flex;align-items:center;gap:8px;padding:4px 0;}
+.pc-lbl{flex:1;font-size:12px;color:var(--t0);}
+
+/* Object tabs strip */
+.obj-tabs-wrap{border-bottom:1px solid var(--bdr);background:var(--surf);border-top:1px solid var(--bdr);}
+.obj-tabs{display:flex;padding:0 24px;}
+.ot{padding:9px 14px;font-size:12px;cursor:pointer;color:var(--t2);border-bottom:2px solid transparent;margin-bottom:-1px;transition:color .1s;white-space:nowrap;user-select:none;}
+.ot:hover{color:var(--t0);}
+.ot.active{color:var(--pu-t);border-bottom-color:var(--pu);font-weight:600;}
+
+/* Tab content area */
+.tab-pane{padding:16px 24px 4px;}
+
+/* Details pane */
+.details-pane{padding:20px 24px;}
+.ui-section-lbl{font-size:14px;font-weight:600;color:var(--t0);margin-bottom:14px;}
+.ui-fields{display:grid;grid-template-columns:1fr 1fr;gap:12px 24px;}
+.ui-field label{display:block;font-size:10px;font-weight:700;color:var(--t2);text-transform:uppercase;letter-spacing:.05em;margin-bottom:4px;}
+.ui-field input{width:100%;padding:8px 10px;border:1px solid var(--bdr2);border-radius:var(--r6);font-size:12px;color:var(--t0);background:#fafaf8;outline:none;}
+
+/* Footer */
+.detail-foot{padding:11px 24px;border-top:1px solid var(--bdr);display:flex;align-items:center;gap:8px;background:var(--surf);}
+.dirty-dot{width:6px;height:6px;border-radius:50%;background:var(--am);display:none;flex-shrink:0;}
+.dirty-dot.show{display:block;}
+.dirty-txt{font-size:11px;color:var(--am-t);display:none;}
+.dirty-txt.show{display:block;}
+
+/* ── BUTTONS ─────────────────────────────────────────────────────── */
+.btn-primary{padding:7px 14px;border:none;border-radius:var(--r6);cursor:pointer;font-size:13px;background:var(--navy);color:#fff;font-weight:500;transition:background .1s;white-space:nowrap;}
+.btn-primary:hover{background:var(--navy2);}
+.btn-outline{padding:6px 13px;border:1px solid var(--bdr2);border-radius:var(--r6);cursor:pointer;font-size:13px;background:var(--surf);color:var(--t0);transition:background .1s;white-space:nowrap;}
+.btn-outline:hover{background:var(--hbg);}
+.btn-sm{padding:5px 11px;font-size:12px;}
+.btn-destr{border:1px solid rgba(185,28,28,0.22);color:var(--rd-t);background:var(--rd-bg);border-radius:var(--r6);cursor:pointer;transition:background .1s;}
+.btn-destr:hover{background:#fecaca;}
+.btn-ghost{background:none;border:none;color:var(--ti);cursor:pointer;font-size:11px;padding:0;}
+.btn-ghost:hover{text-decoration:underline;}
+.ml-auto{margin-left:auto;}
+
+/* ── PERMISSION CONTROLS ─────────────────────────────────────────── */
+/* "All / Future Grant" first-row in entity tables */
+.pt-all td{background:var(--am-bg);}
+.pt-all td:first-child{border-left:3px solid var(--am);padding-left:9px;}
+.pt tbody .pt-all td{border-bottom:2px solid var(--am-b);}
+.en-all{font-weight:600;color:var(--am-t);}
+.en-all-sub{display:block;font-size:10px;font-weight:400;color:var(--am-t);opacity:0.65;margin-top:1px;}
+
+/* Entity table */
+.pt-wrap{border:1px solid var(--bdr);border-radius:var(--r6);overflow:hidden;overflow-x:auto;margin-bottom:10px;}
+.pt{width:100%;border-collapse:collapse;font-size:12px;}
+.pt th{text-align:left;padding:6px 10px;background:#fafaf8;font-size:10px;font-weight:700;color:var(--t2);border-bottom:1px solid var(--bdr);white-space:nowrap;letter-spacing:.03em;text-transform:uppercase;}
+.pt td{padding:7px 10px;border-bottom:1px solid var(--bdr);vertical-align:top;}
+.pt tbody tr:last-child td{border-bottom:none;}
+.pt tbody tr:hover td{background:#fafaf8;}
+
+/* Entity cell */
+.en-name{font-size:12px;font-weight:500;}
+.en-dim .en-name{color:var(--t2);}
+.ebadge{font-size:9px;padding:1px 5px;border-radius:3px;margin-left:5px;font-weight:600;display:inline-block;vertical-align:middle;}
+.eb-on{background:var(--gn-bg);color:var(--gn-t);}
+.eb-off{background:var(--hbg);color:var(--t2);border:1px solid var(--bdr2);}
+.eb-plat{background:var(--pu-bg);color:var(--pu-t);}
+
+/* Permission select */
+.ps{font-size:11px;padding:3px 5px;border:1px solid var(--bdr2);border-radius:var(--r4);background:var(--surf);color:var(--t0);cursor:pointer;width:120px;}
+.ps:disabled{opacity:0.38;cursor:not-allowed;}
+.ps.pf{border-color:var(--pu);color:var(--pu-t);background:var(--pu-bg);}
+.ps.pe{border-color:var(--bl-t);color:var(--bl-t);background:var(--bl-bg);}
+.ps.pv{border-color:var(--bdr2);color:var(--t1);background:var(--hbg);}
+.ps.pn{border-color:var(--bdr);color:var(--t2);background:var(--surf);}
+.ps.ps-inh{opacity:0.65;}
+
+
+/* Toggle */
+.tog{display:flex;align-items:center;gap:5px;}
+.tog-sw{position:relative;width:30px;height:17px;flex-shrink:0;}
+.tog-sw input{opacity:0;width:0;height:0;position:absolute;}
+.tog-sl{position:absolute;inset:0;background:var(--bdr2);border-radius:99px;cursor:pointer;transition:background .15s;}
+.tog-sl:before{content:'';position:absolute;width:13px;height:13px;left:2px;top:2px;background:#fff;border-radius:50%;transition:transform .15s;box-shadow:0 1px 2px rgba(0,0,0,0.2);}
+.tog-sw input:checked+.tog-sl{background:var(--pu);}
+.tog-sw input:checked+.tog-sl:before{transform:translateX(13px);}
+.tog-sw input:disabled+.tog-sl{opacity:0.38;cursor:not-allowed;}
+.tog-lbl{font-size:11px;color:var(--t2);min-width:22px;}
+.tog-yes{color:var(--pu-t);font-weight:600;}
+.tog-inh{opacity:0.65;}
+
+/* Row action */
+.row-act{width:28px;vertical-align:middle!important;}
+.revert-btn{opacity:0;width:20px;height:20px;font-size:14px;line-height:1;color:var(--t2);background:none;border:none;cursor:pointer;border-radius:3px;display:flex;align-items:center;justify-content:center;transition:all .1s;padding:0;}
+tr:hover .revert-btn{opacity:1;}
+.revert-btn:hover{color:var(--rd-t);background:var(--rd-bg);}
+
+/* ── AUDIT PAGE ──────────────────────────────────────────────────── */
+.view-head{padding:18px 24px;border-bottom:1px solid var(--bdr);display:flex;align-items:center;justify-content:space-between;}
+.arow{padding:9px 24px;border-bottom:1px solid var(--bdr);display:flex;gap:12px;}
+.at{font-size:10px;color:var(--t2);white-space:nowrap;min-width:88px;padding-top:2px;}
+.ac-main{font-size:12px;line-height:1.4;}
+.ac-user{color:var(--ti);}
+.ac-detail{font-size:11px;color:var(--t1);margin-top:2px;}
+.arow-day{background:#fafaf8;padding:5px 24px;font-size:10px;font-weight:700;color:var(--t2);text-transform:uppercase;letter-spacing:.05em;border-bottom:1px solid var(--bdr);}
+.atag{display:inline-block;font-size:9px;padding:1px 5px;border-radius:3px;font-weight:700;margin-left:5px;vertical-align:middle;}
+.at-perm{background:var(--pu-bg);color:var(--pu-t);}
+.at-user{background:var(--bl-bg);color:var(--bl-t);}
+.at-sys{background:var(--gn-bg);color:var(--gn-t);}
+
+/* ── MODAL ───────────────────────────────────────────────────────── */
+.modal-bg{position:fixed;inset:0;background:rgba(0,0,0,0.24);display:flex;align-items:center;justify-content:center;z-index:500;opacity:0;pointer-events:none;transition:opacity .15s;}
+.modal-bg.show{opacity:1;pointer-events:all;}
+.modal{background:var(--surf);border-radius:12px;padding:22px;width:360px;box-shadow:0 8px 32px rgba(0,0,0,0.14);border:1px solid var(--bdr);}
+.modal-title{font-size:15px;font-weight:600;margin-bottom:7px;color:var(--t0);}
+.modal-body{font-size:13px;color:var(--t1);margin-bottom:18px;line-height:1.55;}
+.modal-actions{display:flex;gap:8px;justify-content:flex-end;}
+
+/* ── TOAST ───────────────────────────────────────────────────────── */
+.toast{position:fixed;bottom:24px;right:24px;background:#0d2b26;color:#e8f0ee;padding:10px 16px;border-radius:var(--r8);font-size:12px;opacity:0;transform:translateY(6px);transition:all .2s;pointer-events:none;z-index:999;box-shadow:0 4px 16px rgba(0,0,0,0.18);}
+.toast.show{opacity:1;transform:none;}
+
+::-webkit-scrollbar{width:5px;height:5px;}
+::-webkit-scrollbar-track{background:transparent;}
+::-webkit-scrollbar-thumb{background:var(--bdr2);border-radius:99px;}
+</style>
+</head>
+<body>
+
+<!-- ── NAV ──────────────────────────────────────────────────────── -->
+<header class="hm-nav">
+  <div class="hm-nav-inner">
+    <div class="hm-logo">Homium</div>
+    <nav class="hm-nav-links">
+      <a class="hm-nl" onclick="navTo('home')">Dashboard</a>
+      <a class="hm-nl">Administration
+        <svg width="10" height="10" viewBox="0 0 10 10" fill="none" style="margin-left:3px"><path d="M2 3.5l3 3 3-3" stroke="currentColor" stroke-width="1.3" stroke-linecap="round"/></svg>
+      </a>
+      <div class="hm-dd-wrap">
+        <a class="hm-nl" id="setup-btn" onclick="toggleSetupMenu()">Setup
+          <svg width="10" height="10" viewBox="0 0 10 10" fill="none" style="margin-left:3px"><path d="M2 3.5l3 3 3-3" stroke="currentColor" stroke-width="1.3" stroke-linecap="round"/></svg>
+        </a>
+        <div class="hm-dd" id="setup-dd">
+          <div class="hm-dd-item" onclick="navTo('loc')">Loan Origination Companies</div>
+          <div class="hm-dd-item" onclick="navTo('platops')">Platform Ops</div>
+        </div>
+      </div>
+    </nav>
+    <div class="hm-nav-right">
+      <div class="hm-bell">
+        <svg viewBox="0 0 20 20" fill="none"><path d="M10 2a6 6 0 00-6 6c0 3-1.5 4.5-1.5 4.5h15S16 11 16 8a6 6 0 00-6-6zM8.5 16.5a1.5 1.5 0 003 0" stroke="currentColor" stroke-width="1.4" stroke-linecap="round"/></svg>
+        <span class="hm-badge">3</span>
+      </div>
+      <div class="hm-user-chip">
+        <div class="hm-av-sm">AM</div>
+        <div>
+          <div class="hm-un">Alex Morgan</div>
+          <div class="hm-ur">Administrator</div>
+        </div>
+        <svg width="10" height="10" viewBox="0 0 10 10" fill="none" style="color:var(--t2);margin-left:2px"><path d="M2 3.5l3 3 3-3" stroke="currentColor" stroke-width="1.3" stroke-linecap="round"/></svg>
+      </div>
+    </div>
+  </div>
+</header>
+
+<!-- ── HOME / BLANK PAGE ─────────────────────────────────────────── -->
+<div id="page-home" class="hm-page active">
+  <div class="home-empty">
+    <div class="home-empty-logo">Homium</div>
+    <div>Select a section from <strong>Setup</strong> to get started.</div>
+  </div>
+</div>
+
+<!-- ── LOC BLANK PAGE ────────────────────────────────────────────── -->
+<div id="page-loc" class="hm-page">
+  <div class="hm-container">
+    <div class="hm-card" style="padding:40px;text-align:center;color:var(--t2);">
+      Loan Origination Companies — coming soon
+    </div>
+  </div>
+</div>
+
+<!-- ── PLATFORM OPS: USER LIST ───────────────────────────────────── -->
+<div id="page-list" class="hm-page">
+  <div class="hm-container-wide">
+    <div class="hm-card">
+      <div class="list-head">
+        <div>
+          <div class="list-title">Users</div>
+          <div class="list-subtitle">All platform operator users — user type, company, status</div>
+        </div>
+        <div class="list-actions">
+          <button class="btn-outline" onclick="navTo('audit')">Audit Log</button>
+          <button class="btn-primary" onclick="toggleInvite()">+ New User</button>
+        </div>
+      </div>
+
+      <!-- Invite panel -->
+      <div class="inv-panel" id="inv-panel">
+        <div class="inv-panel-inner">
+          <div class="inv-f"><label>Full name</label><input type="text" placeholder="Jane Smith" /></div>
+          <div class="inv-f"><label>Email</label><input type="email" placeholder="jane@homium.io" /></div>
+          <div class="inv-f"><label>User type</label>
+            <select><option>Member</option><option>Admin</option><option>View-only</option></select>
+          </div>
+          <div style="display:flex;gap:8px;padding-bottom:1px;">
+            <button class="btn-outline btn-sm" onclick="toggleInvite()">Cancel</button>
+            <button class="btn-primary btn-sm" onclick="fakeInvite()">Send Invite</button>
+          </div>
+        </div>
+      </div>
+
+      <!-- Search -->
+      <div class="list-search">
+        <input placeholder="Search by name or email…" oninput="filterUsers(this.value)" id="list-search" />
+      </div>
+
+      <table class="hm-table">
+        <thead>
+          <tr>
+            <th>User</th>
+            <th>User Type</th>
+            <th>Company</th>
+          </tr>
+        </thead>
+        <tbody id="user-table-body"></tbody>
+      </table>
+
+      <div class="list-foot">
+        <span id="user-count"></span>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ── USER DETAIL PAGE ──────────────────────────────────────────── -->
+<div id="page-detail" class="hm-page">
+  <div class="hm-container-wide">
+    <a class="back-link" onclick="navTo('platops')">
+      <svg viewBox="0 0 14 14" fill="none"><path d="M9 2L4 7l5 5" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round"/></svg>
+      Back to Users
+    </a>
+    <div class="hm-card">
+      <!-- Header (populated by JS) -->
+      <div id="pe-head" class="detail-head"></div>
+
+      <!-- User details (populated by JS) -->
+      <div id="pe-user-info"></div>
+
+      <!-- View-only notice -->
+      <div id="vo-bar" class="vo-bar">
+        <svg width="12" height="12" viewBox="0 0 12 12" fill="none"><path d="M6 1a5 5 0 100 10A5 5 0 006 1zm0 7.5a.75.75 0 110-1.5.75.75 0 010 1.5zM6 3v3.5" stroke="currentColor" stroke-width="1.1" stroke-linecap="round"/></svg>
+        View-only — all editing controls are disabled
+      </div>
+
+      <!-- Permissions section header -->
+      <div class="section-hd">
+        <div class="section-hd-title">Permissions Configuration</div>
+      </div>
+
+      <!-- Object tabs -->
+      <div class="obj-tabs-wrap">
+        <div class="obj-tabs" id="obj-tabs"></div>
+      </div>
+
+      <!-- Tab content (populated by JS) -->
+      <div id="pe-scroll" class="tab-pane"></div>
+
+      <!-- Footer -->
+      <div class="detail-foot">
+        <div class="dirty-dot" id="dirty-dot"></div>
+        <div class="dirty-txt" id="dirty-txt">Unsaved changes</div>
+        <div class="ml-auto"></div>
+        <button class="btn-destr btn-sm" onclick="confirmDeactivate()">Deactivate User</button>
+        <button class="btn-outline btn-sm" onclick="cancelChanges()">Cancel</button>
+        <button class="btn-primary btn-sm" onclick="saveChanges()">Save Changes</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ── AUDIT LOG PAGE ─────────────────────────────────────────────── -->
+<div id="page-audit" class="hm-page">
+  <div class="hm-container-wide">
+    <a class="back-link" onclick="navTo('platops')">
+      <svg viewBox="0 0 14 14" fill="none"><path d="M9 2L4 7l5 5" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round"/></svg>
+      Back to Users
+    </a>
+    <div class="hm-card">
+      <div class="view-head">
+        <div class="list-title" style="font-size:28px;">Audit Log</div>
+        <div style="display:flex;gap:8px;">
+          <select style="padding:5px 8px;border:1px solid var(--bdr2);border-radius:var(--r6);font-size:12px;background:var(--surf);color:var(--t0);">
+            <option>All events</option>
+            <option>Permission changes</option>
+            <option>User management</option>
+            <option>System</option>
+          </select>
+          <button class="btn-outline btn-sm">Export CSV</button>
+        </div>
+      </div>
+      <div id="audit-content"></div>
+    </div>
+  </div>
+</div>
+
+<!-- ── MODAL ─────────────────────────────────────────────────────── -->
+<div class="modal-bg" id="modal-bg">
+  <div class="modal">
+    <div class="modal-title" id="modal-title"></div>
+    <div class="modal-body" id="modal-body"></div>
+    <div class="modal-actions" id="modal-actions"></div>
+  </div>
+</div>
+<div class="toast" id="toast"></div>
+
+<script>
+// ── TAB MANIFEST ─────────────────────────────────────────────────
+const TABS = [
+  {id:'platformsettings', label:'Platform'},
+  {id:'orgs',             label:'Origination Companies'},
+  {id:'investors',        label:'Investors'},
+  {id:'loanprograms',     label:'Loan Programs'},
+  {id:'funds',            label:'Funds'},
+];
+
+// ── DATA ──────────────────────────────────────────────────────────
+const USERS = [
+  {id:1,name:'Sarah Chen',      initials:'SC',email:'sarah@homium.io',    type:'admin',    color:'#7F77DD',bg:'#EEEDFE'},
+  {id:2,name:'Marcus Rodriguez',initials:'MR',email:'marcus@homium.io',   type:'admin',    color:'#854F0B',bg:'#FEF3C7'},
+  {id:3,name:'Elena Torres',    initials:'ET',email:'elena@homium.io',    type:'member',   color:'#185FA5',bg:'#E6F1FB'},
+  {id:4,name:'James Kim',       initials:'JK',email:'james@homium.io',    type:'member',   color:'#3B6D11',bg:'#EAF3DE'},
+  {id:5,name:'Rachel Foster',   initials:'RF',email:'rachel@homium.io',   type:'member',   color:'#5f5e5a',bg:'#f5f5f3'},
+  {id:6,name:'David Park',      initials:'DP',email:'david@homium.io',    type:'member',   color:'#6D3BA5',bg:'#F3EFFE'},
+  {id:7,name:'Lisa Wong',       initials:'LW',email:'lisa@homium.io',     type:'view-only',color:'#9e9c96',bg:'#eeece6'},
+];
+
+const userTitles = {1:'',2:'',3:'',4:'',5:'',6:'',7:''};
+
+const ORGS = [
+  {id:'oc1',name:'FirstHome Lending',     active:true},
+  {id:'oc2',name:'Pacific Mortgage Group',active:true},
+  {id:'oc3',name:'Cornerstone Financial', active:false},
+  {id:'oc4',name:'Heartland Home Loans',  active:true},
+];
+const INVESTORS = [
+  {id:'iv1',name:'Sequoia Housing Trust',     active:true},
+  {id:'iv2',name:'Pacific Capital Fund',      active:true},
+  {id:'iv3',name:'Heritage Investment Group', active:false},
+  {id:'iv4',name:'National Housing Partners', active:true},
+];
+const LOAN_PROGRAMS = [
+  {id:'lp1',name:'Standard SAM 2024-A',platActive:true},
+  {id:'lp2',name:'Premium SAM 2024-B',  platActive:true},
+  {id:'lp3',name:'SAM Launch 2025-A',   platActive:false},
+  {id:'lp4',name:'Utah Dream Fund SAM', platActive:true},
+];
+const FUNDS = [
+  {id:'f1',name:'Homium Housing Fund I', active:true},
+  {id:'f2',name:'Homium Housing Fund II',active:true},
+  {id:'f3',name:'Pacific SAM Pool',      active:true},
+  {id:'f4',name:'Utah SAM Trust',        active:false},
+];
+
+// ── PERMISSION STATE ───────────────────────────────────────────────
+const INIT_PERMS = {
+  1:{type:'admin',
+    platform:{manageOrgCos:'full',manageInvestors:'full',managePlatformSettings:'full'},
+    orgs:{'all':{settings:'full',impersonate:true},'oc1':null,'oc2':null,'oc3':null,'oc4':null},
+    investors:{'all':{settings:'full',approve:true,impersonate:true},'iv1':null,'iv2':null,'iv3':null,'iv4':null},
+    loanPrograms:{'all':{originations:'full',uwApprovals:true,ctc:true},'lp1':null,'lp2':null,'lp3':null,'lp4':null},
+    funds:{'all':{activations:'full',fundAdmin:true,minting:true,updates:'full',hOnchain:true},'f1':null,'f2':null,'f3':null,'f4':null}},
+  2:{type:'admin',
+    platform:{manageOrgCos:'edit',manageInvestors:'edit',managePlatformSettings:'edit'},
+    orgs:{'all':{settings:'view',impersonate:false},'oc1':{settings:'full',impersonate:true},'oc2':null,'oc3':null,'oc4':null},
+    investors:{'all':{settings:'view',approve:false,impersonate:false},'iv1':{settings:'full',approve:false,impersonate:true},'iv2':null,'iv3':null,'iv4':null},
+    loanPrograms:{'all':{originations:'edit',uwApprovals:false,ctc:false},'lp1':null,'lp2':null,'lp3':null,'lp4':null},
+    funds:{'all':{activations:'view',fundAdmin:false,minting:false,updates:'view',hOnchain:false},'f1':null,'f2':null,'f3':null,'f4':null}},
+  3:{type:'member',
+    platform:{manageOrgCos:'view',manageInvestors:'none',managePlatformSettings:'none'},
+    orgs:{'all':{settings:'none',impersonate:false},'oc1':{settings:'view',impersonate:false},'oc2':{settings:'view',impersonate:false},'oc3':null,'oc4':null},
+    investors:{'all':{settings:'none',approve:false,impersonate:false},'iv1':null,'iv2':null,'iv3':null,'iv4':null},
+    loanPrograms:{'all':{originations:'none',uwApprovals:false,ctc:false},'lp1':{originations:'edit',uwApprovals:true,ctc:true},'lp2':{originations:'edit',uwApprovals:true,ctc:true},'lp3':{originations:'view',uwApprovals:false,ctc:false},'lp4':null},
+    funds:{'all':{activations:'none',fundAdmin:false,minting:false,updates:'none',hOnchain:false},'f1':null,'f2':null,'f3':null,'f4':null}},
+  4:{type:'member',
+    platform:{manageOrgCos:'none',manageInvestors:'none',managePlatformSettings:'none'},
+    orgs:{'all':{settings:'view',impersonate:false},'oc1':null,'oc2':null,'oc3':null,'oc4':null},
+    investors:{'all':{settings:'none',approve:false,impersonate:false},'iv1':null,'iv2':null,'iv3':null,'iv4':null},
+    loanPrograms:{'all':{originations:'edit',uwApprovals:true,ctc:true},'lp1':null,'lp2':null,'lp3':null,'lp4':null},
+    funds:{'all':{activations:'none',fundAdmin:false,minting:false,updates:'none',hOnchain:false},'f1':null,'f2':null,'f3':null,'f4':null}},
+  5:{type:'member',
+    platform:{manageOrgCos:'view',manageInvestors:'view',managePlatformSettings:'view'},
+    orgs:{'all':{settings:'view',impersonate:false},'oc1':null,'oc2':null,'oc3':null,'oc4':null},
+    investors:{'all':{settings:'view',approve:false,impersonate:false},'iv1':null,'iv2':null,'iv3':null,'iv4':null},
+    loanPrograms:{'all':{originations:'view',uwApprovals:false,ctc:false},'lp1':null,'lp2':null,'lp3':null,'lp4':null},
+    funds:{'all':{activations:'view',fundAdmin:false,minting:false,updates:'view',hOnchain:false},'f1':null,'f2':null,'f3':null,'f4':null}},
+  6:{type:'member',
+    platform:{manageOrgCos:'none',manageInvestors:'none',managePlatformSettings:'none'},
+    orgs:{'all':{settings:'none',impersonate:false},'oc1':null,'oc2':null,'oc3':null,'oc4':null},
+    investors:{'all':{settings:'none',approve:false,impersonate:false},'iv1':{settings:'full',approve:true,impersonate:false},'iv2':{settings:'view',approve:false,impersonate:false},'iv3':null,'iv4':null},
+    loanPrograms:{'all':{originations:'none',uwApprovals:false,ctc:false},'lp1':null,'lp2':null,'lp3':null,'lp4':null},
+    funds:{'all':{activations:'none',fundAdmin:false,minting:false,updates:'none',hOnchain:false},'f1':{activations:'full',fundAdmin:true,minting:true,updates:'full',hOnchain:true},'f2':{activations:'view',fundAdmin:false,minting:false,updates:'view',hOnchain:false},'f3':null,'f4':null}},
+  7:{type:'view-only',
+    platform:{manageOrgCos:'view',manageInvestors:'view',managePlatformSettings:'none'},
+    orgs:{'all':{settings:'view',impersonate:false},'oc1':null,'oc2':null,'oc3':null,'oc4':null},
+    investors:{'all':{settings:'view',approve:false,impersonate:false},'iv1':null,'iv2':null,'iv3':null,'iv4':null},
+    loanPrograms:{'all':{originations:'view',uwApprovals:false,ctc:false},'lp1':null,'lp2':null,'lp3':null,'lp4':null},
+    funds:{'all':{activations:'view',fundAdmin:false,minting:false,updates:'view',hOnchain:false},'f1':null,'f2':null,'f3':null,'f4':null}},
+};
+
+// ── STATE ─────────────────────────────────────────────────────────
+let state = JSON.parse(JSON.stringify(INIT_PERMS));
+let selectedUserId = null;
+let currentObjTab = 'platformsettings';
+let isDirty = false;
+
+// ── PAGE NAVIGATION ───────────────────────────────────────────────
+const PAGES = ['home','loc','list','detail','audit'];
+function navTo(page){
+  PAGES.forEach(p=>document.getElementById('page-'+p).classList.remove('active'));
+  document.getElementById('setup-dd').classList.remove('open');
+  document.getElementById('setup-btn').classList.remove('active');
+
+  const targetId = page==='platops'?'list':page;
+  document.getElementById('page-'+targetId).classList.add('active');
+
+  // Update nav active state
+  if(page==='platops'||page==='loc'||page==='audit'||page==='detail'){
+    document.getElementById('setup-btn').classList.add('active');
+  }
+  if(page==='platops') renderUserList();
+  if(page==='audit')   renderAudit();
+}
+
+function toggleSetupMenu(){
+  document.getElementById('setup-dd').classList.toggle('open');
+}
+document.addEventListener('click',function(e){
+  if(!e.target.closest('.hm-dd-wrap')) document.getElementById('setup-dd').classList.remove('open');
+});
+
+// ── HELPERS ───────────────────────────────────────────────────────
+function pClass(v){return v==='full'?'pf':v==='edit'?'pe':v==='view'?'pv':'pn';}
+function adminCount(){return USERS.filter(u=>state[u.id].type==='admin').length;}
+
+function mkSel(userId,section,entityId,field,opts,currentVal,grantAllVal,locked){
+  const isGA=entityId==='all';
+  const isInh=!isGA&&(currentVal===null||currentVal===undefined);
+  const eff=isInh?grantAllVal:currentVal;
+  const options=opts.map(([val,lbl])=>`<option value="${val}"${eff===val?' selected':''}>${lbl}</option>`).join('');
+  const inhCls=isInh?' ps-inh':'';
+  return `<select class="ps ${pClass(eff)}${inhCls}"${locked?' disabled':''}
+    onchange="onPermChange(${userId},'${section}','${entityId}','${field}',this)">${options}</select>`;
+}
+
+function mkTog(userId,section,entityId,field,currentVal,grantAllVal,locked,labelOn,labelOff){
+  const isGA=entityId==='all';
+  const isInh=!isGA&&(currentVal===null||currentVal===undefined);
+  const eff=isInh?grantAllVal:currentVal;
+  const togId=`tog-${userId}-${section}-${entityId}-${field}`;
+  const lblCls=`tog-lbl${eff?' tog-yes':''}${isInh?' tog-inh':''}`;
+  return `<div class="tog">
+    <label class="tog-sw"><input type="checkbox" id="${togId}"${eff?' checked':''}${locked?' disabled':''}
+      onchange="onTogChange(${userId},'${section}','${entityId}','${field}',this)"><span class="tog-sl"></span></label>
+    <span class="${lblCls}" id="${togId}-lbl">${eff?(labelOn||'Yes'):(labelOff||'No')}</span>
+  </div>`;
+}
+
+// ── EVENT HANDLERS ────────────────────────────────────────────────
+function onPermChange(userId,section,entityId,field,sel){
+  if(!state[userId][section][entityId]) state[userId][section][entityId]={};
+  state[userId][section][entityId][field]=sel.value;
+  sel.className=`ps ${pClass(sel.value)}`;
+  if(entityId==='all') renderCurrentTab();
+  setDirty();
+}
+function onTogChange(userId,section,entityId,field,inp){
+  if(!state[userId][section][entityId]) state[userId][section][entityId]={};
+  state[userId][section][entityId][field]=inp.checked;
+  const lbl=document.getElementById(`tog-${userId}-${section}-${entityId}-${field}-lbl`);
+  if(lbl){lbl.className=inp.checked?'tog-lbl tog-yes':'tog-lbl';lbl.textContent=inp.checked?'Yes':'No';}
+  if(entityId==='all') renderCurrentTab();
+  setDirty();
+}
+function onPlatformChange(userId,key,sel){
+  state[userId].platform[key]=sel.value;
+  sel.className=`ps ${pClass(sel.value)}`;
+  setDirty();
+}
+function resetRow(userId,section,entityId){
+  state[userId][section][entityId]=null;
+  renderCurrentTab();
+  setDirty();
+}
+
+// ── RENDER: Tab row (always all 5 tabs) ───────────────────────────
+function renderTabs(userId){
+  if(!TABS.some(t=>t.id===currentObjTab)) currentObjTab=TABS[0].id;
+  document.getElementById('obj-tabs').innerHTML=TABS.map(t=>
+    `<div class="ot${t.id===currentObjTab?' active':''}" onclick="switchObjTab('${t.id}',this)">${t.label}</div>`
+  ).join('');
+}
+
+// ── RENDER: Orgs Tab ──────────────────────────────────────────────
+function renderOrgsTab(userId){
+  const p=state[userId];
+  const locked=p.type==='view-only';
+  const ga=p.orgs['all'];
+  const showImpersonate=p.type!=='view-only';
+  let h=`<div class="pt-wrap"><table class="pt"><thead><tr>
+    <th style="width:220px">Entity</th><th style="width:150px">Settings Access</th>
+    ${showImpersonate?'<th style="width:130px">Impersonate</th>':''}<th class="row-act"></th>
+  </tr></thead><tbody>`;
+  h+=`<tr class="pt-all">
+    <td><span class="en-all">All Origination Companies</span><span class="en-all-sub">Current &amp; future entities</span></td>
+    <td>${mkSel(userId,'orgs','all','settings',[['none','No Access'],['view','View Only'],['full','Full Access']],ga.settings,ga.settings,locked)}</td>
+    ${showImpersonate?`<td>${mkTog(userId,'orgs','all','impersonate',ga.impersonate,ga.impersonate,locked,'Yes','No')}</td>`:''}
+    <td class="row-act"></td>
+  </tr>`;
+  ORGS.forEach(org=>{
+    const row=p.orgs[org.id];const isInh=row===null||row===undefined;
+    const dis=locked||!org.active;
+    const badge=org.active?'<span class="ebadge eb-on">Active</span>':'<span class="ebadge eb-off">Inactive</span>';
+    h+=`<tr>
+      <td><div class="${org.active?'':'en-dim'}"><span class="en-name">${org.name}</span>${badge}</div></td>
+      <td>${mkSel(userId,'orgs',org.id,'settings',[['none','No Access'],['view','View Only'],['full','Full Access']],isInh?null:row?.settings,ga.settings,dis)}</td>
+      ${showImpersonate?`<td>${mkTog(userId,'orgs',org.id,'impersonate',isInh?null:row?.impersonate,ga.impersonate,dis,'Yes','No')}</td>`:''}
+      <td class="row-act">${!isInh&&!locked?`<button class="revert-btn" title="Revert to default" onclick="resetRow(${userId},'orgs','${org.id}')">&#xd7;</button>`:''}</td>
+    </tr>`;
+  });
+  h+=`</tbody></table></div>`;return h;
+}
+
+// ── RENDER: Investors Tab ─────────────────────────────────────────
+function renderInvestorsTab(userId){
+  const p=state[userId];
+  const locked=p.type==='view-only';
+  const ga=p.investors['all'];
+  const showApprove=p.type!=='view-only';const showImpersonate=p.type!=='view-only';
+  let h=`<div class="pt-wrap"><table class="pt"><thead><tr>
+    <th style="width:200px">Entity</th><th style="width:150px">Settings Access</th>
+    ${showApprove?'<th style="width:130px">Approve Activation</th>':''}
+    ${showImpersonate?'<th style="width:120px">Impersonate</th>':''}<th class="row-act"></th>
+  </tr></thead><tbody>`;
+  h+=`<tr class="pt-all">
+    <td><span class="en-all">All Investors</span><span class="en-all-sub">Current &amp; future entities</span></td>
+    <td>${mkSel(userId,'investors','all','settings',[['none','No Access'],['view','View Only'],['full','Full Access']],ga.settings,ga.settings,locked)}</td>
+    ${showApprove?`<td>${mkTog(userId,'investors','all','approve',ga.approve,ga.approve,locked,'Yes','No')}</td>`:''}
+    ${showImpersonate?`<td>${mkTog(userId,'investors','all','impersonate',ga.impersonate,ga.impersonate,locked,'Yes','No')}</td>`:''}
+    <td class="row-act"></td>
+  </tr>`;
+  INVESTORS.forEach(inv=>{
+    const row=p.investors[inv.id];const isInh=row===null||row===undefined;
+    const dis=locked||!inv.active;
+    const badge=inv.active?'<span class="ebadge eb-on">Active</span>':'<span class="ebadge eb-off">Inactive</span>';
+    h+=`<tr>
+      <td><div class="${inv.active?'':'en-dim'}"><span class="en-name">${inv.name}</span>${badge}</div></td>
+      <td>${mkSel(userId,'investors',inv.id,'settings',[['none','No Access'],['view','View Only'],['full','Full Access']],isInh?null:row?.settings,ga.settings,dis)}</td>
+      ${showApprove?`<td>${mkTog(userId,'investors',inv.id,'approve',isInh?null:row?.approve,ga.approve,dis,'Yes','No')}</td>`:''}
+      ${showImpersonate?`<td>${mkTog(userId,'investors',inv.id,'impersonate',isInh?null:row?.impersonate,ga.impersonate,dis,'Yes','No')}</td>`:''}
+      <td class="row-act">${!isInh&&!locked?`<button class="revert-btn" title="Revert to default" onclick="resetRow(${userId},'investors','${inv.id}')">&#xd7;</button>`:''}</td>
+    </tr>`;
+  });
+  h+=`</tbody></table></div>`;return h;
+}
+
+// ── RENDER: Loan Programs Tab ─────────────────────────────────────
+function renderLoanProgramsTab(userId){
+  const p=state[userId];
+  const locked=p.type==='view-only';
+  const ga=p.loanPrograms['all'];
+  const showUW=p.type!=='view-only';const showCTC=p.type!=='view-only';
+  let h=`<div class="pt-wrap"><table class="pt"><thead><tr>
+    <th style="width:200px">Entity</th><th style="width:165px">Origination Access</th>
+    ${showUW?'<th style="width:120px">UW Approvals</th>':''}
+    ${showCTC?'<th style="width:120px">Clear to Close</th>':''}<th class="row-act"></th>
+  </tr></thead><tbody>`;
+  h+=`<tr class="pt-all">
+    <td><span class="en-all">All Loan Programs</span><span class="en-all-sub">Current &amp; future entities</span></td>
+    <td>${mkSel(userId,'loanPrograms','all','originations',[['none','No Access'],['view','View Only'],['edit','Can Edit'],['full','Full Access']],ga.originations,ga.originations,locked)}</td>
+    ${showUW?`<td>${mkTog(userId,'loanPrograms','all','uwApprovals',ga.uwApprovals,ga.uwApprovals,locked,'Yes','No')}</td>`:''}
+    ${showCTC?`<td>${mkTog(userId,'loanPrograms','all','ctc',ga.ctc,ga.ctc,locked,'Yes','No')}</td>`:''}
+    <td class="row-act"></td>
+  </tr>`;
+  LOAN_PROGRAMS.forEach(lp=>{
+    const row=p.loanPrograms[lp.id];const isInh=row===null||row===undefined;
+    const dis=locked||!lp.platActive;
+    const badge=lp.platActive?'<span class="ebadge eb-plat">Platform Active</span>':'<span class="ebadge eb-off">Inactive</span>';
+    h+=`<tr>
+      <td><div class="${lp.platActive?'':'en-dim'}"><span class="en-name">${lp.name}</span>${badge}</div></td>
+      <td>${mkSel(userId,'loanPrograms',lp.id,'originations',[['none','No Access'],['view','View Only'],['edit','Can Edit'],['full','Full Access']],isInh?null:row?.originations,ga.originations,dis)}</td>
+      ${showUW?`<td>${mkTog(userId,'loanPrograms',lp.id,'uwApprovals',isInh?null:row?.uwApprovals,ga.uwApprovals,dis,'Yes','No')}</td>`:''}
+      ${showCTC?`<td>${mkTog(userId,'loanPrograms',lp.id,'ctc',isInh?null:row?.ctc,ga.ctc,dis,'Yes','No')}</td>`:''}
+      <td class="row-act">${!isInh&&!locked?`<button class="revert-btn" title="Revert to default" onclick="resetRow(${userId},'loanPrograms','${lp.id}')">&#xd7;</button>`:''}</td>
+    </tr>`;
+  });
+  h+=`</tbody></table></div>`;return h;
+}
+
+// ── RENDER: Funds Tab ─────────────────────────────────────────────
+function renderFundsTab(userId){
+  const p=state[userId];
+  const locked=p.type==='view-only';
+  const ga=p.funds['all'];
+  const showAdmin=p.type!=='view-only';const showMint=p.type!=='view-only';const showOnchain=p.type!=='view-only';
+  let h=`<div class="pt-wrap" style="overflow-x:auto;"><table class="pt" style="min-width:${locked?'500px':'720px'};">
+    <thead><tr>
+      <th style="width:165px">Entity</th><th style="width:145px">Activation Access</th>
+      ${showAdmin?'<th style="width:115px">Fund Admin Approve</th>':''}
+      ${showMint?'<th style="width:105px">Approve Minting</th>':''}
+      <th style="width:135px">Fund Updates</th>
+      ${showOnchain?'<th style="width:110px">On-chain Update</th>':''}<th class="row-act"></th>
+    </tr></thead><tbody>`;
+  h+=`<tr class="pt-all">
+    <td><span class="en-all">All Funds</span><span class="en-all-sub">Current &amp; future entities</span></td>
+    <td>${mkSel(userId,'funds','all','activations',[['none','No Access'],['view','View Only'],['full','Full Access']],ga.activations,ga.activations,locked)}</td>
+    ${showAdmin?`<td>${mkTog(userId,'funds','all','fundAdmin',ga.fundAdmin,ga.fundAdmin,locked,'Yes','No')}</td>`:''}
+    ${showMint?`<td>${mkTog(userId,'funds','all','minting',ga.minting,ga.minting,locked,'Yes','No')}</td>`:''}
+    <td>${mkSel(userId,'funds','all','updates',[['none','No Access'],['view','View Only'],['full','Full Access']],ga.updates,ga.updates,locked)}</td>
+    ${showOnchain?`<td>${mkTog(userId,'funds','all','hOnchain',ga.hOnchain,ga.hOnchain,locked,'Yes','No')}</td>`:''}
+    <td class="row-act"></td>
+  </tr>`;
+  FUNDS.forEach(f=>{
+    const row=p.funds[f.id];const isInh=row===null||row===undefined;
+    const dis=locked||!f.active;
+    const badge=f.active?'<span class="ebadge eb-on">Active</span>':'<span class="ebadge eb-off">Inactive</span>';
+    h+=`<tr>
+      <td><div class="${f.active?'':'en-dim'}"><span class="en-name">${f.name}</span>${badge}</div></td>
+      <td>${mkSel(userId,'funds',f.id,'activations',[['none','No Access'],['view','View Only'],['full','Full Access']],isInh?null:row?.activations,ga.activations,dis)}</td>
+      ${showAdmin?`<td>${mkTog(userId,'funds',f.id,'fundAdmin',isInh?null:row?.fundAdmin,ga.fundAdmin,dis,'Yes','No')}</td>`:''}
+      ${showMint?`<td>${mkTog(userId,'funds',f.id,'minting',isInh?null:row?.minting,ga.minting,dis,'Yes','No')}</td>`:''}
+      <td>${mkSel(userId,'funds',f.id,'updates',[['none','No Access'],['view','View Only'],['full','Full Access']],isInh?null:row?.updates,ga.updates,dis)}</td>
+      ${showOnchain?`<td>${mkTog(userId,'funds',f.id,'hOnchain',isInh?null:row?.hOnchain,ga.hOnchain,dis,'Yes','No')}</td>`:''}
+      <td class="row-act">${!isInh&&!locked?`<button class="revert-btn" title="Revert to default" onclick="resetRow(${userId},'funds','${f.id}')">&#xd7;</button>`:''}</td>
+    </tr>`;
+  });
+  h+=`</tbody></table></div>`;return h;
+}
+
+// ── RENDER: Platform Tab ──────────────────────────────────────────
+function renderPlatformSettingsTab(userId){
+  const p=state[userId];
+  const locked=p.type==='view-only';
+  const cfgOpts=locked
+    ?[['none','No Access'],['view','View Only']]
+    :[['none','No Access'],['view','View Only'],['edit','Can Edit'],['full','Full Access']];
+  const cfgItems=[
+    {key:'manageOrgCos',           label:'Manage Origination Companies'},
+    {key:'manageInvestors',        label:'Manage Investors'},
+    {key:'managePlatformSettings', label:'Manage Platform Settings'},
+  ];
+  let h=`<div class="pt-wrap"><table class="pt"><thead><tr>
+    <th style="width:280px">Configuration</th><th style="width:160px">Access Level</th>
+  </tr></thead><tbody>`;
+  cfgItems.forEach(item=>{
+    const v=p.platform[item.key];
+    const opts=cfgOpts.map(([val,lbl])=>`<option value="${val}"${v===val?' selected':''}>${lbl}</option>`).join('');
+    h+=`<tr>
+      <td><span class="en-name">${item.label}</span></td>
+      <td><select class="ps ${pClass(v)}"${locked?' disabled':''} onchange="onPlatformChange(${userId},'${item.key}',this)">${opts}</select></td>
+    </tr>`;
+  });
+  h+=`</tbody></table></div>`;
+  return h;
+}
+
+// ── RENDER: Current Tab ───────────────────────────────────────────
+function renderCurrentTab(){
+  if(!selectedUserId||!currentObjTab){document.getElementById('pe-scroll').innerHTML='';return;}
+  let h='';
+  if(currentObjTab==='orgs')               h=renderOrgsTab(selectedUserId);
+  else if(currentObjTab==='investors')      h=renderInvestorsTab(selectedUserId);
+  else if(currentObjTab==='loanprograms')   h=renderLoanProgramsTab(selectedUserId);
+  else if(currentObjTab==='funds')          h=renderFundsTab(selectedUserId);
+  else if(currentObjTab==='platformsettings') h=renderPlatformSettingsTab(selectedUserId);
+  document.getElementById('pe-scroll').innerHTML=h;
+}
+
+function switchObjTab(tab,el){
+  currentObjTab=tab;
+  document.querySelectorAll('.ot').forEach(t=>t.classList.remove('active'));
+  if(el) el.classList.add('active');
+  renderCurrentTab();
+}
+
+// ── SELECT USER ───────────────────────────────────────────────────
+function selectUser(userId){
+  selectedUserId=userId;
+  isDirty=false;
+  document.getElementById('dirty-dot').classList.remove('show');
+  document.getElementById('dirty-txt').classList.remove('show');
+
+  const u=USERS.find(x=>x.id===userId);
+  const p=state[userId];
+  const t=p.type;
+  const typeClass=t==='admin'?'ta':t==='member'?'tm':'tv';
+
+  navTo('detail');
+
+  // Header — avatar, name, email, type dropdown (no status)
+  document.getElementById('pe-head').innerHTML=`
+    <div class="detail-av" style="background:${u.bg};color:${u.color}">${u.initials}</div>
+    <div class="detail-info">
+      <div class="detail-name">${u.name}</div>
+      <div class="detail-email">${u.email}</div>
+    </div>
+    <div class="detail-head-right">
+      <div class="type-row">
+        <span class="type-lbl">User type</span>
+        <select class="type-sel ${typeClass}" id="type-sel-${userId}" onchange="changeType(${userId},this)">
+          <option value="admin"${t==='admin'?' selected':''}>Admin</option>
+          <option value="member"${t==='member'?' selected':''}>Member</option>
+          <option value="view-only"${t==='view-only'?' selected':''}>View-only</option>
+        </select>
+      </div>
+    </div>`;
+
+  // User details section (replaces Details tab)
+  const names=u.name.split(' ');
+  document.getElementById('pe-user-info').innerHTML=`
+    <div class="section-hd">
+      <div class="section-hd-title">User Profile</div>
+    </div>
+    <div class="detail-info-section">
+      <div class="ui-fields">
+        <div class="ui-field"><label>First name</label><input value="${names[0]||''}" readonly /></div>
+        <div class="ui-field"><label>Last name</label><input value="${names.slice(1).join(' ')||''}" readonly /></div>
+        <div class="ui-field"><label>Email</label><input value="${u.email}" readonly /></div>
+        <div class="ui-field"><label>Phone</label><input id="phone-${userId}" value=""
+          placeholder="—" /></div>
+        <div class="ui-field"><label>Title</label><input id="title-${userId}" value="${userTitles[userId]||''}"
+          placeholder="—" oninput="userTitles[${userId}]=this.value;renderUserList()" /></div>
+        <div class="ui-field"><label>Company</label><input value="Homium" readonly /></div>
+      </div>
+    </div>`;
+
+  // View-only bar
+  const voBar=document.getElementById('vo-bar');
+  t==='view-only'?voBar.classList.add('show'):voBar.classList.remove('show');
+
+  // Tabs + content (always all 5, Platform Settings first)
+  currentObjTab='platformsettings';
+  renderTabs(userId);
+  renderCurrentTab();
+}
+
+// ── USER TYPE CHANGE ──────────────────────────────────────────────
+function changeType(userId,sel){
+  const newType=sel.value;
+  const oldType=state[userId].type;
+  if(newType===oldType) return;
+  sel.value=oldType;
+  const u=USERS.find(x=>x.id===userId);
+  if(oldType==='admin'&&newType!=='admin'&&adminCount()<=1){
+    showModal('Cannot change user type',
+      `${u.name} is the only Admin on this platform. At least one Admin must remain.`,
+      [['OK','closeModal()']]);
+    return;
+  }
+  showModal('Change user type',
+    `Set <strong>${u.name}</strong> to <strong>${newType}</strong>? Their individual permission configuration will remain unchanged.`,
+    [['Cancel','closeModal()'],['Confirm',`applyType(${userId},'${newType}')`]]);
+}
+
+function applyType(userId,newType){
+  closeModal();
+  state[userId].type=newType;
+  if(newType==='view-only'){
+    const plat=state[userId].platform;
+    Object.keys(plat).forEach(k=>{if(plat[k]==='edit'||plat[k]==='full') plat[k]='view';});
+  }
+  setDirty();
+  selectUser(userId);
+  showToast('User type updated');
+}
+
+// ── RENDER: User List ─────────────────────────────────────────────
+function renderUserList(filter){
+  filter=filter||document.getElementById('list-search')?.value||'';
+  const filtered=USERS.filter(u=>
+    u.name.toLowerCase().includes(filter.toLowerCase())||
+    u.email.toLowerCase().includes(filter.toLowerCase())
+  );
+  const tbody=document.getElementById('user-table-body');
+  if(!tbody) return;
+  document.getElementById('user-count').textContent=`${USERS.length} user${USERS.length!==1?'s':''}`;
+  tbody.innerHTML=filtered.map(u=>{
+    const t=state[u.id].type;
+    const typeLbl=t==='admin'?'Admin':t==='view-only'?'View-only':'Member';
+    const typeCls=t==='admin'?'utb utb-admin':t==='view-only'?'utb utb-view':'utb utb-member';
+    return `<tr onclick="selectUser(${u.id})">
+      <td>
+        <div class="hm-user-cell">
+          <div class="hm-av" style="background:${u.bg};color:${u.color}">${u.initials}</div>
+          <div>
+            <div class="hm-uname">${u.name}</div>
+            <div class="hm-uemail">${u.email}</div>
+          </div>
+        </div>
+      </td>
+      <td><span class="${typeCls}">${typeLbl}</span></td>
+      <td class="hm-company">Homium</td>
+    </tr>`;
+  }).join('');
+}
+
+function filterUsers(v){renderUserList(v);}
+
+// ── AUDIT LOG ─────────────────────────────────────────────────────
+const AUDIT=[
+  {time:'10:42 AM',type:'perm',user:'Sarah Chen',      action:'Updated permissions',  target:'Elena Torres',    detail:'Loan Programs — Premium SAM 2024-B: Origination Access → Can Edit; UW Approvals enabled'},
+  {time:'10:38 AM',type:'perm',user:'Sarah Chen',      action:'Updated permissions',  target:'Elena Torres',    detail:'Loan Programs — Standard SAM 2024-A: Clear to Close approval enabled'},
+  {time:'09:15 AM',type:'user',user:'Marcus Rodriguez',action:'Changed user type',    target:'Lisa Wong',       detail:'Member → View-only'},
+  {time:'08:50 AM',type:'sys', user:'System',           action:'Login',               target:'David Park',      detail:'192.168.1.45 · macOS · Chrome'},
+  {time:'2 days ago',type:'perm',user:'Sarah Chen',    action:'Updated permissions',  target:'David Park',      detail:'Funds — Homium Housing Fund I: Full Access; Fund Admin Approve and Minting enabled'},
+  {time:'2 days ago',type:'perm',user:'Sarah Chen',    action:'Updated permissions',  target:'David Park',      detail:'Investors — Sequoia Housing Trust: Settings → Full Access; Approve Activation enabled'},
+  {time:'2 days ago',type:'user',user:'Marcus Rodriguez',action:'Added user',         target:'Rachel Foster',   detail:'rachel@homium.io · Member'},
+  {time:'3 days ago',type:'perm',user:'Sarah Chen',    action:'Updated default',      target:'James Kim',       detail:'Loan Programs — All: Origination Access → Can Edit; UW Approvals and CTC enabled'},
+  {time:'3 days ago',type:'user',user:'Sarah Chen',    action:'Changed user type',    target:'Marcus Rodriguez',detail:'Member → Admin'},
+  {time:'4 days ago',type:'sys', user:'System',         action:'Password reset',       target:'Elena Torres',   detail:'Completed via forgot-password flow'},
+];
+function renderAudit(){
+  let prev='';
+  document.getElementById('audit-content').innerHTML=AUDIT.map(e=>{
+    let out='';
+    const day=(e.time.includes('AM')||e.time.includes('PM'))?'Today':e.time;
+    if(day!==prev){out+=`<div class="arow-day">${day}</div>`;prev=day;}
+    const tagCls=e.type==='perm'?'at-perm':e.type==='user'?'at-user':'at-sys';
+    const tagLbl=e.type==='perm'?'PERMISSION':e.type==='user'?'USER':'SYSTEM';
+    const tStr=(e.time.includes('AM')||e.time.includes('PM'))?e.time:'';
+    out+=`<div class="arow"><div class="at">${tStr}</div>
+      <div><div class="ac-main"><span class="ac-user">${e.user}</span> ${e.action} &mdash; <strong>${e.target}</strong><span class="atag ${tagCls}">${tagLbl}</span></div>
+      <div class="ac-detail">${e.detail}</div></div></div>`;
+    return out;
+  }).join('');
+}
+
+// ── MODAL ─────────────────────────────────────────────────────────
+function showModal(title,body,actions){
+  document.getElementById('modal-title').textContent=title;
+  document.getElementById('modal-body').innerHTML=body;
+  document.getElementById('modal-actions').innerHTML=actions.map(([lbl,fn],i)=>{
+    const cls=(i===actions.length-1&&actions.length>1)?'btn-primary btn-sm':'btn-outline btn-sm';
+    return `<button class="${cls}" onclick="${fn}">${lbl}</button>`;
+  }).join('');
+  document.getElementById('modal-bg').classList.add('show');
+}
+function closeModal(){document.getElementById('modal-bg').classList.remove('show');}
+document.getElementById('modal-bg').addEventListener('click',function(e){if(e.target===this)closeModal();});
+
+// ── TOAST ─────────────────────────────────────────────────────────
+let _tt;
+function showToast(msg){
+  const t=document.getElementById('toast');t.textContent=msg;t.classList.add('show');
+  clearTimeout(_tt);_tt=setTimeout(()=>t.classList.remove('show'),2200);
+}
+
+// ── ACTIONS ───────────────────────────────────────────────────────
+function setDirty(){
+  isDirty=true;
+  document.getElementById('dirty-dot').classList.add('show');
+  document.getElementById('dirty-txt').classList.add('show');
+}
+function saveChanges(){
+  isDirty=false;
+  document.getElementById('dirty-dot').classList.remove('show');
+  document.getElementById('dirty-txt').classList.remove('show');
+  showToast('Permissions saved');
+}
+function cancelChanges(){
+  if(!isDirty) return;
+  state=JSON.parse(JSON.stringify(INIT_PERMS));
+  isDirty=false;
+  document.getElementById('dirty-dot').classList.remove('show');
+  document.getElementById('dirty-txt').classList.remove('show');
+  if(selectedUserId) selectUser(selectedUserId);
+  showToast('Changes discarded');
+}
+function confirmDeactivate(){
+  if(!selectedUserId) return;
+  const u=USERS.find(x=>x.id===selectedUserId);
+  if(state[selectedUserId].type==='admin'&&adminCount()<=1){
+    showModal('Cannot deactivate user',`${u.name} is the only Admin. Assign another Admin first.`,[['OK','closeModal()']]);
+    return;
+  }
+  showModal('Deactivate user',
+    `Deactivate ${u.name}? Platform access will be revoked immediately. Their permission configuration is preserved.`,
+    [['Cancel','closeModal()'],['Deactivate',`doDeactivate(${u.id})`]]);
+}
+function doDeactivate(userId){closeModal();showToast('User deactivated');}
+function toggleInvite(){document.getElementById('inv-panel').classList.toggle('show');}
+function fakeInvite(){document.getElementById('inv-panel').classList.remove('show');showToast('Invite sent');}
+
+// ── INIT ──────────────────────────────────────────────────────────
+navTo('platops');
+</script>
+</body>
+</html>

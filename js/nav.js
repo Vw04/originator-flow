@@ -67,7 +67,6 @@ const Nav = (() => {
       { path: '/dashboard',             label: 'Administration Dashboard' },
       { path: '/origination-companies', label: 'Origination Companies' },
       { path: '/investors',             label: 'Investors & Funds' },
-      { path: '/platform',              label: 'Platform Operations' },
       { path: '/system-config',         label: 'System Configuration' },
     ],
     prog_admin: [
