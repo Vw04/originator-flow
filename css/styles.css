@@ -8630,30 +8630,6 @@ label { font-size: 12px; font-weight: 600; color: var(--color-text); }
 .rb-typesel-member { background: rgba(3,105,161,0.10); color: var(--h-info);  border-color: rgba(3,105,161,0.30); }
 .rb-typesel-view   { background: var(--h-paper-warm);  color: var(--h-ink-2); border-color: var(--h-line); }
 
-/* Effective-access summary chips */
-.rb-summary-row {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 10px;
-  padding: 14px 18px;
-  background: #fff;
-  border: 1px solid var(--h-line);
-  border-radius: 12px;
-  margin-bottom: 12px;
-}
-.rb-sum-chip {
-  display: inline-flex;
-  align-items: baseline;
-  gap: 6px;
-  padding: 6px 14px;
-  background: var(--h-mint);
-  color: var(--h-green);
-  border-radius: 999px;
-  font-size: 12px;
-  font-weight: 500;
-}
-.rb-sum-num { font-family: var(--font-serif); font-weight: 400; font-size: 16px; color: var(--h-green); letter-spacing: -0.01em; }
-
 /* Section headers within detail card */
 .rb-section-hd {
   padding: 18px 24px 10px;

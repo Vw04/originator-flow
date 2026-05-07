@@ -484,8 +484,6 @@ const PlatformRbacView = (() => {
     const typeClass = t === 'admin' ? 'rb-typesel-admin' : t === 'view-only' ? 'rb-typesel-view' : 'rb-typesel-member';
     const dirty = _diffCount(userId);
 
-    const summary = _effectiveSummary(userId);
-
     let tabContent = '';
     if      (_activeObjTab === 'orgs')             tabContent = _renderOrgsTab(userId);
     else if (_activeObjTab === 'investors')        tabContent = _renderInvestorsTab(userId);
@@ -526,10 +524,6 @@ const PlatformRbacView = (() => {
                 </select>
               </label>
             </div>
-          </div>
-
-          <div class="rb-summary-row" aria-label="Effective access summary">
-            ${summary.map(s => `<span class="rb-sum-chip"><span class="rb-sum-num">${s.count}</span> ${s.label}</span>`).join('')}
           </div>
 
           <div class="rb-card-wrap">
