@@ -1,8 +1,12 @@
 /* ============================================================
    HOMIUM ORIGINATOR FLOW — Platform Operations Users (RBAC)
-   Replaces the old "Users" sub-tab on /platform with a full
-   user roster + per-entity permission matrix + audit log.
-   Visible only to sys_admin (gated upstream by PlatformOpsView).
+   sys_admin-only. Hosts the entire /platform surface:
+     /platform           → operator roster
+     /platform/u/:id     → user detail (per-entity permission matrix)
+     /platform/audit     → audit log
+     /platform/invite    → bulk invite (Stage 1 emails → Stage 2 per-row)
+   Visual aesthetic mirrors the Institutional artboard
+   (warm paper, serif accents, navy primary, mint highlights, gold).
    ============================================================ */
 
 const PlatformRbacView = (() => {
@@ -16,7 +20,7 @@ const PlatformRbacView = (() => {
     { id: 'funds',            label: 'Funds' },
   ];
 
-  /* ---- Tooltip / help copy for every capability ---- */
+  /* ---- Tooltip help copy (still surfaced via title attrs) ---- */
   const HELP = {
     manageOrgCos:           'Read or modify origination-company records (entity profile, branches, status).',
     manageInvestors:        'Read or modify investor entities and fund linkages.',
@@ -36,19 +40,24 @@ const PlatformRbacView = (() => {
 
   /* ---- Mock data — scoped to this view, not in global State ---- */
   const USERS = [
-    { id: 1, name: 'Sarah Chen',       initials: 'SC', email: 'sarah@homium.io',   color: '#1E3F62', bg: '#D7E5F1', status: 'active'  },
-    { id: 2, name: 'Marcus Rodriguez', initials: 'MR', email: 'marcus@homium.io',  color: '#854F0B', bg: '#FEF3C7', status: 'active'  },
-    { id: 3, name: 'Elena Torres',     initials: 'ET', email: 'elena@homium.io',   color: '#185FA5', bg: '#E6F1FB', status: 'active'  },
-    { id: 4, name: 'James Kim',        initials: 'JK', email: 'james@homium.io',   color: '#0E2A47', bg: '#C5DEF5', status: 'active'  },
-    { id: 5, name: 'Rachel Foster',    initials: 'RF', email: 'rachel@homium.io',  color: '#5f5e5a', bg: '#F3F4F6', status: 'active'  },
-    { id: 6, name: 'David Park',       initials: 'DP', email: 'david@homium.io',   color: '#2D5680', bg: '#D7E5F1', status: 'active'  },
-    { id: 7, name: 'Lisa Wong',        initials: 'LW', email: 'lisa@homium.io',    color: '#9e9c96', bg: '#E5E7EB', status: 'active'  },
-    { id: 8, name: 'Priya Natarajan',  initials: 'PN', email: 'priya@homium.io',   color: '#1E3F62', bg: '#C5DEF5', status: 'pending' },
+    { id: 1, name: 'Sarah Chen',       initials: 'SC', email: 'sarah@homium.io',   color: '#fff', bg: '#0E2A47' },
+    { id: 2, name: 'Marcus Rodriguez', initials: 'MR', email: 'marcus@homium.io',  color: '#fff', bg: '#C2A14A' },
+    { id: 3, name: 'Elena Torres',     initials: 'ET', email: 'elena@homium.io',   color: '#fff', bg: '#1E3F62' },
+    { id: 4, name: 'James Kim',        initials: 'JK', email: 'james@homium.io',   color: '#fff', bg: '#2D5680' },
+    { id: 5, name: 'Rachel Foster',    initials: 'RF', email: 'rachel@homium.io',  color: '#fff', bg: '#5A8AB5' },
+    { id: 6, name: 'David Park',       initials: 'DP', email: 'david@homium.io',   color: '#fff', bg: '#0369A1' },
+    { id: 7, name: 'Lisa Wong',        initials: 'LW', email: 'lisa@homium.io',    color: '#fff', bg: '#7C3AED' },
   ];
 
-  const userTitles = { 1:'Head of Platform Ops', 2:'Senior Operator', 3:'Operations Specialist',
-                       4:'Operations Specialist', 5:'Operator', 6:'Operator',
-                       7:'Compliance Reviewer',  8:'' };
+  const userTitles = {
+    1: 'System Admin',
+    2: 'Senior Operator',
+    3: 'Operations Specialist',
+    4: 'Operations Specialist',
+    5: 'Operator',
+    6: 'Operator',
+    7: 'Compliance Reviewer',
+  };
   const userPhones = {};
 
   const ORGS = [
@@ -120,12 +129,6 @@ const PlatformRbacView = (() => {
       investors:    { 'all': { settings: 'view', approve: false, impersonate: false }, 'iv1': null, 'iv2': null, 'iv3': null, 'iv4': null },
       loanPrograms: { 'all': { originations: 'view', uwApprovals: false, ctc: false }, 'lp1': null, 'lp2': null, 'lp3': null, 'lp4': null },
       funds:        { 'all': { activations: 'view', fundAdmin: false, minting: false, updates: 'view', hOnchain: false }, 'f1': null, 'f2': null, 'f3': null, 'f4': null } },
-    8: { type: 'member',
-      platform:     { manageOrgCos: 'none', manageInvestors: 'none', managePlatformSettings: 'none' },
-      orgs:         { 'all': { settings: 'none', impersonate: false }, 'oc1': null, 'oc2': null, 'oc3': null, 'oc4': null },
-      investors:    { 'all': { settings: 'none', approve: false, impersonate: false }, 'iv1': null, 'iv2': null, 'iv3': null, 'iv4': null },
-      loanPrograms: { 'all': { originations: 'none', uwApprovals: false, ctc: false }, 'lp1': null, 'lp2': null, 'lp3': null, 'lp4': null },
-      funds:        { 'all': { activations: 'none', fundAdmin: false, minting: false, updates: 'none', hOnchain: false }, 'f1': null, 'f2': null, 'f3': null, 'f4': null } },
   };
 
   /* ---- Audit log demo data ---- */
@@ -143,22 +146,40 @@ const PlatformRbacView = (() => {
   ];
 
   /* ---- Module-scope mutable state (persists across re-renders) ---- */
-  let _state         = JSON.parse(JSON.stringify(INIT_PERMS));   // current draft
-  let _saved         = JSON.parse(JSON.stringify(INIT_PERMS));   // last saved baseline (for dirty diff)
+  let _state         = JSON.parse(JSON.stringify(INIT_PERMS));
+  let _saved         = JSON.parse(JSON.stringify(INIT_PERMS));
   let _activeObjTab  = 'platformsettings';
   let _searchFilter  = '';
   let _typeFilter    = 'all';                                    // 'all' | 'admin' | 'member' | 'view-only'
-  let _statusFilter  = 'all';                                    // 'all' | 'active' | 'pending'
-  let _showInvite    = false;
-  let _auditTypeFilter  = 'all';                                 // 'all' | 'perm' | 'user' | 'sys'
+  let _auditTypeFilter  = 'all';
   let _auditActorFilter = 'all';
-  let _modal         = null;                                     // {title, body, actions:[[label,onclick]]}
+  let _modal         = null;
   let _toastTimer    = null;
   let _currentPath   = '/platform';
 
+  /* ---- Bulk-invite Stage 1/2 state ---- */
+  let _inv = null;
+  function _initInvite() {
+    _inv = { stage: 1, rawEmails: '', parsed: null, rows: [], nextRowId: 0 };
+  }
+  function _parseEmails(raw) {
+    const tokens = raw.split(/[,;\s\n]+/).map(t => t.trim()).filter(Boolean);
+    const re = /^[^\s@]+@[^\s@]+\.[^\s@]+$/i;
+    const seen = new Set(USERS.map(u => u.email.toLowerCase()));
+    const valid = [], invalid = [], duplicates = [];
+    tokens.forEach(t => {
+      if (!re.test(t)) { invalid.push(t); return; }
+      const lc = t.toLowerCase();
+      if (seen.has(lc)) { duplicates.push(t); return; }
+      seen.add(lc);
+      valid.push(t);
+    });
+    return { valid, invalid, duplicates };
+  }
+
   /* ===== HELPERS ===== */
 
-  function _adminCount() { return USERS.filter(u => _state[u.id]?.type === 'admin' && u.status !== 'deactivated').length; }
+  function _adminCount() { return USERS.filter(u => _state[u.id]?.type === 'admin').length; }
 
   function _diffCount(userId) {
     const a = _state[userId], b = _saved[userId];
@@ -166,10 +187,10 @@ const PlatformRbacView = (() => {
     return JSON.stringify(a) === JSON.stringify(b) ? 0 : _deepDiffCount(a, b);
   }
   function _deepDiffCount(a, b) {
-    let n = 0;
     if (typeof a !== 'object' || a === null || typeof b !== 'object' || b === null) {
       return a === b ? 0 : 1;
     }
+    let n = 0;
     const keys = new Set([...Object.keys(a), ...Object.keys(b)]);
     keys.forEach(k => { n += _deepDiffCount(a?.[k], b?.[k]); });
     return n;
@@ -220,12 +241,6 @@ const PlatformRbacView = (() => {
     return `<span class="rb-utb ${cls}">${lbl}</span>`;
   }
 
-  function _statusBadge(status) {
-    if (status === 'pending')     return `<span class="rb-status rb-status-pending">Pending invite</span>`;
-    if (status === 'deactivated') return `<span class="rb-status rb-status-deactivated">Deactivated</span>`;
-    return `<span class="rb-status rb-status-active">Active</span>`;
-  }
-
   function _avatar(u, size = 'md') {
     const sz = size === 'lg' ? 'rb-av-lg' : size === 'sm' ? 'rb-av-sm' : 'rb-av-md';
     return `<div class="rb-av ${sz}" style="background:${u.bg};color:${u.color}" aria-hidden="true">${u.initials}</div>`;
@@ -235,8 +250,7 @@ const PlatformRbacView = (() => {
 
   function _renderList() {
     const filtered = USERS.filter(u => {
-      if (_typeFilter   !== 'all' && _state[u.id]?.type !== _typeFilter) return false;
-      if (_statusFilter !== 'all' && u.status !== _statusFilter) return false;
+      if (_typeFilter !== 'all' && _state[u.id]?.type !== _typeFilter) return false;
       if (_searchFilter) {
         const q = _searchFilter.toLowerCase();
         if (!u.name.toLowerCase().includes(q) && !u.email.toLowerCase().includes(q)) return false;
@@ -246,6 +260,8 @@ const PlatformRbacView = (() => {
 
     const rows = filtered.map(u => {
       const t = _state[u.id]?.type || 'member';
+      const summary = _effectiveSummary(u.id);
+      const summaryStr = summary.map(s => `${s.count} ${s.short}`).join(' · ');
       return `
         <tr onclick="PlatformRbacView.openUser(${u.id})" tabindex="0"
             onkeydown="if(event.key==='Enter')PlatformRbacView.openUser(${u.id})">
@@ -259,133 +275,202 @@ const PlatformRbacView = (() => {
             </div>
           </td>
           <td>${_typeBadge(t)}</td>
-          <td>${_esc(userTitles[u.id] || '—')}</td>
-          <td>${_statusBadge(u.status)}</td>
-          <td class="rb-row-act">
-            ${u.status === 'pending'
-              ? `<button class="btn btn-ghost btn-xs" onclick="event.stopPropagation();PlatformRbacView.resendInvite(${u.id})">Resend invite</button>`
-              : ''}
-          </td>
+          <td><span class="rb-utitle">${_esc(userTitles[u.id] || '—')}</span></td>
+          <td><span class="rb-uaccess">${summaryStr}</span></td>
         </tr>`;
     }).join('');
 
-    const totalAdmins = _adminCount();
-    const totalActive = USERS.filter(u => u.status === 'active').length;
-    const totalPending = USERS.filter(u => u.status === 'pending').length;
+    const counts = ['all','admin','member','view-only'].reduce((acc, k) => {
+      acc[k] = k === 'all' ? USERS.length : USERS.filter(u => _state[u.id]?.type === k).length;
+      return acc;
+    }, {});
 
     return `
       <div class="rbac-root">
-        <div class="page-header">
-          <div class="page-header-inner">
-            <div class="page-header-left">
-              <div class="page-title">Platform Operations Users</div>
-              <div class="page-subtitle">Internal Homium operator accounts, roles, and per-entity access permissions</div>
+        <div class="rb-page">
+          <div class="rb-header">
+            <div>
+              <h1 class="rb-title">Platform Operations <em>users</em></h1>
+              <div class="rb-subtitle">Internal Homium operator accounts &middot; per-entity access permissions</div>
             </div>
-            <div class="page-header-actions">
-              <button class="btn btn-secondary btn-sm" onclick="PlatformRbacView.goAudit()">
-                <svg width="14" height="14" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6"><path d="M3 2h7l3 3v9H3V2z"/><path d="M5.5 7h5M5.5 9.5h5M5.5 12h3"/></svg>
+            <div class="rb-header-actions">
+              <button class="rb-btn rb-btn-outline" onclick="PlatformRbacView.goAudit()">
+                <svg width="13" height="13" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6"><path d="M3 2h7l3 3v9H3V2z"/><path d="M5.5 7h5M5.5 9.5h5M5.5 12h3"/></svg>
                 Audit Log
               </button>
-              <button class="btn btn-primary btn-sm" onclick="PlatformRbacView.toggleInvite()">+ New User</button>
+              <button class="rb-btn rb-btn-primary" onclick="PlatformRbacView.goInvite()">+ Invite Users</button>
             </div>
           </div>
-        </div>
 
-        <div class="page-body">
-          <div class="rb-stat-row" role="region" aria-label="Operator account summary">
-            <div class="rb-stat"><div class="rb-stat-num">${USERS.length}</div><div class="rb-stat-lbl">Total operators</div></div>
-            <div class="rb-stat"><div class="rb-stat-num">${totalActive}</div><div class="rb-stat-lbl">Active</div></div>
-            <div class="rb-stat"><div class="rb-stat-num">${totalAdmins}</div><div class="rb-stat-lbl">Admins</div></div>
-            <div class="rb-stat"><div class="rb-stat-num">${totalPending}</div><div class="rb-stat-lbl">Pending invites</div></div>
+          <div class="rb-filters">
+            <input class="rb-search" id="rb-search-input"
+                   placeholder="Search by name or email…  (press / to focus)"
+                   value="${_esc(_searchFilter)}"
+                   oninput="PlatformRbacView.onSearch(this.value)"
+                   aria-label="Search operators by name or email" />
+            ${['all','admin','member','view-only'].map(k => {
+              const lbl = k==='all'?'All':k==='view-only'?'View-only':k.charAt(0).toUpperCase()+k.slice(1);
+              return `<button class="rb-chip${_typeFilter===k?' active':''}"
+                              aria-pressed="${_typeFilter===k}"
+                              onclick="PlatformRbacView.setTypeFilter('${k}')">${lbl} <span class="rb-chip-num">${counts[k]}</span></button>`;
+            }).join('')}
           </div>
 
-          ${_renderInvitePanel()}
-
-          <div class="card rb-card">
-            <div class="rb-toolbar">
-              <input class="input input-sm input-search rb-search" id="rb-search-input"
-                     placeholder="Search by name or email…  (press / to focus)"
-                     value="${_esc(_searchFilter)}"
-                     oninput="PlatformRbacView.onSearch(this.value)"
-                     aria-label="Search operators by name or email" />
-              <div class="rb-filter-group" role="group" aria-label="User type filter">
-                <span class="rb-filter-label">Type</span>
-                ${['all','admin','member','view-only'].map(k =>
-                  `<button class="rb-chip${_typeFilter===k?' active':''}"
-                           aria-pressed="${_typeFilter===k}"
-                           onclick="PlatformRbacView.setTypeFilter('${k}')">${k==='all'?'All':k==='view-only'?'View-only':k.charAt(0).toUpperCase()+k.slice(1)}</button>`
-                ).join('')}
-              </div>
-              <div class="rb-filter-group" role="group" aria-label="Status filter">
-                <span class="rb-filter-label">Status</span>
-                ${['all','active','pending'].map(k =>
-                  `<button class="rb-chip${_statusFilter===k?' active':''}"
-                           aria-pressed="${_statusFilter===k}"
-                           onclick="PlatformRbacView.setStatusFilter('${k}')">${k==='all'?'All':k.charAt(0).toUpperCase()+k.slice(1)}</button>`
-                ).join('')}
-              </div>
-            </div>
-
+          <div class="rb-card-wrap">
             ${rows ? `
-              <div class="rb-table-wrap">
-                <table class="rb-list-table">
-                  <thead>
-                    <tr>
-                      <th scope="col">User</th>
-                      <th scope="col">User Type</th>
-                      <th scope="col">Title</th>
-                      <th scope="col">Status</th>
-                      <th scope="col" class="rb-row-act"></th>
-                    </tr>
-                  </thead>
-                  <tbody>${rows}</tbody>
-                </table>
-              </div>
+              <table class="rb-table">
+                <thead>
+                  <tr>
+                    <th scope="col">User</th>
+                    <th scope="col">User Type</th>
+                    <th scope="col">Title</th>
+                    <th scope="col">Effective Access</th>
+                  </tr>
+                </thead>
+                <tbody>${rows}</tbody>
+              </table>
               <div class="rb-list-foot">${filtered.length} of ${USERS.length} user${USERS.length===1?'':'s'}</div>
             ` : `
               <div class="rb-empty">
                 <div class="rb-empty-icon"><svg width="40" height="40" viewBox="0 0 40 40" fill="none" stroke="currentColor" stroke-width="1.5" opacity="0.4"><circle cx="15" cy="12" r="6"/><path d="M2 35c0-7.18 5.82-13 13-13s13 5.82 13 13"/><circle cx="30" cy="12" r="5"/><path d="M38 34c0-5.52-3.58-10.23-8.5-11.85"/></svg></div>
                 <p>No operators match your filters.</p>
-                <button class="btn btn-secondary btn-sm" onclick="PlatformRbacView.clearFilters()">Clear filters</button>
+                <button class="rb-btn rb-btn-outline rb-btn-sm" onclick="PlatformRbacView.clearFilters()">Clear filters</button>
               </div>
             `}
           </div>
         </div>
-
         ${_renderModal()}
       </div>`;
   }
 
-  function _renderInvitePanel() {
-    if (!_showInvite) return '';
-    return `
-      <div class="card rb-invite-card" role="dialog" aria-label="Invite new operator">
-        <div class="rb-invite-head">
-          <div class="rb-invite-title">Invite a new operator</div>
-          <div class="rb-invite-sub">They'll receive an email to confirm their account. Permissions can be tuned after they accept.</div>
+  /* ===== RENDER: BULK INVITE (STAGE 1 + 2) ===== */
+
+  function _renderInvite() {
+    if (!_inv) _initInvite();
+    return _inv.stage === 1 ? _renderInviteStage1() : _renderInviteStage2();
+  }
+
+  function _renderInviteStage1() {
+    const s = _inv;
+    const parsed = s.parsed;
+    const warnings = parsed && (parsed.invalid.length || parsed.duplicates.length) ? `
+      <div class="rb-inv-warn">
+        <div class="rb-inv-warn-hd">These were not added:</div>
+        <div class="rb-inv-warn-list">
+          ${parsed.invalid.map(e => `<span class="rb-inv-tag">${_esc(e)} <span class="rb-inv-tag-sub">— invalid</span></span>`).join('')}
+          ${parsed.duplicates.map(e => `<span class="rb-inv-tag">${_esc(e)} <span class="rb-inv-tag-sub">— already on platform</span></span>`).join('')}
         </div>
-        <form class="rb-invite-form" onsubmit="event.preventDefault();PlatformRbacView.submitInvite()">
-          <div class="form-group">
-            <label for="rb-inv-name">Full name</label>
-            <input class="input input-sm" id="rb-inv-name" placeholder="Jane Smith" required />
+      </div>` : '';
+
+    return `
+      <div class="rbac-root">
+        <div class="rb-page">
+          <a class="rb-back" href="javascript:PlatformRbacView.goList()">
+            <svg width="13" height="13" viewBox="0 0 14 14" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M9 2L4 7l5 5"/></svg>
+            Back to Platform Operations Users
+          </a>
+          <div class="rb-header">
+            <div>
+              <h1 class="rb-title">Invite <em>operators</em></h1>
+              <div class="rb-subtitle">Step 1 of 2 &middot; paste internal email addresses</div>
+            </div>
+            <div class="rb-stage-dots" aria-label="Step 1 of 2">
+              <span class="rb-dot current"></span><span class="rb-dot-line"></span><span class="rb-dot"></span>
+            </div>
           </div>
-          <div class="form-group">
-            <label for="rb-inv-email">Email</label>
-            <input class="input input-sm" id="rb-inv-email" type="email" placeholder="jane@homium.io" required />
+
+          <div class="rb-card-wrap rb-inv-card">
+            <div class="rb-inv-field">
+              <label for="rb-inv-emails">Paste email addresses</label>
+              <textarea class="rb-textarea" id="rb-inv-emails" rows="9"
+                        placeholder="alice@homium.io, bob@homium.io&#10;carol@homium.io"
+                        oninput="PlatformRbacView.invSetRawEmails(this.value)">${_esc(s.rawEmails)}</textarea>
+              <div class="rb-inv-hint">Separate by comma, semicolon, space, or newline. Domain must match <strong>homium.io</strong>.</div>
+            </div>
+
+            ${warnings}
+
+            <div class="rb-inv-actions">
+              <button class="rb-btn rb-btn-outline rb-btn-sm" onclick="PlatformRbacView.goList()">Cancel</button>
+              <button class="rb-btn rb-btn-primary rb-btn-sm" onclick="PlatformRbacView.invContinue()">Continue →</button>
+            </div>
           </div>
-          <div class="form-group">
-            <label for="rb-inv-type">User type</label>
-            <select class="input input-sm" id="rb-inv-type">
-              <option value="member">Member</option>
+        </div>
+        ${_renderModal()}
+      </div>`;
+  }
+
+  function _renderInviteStage2() {
+    const s = _inv;
+    const total = s.rows.length;
+    const selected = s.rows.filter(r => r.selected).length;
+    const allSelected = selected === total && total > 0;
+
+    return `
+      <div class="rbac-root">
+        <div class="rb-page">
+          <a class="rb-back" href="javascript:PlatformRbacView.invBackToStage1()">
+            <svg width="13" height="13" viewBox="0 0 14 14" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M9 2L4 7l5 5"/></svg>
+            Back to Step 1
+          </a>
+          <div class="rb-header">
+            <div>
+              <h1 class="rb-title">Invite <em>operators</em></h1>
+              <div class="rb-subtitle">Step 2 of 2 &middot; assign user type and title to each operator</div>
+            </div>
+            <div class="rb-stage-dots" aria-label="Step 2 of 2">
+              <span class="rb-dot done"></span><span class="rb-dot-line done"></span><span class="rb-dot current"></span>
+            </div>
+          </div>
+
+          <div class="rb-bulk-toolbar">
+            <span class="rb-bulk-meta">${selected} of ${total} selected · bulk-apply to selected:</span>
+            <select class="rb-select rb-select-sm" onchange="PlatformRbacView.invBulkSetType(this.value); this.value=''">
+              <option value="">Set user type…</option>
               <option value="admin">Admin</option>
+              <option value="member">Member</option>
               <option value="view-only">View-only</option>
             </select>
           </div>
-          <div class="rb-invite-actions">
-            <button type="button" class="btn btn-ghost btn-sm" onclick="PlatformRbacView.toggleInvite()">Cancel</button>
-            <button type="submit" class="btn btn-primary btn-sm">Send Invite</button>
+
+          <div class="rb-card-wrap">
+            <table class="rb-table rb-bulk-table">
+              <thead>
+                <tr>
+                  <th class="rb-bulk-cb"><input type="checkbox" ${allSelected ? 'checked' : ''} onchange="PlatformRbacView.invSelectAll(this.checked)" aria-label="Select all" /></th>
+                  <th>Email</th>
+                  <th>User Type</th>
+                  <th>Title <span class="rb-th-opt">(optional)</span></th>
+                  <th></th>
+                </tr>
+              </thead>
+              <tbody>
+                ${s.rows.map(r => `
+                  <tr>
+                    <td class="rb-bulk-cb"><input type="checkbox" ${r.selected ? 'checked' : ''} onchange="PlatformRbacView.invSetRow(${r.id},'selected',this.checked)" aria-label="Select ${_esc(r.email)}" /></td>
+                    <td><span class="rb-bulk-email">${_esc(r.email)}</span></td>
+                    <td>
+                      <select class="rb-select rb-select-sm" onchange="PlatformRbacView.invSetRow(${r.id},'type',this.value)">
+                        <option value="member"${r.type==='member'?' selected':''}>Member</option>
+                        <option value="admin"${r.type==='admin'?' selected':''}>Admin</option>
+                        <option value="view-only"${r.type==='view-only'?' selected':''}>View-only</option>
+                      </select>
+                    </td>
+                    <td><input class="rb-input rb-input-sm" placeholder="—" value="${_esc(r.title)}" oninput="PlatformRbacView.invSetRow(${r.id},'title',this.value)" /></td>
+                    <td class="rb-row-act">
+                      <button class="rb-revert" title="Remove from invite" aria-label="Remove ${_esc(r.email)}" onclick="PlatformRbacView.invRemoveRow(${r.id})">×</button>
+                    </td>
+                  </tr>`).join('')}
+              </tbody>
+            </table>
           </div>
-        </form>
+
+          <div class="rb-inv-actions">
+            <button class="rb-btn rb-btn-outline rb-btn-sm" onclick="PlatformRbacView.goList()">Cancel</button>
+            <button class="rb-btn rb-btn-primary rb-btn-sm" onclick="PlatformRbacView.invSubmit()">Send ${total} Invite${total===1?'':'s'}</button>
+          </div>
+        </div>
+        ${_renderModal()}
       </div>`;
   }
 
@@ -418,70 +503,71 @@ const PlatformRbacView = (() => {
 
     return `
       <div class="rbac-root">
-        <div class="page-body rb-detail-body">
+        <div class="rb-page">
           <a class="rb-back" href="javascript:PlatformRbacView.goList()">
-            <svg width="14" height="14" viewBox="0 0 14 14" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M9 2L4 7l5 5"/></svg>
+            <svg width="13" height="13" viewBox="0 0 14 14" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M9 2L4 7l5 5"/></svg>
             Back to Platform Operations Users
           </a>
 
-          <div class="card rb-detail-card">
-            <div class="rb-detail-head">
-              ${_avatar(u, 'lg')}
-              <div class="rb-detail-info">
-                <div class="rb-detail-name">${_esc(u.name)}</div>
-                <div class="rb-detail-email">${_esc(u.email)}</div>
-                <div class="rb-detail-meta">${_statusBadge(u.status)}${userTitles[userId] ? `<span class="rb-meta-sep">·</span><span class="rb-meta-text">${_esc(userTitles[userId])}</span>` : ''}</div>
-              </div>
-              <div class="rb-detail-head-right">
-                <label class="rb-typesel-row" for="rb-typesel-${userId}">
-                  <span class="rb-typesel-lbl">User type</span>
-                  <select class="rb-typesel ${typeClass}" id="rb-typesel-${userId}"
-                          onchange="PlatformRbacView.changeType(${userId},this)">
-                    <option value="admin"${t==='admin'?' selected':''}>Admin</option>
-                    <option value="member"${t==='member'?' selected':''}>Member</option>
-                    <option value="view-only"${t==='view-only'?' selected':''}>View-only</option>
-                  </select>
-                </label>
-              </div>
+          <div class="rb-detail-header">
+            ${_avatar(u, 'lg')}
+            <div class="rb-detail-info">
+              <h1 class="rb-detail-name">${_esc(u.name)}</h1>
+              <div class="rb-detail-email">${_esc(u.email)}${userTitles[userId] ? ` <span class="rb-meta-sep">·</span> <span class="rb-meta-text">${_esc(userTitles[userId])}</span>` : ''}</div>
             </div>
-
-            <div class="rb-summary-row" aria-label="Effective access summary">
-              ${summary.map(s => `<span class="rb-sum-chip"><span class="rb-sum-num">${s.count}</span> ${s.label}</span>`).join('')}
+            <div class="rb-detail-head-right">
+              <label class="rb-typesel-row" for="rb-typesel-${userId}">
+                <span class="rb-typesel-lbl">User type</span>
+                <select class="rb-typesel ${typeClass}" id="rb-typesel-${userId}"
+                        onchange="PlatformRbacView.changeType(${userId},this)">
+                  <option value="admin"${t==='admin'?' selected':''}>Admin</option>
+                  <option value="member"${t==='member'?' selected':''}>Member</option>
+                  <option value="view-only"${t==='view-only'?' selected':''}>View-only</option>
+                </select>
+              </label>
             </div>
+          </div>
 
+          <div class="rb-summary-row" aria-label="Effective access summary">
+            ${summary.map(s => `<span class="rb-sum-chip"><span class="rb-sum-num">${s.count}</span> ${s.label}</span>`).join('')}
+          </div>
+
+          <div class="rb-card-wrap">
             <div class="rb-section-hd">
               <div class="rb-section-hd-title">User Profile</div>
               <div class="rb-section-hd-sub">Read-only fields are populated from the operator's onboarding</div>
             </div>
             <div class="rb-profile-grid">
-              <div class="form-group"><label for="rb-pf-first-${userId}">First name</label><input class="input input-sm" id="rb-pf-first-${userId}" value="${_esc(names[0]||'')}" readonly /></div>
-              <div class="form-group"><label for="rb-pf-last-${userId}">Last name</label><input class="input input-sm" id="rb-pf-last-${userId}" value="${_esc(names.slice(1).join(' ')||'')}" readonly /></div>
-              <div class="form-group"><label for="rb-pf-email-${userId}">Email</label><input class="input input-sm" id="rb-pf-email-${userId}" value="${_esc(u.email)}" readonly /></div>
-              <div class="form-group"><label for="rb-pf-phone-${userId}">Phone</label><input class="input input-sm" id="rb-pf-phone-${userId}" placeholder="—" value="${_esc(userPhones[userId]||'')}" /></div>
-              <div class="form-group"><label for="rb-pf-title-${userId}">Title</label><input class="input input-sm" id="rb-pf-title-${userId}" placeholder="—" value="${_esc(userTitles[userId]||'')}" oninput="PlatformRbacView.onTitleChange(${userId},this.value)" /></div>
-              <div class="form-group"><label for="rb-pf-co-${userId}">Company</label><input class="input input-sm" id="rb-pf-co-${userId}" value="Homium" readonly /></div>
+              <div class="rb-fg"><label for="rb-pf-first-${userId}">First name</label><input class="rb-input rb-input-sm" id="rb-pf-first-${userId}" value="${_esc(names[0]||'')}" readonly /></div>
+              <div class="rb-fg"><label for="rb-pf-last-${userId}">Last name</label><input class="rb-input rb-input-sm" id="rb-pf-last-${userId}" value="${_esc(names.slice(1).join(' ')||'')}" readonly /></div>
+              <div class="rb-fg"><label for="rb-pf-email-${userId}">Email</label><input class="rb-input rb-input-sm" id="rb-pf-email-${userId}" value="${_esc(u.email)}" readonly /></div>
+              <div class="rb-fg"><label for="rb-pf-phone-${userId}">Phone</label><input class="rb-input rb-input-sm" id="rb-pf-phone-${userId}" placeholder="—" value="${_esc(userPhones[userId]||'')}" /></div>
+              <div class="rb-fg"><label for="rb-pf-title-${userId}">Title</label><input class="rb-input rb-input-sm" id="rb-pf-title-${userId}" placeholder="—" value="${_esc(userTitles[userId]||'')}" oninput="PlatformRbacView.onTitleChange(${userId},this.value)" /></div>
+              <div class="rb-fg"><label for="rb-pf-co-${userId}">Company</label><input class="rb-input rb-input-sm" id="rb-pf-co-${userId}" value="Homium" readonly /></div>
             </div>
+          </div>
 
-            ${t === 'view-only' ? `
-              <div class="rb-vo-bar" role="status">
-                <svg width="13" height="13" viewBox="0 0 12 12" fill="none" stroke="currentColor" stroke-width="1.4"><circle cx="6" cy="6" r="5"/><path d="M6 3v3.5M6 8.5v.01" stroke-linecap="round"/></svg>
-                View-only — all editing controls are disabled. Promote to Member or Admin to grant write access.
-              </div>` : ''}
+          ${t === 'view-only' ? `
+            <div class="rb-vo-bar" role="status">
+              <svg width="13" height="13" viewBox="0 0 12 12" fill="none" stroke="currentColor" stroke-width="1.4"><circle cx="6" cy="6" r="5"/><path d="M6 3v3.5M6 8.5v.01" stroke-linecap="round"/></svg>
+              View-only — all editing controls are disabled. Promote to Member or Admin to grant write access.
+            </div>` : ''}
 
+          <div class="rb-card-wrap">
             <div class="rb-section-hd">
               <div class="rb-section-hd-title">Permissions Configuration</div>
               <div class="rb-section-hd-sub">Each tab grants access per object family. The amber row at the top of each table is a default applied to all current and future entities; row-level edits override it.</div>
             </div>
             <div class="rb-obj-tabs" role="tablist" aria-label="Permission categories">${tabsHtml}</div>
             <div class="rb-obj-pane">${tabContent}</div>
+          </div>
 
-            <div class="rb-detail-foot">
-              ${dirty ? `<span class="rb-dirty"><span class="rb-dirty-dot"></span>${dirty} unsaved change${dirty===1?'':'s'}</span>` : '<span class="rb-clean">All changes saved</span>'}
-              <div class="rb-foot-spacer"></div>
-              <button class="btn btn-danger-ghost btn-sm" onclick="PlatformRbacView.confirmDeactivate(${userId})">Deactivate User</button>
-              <button class="btn btn-ghost btn-sm" ${dirty?'':'disabled'} onclick="PlatformRbacView.cancelChanges(${userId})">Cancel</button>
-              <button class="btn btn-primary btn-sm" ${dirty?'':'disabled'} onclick="PlatformRbacView.saveChanges(${userId})">Save Changes</button>
-            </div>
+          <div class="rb-detail-foot">
+            ${dirty ? `<span class="rb-dirty"><span class="rb-dirty-dot"></span>${dirty} unsaved change${dirty===1?'':'s'}</span>` : '<span class="rb-clean">All changes saved</span>'}
+            <div class="rb-foot-spacer"></div>
+            <button class="rb-btn rb-btn-danger-ghost rb-btn-sm" onclick="PlatformRbacView.confirmDeactivate(${userId})">Deactivate User</button>
+            <button class="rb-btn rb-btn-ghost rb-btn-sm" ${dirty?'':'disabled'} onclick="PlatformRbacView.cancelChanges(${userId})">Cancel</button>
+            <button class="rb-btn rb-btn-primary rb-btn-sm" ${dirty?'':'disabled'} onclick="PlatformRbacView.saveChanges(${userId})">Save Changes</button>
           </div>
         </div>
         ${_renderModal()}
@@ -491,9 +577,9 @@ const PlatformRbacView = (() => {
   function _renderNotFound() {
     return `
       <div class="rbac-root">
-        <div class="page-body rb-detail-body">
+        <div class="rb-page">
           <a class="rb-back" href="javascript:PlatformRbacView.goList()">← Back</a>
-          <div class="card" style="padding:40px;text-align:center;color:var(--color-text-muted)">User not found.</div>
+          <div class="rb-card-wrap" style="padding:40px;text-align:center;color:var(--h-ink-3)">User not found.</div>
         </div>
       </div>`;
   }
@@ -516,10 +602,10 @@ const PlatformRbacView = (() => {
     const lpOn    = cnt('loanPrograms', LOAN_PROGRAMS, (e) => e.originations && e.originations !== 'none');
     const fundsOn = cnt('funds',        FUNDS,         (e) => e.activations && e.activations !== 'none');
     return [
-      { count: orgsOn,  label: `Origination Co${orgsOn===1?'':'s'}` },
-      { count: invOn,   label: `Investor${invOn===1?'':'s'}` },
-      { count: lpOn,    label: `Loan Program${lpOn===1?'':'s'}` },
-      { count: fundsOn, label: `Fund${fundsOn===1?'':'s'}` },
+      { count: orgsOn,  label: `Origination Co${orgsOn===1?'':'s'}`, short: 'OCs' },
+      { count: invOn,   label: `Investor${invOn===1?'':'s'}`,        short: 'Invs' },
+      { count: lpOn,    label: `Loan Program${lpOn===1?'':'s'}`,     short: 'LPs' },
+      { count: fundsOn, label: `Fund${fundsOn===1?'':'s'}`,          short: 'Funds' },
     ];
   }
 
@@ -557,7 +643,7 @@ const PlatformRbacView = (() => {
     const visibleCols = columns.filter(c => !c.hideForViewOnly || !locked);
 
     const headCells = visibleCols.map(c =>
-      `<th scope="col" style="width:${c.width}">${c.label}${HELP[c.field] ? ` <span class="rb-help" title="${_esc(HELP[c.field])}" aria-label="${_esc(HELP[c.field])}">?</span>` : ''}</th>`
+      `<th scope="col" style="width:${c.width}" ${HELP[c.field] ? `title="${_esc(HELP[c.field])}"` : ''}>${c.label}</th>`
     ).join('');
 
     const renderCell = (entityId, col, val, gaVal, dis) => {
@@ -618,7 +704,6 @@ const PlatformRbacView = (() => {
   }
 
   function _renderOrgsTab(userId) {
-    const locked = _state[userId].type === 'view-only';
     return _renderEntityTable(userId, 'orgs', ORGS, [
       { field: 'settings',    label: 'Settings Access', width: '180px', kind: 'select',
         opts: [['none','No Access'],['view','View Only'],['full','Full Access']] },
@@ -687,39 +772,40 @@ const PlatformRbacView = (() => {
 
     return `
       <div class="rbac-root">
-        <div class="page-body rb-detail-body">
+        <div class="rb-page">
           <a class="rb-back" href="javascript:PlatformRbacView.goList()">
-            <svg width="14" height="14" viewBox="0 0 14 14" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M9 2L4 7l5 5"/></svg>
+            <svg width="13" height="13" viewBox="0 0 14 14" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M9 2L4 7l5 5"/></svg>
             Back to Platform Operations Users
           </a>
-          <div class="card rb-detail-card">
-            <div class="rb-detail-head rb-audit-head">
-              <div class="rb-detail-info">
-                <div class="rb-detail-name">Audit Log</div>
-                <div class="rb-detail-email">All permission, user-management, and system events</div>
-              </div>
-              <div class="rb-audit-controls">
-                <label class="rb-audit-ctrl">
-                  <span>Event type</span>
-                  <select class="input input-sm" onchange="PlatformRbacView.setAuditTypeFilter(this.value)">
-                    ${[['all','All events'],['perm','Permission changes'],['user','User management'],['sys','System']].map(([v,l]) =>
-                      `<option value="${v}"${_auditTypeFilter===v?' selected':''}>${l}</option>`).join('')}
-                  </select>
-                </label>
-                <label class="rb-audit-ctrl">
-                  <span>Actor</span>
-                  <select class="input input-sm" onchange="PlatformRbacView.setAuditActorFilter(this.value)">
-                    ${actors.map(a => `<option value="${a}"${_auditActorFilter===a?' selected':''}>${a==='all'?'All actors':_esc(a)}</option>`).join('')}
-                  </select>
-                </label>
-                <button class="btn btn-secondary btn-sm" onclick="PlatformRbacView.exportAudit()">Export CSV</button>
-              </div>
+          <div class="rb-header">
+            <div>
+              <h1 class="rb-title">Audit <em>log</em></h1>
+              <div class="rb-subtitle">All permission, user-management, and system events</div>
             </div>
+            <div class="rb-audit-controls">
+              <label class="rb-audit-ctrl">
+                <span>Event type</span>
+                <select class="rb-select rb-select-sm" onchange="PlatformRbacView.setAuditTypeFilter(this.value)">
+                  ${[['all','All events'],['perm','Permission changes'],['user','User management'],['sys','System']].map(([v,l]) =>
+                    `<option value="${v}"${_auditTypeFilter===v?' selected':''}>${l}</option>`).join('')}
+                </select>
+              </label>
+              <label class="rb-audit-ctrl">
+                <span>Actor</span>
+                <select class="rb-select rb-select-sm" onchange="PlatformRbacView.setAuditActorFilter(this.value)">
+                  ${actors.map(a => `<option value="${a}"${_auditActorFilter===a?' selected':''}>${a==='all'?'All actors':_esc(a)}</option>`).join('')}
+                </select>
+              </label>
+              <button class="rb-btn rb-btn-outline rb-btn-sm" onclick="PlatformRbacView.exportAudit()">Export CSV</button>
+            </div>
+          </div>
+
+          <div class="rb-card-wrap">
             <div class="rb-audit-list">
               ${rows.length ? rows.join('') : `<div class="rb-empty"><p>No events match the current filters.</p></div>`}
             </div>
             <div class="rb-audit-foot">
-              <button class="btn btn-ghost btn-sm" onclick="PlatformRbacView.loadMoreAudit()">Load older events</button>
+              <button class="rb-btn rb-btn-ghost rb-btn-sm" onclick="PlatformRbacView.loadMoreAudit()">Load older events</button>
             </div>
           </div>
         </div>
@@ -733,21 +819,21 @@ const PlatformRbacView = (() => {
     if (!_modal) return '';
     const actions = _modal.actions.map(([lbl, fn], i) => {
       const last = i === _modal.actions.length - 1 && _modal.actions.length > 1;
-      const cls = _modal.danger && last ? 'btn btn-danger btn-sm' : last ? 'btn btn-primary btn-sm' : 'btn btn-ghost btn-sm';
+      const cls = _modal.danger && last ? 'rb-btn rb-btn-danger rb-btn-sm' : last ? 'rb-btn rb-btn-primary rb-btn-sm' : 'rb-btn rb-btn-ghost rb-btn-sm';
       return `<button class="${cls}" onclick="${fn}">${_esc(lbl)}</button>`;
     }).join('');
     return `
-      <div class="modal-overlay rb-modal-overlay" onclick="if(event.target===this)PlatformRbacView.closeModal()">
-        <div class="modal" role="dialog" aria-modal="true" aria-labelledby="rb-modal-title">
-          <div class="modal-header">
+      <div class="rb-modal-overlay" onclick="if(event.target===this)PlatformRbacView.closeModal()">
+        <div class="rb-modal" role="dialog" aria-modal="true" aria-labelledby="rb-modal-title">
+          <div class="rb-modal-header">
             <div>
-              <div class="modal-title" id="rb-modal-title">${_esc(_modal.title)}</div>
-              ${_modal.subtitle ? `<div class="modal-subtitle">${_esc(_modal.subtitle)}</div>` : ''}
+              <div class="rb-modal-title" id="rb-modal-title">${_esc(_modal.title)}</div>
+              ${_modal.subtitle ? `<div class="rb-modal-subtitle">${_esc(_modal.subtitle)}</div>` : ''}
             </div>
-            <button class="modal-close" aria-label="Close" onclick="PlatformRbacView.closeModal()">×</button>
+            <button class="rb-modal-close" aria-label="Close" onclick="PlatformRbacView.closeModal()">×</button>
           </div>
-          <div class="modal-body">${_modal.body}</div>
-          <div class="modal-footer">${actions}</div>
+          <div class="rb-modal-body">${_modal.body}</div>
+          <div class="rb-modal-footer">${actions}</div>
         </div>
       </div>`;
   }
@@ -770,23 +856,14 @@ const PlatformRbacView = (() => {
     _toastTimer = setTimeout(() => el.classList.remove('show'), 2200);
   }
 
-  /* ===== AFTER-RENDER HOOKS (focus, keyboard) ===== */
+  /* ===== AFTER-RENDER HOOKS ===== */
 
   function _afterRender() {
-    // Focus the search input if user arrived via "/"
-    if (_pendingFocusSearch) {
-      const inp = document.getElementById('rb-search-input');
-      if (inp) { inp.focus(); inp.select?.(); }
-      _pendingFocusSearch = false;
-    }
-    // ESC closes modal
     document.removeEventListener('keydown', _escHandler);
     document.addEventListener('keydown', _escHandler);
-    // "/" focuses search on the list page
     document.removeEventListener('keydown', _slashHandler);
     document.addEventListener('keydown', _slashHandler);
   }
-  let _pendingFocusSearch = false;
   function _escHandler(e) { if (e.key === 'Escape' && _modal) { e.preventDefault(); PlatformRbacView.closeModal(); } }
   function _slashHandler(e) {
     if (e.key !== '/' || e.metaKey || e.ctrlKey || e.altKey) return;
@@ -795,8 +872,6 @@ const PlatformRbacView = (() => {
     const inp = document.getElementById('rb-search-input');
     if (inp) { e.preventDefault(); inp.focus(); inp.select?.(); }
   }
-
-  /* ===== RE-RENDER ===== */
 
   function _rerender() {
     if (typeof App !== 'undefined' && App.renderView) {
@@ -816,6 +891,8 @@ const PlatformRbacView = (() => {
       html = _renderList();
     } else if (fullPath.startsWith('/platform/audit')) {
       html = _renderAudit();
+    } else if (fullPath.startsWith('/platform/invite')) {
+      html = _renderInvite();
     } else if (fullPath.startsWith('/platform/u/')) {
       const id = parseInt(fullPath.split('/platform/u/')[1], 10);
       html = _renderDetail(id);
@@ -827,7 +904,7 @@ const PlatformRbacView = (() => {
     return html;
   }
 
-  /* ===== PUBLIC API (inline-handler shims) ===== */
+  /* ===== PUBLIC API ===== */
 
   return {
     render,
@@ -836,28 +913,49 @@ const PlatformRbacView = (() => {
     openUser(userId) { _activeObjTab = 'platformsettings'; Router.navigate('/platform/u/' + userId); },
     goList()         { Router.navigate('/platform'); },
     goAudit()        { Router.navigate('/platform/audit'); },
+    goInvite()       { _initInvite(); Router.navigate('/platform/invite'); },
 
     /* List filters */
-    onSearch(v)            { _searchFilter = v; _rerender(); },
-    setTypeFilter(v)       { _typeFilter   = v; _rerender(); },
-    setStatusFilter(v)     { _statusFilter = v; _rerender(); },
-    clearFilters()         { _searchFilter=''; _typeFilter='all'; _statusFilter='all'; _rerender(); },
+    onSearch(v)        { _searchFilter = v; _rerender(); },
+    setTypeFilter(v)   { _typeFilter   = v; _rerender(); },
+    clearFilters()     { _searchFilter=''; _typeFilter='all'; _rerender(); },
 
-    /* Invite */
-    toggleInvite() { _showInvite = !_showInvite; _rerender(); },
-    submitInvite() {
-      const name = document.getElementById('rb-inv-name')?.value?.trim();
-      const em   = document.getElementById('rb-inv-email')?.value?.trim();
-      if (!name || !em) return;
-      _showInvite = false; _rerender(); _showToast('Invite sent to ' + em);
+    /* Bulk-invite actions */
+    invSetRawEmails(v) { _inv.rawEmails = v; },
+    invContinue() {
+      const parsed = _parseEmails(_inv.rawEmails || '');
+      _inv.parsed = parsed;
+      if (!parsed.valid.length) { _rerender(); return; }
+      _inv.rows = parsed.valid.map((email) => ({ id: _inv.nextRowId++, email, type: 'member', title: '', selected: true }));
+      _inv.stage = 2;
+      _rerender();
     },
-    resendInvite(userId) {
-      const u = USERS.find(x => x.id === userId);
-      _showToast('Invite resent to ' + (u?.email || 'user'));
+    invBackToStage1() { _inv.stage = 1; _rerender(); },
+    invSetRow(rowId, key, value) {
+      const r = _inv.rows.find(x => x.id === rowId);
+      if (!r) return;
+      r[key] = value;
+      if (key === 'selected') _rerender();
+    },
+    invSelectAll(checked) { _inv.rows.forEach(r => r.selected = checked); _rerender(); },
+    invBulkSetType(value) {
+      if (!value) return;
+      _inv.rows.forEach(r => { if (r.selected) r.type = value; });
+      _rerender();
+    },
+    invRemoveRow(rowId) {
+      _inv.rows = _inv.rows.filter(r => r.id !== rowId);
+      _rerender();
+    },
+    invSubmit() {
+      const n = _inv.rows.length;
+      _inv = null;
+      Router.navigate('/platform');
+      _showToast(`${n} invite${n===1?'':'s'} sent`);
     },
 
     /* Profile editing (title) */
-    onTitleChange(userId, v) { userTitles[userId] = v; /* no rerender — keeps focus */ },
+    onTitleChange(userId, v) { userTitles[userId] = v; },
 
     /* Permission edits */
     onPermChange(userId, section, entityId, field, sel) {
@@ -887,7 +985,7 @@ const PlatformRbacView = (() => {
       const newType = sel.value;
       const oldType = _state[userId].type;
       if (newType === oldType) return;
-      sel.value = oldType;  // revert until confirmed
+      sel.value = oldType;
       const u = USERS.find(x => x.id === userId);
       if (oldType === 'admin' && newType !== 'admin' && _adminCount() <= 1) {
         _modal = { title: 'Cannot change user type',
@@ -930,17 +1028,15 @@ const PlatformRbacView = (() => {
       }
       _modal = { title: 'Deactivate ' + _esc(u.name) + '?', danger: true,
         body: `<p style="margin-bottom:10px">This immediately revokes platform access:</p>
-               <ul style="margin:0 0 10px 18px;color:var(--color-text-secondary);font-size:13px;line-height:1.55">
+               <ul style="margin:0 0 10px 18px;color:var(--h-ink-2);font-size:13px;line-height:1.55">
                  <li><strong>Stops:</strong> active sessions, future logins, in-flight notifications</li>
                  <li><strong>Preserves:</strong> permission configuration (so reactivation is one click) and historic audit attribution</li>
                </ul>
-               <p style="font-size:12px;color:var(--color-text-muted)">You can reactivate ${_esc(u.name)} from the user list at any time.</p>`,
-        actions: [['Cancel', 'PlatformRbacView.closeModal()'], ['Deactivate', `PlatformRbacView.doDeactivate(${userId})`]] };
+               <p style="font-size:12px;color:var(--h-ink-3)">You can reactivate ${_esc(u.name)} from the user list at any time.</p>`,
+        actions: [['Cancel', 'PlatformRbacView.closeModal()'], ['Deactivate', 'PlatformRbacView.doDeactivate()']] };
       _rerender();
     },
-    doDeactivate(userId) {
-      const u = USERS.find(x => x.id === userId);
-      if (u) u.status = 'deactivated';
+    doDeactivate() {
       _modal = null; Router.navigate('/platform'); _showToast('User deactivated');
     },
 
