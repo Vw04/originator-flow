@@ -260,8 +260,6 @@ const PlatformRbacView = (() => {
 
     const rows = filtered.map(u => {
       const t = _state[u.id]?.type || 'member';
-      const summary = _effectiveSummary(u.id);
-      const summaryStr = summary.map(s => `${s.count} ${s.short}`).join(' · ');
       return `
         <tr onclick="PlatformRbacView.openUser(${u.id})" tabindex="0"
             onkeydown="if(event.key==='Enter')PlatformRbacView.openUser(${u.id})">
@@ -276,7 +274,6 @@ const PlatformRbacView = (() => {
           </td>
           <td>${_typeBadge(t)}</td>
           <td><span class="rb-utitle">${_esc(userTitles[u.id] || '—')}</span></td>
-          <td><span class="rb-uaccess">${summaryStr}</span></td>
         </tr>`;
     }).join('');
 
@@ -324,7 +321,6 @@ const PlatformRbacView = (() => {
                     <th scope="col">User</th>
                     <th scope="col">User Type</th>
                     <th scope="col">Title</th>
-                    <th scope="col">Effective Access</th>
                   </tr>
                 </thead>
                 <tbody>${rows}</tbody>
@@ -576,31 +572,6 @@ const PlatformRbacView = (() => {
           <div class="rb-card-wrap" style="padding:40px;text-align:center;color:var(--h-ink-3)">User not found.</div>
         </div>
       </div>`;
-  }
-
-  /* ---- Effective-access summary chips on the detail header ---- */
-  function _effectiveSummary(userId) {
-    const p = _state[userId];
-    const cnt = (section, list, isOn) => {
-      const ga = p[section]['all'];
-      let n = 0;
-      list.forEach(item => {
-        const row = p[section][item.id];
-        const eff = (row === null || row === undefined) ? ga : { ...ga, ...row };
-        if (isOn(eff, item)) n++;
-      });
-      return n;
-    };
-    const orgsOn  = cnt('orgs',         ORGS,          (e) => e.settings && e.settings !== 'none');
-    const invOn   = cnt('investors',    INVESTORS,     (e) => e.settings && e.settings !== 'none');
-    const lpOn    = cnt('loanPrograms', LOAN_PROGRAMS, (e) => e.originations && e.originations !== 'none');
-    const fundsOn = cnt('funds',        FUNDS,         (e) => e.activations && e.activations !== 'none');
-    return [
-      { count: orgsOn,  label: `Origination Co${orgsOn===1?'':'s'}`, short: 'OCs' },
-      { count: invOn,   label: `Investor${invOn===1?'':'s'}`,        short: 'Invs' },
-      { count: lpOn,    label: `Loan Program${lpOn===1?'':'s'}`,     short: 'LPs' },
-      { count: fundsOn, label: `Fund${fundsOn===1?'':'s'}`,          short: 'Funds' },
-    ];
   }
 
   /* ===== RENDER: PERMISSION TABS ===== */
