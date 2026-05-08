@@ -287,7 +287,7 @@ const PlatformRbacView = (() => {
         <div class="rb-page">
           <div class="rb-header">
             <div>
-              <h1 class="rb-title">Platform Operations <em>users</em></h1>
+              <h1 class="rb-title">Platform Operations <em>Users</em></h1>
               <div class="rb-subtitle">Internal Homium operator accounts &middot; per-entity access permissions</div>
             </div>
             <div class="rb-header-actions">
