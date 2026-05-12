@@ -126,8 +126,10 @@ const App = {
     document.getElementById('app').innerHTML = `
       <div class="app-shell">
         ${Nav.render()}
-        ${impBanner}
-        <div class="main-content">${content}</div>
+        <div class="main-content">
+          ${impBanner}
+          ${content}
+        </div>
       </div>`;
     Nav.setActive(Router.getCurrentPath() || '/data/analytics');
     // Post-render hooks for sticky header observers
