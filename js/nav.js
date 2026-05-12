@@ -204,6 +204,7 @@ const Nav = (() => {
     const tabs        = LOP_TABS[role] || [];
     const adminItems  = ADMIN_ITEMS[role] || [];
     const meta        = ROLE_META[role] || {};
+    const isOnAdmin   = ADMIN_PATHS.some(p => currentPath === p || currentPath.startsWith(p + '/'));
 
     const initials  = user ? Display.initials(user) : 'HM';
     const userName  = user ? Display.fullName(user) : 'Demo User';
@@ -211,7 +212,6 @@ const Nav = (() => {
     const orgLine   = meta.label || role;
 
     const lopHtml   = tabs.map(item => _renderTile(item, currentPath, false)).join('');
-    const adminHtml = adminItems.map(item => _renderTile(item, currentPath, true)).join('');
 
     // Once-only bindings (Cmd/Ctrl+K palette shortcut)
     setTimeout(_bindGlobalShortcuts, 0);
@@ -222,20 +222,41 @@ const Nav = (() => {
           <img src="assets/branding/HomiumLogo_0721_Icon (Blue).png" alt="Homium"
                onerror="this.style.display='none';this.nextElementSibling.style.display='flex'" />
           <span class="sidenav-logo-fallback" style="display:none">H</span>
-          <span class="sidenav-logo-text">Homium</span>
         </div>
 
         <div class="sidenav-section">
-          <button class="sidenav-icon-btn" onclick="Nav.openSearchPalette()" aria-label="Search (⌘K)" title="Search (⌘K)">
+          <div class="sidenav-search" role="button" tabindex="0"
+               onclick="Nav.openSearchPalette()"
+               onkeydown="if(event.key==='Enter')Nav.openSearchPalette()"
+               aria-label="Search (⌘K)" title="Search loans, borrowers, or addresses — ⌘K">
             ${ICONS.search}
-          </button>
+            <span>Search</span>
+          </div>
         </div>
 
         <div class="sidenav-section">${lopHtml}</div>
 
         ${adminItems.length ? `
-          <div class="sidenav-divider">Administration</div>
-          <div class="sidenav-section">${adminHtml}</div>` : ''}
+          <div class="sidenav-section">
+            <div class="sidenav-tile${isOnAdmin ? ' active' : ''}"
+                 id="admin-nav-wrap"
+                 data-admin="1"
+                 tabindex="0"
+                 onclick="Nav.toggleAdminDropdown(event)"
+                 onkeydown="if(event.key==='Enter')Nav.toggleAdminDropdown(event)"
+                 style="position:relative">
+              ${ICONS['/system-config']}
+              <span>Admin</span>
+              <div class="admin-flyout" id="admin-nav-menu">
+                <div class="admin-flyout-header">Administration</div>
+                ${adminItems.map(item => `
+                  <div class="admin-flyout-item${(currentPath === item.path || currentPath.startsWith(item.path + '/')) ? ' active' : ''}"
+                       onclick="event.stopPropagation();Nav.goAdmin('${item.path}')">
+                    ${item.label}
+                  </div>`).join('')}
+              </div>
+            </div>
+          </div>` : ''}
 
         <div class="sidenav-spacer"></div>
 
@@ -413,6 +434,11 @@ const Nav = (() => {
         }
         el.classList.toggle('active', isActive);
       });
+      const adminTile = document.getElementById('admin-nav-wrap');
+      if (adminTile) {
+        const onAdmin = ADMIN_PATHS.some(p => path === p || path.startsWith(p + '/'));
+        adminTile.classList.toggle('active', onAdmin);
+      }
     },
 
     refresh() {
@@ -431,20 +457,33 @@ const Nav = (() => {
 
     goAdmin(path) {
       State.setMode('admin');
+      document.getElementById('admin-nav-menu')?.classList.remove('open');
       Router.navigate(path);
     },
 
-    /* Kept for back-compat — admin items are now flat rail tiles, no dropdown */
     toggleAdminDropdown(e) {
       if (e) e.stopPropagation();
+      const menu = document.getElementById('admin-nav-menu');
+      if (menu) menu.classList.toggle('open');
+      // Close peer flyouts
+      document.getElementById('notif-panel')?.classList.remove('open');
+      document.getElementById('profile-dropdown')?.classList.remove('open');
+      const close = (ev) => {
+        if (!document.getElementById('admin-nav-wrap')?.contains(ev.target)) {
+          document.getElementById('admin-nav-menu')?.classList.remove('open');
+          document.removeEventListener('click', close);
+        }
+      };
+      document.addEventListener('click', close);
     },
 
     toggleNotifications(e) {
       if (e) e.stopPropagation();
       const panel = document.getElementById('notif-panel');
       if (panel) panel.classList.toggle('open');
-      // Close profile if open
+      // Close peer flyouts
       document.getElementById('profile-dropdown')?.classList.remove('open');
+      document.getElementById('admin-nav-menu')?.classList.remove('open');
       const close = (ev) => {
         if (!document.getElementById('topnav-notif')?.contains(ev.target)) {
           document.getElementById('notif-panel')?.classList.remove('open');
@@ -465,8 +504,9 @@ const Nav = (() => {
       if (e) e.stopPropagation();
       const dropdown = document.getElementById('profile-dropdown');
       if (dropdown) dropdown.classList.toggle('open');
-      // Close notifications if open
+      // Close peer flyouts
       document.getElementById('notif-panel')?.classList.remove('open');
+      document.getElementById('admin-nav-menu')?.classList.remove('open');
       const close = (ev) => {
         if (!document.getElementById('topnav-profile')?.contains(ev.target)) {
           document.getElementById('profile-dropdown')?.classList.remove('open');
