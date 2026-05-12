@@ -60,7 +60,7 @@ const Nav = (() => {
       { path: '/dashboard',             label: 'Administration Dashboard' },
       { path: '/origination-companies', label: 'Origination Companies' },
       { path: '/investors',             label: 'Investors & Funds' },
-      { path: '/platform',              label: 'Platform Operations' },
+      { path: '/user-management',       label: 'User Management' },
       { path: '/system-config',         label: 'System Configuration' },
     ],
     operator:   [
@@ -75,7 +75,7 @@ const Nav = (() => {
     lo: [], lp: [], investor: [], investor_prospect: [],
   };
 
-  const ADMIN_PATHS = ['/admin-dashboard', '/dashboard', '/origination-companies', '/investors', '/platform', '/system-config'];
+  const ADMIN_PATHS = ['/admin-dashboard', '/dashboard', '/origination-companies', '/investors', '/user-management', '/system-config'];
 
   const ROLE_META = {
     sys_admin:  { label: 'System Admin' },

@@ -8911,3 +8911,103 @@ label { font-size: 12px; font-weight: 600; color: var(--color-text); }
   .rb-detail-header { flex-wrap: wrap; }
 }
 
+/* ============================================================
+   USER MANAGEMENT — additions for unified all-users page
+   ============================================================ */
+
+/* Category pills (Platform Ops / Loan Origination / Investor) */
+.rb-cat {
+  display: inline-flex; align-items: center;
+  padding: 3px 10px;
+  border-radius: 999px;
+  font-size: 11px; font-weight: 600; letter-spacing: 0.02em;
+  line-height: 1.4;
+  white-space: nowrap;
+}
+.rb-cat-platform { background: rgba(198,149,43,0.12); color: #8C6A1C; }
+.rb-cat-orig     { background: rgba(29,78,216,0.10); color: #1D4ED8; }
+.rb-cat-investor { background: rgba(29,61,42,0.10);  color: #1D3D2A; }
+
+/* Second filter row (dropdowns) */
+.rb-filters-2 {
+  margin-top: 10px;
+  display: flex; flex-wrap: wrap;
+  gap: 12px 16px;
+  align-items: center;
+}
+.rb-filter-lbl {
+  display: inline-flex; align-items: center;
+  gap: 6px;
+  font-size: 12px;
+  color: var(--h-ink-3);
+}
+.rb-filter-lbl .rb-select { min-width: 150px; }
+
+/* Wide table — slightly tighter cells so 9 columns fit */
+.rb-table-wide td, .rb-table-wide th { padding: 10px 12px; font-size: 12.5px; }
+.rb-table-wide .rb-uname { font-size: 13px; }
+.rb-table-wide .rb-uemail { font-size: 11.5px; }
+.rb-dim { color: var(--h-ink-3); }
+
+/* Bulk-invite Stage 0 — category card chooser */
+.rb-inv-catgrid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 14px;
+  margin-top: 4px;
+}
+.rb-inv-cat {
+  display: flex; flex-direction: column; gap: 6px;
+  text-align: left;
+  padding: 18px 18px 20px;
+  background: #fff;
+  border: 1px solid var(--h-line);
+  border-radius: 14px;
+  cursor: pointer;
+  transition: border-color .15s, background .15s, transform .05s;
+}
+.rb-inv-cat:hover { border-color: var(--h-green); background: var(--h-paper-warm); }
+.rb-inv-cat.selected {
+  border-color: var(--h-green);
+  background: rgba(22,163,74,0.05);
+  box-shadow: 0 0 0 1px var(--h-green) inset;
+}
+.rb-inv-cat-name {
+  font-family: var(--font-serif);
+  font-size: 16px;
+  color: var(--h-ink);
+  font-weight: 500;
+}
+.rb-inv-cat-sub { font-size: 12px; color: var(--h-ink-3); line-height: 1.45; }
+
+/* Origination user detail — assignment cards */
+.rb-assign {
+  border: 1px solid var(--h-line-2);
+  border-radius: 10px;
+  padding: 14px 16px;
+  margin-bottom: 12px;
+  background: var(--h-paper-warm, #FBFAF7);
+}
+.rb-assign-hd {
+  display: flex; align-items: center; gap: 8px;
+  margin-bottom: 10px;
+}
+.rb-assign-name { font-weight: 600; color: var(--h-ink); font-size: 14px; }
+.rb-assign-grid {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 10px 18px;
+  margin-bottom: 10px;
+}
+.rb-assign-foot {
+  margin-top: 8px;
+  font-size: 12px;
+}
+.rb-assign-foot a { color: var(--h-green); }
+
+@media (max-width: 900px) {
+  .rb-inv-catgrid { grid-template-columns: 1fr; }
+  .rb-assign-grid { grid-template-columns: 1fr; }
+  .rb-filter-lbl .rb-select { min-width: 0; flex: 1 1 auto; }
+}
+

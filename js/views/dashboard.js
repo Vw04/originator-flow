@@ -239,7 +239,7 @@ const DashboardView = {
       const co = State.getCompany(u.companyId);
       return { label: co ? co.name : 'Origination', cls: 'section-tag-origination', route: '/origination-companies' };
     }
-    return { label: 'Platform Operations', cls: 'section-tag-platform', route: '/platform' };
+    return { label: 'User Management', cls: 'section-tag-platform', route: '/user-management' };
   },
 
   toggleFilterPopover(type, e) {
@@ -336,8 +336,8 @@ const DashboardView = {
           <td>—</td>
           <td><span class="status-pill ${e.status==='active'?'badge-active':'badge-pending'}"><span class="status-dot"></span>${e.status==='active'?'Active':'Pending'}</span></td>
         </tr>`),
-      `<tr class="clickable" onclick="Router.navigate('/platform')">
-        <td><div class="cell-primary">Platform Operations</div><div class="cell-secondary">Internal team</div></td>
+      `<tr class="clickable" onclick="Router.navigate('/user-management')">
+        <td><div class="cell-primary">User Management</div><div class="cell-secondary">All users in one place</div></td>
         <td><span class="section-tag section-tag-platform">Platform</span></td>
         <td>${platformUsers.length}</td>
         <td><span class="status-pill badge-active"><span class="status-dot"></span>Active</span></td>

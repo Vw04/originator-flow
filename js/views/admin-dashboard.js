@@ -135,7 +135,7 @@ const AdminDashboardView = {
     const quickLinks = [
       { path: '/origination-companies', label: 'Origination Companies', desc: 'Manage companies, branches, and users' },
       { path: '/investors',             label: 'Investors & Funds',     desc: 'Investor entities and fund management' },
-      { path: '/platform',             label: 'Platform Operations',   desc: 'Onboarding, integrations, and operations' },
+      { path: '/user-management',      label: 'User Management',       desc: 'Platform-ops, origination, and investor users in one place' },
       { path: '/system-config',        label: 'System Configuration',  desc: 'Permissions, templates, and settings' },
     ];
     const quickLinksHtml = quickLinks.map(l => `

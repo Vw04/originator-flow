@@ -109,30 +109,14 @@ const InvestorsView = {
   },
 
   _renderUsers() {
-    const users = State.getInvestorUsers();
-    if (!users.length) return renderStubContent('👤', 'No investor users', 'Investor users will appear here.');
-    const rows = users.map(u => `
-      <tr class="clickable" onclick="ProfileView.open('${u.id}')">
-        <td>
-          <div style="display:flex;align-items:center;gap:10px">
-            <div class="avatar avatar-sm" style="background:${avatarColor(u.role)}">${Display.initials(u)}</div>
-            <div>
-              <div class="cell-primary">${Display.fullName(u)}</div>
-              <div class="cell-secondary">${u.email}</div>
-            </div>
-          </div>
-        </td>
-        <td><span class="role-chip ${Display.roleClass(u.role)}">${Display.roleName(u.role)}</span></td>
-        <td><span class="status-pill ${Display.onboardingStatusClass(u.onboardingStatus)}"><span class="status-dot"></span>${Display.onboardingStatusLabel(u.onboardingStatus)}</span></td>
-        <td class="text-secondary">${u.lastLogin ? Display.date(u.lastLogin) : '<span class="text-muted">Never</span>'}</td>
-      </tr>`).join('');
     return `
-      <div class="table-container">
-        <table>
-          <thead><tr><th>User</th><th>Role</th><th>Status</th><th>Last Login</th></tr></thead>
-          <tbody>${rows}</tbody>
-        </table>
-        <div class="table-footer"><span class="table-count">${users.length} users</span></div>
+      <div class="stub-placeholder" style="padding:48px 32px;text-align:center;max-width:560px;margin:0 auto">
+        <h3 style="margin:0 0 8px;font-size:18px;color:var(--color-text-primary)">Investor users have moved</h3>
+        <p style="margin:0;color:var(--color-text-secondary);line-height:1.55">
+          All users are now managed in one place.
+          Open <a href="javascript:Router.navigate('/user-management')" style="color:var(--color-primary);font-weight:600">User Management</a>
+          and filter by category <strong>Investor</strong>.
+        </p>
       </div>`;
   },
 
@@ -165,7 +149,7 @@ const PlatformOpsView = {
             'Platform Operations Users is available to System Admins only. Contact your System Admin to request access.')}
         </div>`;
     }
-    return PlatformRbacView.render(fullPath || '/platform');
+    return PlatformRbacView.render(fullPath || '/user-management');
   },
 };
 

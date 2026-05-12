@@ -46,7 +46,8 @@ const App = {
     Router.register('/admin-dashboard',       () => this.renderShell(AdminDashboardView.render()));
     Router.register('/origination-companies', (path) => this.renderShell(OriginationCompaniesView.render(path)));
     Router.register('/investors',             (path) => this.renderShell(InvestorsView.render(path)));
-    Router.register('/platform',              (path) => this.renderShell(PlatformOpsView.render(path)));
+    Router.register('/user-management',       (path) => this.renderShell(PlatformOpsView.render(path)));
+    Router.register('/platform',              ()     => Router.navigate('/user-management', { replace: true }));
     Router.register('/system-config',         (path) => this.renderShell(SystemConfigView.render(path)));
     Router.register('/bulk-invite',           (path) => this.renderShell(BulkInviteView.render(path)));
 
@@ -58,7 +59,7 @@ const App = {
       this.renderShell(BranchesView.renderDetailPage(segs[0]));
     });
     Router.register('/users',        () => Router.navigate('/origination-companies', { replace: true }));
-    Router.register('/permissions',  () => Router.navigate('/platform/permissions', { replace: true }));
+    Router.register('/permissions',  () => Router.navigate('/user-management', { replace: true }));
 
     // Data Platform sub-routes
     Router.register('/data/analytics',    () => { DataPlatformView._activeTab = 'analytics';    this.renderShell(DataPlatformView.render()); });
@@ -171,7 +172,7 @@ const App = {
       },
       '/origination-companies':   () => OriginationCompaniesView.render(path),
       '/investors':               () => InvestorsView.render(path),
-      '/platform':                () => PlatformOpsView.render(path),
+      '/user-management':         () => PlatformOpsView.render(path),
       '/system-config':           () => SystemConfigView.render(path),
       '/bulk-invite':             () => BulkInviteView.render(Router.getCurrentPath()),
       '/data/analytics':          () => { DataPlatformView._activeTab = 'analytics';    return DataPlatformView.render(); },
