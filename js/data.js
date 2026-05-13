@@ -1444,6 +1444,56 @@ function initColumnResize(container) {
     { id: 'funded',  short: 'FUND',     label: 'Funded' },
   ];
 
+  /* Consolidated 6-stage origination model with tasks per stage.
+     Mirrors the legacy STAGES at lines 1161-1206 inside getProcessSteps().
+     LO/LP roles see stages 1-4 ("Applications"); operators see all 6. */
+  const STAGES_FULL = [
+    { id: 'prequalification', short: 'PRE-QUAL', label: 'Prequalification', tasks: [
+      { id: 'pq_creation',  label: 'Prequalification Creation',  role: 'Loan Officer',    action: null },
+      { id: 'pq_submitted', label: 'Prequalification Submitted', role: 'Loan Officer',    action: null },
+      { id: 'pq_review',    label: 'Prequalification Review',    role: 'Account Manager', action: 'Review' },
+      { id: 'pq_accepted',  label: 'Prequalification Accepted',  role: 'Loan Officer',    action: null },
+    ]},
+    { id: 'application_disclosures', short: 'APP & DISC', label: 'Application & Disclosures', tasks: [
+      { id: 'ad_initial',       label: 'Initial Application Submission',                        role: 'Loan Officer',    action: null },
+      { id: 'ad_title',         label: 'Validate Title Information & Send Initial Disclosures', role: 'Account Manager', action: 'Validate' },
+      { id: 'ad_disclosures',   label: 'Initial Disclosures Signed',                            role: 'Borrower',        action: null },
+      { id: 'ad_borrower_docs', label: 'Borrower Qualification Documents',                      role: 'Loan Officer',    action: null },
+      { id: 'ad_app_docs',      label: 'Application Documents Uploaded',                        role: 'Loan Officer',    action: null },
+      { id: 'ad_final',         label: 'Final Application Submission',                          role: 'Loan Officer',    action: null },
+    ]},
+    { id: 'cda_appraisal', short: 'CDA', label: 'CDA & Appraisal', tasks: [
+      { id: 'ca_upload',  label: 'Upload Appraisal Documents',  role: 'Loan Officer',    action: 'Upload' },
+      { id: 'ca_approve', label: 'Approve Appraisal Documents', role: 'Account Manager', action: 'Review Documents' },
+      { id: 'ca_order',   label: 'Order CDA',                   role: 'Account Manager', action: 'Order CDA' },
+      { id: 'ca_report',  label: 'CDA Report Generation',       role: 'Account Manager', action: null },
+      { id: 'ca_review',  label: 'View and Approve CDA',        role: 'Account Manager', action: 'Review CDA' },
+    ]},
+    { id: 'clear_close', short: 'CTC', label: 'Clear to Close & Closing', tasks: [
+      { id: 'cc_docs',   label: 'Application Documents Approved',                role: 'Account Manager', action: null },
+      { id: 'cc_atr',    label: 'ATR / AMI Submitted',                           role: 'Account Manager', action: 'ATR / AMI' },
+      { id: 'cc_ctc',    label: 'Clear to Close Submitted',                      role: 'Account Manager', action: 'Clear to Close' },
+      { id: 'cc_prelim', label: 'Upload and Approve Preliminary Closing Package',role: 'Account Manager', action: null },
+      { id: 'cc_san',    label: 'Upload and Approve SAN Note',                   role: 'Account Manager', action: null },
+      { id: 'cc_dates',  label: 'Set Closing & Disbursement Dates',              role: 'Account Manager', action: 'Set dates' },
+      { id: 'cc_fees',   label: 'Validate Fees',                                 role: 'Account Manager', action: 'Validate' },
+      { id: 'cc_submit', label: 'Submit Closing Package',                        role: 'Account Manager', action: 'Submit' },
+    ]},
+    { id: 'post_closing', short: 'POST-CLOSE', label: 'Post-Closing & Funding', tasks: [
+      { id: 'pc_validate', label: 'Validate Post-Closing Data',               role: 'Account Manager', action: 'Validate' },
+      { id: 'pc_files',    label: 'Generate Files (WAB, Disbursement, MERS)', role: 'Account Manager', action: 'Generate' },
+      { id: 'pc_package',  label: 'Loan Package Upload',                      role: 'Account Manager', action: 'Upload' },
+      { id: 'pc_funding',  label: 'Submit Funding Details',                   role: 'Account Manager', action: 'Submit' },
+    ]},
+    { id: 'transfer_minting', short: 'MINT', label: 'Transfer & Minting', tasks: [
+      { id: 'tm_securitize', label: 'Submit to Securitize for Batch Processing', role: 'Account Manager', action: null },
+      { id: 'tm_approval',   label: 'Approval Received',                         role: 'Account Manager', action: null },
+      { id: 'tm_mers',       label: 'MERS Registration & TOB2 Transfer',         role: 'Account Manager', action: null },
+      { id: 'tm_mint',       label: 'Mint',                                      role: 'Account Manager', action: 'Mint' },
+      { id: 'tm_servicing',  label: 'Servicing Email with Loan Files',           role: 'Account Manager', action: null },
+    ]},
+  ];
+
   const PEOPLE = {
     priya:  { name: 'Priya Shah',    initials: 'PS', org: 'Homium',     bg: '#1E3F62', role: 'Underwriter' },
     james:  { name: 'James Okafor',  initials: 'JO', org: 'CC Lending', bg: '#0E2A47', role: 'Originator' },
@@ -1738,5 +1788,5 @@ function initColumnResize(container) {
     },
   ];
 
-  window.HOMIUM_DATA = { LOANS, STAGES, PEOPLE };
+  window.HOMIUM_DATA = { LOANS, STAGES, STAGES_FULL, PEOPLE };
 })();
