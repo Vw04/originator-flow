@@ -1,8 +1,8 @@
-/* ARTBOARD 8 — ATRIUM — light originator workbench, 3-column with horizontal journey strip.
-   Reads State.getAtriumScope() to decide which loans populate the left rail:
+/* ARTBOARD 8 — ATRIUM — light originator workbench, top tabs + persistent header + journey strip.
+   Reads State.getAtriumScope() to decide which loans populate the tab strip:
    - If a scope is set (1+ ids from a loan-detail toggle or originations queue),
-     the rail shows only those loans.
-   - If empty (e.g. visited as a standalone artboard preview), it shows all loans. */
+     the tabs show only those loans.
+   - If empty (e.g. visited as a standalone artboard preview), all loans become tabs. */
 const AtriumArtboard = () => {
   const LOANS = HOMIUM_DATA.LOANS;
   const STAGES = HOMIUM_DATA.STAGES;
@@ -21,11 +21,6 @@ const AtriumArtboard = () => {
 
   const focus = scopedLoans.find(l => l.id === activeId) || scopedLoans[0];
 
-  // when not in scoped mode, group loans like before; when scoped, just show one section
-  const isScoped = scopeIds.length > 0;
-  const pinned = isScoped ? scopedLoans : LOANS.filter(l => l.sla === 'red' || l.sla === 'amber' || l.stageKey === 'ctc' || l.stageKey === 'doc');
-  const others = isScoped ? [] : LOANS.filter(l => !pinned.includes(l));
-
   if (!focus) return <div className="ab-atrium" style={{padding:40, color:'#6B6557'}}>No loans in scope. Select loans from the originations list and click "View in Atrium".</div>;
 
   const stipDone = focus.stips.filter(s => s.status === 'received').length;
@@ -35,128 +30,82 @@ const AtriumArtboard = () => {
 
   return (
     <div className={'ab-atrium ab-atrium-no-tabs' + (inspectorOpen ? '' : ' atrium-inspector-collapsed')}>
-      {/* `.atr-top` removed — host app's topnav provides logo, search, user.
-          Pins/tabs were redundant with the left rail; left rail is the single
-          source of which loans are in scope. */}
-
-      {/* LEFT RAIL: scoped loans (or full list when not scoped) */}
-      <div className="atr-rail">
-        <div className="atr-rail-section">
-          <div className="atr-rail-h">
-            <div className="atr-rail-title">{isScoped ? 'In scope' : 'Pinned to today'}</div>
-            <span className="atr-rail-count">{pinned.length}</span>
-          </div>
-          {pinned.map(l => (
-            <div
-              key={l.id}
-              className={'atr-rail-card' + (l.id === activeId ? ' active' : '')}
-              onClick={() => setActiveId(l.id)}
-            >
-              <div className="atr-rail-card-id">{l.id}</div>
-              <div className="atr-rail-card-name">{l.borrower}</div>
-              <div className="atr-rail-card-meta">
-                <span>{STAGES[l.stageIdx].short}</span>
-                <span className="atr-rail-card-amt">{fmt$k(l.amount)}</span>
-              </div>
-              <div className="atr-rail-mini-stage" style={{display:'flex', gap:2, marginTop:8}}>
-                {l.progress.map((s, i) => (
-                  <div key={i} className={
-                    'atr-rail-mini-seg ' +
-                    (s === 'done' ? 'done' : s === 'current' ? 'cur' : s === 'blocked' ? 'bad' : '')
-                  }/>
-                ))}
-              </div>
-              <div style={{marginTop: 8, display: 'flex', justifyContent: 'space-between', alignItems: 'center'}}>
-                <span className={'atr-rail-card-sla ' + l.sla}>
-                  {l.sla === 'red' ? `${l.daysInStage}d · stalled` : l.sla === 'amber' ? `${l.daysInStage}d · aging` : `${l.daysInStage}d`}
-                </span>
-                <span style={{fontSize: 10, color: '#9C9583', fontFamily: 'var(--font-mono)'}}>{l.updatedAgo}</span>
-              </div>
-            </div>
-          ))}
-        </div>
-
-        <div className="atr-rail-section">
-          <div className="atr-rail-h">
-            <div className="atr-rail-title">Other loans</div>
-            <span className="atr-rail-count">{others.length}</span>
-          </div>
-          {others.map(l => (
-            <div
-              key={l.id}
-              className={'atr-rail-card' + (l.id === activeId ? ' active' : '')}
-              onClick={() => setActiveId(l.id)}
-            >
-              <div className="atr-rail-card-id">{l.id}</div>
-              <div className="atr-rail-card-name">{l.borrower}</div>
-              <div className="atr-rail-card-meta">
-                <span>{STAGES[l.stageIdx].short}</span>
-                <span className="atr-rail-card-amt">{fmt$k(l.amount)}</span>
-              </div>
-            </div>
-          ))}
-          <div className="atr-pin-hint">Drag any loan up here to pin to today</div>
-        </div>
-      </div>
-
-      {/* CENTER CANVAS */}
+      {/* CANVAS — tabs strip + persistent header flow continuously into the scrollable content. */}
       <div className="atr-canvas">
-        {/* Sticky loan-info banner — persists at the top while the canvas scrolls. */}
-        <div className="atr-sticky-banner">
-          <div className="atr-sticky-id">{focus.id}</div>
-          <div className="atr-sticky-borrower">{focus.borrower}</div>
-          <div className="atr-sticky-addr">{focus.address}</div>
-          <div className="atr-sticky-stage">{STAGES[focus.stageIdx].short}</div>
-          <div className={'atr-sticky-pill ' + (focus.sla === 'red' ? 'warn' : focus.sla === 'amber' ? 'aging' : 'ok')}>
-            {focus.sla === 'red' ? `Stalled · ${focus.daysInStage}d` : focus.sla === 'amber' ? `Aging · ${focus.daysInStage}d` : `${focus.daysInStage}d in stage`}
-          </div>
-          <div className="atr-sticky-amt">{fmt$(focus.amount)}</div>
-          {!inspectorOpen && (
-            <button className="atr-sticky-restore" onClick={() => setInspectorOpen(true)} title="Show inspector panel">
-              <Icon name="chevL" size={14}/>
-              <span>Inspector</span>
-            </button>
-          )}
+        {/* Tabs strip — one tab per loan in scope; + opens originations list to add more. */}
+        <div className="atr-tabs-row">
+          {scopedLoans.map(l => (
+            <div
+              key={l.id}
+              className={'atr-tab' + (l.id === activeId ? ' active' : '')}
+              onClick={() => setActiveId(l.id)}
+              title={l.borrower}
+            >
+              {l.sla === 'red' && <span className="atr-tab-pulse"/>}
+              <span className="atr-tab-id">{l.id}</span>
+              <span className="atr-tab-name">{l.borrower}</span>
+              <button
+                className="atr-tab-close"
+                onClick={(e) => {
+                  e.stopPropagation();
+                  if (typeof State !== 'undefined' && State.setAtriumScope) {
+                    State.setAtriumScope(scopeIds.filter(x => x !== l.id));
+                    if (typeof App !== 'undefined' && App.renderView) App.renderView('/originations');
+                  }
+                }}
+                title="Remove from atrium"
+              >×</button>
+            </div>
+          ))}
+          <button
+            className="atr-tab-add"
+            onClick={() => {
+              if (typeof State !== 'undefined' && State.setPageMode) State.setPageMode('originations','institutional');
+              if (typeof App !== 'undefined' && App.renderView) App.renderView('/originations');
+            }}
+            title="Add loans to atrium"
+          >+</button>
         </div>
-        <div className="atr-canvas-inner">
-          <div className="atr-canvas-head">
-            <div className="atr-canvas-id">
-              <span>{focus.id}</span>
-              <span className={'atr-canvas-pill' + (focus.sla === 'red' ? ' warn' : '')}>
-                {focus.sla === 'red' ? 'STAGE STALLED' : focus.sla === 'amber' ? 'STAGE AGING' : 'ON TRACK'}
-              </span>
-              <span>{focus.program.name.toUpperCase()}</span>
-            </div>
-            <h1 className="atr-canvas-name">
-              {focus.borrower} · <em>{focus.address.split(',')[0]}</em>
-            </h1>
-            <div className="atr-canvas-sub">
-              <span>{focus.address}, {focus.cityState}</span>
-              <span>·</span>
-              <span>opened {focus.daysInStage} day{focus.daysInStage === 1 ? '' : 's'} ago</span>
-            </div>
-            <div className="atr-canvas-stats">
-              <div>
-                <div className="atr-canvas-stat-lbl">Loan amount</div>
-                <div className="atr-canvas-stat-val">{fmt$(focus.amount)}</div>
-              </div>
-              <div>
-                <div className="atr-canvas-stat-lbl">Stage</div>
-                <div className="atr-canvas-stat-val">{STAGES[focus.stageIdx].label}</div>
-              </div>
-              <div>
-                <div className="atr-canvas-stat-lbl">Stips</div>
-                <div className="atr-canvas-stat-val">{stipDone} <span style={{color:'#9C9583', fontSize: 14}}>/ {stipTotal}</span></div>
-              </div>
-              <div>
-                <div className="atr-canvas-stat-lbl">Days in stage</div>
-                <div className="atr-canvas-stat-val" style={{color: focus.sla === 'red' ? '#B0382C' : focus.sla === 'amber' ? '#8A6414' : undefined}}>
-                  {focus.daysInStage}d
-                </div>
-              </div>
-            </div>
-          </div>
 
+        {/* Persistent loan header — sticky, visually continuous with the active tab. */}
+        <div className="atr-header">
+          <div className="atr-header-row1">
+            <span className="atr-header-id">{focus.id}</span>
+            <span className="atr-header-sep">·</span>
+            <span className="atr-header-program">{focus.program.name.toUpperCase()}</span>
+            <span className={'atr-canvas-pill' + (focus.sla === 'red' ? ' warn' : '')}>
+              {focus.sla === 'red' ? 'STAGE STALLED' : focus.sla === 'amber' ? 'STAGE AGING' : 'ON TRACK'}
+            </span>
+            <button
+              className={'atr-panel-toggle' + (inspectorOpen ? ' open' : '')}
+              onClick={() => setInspectorOpen(!inspectorOpen)}
+              title={inspectorOpen ? 'Hide inspector panel' : 'Show inspector panel'}
+              aria-label={inspectorOpen ? 'Hide inspector panel' : 'Show inspector panel'}
+            >
+              <svg viewBox="0 0 16 16" width="16" height="16" fill="none" stroke="currentColor" strokeWidth="1.4">
+                <rect x="1.5" y="2.5" width="13" height="11" rx="1.5"/>
+                <line x1="10" y1="2.5" x2="10" y2="13.5"/>
+                {inspectorOpen && <rect x="10" y="2.5" width="4.5" height="11" fill="currentColor" stroke="none"/>}
+              </svg>
+            </button>
+          </div>
+          <div className="atr-header-row2">
+            <span className="atr-header-name">{focus.borrower}</span>
+            <em className="atr-header-addr-short">· {focus.address.split(',')[0]}</em>
+            <span className="atr-header-divider"/>
+            <span className="atr-header-meta">{focus.address}, {focus.cityState}</span>
+            <span className="atr-header-sep">·</span>
+            <span className="atr-header-amt">{fmt$(focus.amount)}</span>
+            <span className="atr-header-sep">·</span>
+            <span className={'atr-sticky-pill ' + (focus.sla === 'red' ? 'warn' : focus.sla === 'amber' ? 'aging' : 'ok')}>
+              {focus.sla === 'red' ? `Stalled · ${focus.daysInStage}d` : focus.sla === 'amber' ? `Aging · ${focus.daysInStage}d` : `${focus.daysInStage}d in stage`}
+            </span>
+            <span className="atr-header-sep">·</span>
+            <span className="atr-header-meta">Stips <b>{stipDone}/{stipTotal}</b></span>
+          </div>
+        </div>
+
+        <div className="atr-canvas-inner">
           {/* SIGNATURE: horizontal journey strip */}
           <div className="atr-journey-wrap">
             <div className="atr-journey-h">
@@ -283,11 +232,8 @@ const AtriumArtboard = () => {
         </div>
       </div>
 
-      {/* RIGHT INSPECTOR: AI copilot, presence, signals — collapsible. */}
+      {/* RIGHT INSPECTOR: AI copilot, presence, signals — toggled by the panel icon in the header. */}
       {inspectorOpen && <div className="atr-inspector">
-        <button className="atr-inspector-collapse" onClick={() => setInspectorOpen(false)} title="Hide inspector panel">
-          <Icon name="chevR" size={14}/>
-        </button>
         <div className="atr-insp-section">
           <div className="atr-copilot">
             <div className="atr-copilot-h">Homium AI · co-pilot</div>
