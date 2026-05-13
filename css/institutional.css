@@ -43,7 +43,19 @@
   height: 100%;
   display: flex;
   flex-direction: column;
-  overflow: hidden;
+  overflow-y: auto;
+  overflow-x: hidden;
+  /* offset for the sticky table header — equals sticky-group rendered height */
+  --inst-sticky-h: 170px;
+}
+
+/* Sticky controls — KPI metrics + filter bar stay pinned to the top while
+   the table rows scroll beneath. */
+.inst-sticky-group {
+  position: sticky;
+  top: 0;
+  z-index: 5;
+  background: var(--h-paper);
 }
 .ab-institutional .serif { font-family: var(--font-serif); font-weight: 300; letter-spacing: -0.01em; }
 
@@ -187,16 +199,19 @@
 .inst-table-wrap {
   margin: 0 40px 28px;
   background: #fff; border: 1px solid var(--h-line);
-  border-radius: 12px; overflow: hidden;
-  flex: 1; min-height: 0;
-  display: flex; flex-direction: column;
+  border-radius: 12px;
 }
 .inst-table { width: 100%; border-collapse: collapse; }
 .inst-table thead th {
   text-align: left; padding: 10px 16px; font-size: 10px;
   font-weight: 600; color: var(--h-ink-3); text-transform: uppercase;
-  letter-spacing: 0.08em; border-bottom: 1px solid var(--h-line); background: #fff;
+  letter-spacing: 0.08em; background: #fff;
+  position: sticky; top: var(--inst-sticky-h, 170px); z-index: 3;
+  /* inset shadow stands in for the bottom-border, which Chromium drops on sticky <th> */
+  box-shadow: inset 0 -1px 0 var(--h-line);
 }
+.inst-table thead th:first-child { border-top-left-radius: 12px; }
+.inst-table thead th:last-child  { border-top-right-radius: 12px; }
 .inst-table tbody td {
   padding: 14px 16px; font-size: 13px; vertical-align: middle;
   border-bottom: 1px solid var(--h-line-2);
@@ -205,6 +220,8 @@
 .inst-table tbody tr:hover { background: #FBFAF4; }
 .inst-table tbody tr.selected { background: var(--h-mint); }
 .inst-table tbody tr:last-child td { border-bottom: none; }
+.inst-table tbody tr:last-child td:first-child { border-bottom-left-radius: 12px; }
+.inst-table tbody tr:last-child td:last-child  { border-bottom-right-radius: 12px; }
 .inst-cell-id { font-family: var(--font-mono); font-size: 11px; color: var(--h-ink-3); }
 .inst-cell-name { font-weight: 600; color: var(--h-ink); font-size: 13px; margin-top: 2px; }
 .inst-cell-addr { font-size: 12px; color: var(--h-ink-2); }

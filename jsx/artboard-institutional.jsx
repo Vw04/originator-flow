@@ -131,6 +131,7 @@ const InstitutionalArtboard = ({ context = 'applications' } = {}) => {
         </div>
       </div>
 
+      <div className="inst-sticky-group">
       <div className="inst-stats" data-cm={isUW ? null : 'apps-stats'}>
         {isUW ? (<>
           <div className="inst-stat">
@@ -220,6 +221,7 @@ const InstitutionalArtboard = ({ context = 'applications' } = {}) => {
             {FRAME.primaryCta.label}
           </button>
         )}
+      </div>
       </div>
 
       <div className="inst-table-wrap" data-cm={isUW ? null : 'apps-table'}>

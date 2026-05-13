@@ -20,7 +20,7 @@
     radial-gradient(circle at 90% 30%, rgba(194,161,74,0.04) 0%, transparent 50%),
     #F5F4EE;
 }
-.atr-canvas-inner { padding: 24px 36px 60px; max-width: 980px; margin: 0 auto; }
+.atr-canvas-inner { padding: 24px 36px 60px; }
 
 /* === TABS ROW — browser-style strip at the top of the canvas === */
 .atr-tabs-row {
