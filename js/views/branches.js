@@ -123,7 +123,7 @@ const BranchesView = {
           </div>
           ${canEdit ? `
             <div class="page-header-actions">
-              <button class="btn btn-primary btn-sm" onclick="BranchesView.openAddModal()">+ Add Branch</button>
+              <button class="btn btn-primary btn-sm" onclick="BranchesView.openAddPage()">+ Add Branch</button>
             </div>` : ''}
         </div>
       </div>`;
@@ -157,7 +157,7 @@ const BranchesView = {
                 ${hasFilters ? `<div class="filter-menu-section" style="border-top:1px solid var(--color-border);padding-top:8px"><div class="filter-menu-item" onclick="BranchesView.clearFilters()" style="color:var(--color-danger)">Clear All Filters</div></div>` : ''}
               </div>
             </div>
-            ${scope && canEdit ? `<button class="btn btn-primary btn-sm" onclick="BranchesView.openAddModal()" style="margin-left:auto">+ Add Branch</button>` : ''}
+            ${scope && canEdit ? `<button class="btn btn-primary btn-sm" onclick="BranchesView.openAddPage('${scope?.companyId || ''}')" style="margin-left:auto">+ Add Branch</button>` : ''}
           </div>
 
           ${ordered.length ? `
@@ -340,29 +340,62 @@ const BranchesView = {
       default:            content = this._renderBranchDetails(b, co, canEdit);
     }
 
-    const breadcrumb = showBack ? `
-      <div class="breadcrumb">
-        <span class="breadcrumb-link" onclick="Router.navigate('/origination-companies')">Origination Companies</span>
-        <span class="breadcrumb-sep">/</span>
-        <span class="breadcrumb-link" onclick="Router.navigate('/origination-companies/${b.companyId}')">${co ? co.name : 'Company'}</span>
-        <span class="breadcrumb-sep">/</span>
-        <span class="breadcrumb-current">${b.name}</span>
-      </div>` : '';
+    const users = State.getUsersByBranch(b.id);
+    const mgr = b.managingLO ? State.getUser(b.managingLO) : null;
+    const tabsCounts = {
+      details: null,
+      users: users.length,
+      permissions: null,
+      markets: null,
+      programs: null,
+    };
+    const tabsHtmlWithCounts = tabs.map(t =>
+      `<div class="section-tab ${t.key === this._branchTab ? 'active' : ''}"
+            onclick="BranchesView.switchBranchTab('${t.key}')">${t.label}${tabsCounts[t.key] != null ? ` <span style="opacity:0.55;font-weight:400">(${tabsCounts[t.key]})</span>` : ''}</div>`
+    ).join('');
+
+    const backLink = showBack
+      ? `<button class="back-link" onclick="Router.navigate('/origination-companies/${b.companyId}')">
+           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="15 18 9 12 15 6"/></svg>
+           Back to Branches
+         </button>`
+      : '';
+
+    const addr = b.address1 ? `${b.address1}${b.suite ? ', ' + b.suite : ''}, ${b.city || ''} ${b.state || ''} ${b.zip || ''}`.trim() : (b.address || '—');
+    const meta = [
+      { label: 'NMLS #', value: b.nmlsId || '—' },
+      { label: 'State', value: b.state || '—' },
+      { label: 'Manager', value: mgr ? Display.fullName(mgr) : '—' },
+      { label: 'Address', value: addr },
+      { label: 'Phone', value: b.contactPhone || '—' },
+      { label: 'Users', value: users.length },
+    ];
+    const metaHtml = meta.map((m, i) =>
+      `<div><span class="entity-meta-label">${m.label}</span> <span class="entity-meta-value">${m.value}</span></div>${i < meta.length - 1 ? '<span class="entity-meta-sep">|</span>' : ''}`
+    ).join('');
+
+    const statusPill = b.status === 'active'
+      ? `<span class="entity-status-pill">Active</span>`
+      : `<span class="entity-status-pill" style="color:var(--color-warning)">Setup incomplete</span>`;
 
     return `
-      ${breadcrumb}
-      <div class="page-header">
-        <div class="page-header-inner">
-          <div class="page-header-left">
-            <div class="page-title">${b.name}</div>
-            <div class="page-subtitle">${co ? co.name : '—'} · NMLS <span class="mono">${b.nmlsId || '—'}</span> · ${b.state}</div>
+      ${backLink}
+      <div class="entity-header">
+        <div class="entity-header-row">
+          <div>
+            <h1 class="entity-header-title">${b.name}</h1>
+            <div class="entity-header-subtitle">${co ? co.name : 'Branch'}</div>
           </div>
-          <div class="page-header-actions">
-            ${canEdit ? `<button class="btn btn-primary btn-sm" onclick="BranchesView.openEditModal('${b.id}')">Edit Branch</button>` : ''}
+          <div class="entity-header-actions">
+            ${canEdit ? `<button class="btn btn-secondary btn-sm" onclick="BranchesView.openEditModal('${b.id}')">Edit</button>` : ''}
           </div>
         </div>
+        <div class="entity-meta-row">
+          ${metaHtml}
+          ${statusPill}
+        </div>
       </div>
-      <div class="section-tabs">${tabsHtml}</div>
+      <div class="section-tabs">${tabsHtmlWithCounts}</div>
       <div class="page-body">${content}</div>
       <div id="branch-modal-container"></div>`;
   },
@@ -372,50 +405,33 @@ const BranchesView = {
     App.renderView(Router.getCurrentPath());
   },
 
-  /* ---- Details tab ---- */
+  /* ---- Details tab — institutional MUI-form treatment per Figma. ---- */
   _renderBranchDetails(b, co, canEdit) {
     const mgr = b.managingLO ? State.getUser(b.managingLO) : null;
-    const users = State.getUsersByBranch(b.id);
-    const lastSync = b.lastNmlsSync ? Display.relativeTime(b.lastNmlsSync) : '—';
+    const fieldRO = (label, value) => {
+      const v = (value === null || value === undefined || value === '') ? '' : value;
+      const empty = v === '' ? ' empty' : '';
+      const shown = v === '' ? '—' : v;
+      return `
+        <div class="form-group">
+          <label>${label}</label>
+          <div class="input is-readonly${empty}">${shown}</div>
+        </div>`;
+    };
     return `
-      <div style="display:grid;grid-template-columns:1fr 1fr;gap:20px">
-        <div class="card">
-          <div class="card-title" style="margin-bottom:14px;display:flex;align-items:center;justify-content:space-between">
-            <span>Branch Details</span>
-            <span style="font-size:11px;color:var(--color-text-muted);font-weight:500">
-              <span class="status-dot" style="background:var(--color-success);display:inline-block;width:8px;height:8px;border-radius:50%;margin-right:6px"></span>
-              NMLS sync: ${lastSync}
-            </span>
-          </div>
-          <div class="info-grid">
-            <div class="info-row"><div class="info-label">Status</div><div class="info-value"><span class="badge ${b.status === 'active' ? 'badge-active' : 'badge-pending'}">${b.status === 'active' ? 'Active' : 'Setup incomplete'}</span></div></div>
-            <div class="info-row"><div class="info-label">Company</div><div class="info-value">${co ? `<a class="breadcrumb-link" onclick="Router.navigate('/origination-companies/${co.id}')">${co.name}</a>` : '—'}</div></div>
-            <div class="info-row"><div class="info-label">Branch Type</div><div class="info-value"><span class="tag">${b.branchType || 'Branch'}</span></div></div>
-            <div class="info-row"><div class="info-label">NMLS Branch ID</div><div class="info-value mono">${b.nmlsId || '—'}</div></div>
-            <div class="info-row"><div class="info-label">Address</div><div class="info-value">${b.address1 ? `${b.address1}${b.suite ? ', ' + b.suite : ''}, ${b.city}, ${b.state} ${b.zip}` : (b.address || '—')}</div></div>
-            <div class="info-row"><div class="info-label">Phone</div><div class="info-value">${b.contactPhone || '—'}</div></div>
-            <div class="info-row"><div class="info-label">Managing LO</div><div class="info-value">${mgr ? Display.fullName(mgr) : '<span class="text-muted">N/A</span>'}</div></div>
-            <div class="info-row"><div class="info-label">Start Date</div><div class="info-value">${b.startDate ? Display.date(b.startDate) : '—'}</div></div>
-          </div>
-        </div>
-
-        <div class="card">
-          <div class="card-title" style="margin-bottom:14px">At a Glance</div>
-          <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:12px;text-align:center">
-            <div>
-              <div style="font-size:24px;font-weight:700;color:var(--color-primary)">${users.length}</div>
-              <div style="font-size:11px;color:var(--color-text-secondary)">Users</div>
-            </div>
-            <div>
-              <div style="font-size:24px;font-weight:700;color:var(--color-primary)">${State.getBranchEnabledMarkets(b.id).length}</div>
-              <div style="font-size:11px;color:var(--color-text-secondary)">Markets</div>
-            </div>
-            <div>
-              <div style="font-size:24px;font-weight:700;color:var(--color-primary)">${State.getBranchEnabledPrograms(b.id).length}</div>
-              <div style="font-size:11px;color:var(--color-text-secondary)">Programs</div>
-            </div>
-          </div>
-          ${canEdit ? `<div style="margin-top:18px;display:flex;gap:8px;justify-content:flex-end"><button class="btn btn-ghost btn-sm" onclick="BranchesView.switchBranchTab('permissions')">Manage permissions →</button></div>` : ''}
+      <div class="inst-card">
+        <div class="inst-card-title">Branch information</div>
+        <div class="inst-form-grid">
+          ${fieldRO('Branch name', b.name)}
+          ${fieldRO('Branch NMLS #', b.nmlsId)}
+          ${fieldRO('Branch manager', mgr ? Display.fullName(mgr) : '')}
+          ${fieldRO('Address 1', b.address1)}
+          ${fieldRO('Suite #', b.suite)}
+          ${fieldRO('City', b.city)}
+          ${fieldRO('State', b.state)}
+          ${fieldRO('Zip', b.zip)}
+          ${fieldRO('Contact phone', b.contactPhone)}
+          ${fieldRO('Company', co ? co.name : '')}
         </div>
       </div>`;
   },
@@ -820,6 +836,12 @@ const BranchesView = {
     else    cur.delete(lpmId);
     State.setBranchEnabledPrograms(branchId, [...cur]);
     App.renderView(Router.getCurrentPath());
+  },
+
+  /* Navigate to the institutional Create Branch page. The Add Branch buttons
+     now use this entry point instead of the legacy modal. */
+  openAddPage(companyId) {
+    Router.navigate('/branches/new' + (companyId ? '?company=' + companyId : ''));
   },
 
   openAddModal() {

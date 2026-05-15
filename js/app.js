@@ -57,13 +57,15 @@ const App = {
     Router.register('/branches',     (path) => {
       const segs = path.replace('/branches', '').split('/').filter(Boolean);
       if (!segs.length) return Router.navigate('/origination-companies', { replace: true });
+      if (segs[0] === 'new') return this.renderShell(BranchCreateView.render(path));
       this.renderShell(BranchesView.renderDetailPage(segs[0]));
     });
     Router.register('/users',        (path) => {
       const segs = path.replace('/users', '').split('/').filter(Boolean);
       const id = segs[0];
       if (!id) return Router.navigate('/user-management', { replace: true });
-      this.renderShell(ProfileView.renderPage(id));
+      const edit = segs[1] === 'edit';
+      this.renderShell(ProfileView.renderPage(id, { edit }));
     });
     Router.register('/permissions',  () => Router.navigate('/user-management', { replace: true }));
 

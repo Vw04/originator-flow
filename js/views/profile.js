@@ -17,37 +17,33 @@ const ProfileView = {
      path is gone. */
   close() {},
 
-  /* Full-page user profile — institutional treatment. Reachable via
-     `/users/:userId`. Same surface no matter where the user is clicked. */
-  renderPage(userId) {
+  /* tab state for the user profile page */
+  _profileTab: 'details',
+  _editMode: false,
+
+  /* Full-page user profile — institutional treatment per Figma. Reachable
+     via `/users/:userId` (view) or `/users/:userId/edit` (edit). */
+  renderPage(userId, opts) {
+    opts = opts || {};
+    this._editMode = !!opts.edit;
     const u = State.getUser(userId);
     if (!u) {
       return `
-        <div class="page-header">
-          <div class="page-header-inner">
-            <div class="page-header-left">
-              <div class="page-title-eyebrow">User profile</div>
-              <div class="page-title">User not found</div>
-              <div class="page-subtitle">No user matches id <span class="mono">${userId}</span></div>
-            </div>
-          </div>
-        </div>
-        <div class="page-body"></div>`;
+        <div class="page-body">
+          <div class="inst-card"><div class="inst-card-title">User not found</div>No user matches id ${userId}.</div>
+        </div>`;
     }
 
     const canEdit = State.can('editAny') || State.can('manageUsers');
     const co = State.getCompany(u.companyId);
-    const br = State.getBranch(u.branchId);
     const entity = u.investorEntityId
       ? (State.getInvestorEntities().find(e => e.id === u.investorEntityId) || null)
       : null;
     const isHomium = /@homium\.io$/i.test(u.email || '');
     const isInvestor = u.role === 'investor' || u.role === 'investor_prospect';
     const isOC = ['prog_admin', 'lo', 'lp'].includes(u.role);
-    const loans = isOC ? State.getLoansByLO(u.id) : [];
 
-    /* Back link — try to derive a sensible "where I came from".
-       Falls back to the user-management roster. */
+    /* Back link */
     const backUrl = (() => {
       if (isHomium) return '/platform-operator/users';
       if (isInvestor && entity) return '/investors/' + entity.id + '/users';
@@ -63,112 +59,310 @@ const ProfileView = {
       return 'User Management';
     })();
 
-    const loanRows = loans.slice(0, 5).map(l => `
-      <div style="display:flex;align-items:center;justify-content:space-between;padding:10px 0;border-bottom:1px solid var(--color-border-light)">
-        <div>
-          <div style="font-size:12px;font-weight:600;color:var(--color-text-secondary)">${l.id}</div>
-          <div style="font-size:13px;color:var(--color-text)">${l.borrowerName}</div>
-        </div>
-        <div style="text-align:right">
-          <div style="font-size:13px;font-weight:700">${Display.currency(l.amount)}</div>
-          <span class="badge ${Display.loanStatusClass(l.status)}">${Display.loanStatusLabel(l.status)}</span>
-        </div>
-      </div>`).join('');
+    /* Tabs: Details | Companies / Branches (N) */
+    const cbCount = (State.getBranchAssignments(u.id) || []).length;
+    const tabs = [
+      { key: 'details', label: 'Details', count: null },
+      { key: 'cb',      label: 'Companies / Branches', count: cbCount },
+    ];
+    if (!tabs.find(t => t.key === this._profileTab)) this._profileTab = 'details';
+    const tabsHtml = tabs.map(t =>
+      `<div class="section-tab ${t.key === this._profileTab ? 'active' : ''}"
+            onclick="ProfileView.switchProfileTab('${t.key}')">${t.label}${t.count != null ? ` <span style="opacity:0.55;font-weight:400">(${t.count})</span>` : ''}</div>`
+    ).join('');
 
-    const stepBars = this._renderFlowchart(u, 'compact');
-
-    /* Action buttons in the page header */
-    const actions = canEdit ? `
+    /* Page actions in header */
+    const editing = this._editMode;
+    const actions = canEdit ? (editing ? '' : `
       ${State.can('impersonate') && u.id !== State.getCurrentUser()?.id && u.onboardingStatus !== 'suspended'
-        ? `<button class="btn btn-impersonate btn-sm" onclick="App.startImpersonation('${u.id}')">${u.onboardingStatus === 'active' ? 'Impersonate' : 'Run as invitee →'}</button>`
+        ? `<button class="btn btn-secondary btn-sm" onclick="App.startImpersonation('${u.id}')">${u.onboardingStatus === 'active' ? 'Impersonate' : 'Run as invitee →'}</button>`
         : ''}
-      <button class="btn btn-ghost btn-sm btn-danger-ghost" onclick="ProfileView.suspend('${u.id}')" ${u.onboardingStatus === 'suspended' ? 'disabled' : ''}>Suspend</button>
-      <button class="btn btn-primary btn-sm" onclick="ProfileView.openEditModal('${u.id}')">Edit</button>
-    ` : '';
+      <button class="btn btn-secondary btn-sm" onclick="ProfileView.enterEditMode('${u.id}')">Edit</button>
+    `) : '';
 
-    /* Affiliation row — Company / Investor Entity / Branch, depending on role */
-    const affiliationRows = (() => {
-      const rows = [];
-      if (co) rows.push(`<div class="info-row"><div class="info-label">Company</div><div class="info-value"><a href="javascript:Router.navigate('/origination-companies/${co.id}')" style="color:var(--color-primary)">${co.name}</a></div></div>`);
-      if (br) rows.push(`<div class="info-row"><div class="info-label">Branch</div><div class="info-value">${br.name}</div></div>`);
-      if (entity) rows.push(`<div class="info-row"><div class="info-label">Investor Entity</div><div class="info-value"><a href="javascript:Router.navigate('/investors/${entity.id}')" style="color:var(--color-primary)">${entity.name}</a></div></div>`);
-      if (isHomium) rows.push(`<div class="info-row"><div class="info-label">Organization</div><div class="info-value">Homium, Inc.</div></div>`);
-      return rows.join('');
-    })();
+    /* Header meta row: Role | NMLS # | Timezone */
+    const meta = [
+      { label: 'Role', value: Display.roleName(u.role) },
+      { label: 'NMLS #', value: u.nmlsId || '—' },
+      { label: 'Timezone', value: u.timezone || 'PT' },
+    ];
+    const metaHtml = meta.map((m, i) =>
+      `<div><span class="entity-meta-label">${m.label}</span> <span class="entity-meta-value">${m.value}</span></div>${i < meta.length - 1 ? '<span class="entity-meta-sep">|</span>' : ''}`
+    ).join('');
+
+    const statusPill = u.onboardingStatus === 'active'
+      ? `<span class="entity-status-pill">Active</span>`
+      : `<span class="entity-status-pill" style="color:var(--color-warning)">${Display.onboardingStatusLabel(u.onboardingStatus)}</span>`;
+
+    /* Tab body */
+    let content;
+    if (this._profileTab === 'cb') content = this._renderProfileCB(u);
+    else content = this._renderProfileDetails(u, { co, entity, isInvestor, isHomium, isOC, editing });
+
+    /* Sticky footer for edit mode */
+    const footer = editing ? `
+      <div class="inst-footer-bar">
+        <button class="btn btn-secondary btn-sm" onclick="ProfileView.cancelEdit('${u.id}')">Cancel</button>
+        <button class="btn btn-primary btn-sm" onclick="ProfileView.saveEdit('${u.id}')">Save changes</button>
+      </div>` : '';
 
     return `
-      <div class="breadcrumb">
-        <span class="breadcrumb-link" onclick="Router.navigate('${backUrl}')">${backLabel}</span>
-        <span class="breadcrumb-sep">/</span>
-        <span class="breadcrumb-current">${Display.fullName(u)}</span>
-      </div>
-      <div class="page-header">
-        <div class="page-header-inner">
-          <div class="page-header-left">
-            <div class="page-title-eyebrow">User profile</div>
-            <div style="display:flex;align-items:center;gap:14px">
-              <div class="avatar avatar-lg" style="background:${avatarColor(u.role)}">${Display.initials(u)}</div>
-              <div>
-                <div class="page-title" style="margin-bottom:4px">${Display.fullName(u)}</div>
-                <div style="display:flex;gap:6px;flex-wrap:wrap">
-                  <span class="role-chip ${Display.roleClass(u.role)}">${Display.roleName(u.role)}</span>
-                  <span class="status-pill ${Display.onboardingStatusClass(u.onboardingStatus)}"><span class="status-dot"></span>${Display.onboardingStatusLabel(u.onboardingStatus)}</span>
-                  <span style="font-size:12px;color:var(--color-text-muted);align-self:center">${u.title || ''}</span>
-                </div>
-              </div>
-            </div>
+      <button class="back-link" onclick="Router.navigate('${backUrl}')">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="15 18 9 12 15 6"/></svg>
+        Back to ${backLabel === 'User Management' ? 'Users' : backLabel}
+      </button>
+      <div class="entity-header">
+        <div class="entity-header-row">
+          <div>
+            <h1 class="entity-header-title">${Display.fullName(u)}</h1>
+            <div class="entity-header-subtitle">${u.email}</div>
           </div>
-          <div class="page-header-actions">${actions}</div>
+          <div class="entity-header-actions">${actions}</div>
+        </div>
+        <div class="entity-meta-row">
+          ${metaHtml}
+          ${statusPill}
         </div>
       </div>
+      <div class="section-tabs">${tabsHtml}</div>
+      <div class="page-body">${content}</div>
+      ${footer}`;
+  },
 
-      <div class="page-body">
-        <div style="display:grid;grid-template-columns:1fr 1fr;gap:20px;margin-bottom:20px">
-          <div class="card">
-            <div class="card-title" style="margin-bottom:14px">Contact</div>
-            <div class="info-grid">
-              <div class="info-row"><div class="info-label">Email</div><div class="info-value" style="font-size:12px"><a href="mailto:${u.email}" style="color:var(--color-primary)">${u.email}</a></div></div>
-              <div class="info-row"><div class="info-label">Phone</div><div class="info-value">${u.phone || '—'}</div></div>
-              <div class="info-row"><div class="info-label">Title</div><div class="info-value">${u.title || '—'}</div></div>
-              ${!isInvestor && !isHomium ? `<div class="info-row"><div class="info-label">NMLS ID</div><div class="info-value mono">${u.nmlsId || '—'}</div></div>` : ''}
-              ${affiliationRows}
-              <div class="info-row"><div class="info-label">Last Login</div><div class="info-value">${u.lastLogin ? Display.date(u.lastLogin) : 'Never'}</div></div>
-            </div>
+  switchProfileTab(tab) {
+    this._profileTab = tab;
+    App.renderView(Router.getCurrentPath());
+  },
+
+  enterEditMode(userId) {
+    Router.navigate('/users/' + userId + '/edit');
+  },
+
+  cancelEdit(userId) {
+    Router.navigate('/users/' + userId);
+  },
+
+  saveEdit(userId) {
+    const get = (id) => document.getElementById(id)?.value.trim();
+    const patch = {
+      firstName: get('edit-first'),
+      lastName:  get('edit-last'),
+      email:     get('edit-email'),
+      title:     get('edit-title') || null,
+      phone:     get('edit-phone') || null,
+      nmlsId:    get('edit-nmls') || null,
+      timezone:  get('edit-tz') || null,
+    };
+    Object.keys(patch).forEach(k => { if (patch[k] === undefined) delete patch[k]; });
+    if (State.updateUser) State.updateUser(userId, patch);
+    Router.navigate('/users/' + userId);
+  },
+
+  /* ---- Details tab body ---- */
+  _renderProfileDetails(u, ctx) {
+    const { co, entity, isInvestor, isHomium, isOC, editing } = ctx;
+
+    /* Field renderer: editable input or readonly outlined box */
+    const field = (label, value, opts) => {
+      opts = opts || {};
+      const v = value == null ? '' : value;
+      if (editing && !opts.locked) {
+        return `
+          <div class="form-group">
+            <label>${label}</label>
+            <input class="input" id="${opts.id}" value="${String(v).replace(/"/g, '&quot;')}" />
+          </div>`;
+      }
+      const empty = v === '' ? ' empty' : '';
+      const shown = v === '' ? '—' : v;
+      return `
+        <div class="form-group">
+          <label>${label}</label>
+          <div class="input is-readonly${empty}">${shown}</div>
+        </div>`;
+    };
+
+    /* "User information" card per Figma */
+    const userInfoCard = `
+      <div class="inst-card">
+        <div class="inst-card-title">User information</div>
+        <div class="inst-form-grid">
+          ${field('First name', u.firstName, { id: 'edit-first' })}
+          ${field('Last name', u.lastName, { id: 'edit-last' })}
+          ${field('Email', u.email, { id: 'edit-email' })}
+          ${field('Role', Display.roleName(u.role), { locked: true })}
+          ${field('Title', u.title, { id: 'edit-title' })}
+          ${field('Phone', u.phone, { id: 'edit-phone' })}
+          ${field('Timezone', u.timezone || 'PT', { id: 'edit-tz' })}
+          ${field('NMLS #', u.nmlsId, { id: 'edit-nmls' })}
+        </div>
+      </div>`;
+
+    /* Loan officer details (LO only) */
+    const isLO = u.role === 'lo';
+    const loDetails = isLO ? (() => {
+      const assignment = (State.getBranchAssignments(u.id) || []).find(a => a.userType === 'lo');
+      const allowNew  = assignment ? (assignment.allowNewOriginations !== false ? 'Yes' : 'No') : 'Yes';
+      const allowAll  = assignment ? (assignment.allowAccessToAllBranchActivity ? 'Yes' : 'No') : 'No';
+      const markets   = (u.licenses || []).map(l => State.getMarket(l.marketId)?.code).filter(Boolean).join(', ');
+      return `
+        <div class="inst-card">
+          <div class="inst-card-title">Loan officer details</div>
+          <div class="inst-form-grid">
+            ${field('Agent NMLS #', u.agentNmlsId || u.nmlsId, { locked: true })}
+            ${field('Allow new originations', allowNew, { locked: true })}
+            ${field('Market enablement', markets, { locked: true })}
+            ${field('Allow access to all branch activity', allowAll, { locked: true })}
           </div>
+        </div>`;
+    })() : '';
 
-          <div class="card">
-            <div class="card-title" style="margin-bottom:14px">Onboarding Progress</div>
-            ${stepBars}
-            <div style="margin-top:18px">
-              ${this._renderCredentialChips(u, true)}
+    /* State licenses & registrations table */
+    const licenseTable = isOC ? this._renderLicenseTable(u, co) : '';
+
+    /* Investor / Homium specific bits */
+    const affiliationCard = (isInvestor && entity) ? `
+      <div class="inst-card">
+        <div class="inst-card-title">Investor entity</div>
+        <div class="inst-form-grid">
+          ${field('Entity', entity.name, { locked: true })}
+          ${field('Manager', entity.manager || '—', { locked: true })}
+        </div>
+        <div style="margin-top:12px">
+          <button class="btn btn-secondary btn-sm" onclick="Router.navigate('/investors/${entity.id}')">View entity →</button>
+        </div>
+      </div>` : '';
+
+    const homiumCard = isHomium ? `
+      <div class="inst-card">
+        <div class="inst-card-title">Organization</div>
+        <div class="inst-form-grid">
+          ${field('Organization', 'Homium, Inc.', { locked: true })}
+          ${field('Platform Role', Display.roleName(u.role), { locked: true })}
+        </div>
+      </div>` : '';
+
+    /* Permissions placeholder */
+    const permsCard = `
+      <div class="inst-card">
+        <div class="inst-card-title">Permissions</div>
+        <div style="font-size:12.5px;color:var(--color-text-muted);line-height:1.6;max-width:760px">
+          Per-user permission matrix is coming soon. Until then, this user inherits the
+          ${isHomium ? 'platform-operator' : isInvestor ? 'investor-entity' : 'company / branch'}
+          policy assigned to their role.
+        </div>
+      </div>`;
+
+    return `
+      ${userInfoCard}
+      ${loDetails}
+      ${licenseTable}
+      ${affiliationCard}
+      ${homiumCard}
+      ${permsCard}`;
+  },
+
+  /* ---- Companies / Branches tab body ---- */
+  _renderProfileCB(u) {
+    const assignments = State.getBranchAssignments(u.id) || [];
+    if (!assignments.length) {
+      return `
+        <div class="inst-card">
+          <div class="inst-card-title">Companies / Branches</div>
+          <div style="color:var(--color-text-muted);font-size:13px">This user isn't assigned to any branches yet.</div>
+        </div>`;
+    }
+    /* Reuse the existing helpers — they render rich branch-assignment cards. */
+    const eligibility = this._renderEligibilityLine(u, true);
+    const branchCards = this._renderBranchAssignmentCards(u, true);
+    return `${eligibility}${branchCards}`;
+  },
+
+  /* ---- State licenses & registrations table (Figma user screenshot) ---- */
+  _renderLicenseTable(u, co) {
+    const licenses = u.licenses || [];
+    if (!licenses.length) {
+      return `
+        <div class="inst-card">
+          <div class="inst-card-title">
+            <span>State licenses &amp; registrations</span>
+          </div>
+          <div style="color:var(--color-text-muted);font-size:13px">No licenses on file.</div>
+        </div>`;
+    }
+    const today = new Date();
+    let activeCount = 0;
+    licenses.forEach(l => { if (l.active) activeCount++; });
+
+    const rows = licenses.map((l, idx) => {
+      const m = State.getMarket(l.marketId);
+      const stateCode = m?.code || '—';
+      const stateName = m?.name || '—';
+      const status = State.getLicenseExpiryStatus(l, today);
+      const statusLabel = l.active ? 'Approved' : 'Inactive';
+      const statusClass = l.active ? 'success' : 'muted';
+      const licenseNumber = l.licenseNumber || `LO-${String(u.nmlsId || '').slice(-4)}${stateCode}`;
+      const licenseName = l.licenseName || (u.role === 'lo' ? 'Loan Originator License' : 'Mortgage Loan Originator License');
+      const renewalYear = l.renewalDate ? new Date(l.renewalDate).getFullYear() : '—';
+      const issueDate = l.issueDate ? Display.date(l.issueDate) : '—';
+      const statusDate = l.statusDate ? Display.date(l.statusDate) : issueDate;
+      const authCompany = l.authorizedCompany || (co ? co.name : '—');
+      const authNmls = l.authorizedNmlsId || (co ? co.nmlsId : '—');
+      const startDate = l.startDate ? Display.date(l.startDate) : issueDate;
+      const expanded = this._expandedLicenseId === l.id;
+      const arrow = expanded ? '▾' : '▸';
+
+      return `
+        <tr class="lic-row" onclick="ProfileView._toggleLicense('${l.id}')">
+          <td><span style="color:var(--color-text-muted);margin-right:6px">${arrow}</span><a style="color:var(--color-primary);font-weight:600">${stateCode === stateName ? stateCode : stateName}</a></td>
+          <td>${licenseName}</td>
+          <td class="mono">${licenseNumber}</td>
+          <td><span class="status-pill" style="color:${l.active ? 'var(--color-success)' : 'var(--color-text-muted)'}"><span class="status-dot"></span>${statusLabel}</span></td>
+          <td><span class="status-pill" style="color:${l.active ? 'var(--color-success)' : 'var(--color-text-muted)'}"><span class="status-dot"></span>${l.active ? 'Yes' : 'No'}</span></td>
+        </tr>
+        ${expanded ? `
+        <tr class="lic-row-expanded">
+          <td colspan="5" style="background:#FAFAF7;padding:14px 18px">
+            <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:14px 24px;font-size:12.5px">
+              <div><span class="entity-meta-label" style="display:block;margin-bottom:4px">Original issue date</span>${issueDate}</div>
+              <div><span class="entity-meta-label" style="display:block;margin-bottom:4px">Status date</span>${statusDate}</div>
+              <div><span class="entity-meta-label" style="display:block;margin-bottom:4px">Renewed through</span>${renewalYear}</div>
             </div>
+            <div style="margin-top:14px;padding-top:14px;border-top:1px solid var(--color-border-light)">
+              <span class="entity-meta-label" style="display:block;margin-bottom:6px">Currently authorized to represent</span>
+              <div><strong>Company:</strong> ${authCompany}</div>
+              <div style="font-size:12px;color:var(--color-text-muted);margin-top:2px">NMLS ID: ${authNmls} &nbsp;·&nbsp; Start date: ${startDate}</div>
+            </div>
+          </td>
+        </tr>` : ''}`;
+    }).join('');
+
+    return `
+      <div class="inst-card">
+        <div class="inst-card-title">
+          <span>State licenses &amp; registrations</span>
+          <div style="display:flex;gap:8px;align-items:center">
+            <span class="count">${activeCount} active of ${licenses.length} total</span>
+            <button class="btn btn-secondary btn-sm">View all</button>
+            <button class="btn btn-primary btn-sm">+ Add license</button>
           </div>
         </div>
+        <table class="entity-table lic-table">
+          <thead><tr>
+            <th>Regulator</th>
+            <th>LIC / REG Name</th>
+            <th>LIC / REG #</th>
+            <th>Status</th>
+            <th>Auth. to Conduct</th>
+          </tr></thead>
+          <tbody>${rows}</tbody>
+        </table>
+      </div>`;
+  },
 
-        <!-- Permissions placeholder — same on every user profile for now -->
-        <div class="card" style="margin-bottom:20px">
-          <div class="card-title" style="margin-bottom:8px">Permissions</div>
-          <div style="font-size:12.5px;color:var(--color-text-muted);line-height:1.6;max-width:760px">
-            Per-user permission matrix is coming soon. Until then, this user inherits the
-            ${isHomium ? 'platform-operator' : isInvestor ? 'investor-entity' : 'company / branch'}
-            policy assigned to their role.
-          </div>
-        </div>
-
-        ${isOC ? `
-          <!-- LO/LP only — RBAC tuple, branch assignments, licenses, loans -->
-          ${this._renderEligibilityLine(u, true)}
-          ${this._renderBranchAssignmentCards(u, true)}
-          ${this._renderLicenseRecords(u, true)}
-          ${loans.length ? `
-            <div class="card">
-              <div class="card-title" style="margin-bottom:10px">Recent Applications <span style="color:var(--color-text-muted);font-weight:400;font-size:12px">(${loans.length})</span></div>
-              ${loanRows}
-            </div>` : ''}
-        ` : ''}
-      </div>
-
-      <div id="profile-edit-modal"></div>`;
+  _toggleLicense(id) {
+    this._expandedLicenseId = this._expandedLicenseId === id ? null : id;
+    App.renderView(Router.getCurrentPath());
   },
 
   suspend(userId) {

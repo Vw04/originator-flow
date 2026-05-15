@@ -21,7 +21,7 @@
   --color-on-secondary-container: #061629;   /* neutral-variant 10 */
 
   /* MD3 surface containers (cool-neutral) */
-  --color-bg:           #F9FAFB;   /* surface-container-low */
+  --color-bg:           #FBFAF7;   /* institutional paper — matches --h-paper */
   --color-surface:      #F3F4F6;   /* surface-container */
   --color-card:         #FFFFFF;   /* surface-container-lowest */
   --color-surface-high: #E5E7EB;   /* surface-container-high */
@@ -1212,28 +1212,56 @@ tbody td {
 
 .form-group { display: flex; flex-direction: column; gap: 6px; }
 
-label { font-size: 12px; font-weight: 600; color: var(--color-text); }
+/* Institutional MUI-style outlined inputs.
+   The eyebrow label uses the mono caps treatment from the Figma. */
+label {
+  display: block;
+  font-family: var(--font-mono);
+  font-size: 10.5px;
+  font-weight: 600;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--color-text-muted);
+  margin-bottom: 6px;
+}
+label .req { color: var(--color-danger, #DC2626); margin-left: 2px; }
 
 .input, .select-input, textarea {
   width: 100%;
-  padding: 10px 12px;
+  padding: 11px 12px;
   border: 1px solid var(--color-border);
-  border-radius: 4px;
-  font-size: 13px;
+  border-radius: 6px;
+  font-family: var(--font);
+  font-size: 13.5px;
   color: var(--color-text);
-  background: var(--color-card);
-  transition: border-color 0.15s;
+  background: #fff;
+  transition: border-color 0.15s, box-shadow 0.15s;
   outline: none;
 }
 
+.input:hover:not(:disabled):not(.is-readonly),
+.select-input:hover:not(:disabled),
+textarea:hover:not(:disabled) {
+  border-color: #B8BEC7;
+}
+
 .input:focus, .select-input:focus, textarea:focus {
-  border: 2px solid var(--color-primary);
-  padding: 9px 11px;
-  box-shadow: none;
+  border-color: var(--color-primary);
+  box-shadow: 0 0 0 3px rgba(14, 42, 71, 0.10);
 }
 
 .input::placeholder { color: var(--color-text-muted); }
-.input-sm { padding: 5px 10px; font-size: 12px; }
+.input-sm { padding: 7px 10px; font-size: 12.5px; }
+
+/* Read-only field that visually looks like an editable outlined input. */
+.input.is-readonly {
+  background: #FAFAF7;
+  color: var(--color-text);
+  cursor: default;
+  pointer-events: none;
+  border-color: var(--color-border);
+}
+.input.is-readonly.empty { color: var(--color-text-muted); font-style: italic; }
 
 .input-search {
   padding-left: 36px;
@@ -9386,5 +9414,237 @@ label { font-size: 12px; font-weight: 600; color: var(--color-text); }
   .rb-inv-catgrid { grid-template-columns: 1fr; }
   .rb-assign-grid { grid-template-columns: 1fr; }
   .rb-filter-lbl .rb-select { min-width: 0; flex: 1 1 auto; }
+}
+
+/* ============================================================
+   Institutional Entity Header — used on OC, Branch, User detail.
+   Replaces the page-header for institutional surfaces.
+   ============================================================ */
+.back-link {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 12.5px;
+  color: var(--color-text-secondary);
+  padding: 14px 28px 0;
+  cursor: pointer;
+  background: transparent;
+  border: none;
+  font-family: inherit;
+}
+.back-link:hover { color: var(--color-primary); }
+.back-link svg { width: 12px; height: 12px; }
+
+.entity-header {
+  margin: 10px 28px 14px;
+  padding: 20px 24px;
+  background: #fff;
+  border: 1px solid var(--color-border);
+  border-radius: 10px;
+}
+.entity-header-row {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 16px;
+}
+.entity-header-title {
+  font-family: var(--font-heading);
+  font-size: 28px;
+  font-weight: 400;
+  color: var(--color-text);
+  letter-spacing: -0.01em;
+  line-height: 1.15;
+  margin: 0;
+}
+.entity-header-title em { font-style: italic; color: var(--color-primary); }
+.entity-header-subtitle {
+  font-size: 12.5px;
+  color: var(--color-text-muted);
+  margin-top: 4px;
+}
+.entity-header-actions { display: flex; gap: 8px; flex-shrink: 0; }
+.entity-meta-row {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0 16px;
+  row-gap: 6px;
+  margin-top: 14px;
+  font-size: 12.5px;
+}
+.entity-meta-row > div { display: inline-flex; gap: 6px; align-items: baseline; }
+.entity-meta-label {
+  font-family: var(--font-mono);
+  font-size: 10.5px;
+  font-weight: 600;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--color-text-muted);
+}
+.entity-meta-value { color: var(--color-text); font-weight: 500; }
+.entity-meta-sep {
+  color: var(--color-text-muted);
+  opacity: 0.45;
+  padding: 0 4px;
+}
+.entity-status-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 12px;
+  font-weight: 500;
+  color: var(--color-success);
+  margin-left: auto;
+}
+.entity-status-pill::before {
+  content: '';
+  display: inline-block;
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: var(--color-success);
+}
+
+/* Cards on institutional detail pages */
+.inst-card {
+  background: #fff;
+  border: 1px solid var(--color-border);
+  border-radius: 10px;
+  padding: 22px 24px;
+  margin: 0 28px 16px;
+}
+.inst-card-title {
+  font-family: var(--font);
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--color-text);
+  margin-bottom: 16px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+.inst-card-title .count {
+  font-family: var(--font-mono);
+  font-size: 11px;
+  font-weight: 500;
+  color: var(--color-text-muted);
+  margin-left: 6px;
+  letter-spacing: 0.05em;
+}
+
+/* Form grids inside institutional cards */
+.inst-form-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 18px 20px;
+}
+.inst-form-grid .form-full { grid-column: 1 / -1; }
+@media (max-width: 760px) {
+  .inst-form-grid { grid-template-columns: 1fr; }
+}
+
+/* Sticky footer-bar used on edit mode pages (Profile, Permissions) */
+.inst-footer-bar {
+  position: sticky;
+  bottom: 0;
+  background: #fff;
+  border-top: 1px solid var(--color-border);
+  padding: 14px 28px;
+  display: flex;
+  justify-content: flex-end;
+  gap: 8px;
+  z-index: 10;
+  box-shadow: 0 -6px 14px rgba(0, 0, 0, 0.04);
+}
+
+/* Section tabs on the institutional detail pages sit BELOW the entity
+   header card and need a softer surface treatment. */
+.entity-header + .section-tabs,
+.inst-card + .section-tabs {
+  margin: -4px 28px 16px;
+  border: 1px solid var(--color-border);
+  border-radius: 10px;
+  background: #fff;
+  padding: 0 22px;
+}
+
+/* Institutional 50-state chip grid (for OC / branch market enablement card) */
+.state-grid {
+  display: grid;
+  grid-template-columns: repeat(13, minmax(0, 1fr));
+  gap: 6px;
+}
+@media (max-width: 1100px) { .state-grid { grid-template-columns: repeat(10, minmax(0, 1fr)); } }
+@media (max-width: 760px)  { .state-grid { grid-template-columns: repeat(6, minmax(0, 1fr)); } }
+.state-chip {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  height: 28px;
+  padding: 0 4px;
+  font-family: var(--font-mono);
+  font-size: 10.5px;
+  font-weight: 600;
+  letter-spacing: 0.04em;
+  color: var(--color-text-secondary);
+  background: #fff;
+  border: 1px solid var(--color-border);
+  border-radius: 5px;
+  cursor: pointer;
+  user-select: none;
+  transition: background 0.12s, color 0.12s, border-color 0.12s;
+}
+.state-chip:hover:not(.is-locked) { border-color: var(--color-primary); color: var(--color-primary); }
+.state-chip.is-on {
+  background: var(--color-primary-container);
+  color: var(--color-primary);
+  border-color: var(--color-primary);
+  font-weight: 700;
+}
+.state-chip.is-locked {
+  cursor: not-allowed;
+  opacity: 0.5;
+}
+
+/* Eligible-programs checklist (used on OC Details + Branch Details) */
+.program-checklist {
+  display: flex;
+  flex-direction: column;
+  border: 1px solid var(--color-border);
+  border-radius: 8px;
+  overflow: hidden;
+  background: #fff;
+}
+.program-check-row {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 12px 14px;
+  border-bottom: 1px solid var(--color-border-light);
+  font-size: 13.5px;
+}
+.program-check-row:last-child { border-bottom: 0; }
+.program-check-row input[type="checkbox"] {
+  width: 16px; height: 16px;
+  accent-color: var(--color-primary);
+  cursor: pointer;
+  margin: 0;
+}
+.program-check-row .pc-name { flex: 1; color: var(--color-text); font-weight: 500; }
+.program-check-row .pc-code {
+  font-family: var(--font-mono);
+  font-size: 10.5px;
+  font-weight: 600;
+  color: var(--color-text-muted);
+  letter-spacing: 0.06em;
+  padding: 4px 8px;
+  border: 1px solid var(--color-border);
+  border-radius: 4px;
+}
+.program-check-row .pc-note {
+  font-size: 11.5px;
+  color: var(--color-text-muted);
+  font-style: italic;
 }
 
