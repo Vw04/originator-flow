@@ -3,7 +3,7 @@
    ============================================================ */
 
 const UsersView = {
-  _filter: { search: '', role: '', status: '', branchId: '', companyId: '' },
+  _filter: { search: '', role: '', status: '', branchId: '', companyId: '', investorEntityId: '' },
   _sort: { col: null, dir: 'asc' },
 
   _roleOrder:   { sys_admin: 0, operator: 1, prog_admin: 2, lo: 3, lp: 4, investor: 5 },
@@ -95,7 +95,9 @@ const UsersView = {
 
     // Base user set — apply scope if provided
     let users;
-    if (scope?.platformOnly) {
+    if (scope?.homiumOnly) {
+      users = State.getHomiumUsers();
+    } else if (scope?.platformOnly) {
       users = State.getPlatformUsers();
     } else if (scope?.companyId) {
       users = State.getUsersByCompany(scope.companyId);
@@ -122,10 +124,11 @@ const UsersView = {
         u.email.toLowerCase().includes(q)
       );
     }
-    if (f.role)      users = users.filter(u => u.role === f.role);
-    if (f.status)    users = users.filter(u => u.onboardingStatus === f.status);
-    if (f.branchId)  users = users.filter(u => u.branchId === f.branchId);
-    if (f.companyId) users = users.filter(u => u.companyId === f.companyId);
+    if (f.role)             users = users.filter(u => u.role === f.role);
+    if (f.status)           users = users.filter(u => u.onboardingStatus === f.status);
+    if (f.branchId)         users = users.filter(u => u.branchId === f.branchId);
+    if (f.companyId)        users = users.filter(u => u.companyId === f.companyId);
+    if (f.investorEntityId) users = users.filter(u => u.investorEntityId === f.investorEntityId);
 
     // Branch options for filter
     let branches = State.getBranches();
@@ -135,10 +138,19 @@ const UsersView = {
     const companies = State.getCompanies();
 
     users = this._sortUsers(users);
-    const hideOrgCol = role === 'prog_admin' || scope?.companyId;
+    const hideOrgCol = role === 'prog_admin' || scope?.companyId || scope?.investorEntityId;
+
+    // Column mode: pick which secondary columns + filter pills the table shows.
+    const columnMode = scope?.homiumOnly ? 'homium'
+                     : (scope?.roles && scope.roles.includes('investor')) || scope?.investorEntityId ? 'investor'
+                     : 'default';
+
+    const investorEntities = State.getInvestorEntities();
+    const entityById = (id) => investorEntities.find(e => e.id === id);
 
     const rows = users.map(u => {
       const co = State.getCompany(u.companyId);
+      const entity = u.investorEntityId ? entityById(u.investorEntityId) : null;
       const assignments = State.getBranchAssignments(u.id);
       // Branch assignment chips with User Type + BM flag (spec §3.2/§3.3)
       const branchChips = assignments.map(a => {
@@ -164,31 +176,50 @@ const UsersView = {
         const text = expiring > 0 ? `${licenses.length} states · ${expiring} alert${expiring === 1 ? '' : 's'}` : `${licenses.length} states · valid`;
         licChip = `<span class="tag" style="font-size:10px;background:${expiring > 0 ? '#fff7e6' : '#e6f4ec'};color:${color}">${text}</span>`;
       }
-      return `
-        <tr class="clickable" onclick="ProfileView.open('${u.id}')">
-          <td>
-            <div style="display:flex;align-items:center;gap:10px">
-              <div class="avatar avatar-sm" style="background:${avatarColor(u.role)}">${Display.initials(u)}</div>
-              <div>
-                <div class="cell-primary">${Display.fullName(u)}</div>
-                <div class="cell-secondary">${u.email}</div>
-              </div>
+
+      const userCell = `
+        <td>
+          <div style="display:flex;align-items:center;gap:10px">
+            <div class="avatar avatar-sm" style="background:${avatarColor(u.role)}">${Display.initials(u)}</div>
+            <div>
+              <div class="cell-primary serif">${Display.fullName(u)}</div>
+              <div class="cell-secondary">${u.email}</div>
             </div>
-          </td>
-          <td><span class="role-chip ${Display.roleClass(u.role)}">${Display.roleName(u.role)}</span></td>
+          </div>
+        </td>`;
+      const roleCell = `<td><span class="role-chip ${Display.roleClass(u.role)}">${Display.roleName(u.role)}</span></td>`;
+      const statusCell = `<td><span class="status-pill ${Display.onboardingStatusClass(u.onboardingStatus)}"><span class="status-dot"></span>${Display.onboardingStatusLabel(u.onboardingStatus)}</span></td>`;
+      const lastLoginCell = `<td class="text-secondary">${u.lastLogin ? Display.date(u.lastLogin) : '<span class="text-muted">Never</span>'}</td>`;
+
+      let middleCells = '';
+      if (columnMode === 'investor') {
+        // Title · Company (entity name) — no branch / licenses
+        middleCells = `
+          <td class="text-secondary">${u.title || '—'}</td>
+          ${!hideOrgCol ? `<td class="text-secondary">${entity ? entity.name : '—'}</td>` : ''}`;
+      } else if (columnMode === 'homium') {
+        // Title only — no branch, no licenses, no company
+        middleCells = `<td class="text-secondary">${u.title || '—'}</td>`;
+      } else {
+        // Default LOC layout: branch assignments + company + licenses
+        middleCells = `
           <td>${branchChips}</td>
           ${!hideOrgCol ? `<td class="text-secondary">${co ? co.name : '—'}</td>` : ''}
-          <td>${licChip || '<span class="text-muted" style="font-size:11px">—</span>'}</td>
-          <td><span class="status-pill ${Display.onboardingStatusClass(u.onboardingStatus)}"><span class="status-dot"></span>${Display.onboardingStatusLabel(u.onboardingStatus)}</span></td>
-          <td class="text-secondary">${u.lastLogin ? Display.date(u.lastLogin) : '<span class="text-muted">Never</span>'}</td>
+          <td>${licChip || '<span class="text-muted" style="font-size:11px">—</span>'}</td>`;
+      }
+
+      return `
+        <tr class="clickable" onclick="ProfileView.open('${u.id}')">
+          ${userCell}
+          ${roleCell}
+          ${middleCells}
+          ${statusCell}
+          ${lastLoginCell}
         </tr>`;
     }).join('');
 
     const s = this._sort;
     const thClass = (col) => `sortable${s.col === col ? ' sort-' + s.dir : ''}`;
-
-    const branchOptions = branches.map(b => `<option value="${b.id}">${b.name}</option>`).join('');
-    const companyOptions = companies.map(c => `<option value="${c.id}">${c.name}</option>`).join('');
 
     // When scoped (embedded in a section), skip page-header wrapper
     const header = scope ? '' : `
@@ -206,45 +237,62 @@ const UsersView = {
 
     const bodyOpen = scope ? '' : `<div class="page-body">${this._renderOnboardingBanner()}`;
 
+    /* ---- Inline filter pills (Role / Status / + Company or Investor Entity) ---- */
+    const roleOptions = (columnMode === 'investor')
+      ? [{ value: 'investor', label: 'Investor' }, { value: 'investor_prospect', label: 'Investor Prospect' }]
+      : (columnMode === 'homium')
+      ? [{ value: 'sys_admin', label: 'System Admin' }, { value: 'operator', label: 'Platform Operator' }]
+      : [{ value: 'prog_admin', label: 'Program Admin' }, { value: 'lo', label: 'Loan Officer' }, { value: 'lp', label: 'Loan Processor' }];
+
+    const statusOptions = ['active', 'invited', 'email_verified', '2fa_complete', 'verification_pending', 'verification_failed', 'suspended']
+      .map(v => ({ value: v, label: Display.onboardingStatusLabel(v) }));
+
+    const rolePill = this._renderFilterPill('role', 'Role', f.role,
+      roleOptions.map(o => ({ value: o.value, label: o.label })));
+    const statusPill = this._renderFilterPill('status', 'Status', f.status, statusOptions);
+
+    let orgPill = '';
+    if (!hideOrgCol) {
+      if (columnMode === 'investor') {
+        orgPill = this._renderFilterPill('investorEntityId', 'Entity', f.investorEntityId,
+          investorEntities.map(e => ({ value: e.id, label: e.name })));
+      } else if (columnMode === 'default') {
+        orgPill = this._renderFilterPill('companyId', 'Company', f.companyId,
+          companies.map(c => ({ value: c.id, label: c.name })));
+      }
+    }
+
+    const anyActive = !!(f.search || f.role || f.status || f.companyId || f.investorEntityId || f.branchId);
+
     return `
       ${header}
       ${bodyOpen}
         <div class="table-container">
-          <div class="filter-toolbar">
+          <div class="filter-toolbar filter-toolbar-pills">
             <input class="filter-search" placeholder="Search by name or email…"
               value="${f.search}" oninput="UsersView.setFilter('search', this.value)" />
-            <div style="position:relative">
-              <button class="filter-menu-btn" onclick="UsersView.toggleFiltersMenu(event)">
-                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 3H2l8 9.46V19l4 2v-8.54L22 3z"/></svg>
-                Filters
-              </button>
-              <div class="filter-menu-panel" id="users-filters-menu" style="display:none">
-                <div class="filter-menu-section">
-                  <div class="filter-menu-label">Role</div>
-                  ${['prog_admin','lo','lp','investor'].map(r=>`<div class="filter-menu-item${f.role===r?' active':''}" onclick="UsersView.setFilter('role','${r}')">${Display.roleName(r)}</div>`).join('')}
-                </div>
-                <div class="filter-menu-section">
-                  <div class="filter-menu-label">Status</div>
-                  ${['active','invited','email_verified','2fa_complete','verification_pending','verification_failed','suspended'].map(s=>`<div class="filter-menu-item${f.status===s?' active':''}" onclick="UsersView.setFilter('status','${s}')">${Display.onboardingStatusLabel(s)}</div>`).join('')}
-                </div>
-                ${!hideOrgCol ? `<div class="filter-menu-section">
-                  <div class="filter-menu-label">Company</div>
-                  ${companies.map(c=>`<div class="filter-menu-item${f.companyId===c.id?' active':''}" onclick="UsersView.setFilter('companyId','${c.id}')">${c.name}</div>`).join('')}
-                </div>` : ''}
-                ${Object.values(f).some(v=>v) ? `<div class="filter-menu-section" style="border-top:1px solid var(--color-border);padding-top:8px"><div class="filter-menu-item" onclick="UsersView.clearFilters()" style="color:var(--color-danger)">Clear All Filters</div></div>` : ''}
-              </div>
-            </div>
+            ${orgPill}
+            ${rolePill}
+            ${statusPill}
+            ${anyActive ? `<button class="filter-clear-btn" onclick="UsersView.clearFilters()">Clear</button>` : ''}
             ${scope && scope.scope !== 'admin-hub' && canInvite ? `<button class="btn btn-primary btn-sm" onclick="${inviteOnclick}" style="margin-left:auto">+ Invite User</button>` : ''}
           </div>
 
           ${users.length ? `
-            <table>
+            <table class="entity-table">
               <thead><tr>
                 <th class="${thClass('name')}" onclick="UsersView.setSort('name')">User</th>
                 <th class="${thClass('role')}" onclick="UsersView.setSort('role')">Role</th>
-                <th>Branch Assignments</th>
-                ${!hideOrgCol ? '<th>Company</th>' : ''}
-                <th>Licenses</th>
+                ${columnMode === 'investor' ? `
+                  <th>Title</th>
+                  ${!hideOrgCol ? '<th>Company</th>' : ''}
+                ` : columnMode === 'homium' ? `
+                  <th>Title</th>
+                ` : `
+                  <th>Branch Assignments</th>
+                  ${!hideOrgCol ? '<th>Company</th>' : ''}
+                  <th>Licenses</th>
+                `}
                 <th class="${thClass('status')}" onclick="UsersView.setSort('status')">Status</th>
                 <th class="${thClass('login')}" onclick="UsersView.setSort('login')">Last Login</th>
               </tr></thead>
@@ -279,13 +327,40 @@ const UsersView = {
   },
 
   clearFilters() {
-    this._filter = { search: '', role: '', status: '', branchId: '', companyId: '' };
+    this._filter = { search: '', role: '', status: '', branchId: '', companyId: '', investorEntityId: '' };
     this._rerender();
   },
 
-  toggleFiltersMenu(e) {
+  /* Inline filter pill: pill button + dropdown of options. The pill's label
+     shows the active value or falls back to the generic name. */
+  _renderFilterPill(key, label, active, options) {
+    const activeOption = options.find(o => o.value === active);
+    const display = activeOption ? `${label}: ${activeOption.label}` : label;
+    const items = options.map(o =>
+      `<div class="filter-pill-item${o.value === active ? ' active' : ''}"
+            onclick="UsersView.setFilter('${key}','${o.value === active ? '' : o.value}')">${o.label}</div>`
+    ).join('');
+    return `
+      <div class="filter-pill-wrap">
+        <button class="filter-pill${active ? ' is-active' : ''}"
+                onclick="UsersView.togglePill(event, 'pill-${key}')">
+          <span>${display}</span>
+          <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="6 9 12 15 18 9"/></svg>
+        </button>
+        <div class="filter-pill-menu" id="pill-${key}" style="display:none">
+          <div class="filter-pill-list">${items}</div>
+          ${active ? `<div class="filter-pill-clear" onclick="UsersView.setFilter('${key}','')">Clear ${label.toLowerCase()}</div>` : ''}
+        </div>
+      </div>`;
+  },
+
+  togglePill(e, id) {
     e.stopPropagation();
-    const el = document.getElementById('users-filters-menu');
+    // Close any other open pills first
+    document.querySelectorAll('.filter-pill-menu').forEach(el => {
+      if (el.id !== id) el.style.display = 'none';
+    });
+    const el = document.getElementById(id);
     if (!el) return;
     const open = el.style.display !== 'none';
     if (!open) {

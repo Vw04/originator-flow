@@ -548,11 +548,10 @@ img { max-width: 100%; display: block; }
   letter-spacing: -0.005em;
 }
 
-/* Single-line company name + composite secondary metadata line. */
+/* Single-line company name + composite secondary metadata line.
+   Let the column grow with the content — no ellipsis truncation. */
 .company-cell .cell-primary {
   white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
 }
 .company-cell .cell-secondary {
   display: flex;
@@ -610,6 +609,94 @@ img { max-width: 100%; display: block; }
   background: rgba(14, 42, 71, 0.025);
 }
 .entity-table tbody td { vertical-align: middle; }
+
+/* Inline filter pills (Role / Status / Company / Investor Entity) for user tables. */
+.filter-toolbar-pills {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px;
+  padding: 14px 16px;
+}
+.filter-pill-wrap { position: relative; }
+.filter-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  height: 32px;
+  padding: 0 12px;
+  background: #fff;
+  border: 1px solid var(--color-border);
+  border-radius: 16px;
+  font-family: inherit;
+  font-size: 12.5px;
+  font-weight: 500;
+  color: var(--color-text-secondary);
+  cursor: pointer;
+  transition: border-color 0.12s, color 0.12s, background 0.12s;
+  white-space: nowrap;
+}
+.filter-pill:hover {
+  border-color: var(--color-primary);
+  color: var(--color-primary);
+}
+.filter-pill svg { opacity: 0.65; }
+.filter-pill.is-active {
+  background: var(--color-primary);
+  border-color: var(--color-primary);
+  color: #fff;
+}
+.filter-pill.is-active svg { opacity: 0.9; }
+.filter-pill-menu {
+  position: absolute;
+  top: calc(100% + 6px);
+  left: 0;
+  min-width: 220px;
+  max-width: 320px;
+  background: #fff;
+  border: 1px solid var(--color-border);
+  border-radius: 10px;
+  box-shadow: 0 12px 32px rgba(14, 42, 71, 0.12);
+  z-index: 50;
+  padding: 6px;
+  max-height: 320px;
+  overflow-y: auto;
+}
+.filter-pill-list { display: flex; flex-direction: column; }
+.filter-pill-item {
+  padding: 8px 10px;
+  font-size: 13px;
+  color: var(--color-text);
+  cursor: pointer;
+  border-radius: 6px;
+}
+.filter-pill-item:hover { background: rgba(14, 42, 71, 0.06); }
+.filter-pill-item.active {
+  background: var(--color-primary-container);
+  color: var(--color-primary);
+  font-weight: 600;
+}
+.filter-pill-clear {
+  margin-top: 4px;
+  padding: 8px 10px;
+  font-size: 12px;
+  color: var(--color-danger, #DC2626);
+  cursor: pointer;
+  border-top: 1px solid var(--color-border);
+  text-align: center;
+}
+.filter-pill-clear:hover { background: rgba(220, 38, 38, 0.05); }
+.filter-clear-btn {
+  height: 32px;
+  padding: 0 12px;
+  background: transparent;
+  border: none;
+  font-family: inherit;
+  font-size: 12.5px;
+  color: var(--color-text-muted);
+  cursor: pointer;
+}
+.filter-clear-btn:hover { color: var(--color-primary); }
 
 /* Ownership list on investor entity detail */
 .owner-list {
@@ -2495,10 +2582,35 @@ label { font-size: 12px; font-weight: 600; color: var(--color-text); }
 }
 
 /* ---- Section Sub-tabs ---- */
-.section-tabs { display: flex; gap: 4px; border-bottom: 1px solid var(--color-border); padding: 0 40px; background: var(--color-card); }
-.section-tab { padding: 14px 4px; margin-right: 22px; font-size: 13px; font-weight: 500; color: var(--color-text-secondary); cursor: pointer; border-bottom: 2px solid transparent; transition: color 0.12s, border-color 0.12s; letter-spacing: 0.005em; }
+/* Institutional tab strip — promoted from the artboard ".drawer-tabs"
+   pattern so admin pages match the originations/applications feel. */
+.section-tabs {
+  display: flex;
+  gap: 0;
+  border-bottom: 1px solid var(--color-border);
+  padding: 0 40px;
+  background: var(--color-card);
+}
+.section-tab {
+  position: relative;
+  padding: 16px 0;
+  margin-right: 28px;
+  font-size: 13px;
+  font-weight: 500;
+  color: var(--color-text-secondary);
+  cursor: pointer;
+  border-bottom: 2px solid transparent;
+  margin-bottom: -1px; /* overlap the .section-tabs hairline */
+  transition: color 0.12s, border-color 0.12s;
+  letter-spacing: 0.005em;
+}
 .section-tab:hover { color: var(--color-primary); }
-.section-tab.active { color: var(--color-primary); border-bottom-color: var(--color-primary); font-weight: 600; }
+.section-tab.active {
+  color: var(--color-primary);
+  border-bottom-color: var(--color-primary);
+  font-weight: 600;
+  letter-spacing: 0.005em;
+}
 
 /* ---- Breadcrumb ---- */
 .breadcrumb { display: flex; align-items: center; gap: 6px; padding: 14px 24px 0; font-size: 13px; color: var(--color-text-secondary); }

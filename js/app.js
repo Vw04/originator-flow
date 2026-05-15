@@ -59,7 +59,12 @@ const App = {
       if (!segs.length) return Router.navigate('/origination-companies', { replace: true });
       this.renderShell(BranchesView.renderDetailPage(segs[0]));
     });
-    Router.register('/users',        () => Router.navigate('/origination-companies', { replace: true }));
+    Router.register('/users',        (path) => {
+      const segs = path.replace('/users', '').split('/').filter(Boolean);
+      const id = segs[0];
+      if (!id) return Router.navigate('/user-management', { replace: true });
+      this.renderShell(ProfileView.renderPage(id));
+    });
     Router.register('/permissions',  () => Router.navigate('/user-management', { replace: true }));
 
     // Data Platform sub-routes

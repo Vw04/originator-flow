@@ -4,20 +4,67 @@
 
 const ProfileView = {
 
-  /* Open as side panel (used from user tables) */
+  /* Backwards-compatible entry point — every caller across the codebase
+     invokes `ProfileView.open(id)`. We now navigate to the full-page
+     profile route instead of opening a side panel. */
   open(userId) {
+    if (!userId) return;
+    Router.navigate('/users/' + userId);
+  },
+
+  /* No-op kept so any leftover `ProfileView.close()` calls (e.g. from
+     impersonation tear-down in app.js) don't throw. The panel render
+     path is gone. */
+  close() {},
+
+  /* Full-page user profile — institutional treatment. Reachable via
+     `/users/:userId`. Same surface no matter where the user is clicked. */
+  renderPage(userId) {
     const u = State.getUser(userId);
-    if (!u) return;
+    if (!u) {
+      return `
+        <div class="page-header">
+          <div class="page-header-inner">
+            <div class="page-header-left">
+              <div class="page-title-eyebrow">User profile</div>
+              <div class="page-title">User not found</div>
+              <div class="page-subtitle">No user matches id <span class="mono">${userId}</span></div>
+            </div>
+          </div>
+        </div>
+        <div class="page-body"></div>`;
+    }
 
     const canEdit = State.can('editAny') || State.can('manageUsers');
     const co = State.getCompany(u.companyId);
     const br = State.getBranch(u.branchId);
-    const loans = State.getLoansByLO(u.id);
+    const entity = u.investorEntityId
+      ? (State.getInvestorEntities().find(e => e.id === u.investorEntityId) || null)
+      : null;
+    const isHomium = /@homium\.io$/i.test(u.email || '');
+    const isInvestor = u.role === 'investor' || u.role === 'investor_prospect';
+    const isOC = ['prog_admin', 'lo', 'lp'].includes(u.role);
+    const loans = isOC ? State.getLoansByLO(u.id) : [];
 
-    const stepBars = this._renderFlowchart(u, 'compact');
+    /* Back link — try to derive a sensible "where I came from".
+       Falls back to the user-management roster. */
+    const backUrl = (() => {
+      if (isHomium) return '/platform-operator/users';
+      if (isInvestor && entity) return '/investors/' + entity.id + '/users';
+      if (isInvestor) return '/investors/users';
+      if (co) return '/origination-companies/' + co.id;
+      return '/user-management';
+    })();
+    const backLabel = (() => {
+      if (isHomium) return 'Platform Operator';
+      if (isInvestor && entity) return entity.name;
+      if (isInvestor) return 'Investors';
+      if (co) return co.name;
+      return 'User Management';
+    })();
 
-    const loanRows = loans.slice(0, 3).map(l => `
-      <div style="display:flex;align-items:center;justify-content:space-between;padding:8px 0;border-bottom:1px solid var(--color-border-light)">
+    const loanRows = loans.slice(0, 5).map(l => `
+      <div style="display:flex;align-items:center;justify-content:space-between;padding:10px 0;border-bottom:1px solid var(--color-border-light)">
         <div>
           <div style="font-size:12px;font-weight:600;color:var(--color-text-secondary)">${l.id}</div>
           <div style="font-size:13px;color:var(--color-text)">${l.borrowerName}</div>
@@ -28,91 +75,106 @@ const ProfileView = {
         </div>
       </div>`).join('');
 
-    // Container: use panel-container if available, else create one
-    let container = document.getElementById('panel-container') || document.getElementById('company-panel-container');
-    if (!container) {
-      container = document.createElement('div');
-      container.id = 'panel-container';
-      document.body.appendChild(container);
-    }
+    const stepBars = this._renderFlowchart(u, 'compact');
 
-    container.innerHTML = `
-      <div class="side-panel-overlay" onclick="ProfileView.close()"></div>
-      <div class="side-panel">
-        <div class="side-panel-header">
-          <div style="display:flex;align-items:center;gap:12px">
-            <div class="avatar avatar-lg" style="background:${avatarColor(u.role)}">${Display.initials(u)}</div>
-            <div>
-              <div class="modal-title">${Display.fullName(u)}</div>
-              <div style="margin-top:2px;display:flex;gap:6px;flex-wrap:wrap">
-                <span class="role-chip ${Display.roleClass(u.role)}">${Display.roleName(u.role)}</span>
-                <span class="status-pill ${Display.onboardingStatusClass(u.onboardingStatus)}"><span class="status-dot"></span>${Display.onboardingStatusLabel(u.onboardingStatus)}</span>
+    /* Action buttons in the page header */
+    const actions = canEdit ? `
+      ${State.can('impersonate') && u.id !== State.getCurrentUser()?.id && u.onboardingStatus !== 'suspended'
+        ? `<button class="btn btn-impersonate btn-sm" onclick="App.startImpersonation('${u.id}')">${u.onboardingStatus === 'active' ? 'Impersonate' : 'Run as invitee →'}</button>`
+        : ''}
+      <button class="btn btn-ghost btn-sm btn-danger-ghost" onclick="ProfileView.suspend('${u.id}')" ${u.onboardingStatus === 'suspended' ? 'disabled' : ''}>Suspend</button>
+      <button class="btn btn-primary btn-sm" onclick="ProfileView.openEditModal('${u.id}')">Edit</button>
+    ` : '';
+
+    /* Affiliation row — Company / Investor Entity / Branch, depending on role */
+    const affiliationRows = (() => {
+      const rows = [];
+      if (co) rows.push(`<div class="info-row"><div class="info-label">Company</div><div class="info-value"><a href="javascript:Router.navigate('/origination-companies/${co.id}')" style="color:var(--color-primary)">${co.name}</a></div></div>`);
+      if (br) rows.push(`<div class="info-row"><div class="info-label">Branch</div><div class="info-value">${br.name}</div></div>`);
+      if (entity) rows.push(`<div class="info-row"><div class="info-label">Investor Entity</div><div class="info-value"><a href="javascript:Router.navigate('/investors/${entity.id}')" style="color:var(--color-primary)">${entity.name}</a></div></div>`);
+      if (isHomium) rows.push(`<div class="info-row"><div class="info-label">Organization</div><div class="info-value">Homium, Inc.</div></div>`);
+      return rows.join('');
+    })();
+
+    return `
+      <div class="breadcrumb">
+        <span class="breadcrumb-link" onclick="Router.navigate('${backUrl}')">${backLabel}</span>
+        <span class="breadcrumb-sep">/</span>
+        <span class="breadcrumb-current">${Display.fullName(u)}</span>
+      </div>
+      <div class="page-header">
+        <div class="page-header-inner">
+          <div class="page-header-left">
+            <div class="page-title-eyebrow">User profile</div>
+            <div style="display:flex;align-items:center;gap:14px">
+              <div class="avatar avatar-lg" style="background:${avatarColor(u.role)}">${Display.initials(u)}</div>
+              <div>
+                <div class="page-title" style="margin-bottom:4px">${Display.fullName(u)}</div>
+                <div style="display:flex;gap:6px;flex-wrap:wrap">
+                  <span class="role-chip ${Display.roleClass(u.role)}">${Display.roleName(u.role)}</span>
+                  <span class="status-pill ${Display.onboardingStatusClass(u.onboardingStatus)}"><span class="status-dot"></span>${Display.onboardingStatusLabel(u.onboardingStatus)}</span>
+                  <span style="font-size:12px;color:var(--color-text-muted);align-self:center">${u.title || ''}</span>
+                </div>
               </div>
             </div>
           </div>
-          <button class="modal-close" onclick="ProfileView.close()">×</button>
+          <div class="page-header-actions">${actions}</div>
         </div>
+      </div>
 
-        <div class="side-panel-body">
-
-          <!-- Contact info -->
-          <div class="section-title">Contact Information</div>
-          <div class="info-grid" style="margin-bottom:20px">
-            <div class="info-row"><div class="info-label">Email</div><div class="info-value" style="font-size:12px">${u.email}</div></div>
-            <div class="info-row"><div class="info-label">Phone</div><div class="info-value">${u.phone || '—'}</div></div>
-            <div class="info-row"><div class="info-label">Title</div><div class="info-value">${u.title || '—'}</div></div>
-            <div class="info-row"><div class="info-label">NMLS ID</div><div class="info-value">${u.nmlsId || '—'}</div></div>
-            <div class="info-row"><div class="info-label">Company</div><div class="info-value">${co ? co.name : '—'}</div></div>
-            <div class="info-row"><div class="info-label">Branch</div><div class="info-value">${br ? br.name : '—'}</div></div>
-            <div class="info-row"><div class="info-label">Last Login</div><div class="info-value">${u.lastLogin ? Display.date(u.lastLogin) : 'Never'}</div></div>
+      <div class="page-body">
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:20px;margin-bottom:20px">
+          <div class="card">
+            <div class="card-title" style="margin-bottom:14px">Contact</div>
+            <div class="info-grid">
+              <div class="info-row"><div class="info-label">Email</div><div class="info-value" style="font-size:12px"><a href="mailto:${u.email}" style="color:var(--color-primary)">${u.email}</a></div></div>
+              <div class="info-row"><div class="info-label">Phone</div><div class="info-value">${u.phone || '—'}</div></div>
+              <div class="info-row"><div class="info-label">Title</div><div class="info-value">${u.title || '—'}</div></div>
+              ${!isInvestor && !isHomium ? `<div class="info-row"><div class="info-label">NMLS ID</div><div class="info-value mono">${u.nmlsId || '—'}</div></div>` : ''}
+              ${affiliationRows}
+              <div class="info-row"><div class="info-label">Last Login</div><div class="info-value">${u.lastLogin ? Display.date(u.lastLogin) : 'Never'}</div></div>
+            </div>
           </div>
 
-          <!-- Credentials (KYC + NMLS) -->
-          ${this._renderCredentialChips(u)}
-
-          <!-- Onboarding progress -->
-          <div class="section-title">Onboarding Progress</div>
-          <div style="margin-bottom:20px">
+          <div class="card">
+            <div class="card-title" style="margin-bottom:14px">Onboarding Progress</div>
             ${stepBars}
+            <div style="margin-top:18px">
+              ${this._renderCredentialChips(u, true)}
+            </div>
           </div>
-
-          <!-- RBAC v1.2 — Branch assignments + permission tuples -->
-          ${this._renderEligibilityLine(u)}
-          ${this._renderBranchAssignmentCards(u)}
-          ${this._renderLicenseRecords(u)}
-
-          <!-- Loans (LO/LP only) -->
-          ${(u.role === 'lo' || u.role === 'lp') && loans.length ? `
-            <div class="section-title">Recent Applications (${loans.length})</div>
-            <div style="margin-bottom:16px">${loanRows}</div>` : ''}
-
         </div>
 
-        <div class="side-panel-footer">
-          ${canEdit ? `
-            <button class="btn btn-secondary" onclick="ProfileView.close()">Close</button>
-            <button class="btn btn-ghost btn-sm btn-danger-ghost" onclick="ProfileView.suspend('${u.id}')" ${u.onboardingStatus === 'suspended' ? 'disabled' : ''}>Suspend</button>
-            ${State.can('impersonate') && u.id !== State.getCurrentUser()?.id && u.onboardingStatus !== 'suspended'
-              ? `<button class="btn btn-impersonate btn-sm" onclick="App.startImpersonation('${u.id}')">${u.onboardingStatus === 'active' ? 'Impersonate' : 'Run as invitee →'}</button>`
-              : ''}
-            <button class="btn btn-primary" onclick="ProfileView.openEditModal('${u.id}')">Edit</button>
-          ` : `<button class="btn btn-secondary" onclick="ProfileView.close()">Close</button>`}
+        <!-- Permissions placeholder — same on every user profile for now -->
+        <div class="card" style="margin-bottom:20px">
+          <div class="card-title" style="margin-bottom:8px">Permissions</div>
+          <div style="font-size:12.5px;color:var(--color-text-muted);line-height:1.6;max-width:760px">
+            Per-user permission matrix is coming soon. Until then, this user inherits the
+            ${isHomium ? 'platform-operator' : isInvestor ? 'investor-entity' : 'company / branch'}
+            policy assigned to their role.
+          </div>
         </div>
-      </div>`;
-  },
 
-  close() {
-    ['panel-container', 'company-panel-container'].forEach(id => {
-      const el = document.getElementById(id);
-      if (el) el.innerHTML = '';
-    });
+        ${isOC ? `
+          <!-- LO/LP only — RBAC tuple, branch assignments, licenses, loans -->
+          ${this._renderEligibilityLine(u, true)}
+          ${this._renderBranchAssignmentCards(u, true)}
+          ${this._renderLicenseRecords(u, true)}
+          ${loans.length ? `
+            <div class="card">
+              <div class="card-title" style="margin-bottom:10px">Recent Applications <span style="color:var(--color-text-muted);font-weight:400;font-size:12px">(${loans.length})</span></div>
+              ${loanRows}
+            </div>` : ''}
+        ` : ''}
+      </div>
+
+      <div id="profile-edit-modal"></div>`;
   },
 
   suspend(userId) {
     State.suspendUser(userId);
-    UsersView.showSuccess('User suspended');
-    this.close();
-    App.renderView(Router.getCurrentPath() || '/users');
+    if (typeof UsersView !== 'undefined' && UsersView.showSuccess) UsersView.showSuccess('User suspended');
+    App.renderView(Router.getCurrentPath() || '/user-management');
   },
 
   openEditModal(userId) {

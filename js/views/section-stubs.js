@@ -59,7 +59,7 @@ const InvestorsView = {
     if (segs.length && segs[0] !== 'users') {
       const entityId = segs[0];
       const sub = segs[1];
-      if (['details', 'users', 'programs'].includes(sub)) this._detailTab = sub;
+      if (['details', 'users'].includes(sub)) this._detailTab = sub;
       else if (!sub) this._detailTab = 'details';
       return this._renderDetail(entityId);
     }
@@ -107,7 +107,7 @@ const InvestorsView = {
       <div class="table-container">
         <table class="entity-table">
           <thead><tr>
-            <th style="min-width:280px">Entity</th>
+            <th style="min-width:340px">Entity</th>
             <th>Manager</th>
             <th>Users</th>
             <th>Programs</th>
@@ -125,20 +125,17 @@ const InvestorsView = {
     return UsersView.render({ scope: 'admin-hub', roles: ['investor'] });
   },
 
-  /* ---- Entity detail (Details / Users / Programs) ---- */
+  /* ---- Entity detail (Details / Users) ---- */
   _renderDetail(entityId) {
     const e = State.getInvestorEntities().find(x => x.id === entityId);
     if (!e) return `<div class="page-body"><p>Investor entity not found.</p></div>`;
     const detailTabs = [
-      { key: 'details',  label: 'Details',  path: `/investors/${entityId}` },
-      { key: 'users',    label: 'Users',    path: `/investors/${entityId}/users` },
-      { key: 'programs', label: 'Programs', path: `/investors/${entityId}/programs` },
+      { key: 'details', label: 'Details', path: `/investors/${entityId}` },
+      { key: 'users',   label: 'Users',   path: `/investors/${entityId}/users` },
     ];
+    if (this._detailTab === 'programs') this._detailTab = 'details';
     const tab = this._detailTab || 'details';
-    let content;
-    if (tab === 'users')         content = this._renderEntityUsers(e);
-    else if (tab === 'programs') content = this._renderEntityPrograms(e);
-    else                         content = this._renderEntityDetails(e);
+    const content = tab === 'users' ? this._renderEntityUsers(e) : this._renderEntityDetails(e);
 
     const breadcrumb = `
       <div class="breadcrumb">
@@ -214,38 +211,8 @@ const InvestorsView = {
 
   _renderEntityUsers(e) {
     // Same institutional Users layout as OC Users tab, scoped to this entity.
-    const usersList = UsersView.render({ scope: 'admin-hub', investorEntityId: e.id, roles: ['investor'] });
-    const placeholder = `
-      <div class="card" style="margin-top:20px">
-        <div class="card-title" style="margin-bottom:8px">Permissions</div>
-        <div style="font-size:12.5px;color:var(--color-text-muted);line-height:1.55">
-          Per-user permission matrix for investor roles is coming soon. For now, all users on this entity inherit the entity-level policy.
-        </div>
-      </div>`;
-    return usersList + placeholder;
-  },
-
-  _renderEntityPrograms(e) {
-    const programs = (e.programIds || []).map(id => State.getLoanProgram(id)).filter(Boolean);
-    if (!programs.length) return renderStubContent('📈', 'No programs assigned', 'Programs this investor is involved in will appear here.');
-    const rows = programs.map(p => {
-      const markets = (p.allowedMarketIds || []).map(id => State.getMarket(id)).filter(Boolean);
-      return `
-        <tr>
-          <td class="cell-primary serif">${p.name}</td>
-          <td>${p.code}</td>
-          <td>${markets.map(m => `<span class="tag" style="margin-right:4px">${m.code}</span>`).join('')}</td>
-          <td><span class="badge badge-active">${p.status === 'active' ? 'Active' : p.status}</span></td>
-        </tr>`;
-    }).join('');
-    return `
-      <div class="table-container">
-        <table class="entity-table">
-          <thead><tr><th>Program</th><th>Code</th><th>Markets</th><th>Status</th></tr></thead>
-          <tbody>${rows}</tbody>
-        </table>
-        <div class="table-footer"><span class="table-count">${programs.length} program${programs.length === 1 ? '' : 's'}</span></div>
-      </div>`;
+    // (No inline permissions card — permissions live on each user's profile page.)
+    return UsersView.render({ scope: 'admin-hub', investorEntityId: e.id, roles: ['investor'] });
   },
 };
 
@@ -290,7 +257,7 @@ const PlatformOperatorView = {
   },
 
   _renderDetails() {
-    const platformUsers = State.getPlatformUsers();
+    const homiumUsers = State.getHomiumUsers();
     const supportedMarkets = State.getMarkets().filter(m => m.supported).length;
     const livePrograms = State.getLoanPrograms().filter(p => p.status === 'active').length;
     return `
@@ -313,7 +280,7 @@ const PlatformOperatorView = {
             <div class="card-title" style="margin-bottom:14px">Platform at a Glance</div>
             <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:12px;text-align:center">
               <div>
-                <div style="font-family:var(--font-heading);font-size:28px;font-weight:300;color:var(--color-primary)">${platformUsers.length}</div>
+                <div style="font-family:var(--font-heading);font-size:28px;font-weight:300;color:var(--color-primary)">${homiumUsers.length}</div>
                 <div style="font-size:11px;color:var(--color-text-secondary);text-transform:uppercase;letter-spacing:0.08em">Staff</div>
               </div>
               <div>
@@ -345,8 +312,8 @@ const PlatformOperatorView = {
   },
 
   _renderUsers() {
-    // sys_admin + operator surface only (no investors, no LOs)
-    return UsersView.render({ scope: 'admin-hub', platformOnly: true });
+    // Strict @homium.io email filter — Homium internal staff only.
+    return UsersView.render({ scope: 'admin-hub', homiumOnly: true });
   },
 };
 

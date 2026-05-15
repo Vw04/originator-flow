@@ -147,7 +147,7 @@ const CompaniesView = {
           ${companies.length ? `
             <table class="entity-table">
               <thead><tr>
-                <th class="${thClass('name')}" onclick="CompaniesView.setSort('name')" style="min-width:280px">Company</th>
+                <th class="${thClass('name')}" onclick="CompaniesView.setSort('name')" style="min-width:340px">Company</th>
                 <th>Branches</th>
                 <th>Users</th>
                 <th>Programs</th>
