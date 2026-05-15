@@ -66,27 +66,40 @@ const CompaniesView = {
           if (s && (s.tier === 'critical' || s.tier === 'warning' || s.tier === 'expired')) expSoon++;
         });
       });
+      // Compact 2-letter program code chips ("UT · DC · KY"). Use program.code
+      // when present (schema field), else first 2 letters of program name.
+      const programChips = enabledPrograms.length
+        ? enabledPrograms.map(p => {
+            const code = (p.code || p.name.replace(/[^A-Za-z]/g, '').slice(0, 2)).toUpperCase();
+            return `<span class="program-chip" title="${p.name}">${code}</span>`;
+          }).join('')
+        : '<span class="text-muted">—</span>';
+      const click = this._clickMode === 'navigate'
+        ? `Router.navigate('/origination-companies/${c.id}')`
+        : `CompaniesView.openDetail('${c.id}')`;
       return `
-        <tr class="clickable" onclick="${this._clickMode === 'navigate' ? `Router.navigate('/origination-companies/${c.id}')` : `CompaniesView.openDetail('${c.id}')`}">
-          <td>
-            <div class="cell-primary">${c.name}</div>
-            <div class="cell-secondary">${c.emailDomain}</div>
+        <tr class="clickable" onclick="${click}">
+          <td class="company-cell">
+            <div class="cell-primary serif">${c.name}</div>
+            <div class="cell-secondary">
+              <span class="mono">NMLS ${c.nmlsId}</span>
+              <span class="cell-dot">·</span>${c.stateOfIncorporation}
+              <span class="cell-dot">·</span>${c.emailDomain}
+            </div>
           </td>
-          <td class="text-secondary fw-600">${c.nmlsId}</td>
-          <td>${c.stateOfIncorporation}</td>
           <td>${branches.length}</td>
           <td>
             ${users.length}
             ${pending.length ? `<span class="badge badge-pending" style="margin-left:6px">${pending.length} pending</span>` : ''}
           </td>
-          <td>${enabledPrograms.length ? enabledPrograms.map(p => `<span class="tag">${p.name}</span>`).join(' ') : '<span class="text-muted">—</span>'}</td>
+          <td><div class="program-chip-row">${programChips}</div></td>
           <td><span class="badge ${c.status === 'active' ? 'badge-active' : 'badge-pending'}">${c.status === 'active' ? 'Active' : 'Pending Setup'}</span></td>
           <td style="font-size:11px;color:var(--color-text-muted)">
             ${c.lastNmlsSync ? `<span class="status-dot" style="display:inline-block;width:6px;height:6px;border-radius:50%;background:var(--color-success);margin-right:4px"></span>${Display.relativeTime(c.lastNmlsSync)}` : '—'}
             ${expSoon ? `<div style="color:var(--color-warning);font-weight:600;margin-top:2px">${expSoon} lic ≤30d</div>` : ''}
           </td>
           <td>
-            <button class="btn btn-ghost btn-xs" onclick="event.stopPropagation();${this._clickMode === 'navigate' ? `Router.navigate('/origination-companies/${c.id}')` : `CompaniesView.openDetail('${c.id}')`}">View</button>
+            <button class="btn btn-ghost btn-xs" onclick="event.stopPropagation();${click}">View</button>
           </td>
         </tr>`;
     }).join('');
@@ -132,9 +145,15 @@ const CompaniesView = {
           </div>
 
           ${companies.length ? `
-            <table>
+            <table class="entity-table">
               <thead><tr>
-                <th class="${thClass('name')}" onclick="CompaniesView.setSort('name')">Company</th><th>NMLS ID</th><th>State</th><th>Branches</th><th>Users</th><th>Programs Enabled</th><th class="${thClass('status')}" onclick="CompaniesView.setSort('status')">Status</th><th>NMLS Sync</th><th></th>
+                <th class="${thClass('name')}" onclick="CompaniesView.setSort('name')" style="min-width:280px">Company</th>
+                <th>Branches</th>
+                <th>Users</th>
+                <th>Programs</th>
+                <th class="${thClass('status')}" onclick="CompaniesView.setSort('status')">Status</th>
+                <th>NMLS Sync</th>
+                <th></th>
               </tr></thead>
               <tbody>${rows}</tbody>
             </table>

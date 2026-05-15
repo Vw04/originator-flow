@@ -46,6 +46,7 @@ const App = {
     Router.register('/admin-dashboard',       () => this.renderShell(AdminDashboardView.render()));
     Router.register('/origination-companies', (path) => this.renderShell(OriginationCompaniesView.render(path)));
     Router.register('/investors',             (path) => this.renderShell(InvestorsView.render(path)));
+    Router.register('/platform-operator',     (path) => this.renderShell(PlatformOperatorView.render(path)));
     Router.register('/user-management',       (path) => this.renderShell(PlatformOpsView.render(path)));
     Router.register('/platform',              ()     => Router.navigate('/user-management', { replace: true }));
     Router.register('/system-config',         (path) => this.renderShell(SystemConfigView.render(path)));

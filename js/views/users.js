@@ -99,6 +99,10 @@ const UsersView = {
       users = State.getPlatformUsers();
     } else if (scope?.companyId) {
       users = State.getUsersByCompany(scope.companyId);
+    } else if (scope?.investorEntityId) {
+      users = State.getUsers().filter(u => u.investorEntityId === scope.investorEntityId);
+    } else if (scope?.roles && scope.roles.includes('investor')) {
+      users = State.getInvestorUsers();
     } else {
       users = State.getUsers().filter(u => u.companyId); // exclude Homium staff from list
     }
@@ -230,7 +234,7 @@ const UsersView = {
                 ${Object.values(f).some(v=>v) ? `<div class="filter-menu-section" style="border-top:1px solid var(--color-border);padding-top:8px"><div class="filter-menu-item" onclick="UsersView.clearFilters()" style="color:var(--color-danger)">Clear All Filters</div></div>` : ''}
               </div>
             </div>
-            ${scope && canInvite ? `<button class="btn btn-primary btn-sm" onclick="${inviteOnclick}" style="margin-left:auto">+ Invite User</button>` : ''}
+            ${scope && scope.scope !== 'admin-hub' && canInvite ? `<button class="btn btn-primary btn-sm" onclick="${inviteOnclick}" style="margin-left:auto">+ Invite User</button>` : ''}
           </div>
 
           ${users.length ? `

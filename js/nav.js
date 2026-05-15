@@ -106,14 +106,16 @@ const Nav = (() => {
     sys_admin:  [
       { path: '/dashboard',             label: 'Administration Dashboard' },
       { path: '/origination-companies', label: 'Origination Companies' },
-      { path: '/investors',             label: 'Investors & Funds' },
-      { path: '/user-management',       label: 'User Management' },
+      { path: '/investors',             label: 'Investors' },
+      { path: '/platform-operator',     label: 'Platform Operator' },
       { path: '/system-config',         label: 'System Configuration' },
+      { path: '/user-management',       label: 'User Management' },
     ],
     operator:   [
       { path: '/dashboard',             label: 'Administration Dashboard' },
       { path: '/origination-companies', label: 'Origination Companies' },
-      { path: '/investors',             label: 'Investors & Funds' },
+      { path: '/investors',             label: 'Investors' },
+      { path: '/platform-operator',     label: 'Platform Operator' },
       { path: '/system-config',         label: 'System Configuration' },
     ],
     prog_admin: [
@@ -122,7 +124,7 @@ const Nav = (() => {
     lo: [], lp: [], investor: [], investor_prospect: [],
   };
 
-  const ADMIN_PATHS = ['/admin-dashboard', '/dashboard', '/origination-companies', '/investors', '/user-management', '/system-config'];
+  const ADMIN_PATHS = ['/admin-dashboard', '/dashboard', '/origination-companies', '/investors', '/platform-operator', '/user-management', '/system-config'];
 
   const ROLE_META = {
     sys_admin:  { label: 'System Admin' },
@@ -248,12 +250,19 @@ const Nav = (() => {
               ${ICONS['/system-config']}
               <span>Admin</span>
               <div class="admin-flyout" id="admin-nav-menu">
-                <div class="admin-flyout-header">Administration</div>
-                ${adminItems.map(item => `
-                  <div class="admin-flyout-item${(currentPath === item.path || currentPath.startsWith(item.path + '/')) ? ' active' : ''}"
-                       onclick="event.stopPropagation();Nav.goAdmin('${item.path}')">
-                    ${item.label}
-                  </div>`).join('')}
+                <div class="admin-flyout-head">
+                  <div class="admin-flyout-eyebrow">System</div>
+                  <div class="admin-flyout-title">Administration</div>
+                  <div class="admin-flyout-meta">${adminItems.length} area${adminItems.length === 1 ? '' : 's'}</div>
+                </div>
+                <div class="admin-flyout-list">
+                  ${adminItems.map(item => `
+                    <div class="admin-flyout-item${(currentPath === item.path || currentPath.startsWith(item.path + '/')) ? ' active' : ''}"
+                         onclick="event.stopPropagation();Nav.goAdmin('${item.path}')">
+                      <span class="admin-flyout-item-label">${item.label}</span>
+                      <span class="admin-flyout-item-caret">›</span>
+                    </div>`).join('')}
+                </div>
               </div>
             </div>
           </div>` : ''}

@@ -177,8 +177,14 @@ const DEMO_DATA = {
     { id: 'user-016', companyId: 'co-003', branchId: 'br-006', firstName: 'Devon',    lastName: 'Pryce',     email: 'dpryce@commonwealthmortgage.com',       role: 'lo',         onboardingStatus: 'verification_pending', lastLogin: null,         nmlsId: '1134567', phone: '502-555-0401', title: 'Loan Officer',           policies: [] },
     { id: 'user-017', companyId: 'co-003', branchId: 'br-006', firstName: 'Keisha',   lastName: 'Monroe',    email: 'kmonroe@commonwealthmortgage.com',      role: 'lp',         onboardingStatus: 'invited',              lastLogin: null,         nmlsId: null,      phone: null,           title: 'Loan Processor',         policies: [] },
 
-    // Investor
-    { id: 'user-018', companyId: null,     branchId: null,    firstName: 'Robert',    lastName: 'Huang',     email: 'rhuang@capitalpartners.com',            role: 'investor',   onboardingStatus: 'active',               lastLogin: '2026-03-15', nmlsId: null,      phone: '212-555-0500', title: 'Accredited Investor',    policies: ['investor_view'] },
+    // Investors — tied to investorEntities via investorEntityId
+    { id: 'user-018', companyId: null, branchId: null, investorEntityId: 'inv-001', firstName: 'Robert',   lastName: 'Huang',     email: 'rhuang@capitalpartners.com',     role: 'investor', onboardingStatus: 'active',               lastLogin: '2026-03-15', nmlsId: null, phone: '212-555-0500', title: 'Managing Partner (Approver)', policies: ['investor_admin'] },
+    { id: 'user-020', companyId: null, branchId: null, investorEntityId: 'inv-001', firstName: 'Susan',    lastName: 'Tan',       email: 'stan@capitalpartners.com',       role: 'investor', onboardingStatus: 'active',               lastLogin: '2026-04-22', nmlsId: null, phone: '212-555-0501', title: 'Partner',                     policies: ['investor_view'] },
+    { id: 'user-021', companyId: null, branchId: null, investorEntityId: 'inv-001', firstName: 'Marcus',   lastName: 'Reyes',     email: 'mreyes@capitalpartners.com',     role: 'investor', onboardingStatus: 'invited',              lastLogin: null,         nmlsId: null, phone: '212-555-0502', title: 'Investor Operations',         policies: [] },
+    { id: 'user-022', companyId: null, branchId: null, investorEntityId: 'inv-002', firstName: 'Linda',    lastName: 'Cho',       email: 'lcho@heartlandtrust.org',        role: 'investor', onboardingStatus: 'active',               lastLogin: '2026-04-14', nmlsId: null, phone: '816-555-0710', title: 'Executive Director (Approver)', policies: ['investor_admin'] },
+    { id: 'user-023', companyId: null, branchId: null, investorEntityId: 'inv-002', firstName: 'Damon',    lastName: 'Wexler',    email: 'dwexler@heartlandtrust.org',     role: 'investor', onboardingStatus: 'active',               lastLogin: '2026-04-01', nmlsId: null, phone: '816-555-0711', title: 'Portfolio Manager',           policies: ['investor_view'] },
+    { id: 'user-024', companyId: null, branchId: null, investorEntityId: 'inv-003', firstName: 'Priya',    lastName: 'Anand',     email: 'panand@pacificcoastcap.com',     role: 'investor', onboardingStatus: 'active',               lastLogin: '2026-04-26', nmlsId: null, phone: '415-555-0820', title: 'Managing Director (Approver)',  policies: ['investor_admin'] },
+    { id: 'user-025', companyId: null, branchId: null, investorEntityId: 'inv-003', firstName: 'Jonah',    lastName: 'Ellis',     email: 'jellis@pacificcoastcap.com',     role: 'investor', onboardingStatus: 'verification_pending', lastLogin: null,         nmlsId: null, phone: '415-555-0821', title: 'Investment Analyst',          policies: [] },
 
     // Investor Prospect
     { id: 'user-019', companyId: null,     branchId: null,    firstName: 'Sarah',     lastName: 'Chen',      email: 'schen@prospectcapital.com',             role: 'investor_prospect', onboardingStatus: 'active',        lastLogin: '2026-04-10', nmlsId: null,      phone: '415-555-0600', title: 'Managing Director',      policies: ['prospect_view'] },
@@ -404,8 +410,49 @@ const DEMO_DATA = {
 
   /* ---- Investor Entities ---- */
   investorEntities: [
-    { id: 'inv-001', name: 'Capital Partners Fund I', type: 'Institutional', status: 'active', aum: 250000000, contactName: 'Robert Huang', contactEmail: 'rhuang@capitalpartners.com', createdAt: '2025-08-01' },
-    { id: 'inv-002', name: 'Heartland Housing Trust',  type: 'Community Fund', status: 'active', aum: 75000000,  contactName: 'Linda Cho', contactEmail: 'lcho@heartlandtrust.org', createdAt: '2025-11-15' },
+    {
+      id: 'inv-001', name: 'Capital Partners Fund I', type: 'Institutional', status: 'active',
+      aum: 250000000, commitment: 100000000,
+      contactName: 'Robert Huang', contactEmail: 'rhuang@capitalpartners.com', contactPhone: '212-555-0500',
+      website: 'capitalpartners.com',
+      address1: '825 Third Avenue, Suite 2200', city: 'New York', state: 'NY', zip: '10022',
+      manager: 'Robert Huang', approverUserId: 'user-018',
+      owners: [
+        { name: 'Robert Huang', role: 'Managing Partner', stake: 0.40 },
+        { name: 'Susan Tan',    role: 'Partner',          stake: 0.25 },
+        { name: 'CP Holdings LLC', role: 'Sponsor',       stake: 0.35 },
+      ],
+      programIds: ['lp-dc', 'lp-utah', 'lp-multi'],
+      createdAt: '2025-08-01',
+    },
+    {
+      id: 'inv-002', name: 'Heartland Housing Trust', type: 'Community Fund', status: 'active',
+      aum: 75000000, commitment: 50000000,
+      contactName: 'Linda Cho', contactEmail: 'lcho@heartlandtrust.org', contactPhone: '816-555-0710',
+      website: 'heartlandtrust.org',
+      address1: '120 Walnut Street', city: 'Kansas City', state: 'MO', zip: '64106',
+      manager: 'Linda Cho', approverUserId: 'user-022',
+      owners: [
+        { name: 'Heartland Foundation', role: 'Sole Sponsor', stake: 1.00 },
+      ],
+      programIds: ['lp-ky', 'lp-mi'],
+      createdAt: '2025-11-15',
+    },
+    {
+      id: 'inv-003', name: 'Pacific Coast Capital', type: 'Institutional', status: 'active',
+      aum: 410000000, commitment: 175000000,
+      contactName: 'Priya Anand', contactEmail: 'panand@pacificcoastcap.com', contactPhone: '415-555-0820',
+      website: 'pacificcoastcap.com',
+      address1: '1 Embarcadero Center, Floor 27', city: 'San Francisco', state: 'CA', zip: '94111',
+      manager: 'Priya Anand', approverUserId: 'user-024',
+      owners: [
+        { name: 'Priya Anand',     role: 'Managing Director', stake: 0.30 },
+        { name: 'PCC Holdings LP', role: 'GP',                stake: 0.45 },
+        { name: 'Strategic LPs',   role: 'LPs (pooled)',      stake: 0.25 },
+      ],
+      programIds: ['lp-utah', 'lp-co', 'lp-multi'],
+      createdAt: '2026-01-20',
+    },
   ],
 
   /* ---- Funds ---- */

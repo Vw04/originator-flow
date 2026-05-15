@@ -316,24 +316,27 @@ img { max-width: 100%; display: block; }
   z-index: -1;
 }
 
-/* Administration flyout — anchors to the top of the Admin tile, opens right */
+/* Administration flyout — anchors to the top of the Admin tile, opens right.
+   Institutional treatment: serif title, mono eyebrow, hairline divider,
+   navy hover lozenge, chevron caret on each row. */
 .sidenav .admin-flyout {
   position: absolute;
   left: calc(100% + 12px);
   top: 0;
-  min-width: 240px;
+  min-width: 264px;
   background: #fff;
   border: 1px solid var(--color-border);
-  border-radius: 14px;
-  box-shadow: var(--shadow-lg);
+  border-radius: 12px;
+  box-shadow: 0 18px 48px rgba(14, 42, 71, 0.14), 0 2px 6px rgba(14, 42, 71, 0.06);
   z-index: 150;
   display: none;
+  overflow: hidden;
 }
 .sidenav .admin-flyout.open { display: block; }
 .sidenav .admin-flyout::before {
   content: '';
   position: absolute;
-  left: -7px; top: 18px;
+  left: -7px; top: 22px;
   width: 12px; height: 12px;
   background: #fff;
   border-left: 1px solid var(--color-border);
@@ -341,26 +344,74 @@ img { max-width: 100%; display: block; }
   transform: rotate(45deg);
   z-index: -1;
 }
-.admin-flyout-header {
-  padding: 12px 16px 8px;
-  font-size: 10px;
-  font-weight: 700;
-  letter-spacing: 0.12em;
+.admin-flyout-head {
+  padding: 16px 18px 14px;
+  border-bottom: 1px solid var(--color-border);
+  background: linear-gradient(180deg, #FBFAF7 0%, #FFFFFF 100%);
+}
+.admin-flyout-eyebrow {
+  font-family: var(--font-mono);
+  font-size: 9.5px;
+  font-weight: 600;
+  letter-spacing: 0.16em;
   text-transform: uppercase;
   color: var(--color-text-muted);
-  border-bottom: 1px solid var(--color-border);
+  margin-bottom: 4px;
 }
+.admin-flyout-title {
+  font-family: var(--font-heading);
+  font-size: 18px;
+  font-weight: 400;
+  color: var(--color-primary);
+  letter-spacing: -0.01em;
+  line-height: 1.1;
+}
+.admin-flyout-meta {
+  font-size: 11px;
+  color: var(--color-text-muted);
+  margin-top: 4px;
+  letter-spacing: 0.01em;
+}
+.admin-flyout-list { padding: 6px; }
 .admin-flyout-item {
-  padding: 10px 16px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  padding: 9px 12px;
   font-size: 13px;
+  font-weight: 500;
   cursor: pointer;
   color: var(--color-text);
+  border-radius: 8px;
+  transition: background 0.12s, color 0.12s;
 }
-.admin-flyout-item:hover { background: rgba(14,42,71,0.04); }
-.admin-flyout-item.active {
-  background: var(--color-primary-container);
+.admin-flyout-item-label { flex: 1; }
+.admin-flyout-item-caret {
+  font-size: 14px;
+  color: var(--color-text-muted);
+  opacity: 0;
+  transform: translateX(-2px);
+  transition: opacity 0.12s, transform 0.12s, color 0.12s;
+}
+.admin-flyout-item:hover {
+  background: rgba(14, 42, 71, 0.06);
   color: var(--color-primary);
+}
+.admin-flyout-item:hover .admin-flyout-item-caret {
+  opacity: 1;
+  transform: translateX(0);
+  color: var(--color-primary);
+}
+.admin-flyout-item.active {
+  background: var(--color-primary);
+  color: #fff;
   font-weight: 600;
+}
+.admin-flyout-item.active .admin-flyout-item-caret {
+  opacity: 1;
+  transform: translateX(0);
+  color: rgba(255, 255, 255, 0.85);
 }
 
 /* ---- Command palette (search modal) ---- */
@@ -473,9 +524,119 @@ img { max-width: 100%; display: block; }
   font-family: var(--font-heading);
   font-size: 30px;
   font-weight: 300;
-  color: var(--color-text);
+  color: var(--color-primary);
   letter-spacing: -0.02em;
   line-height: 1.15;
+}
+/* Tiny serif eyebrow above some institutional headers (e.g. "Administration / Investors") */
+.page-title-eyebrow {
+  font-family: var(--font-mono);
+  font-size: 10px;
+  font-weight: 600;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  color: var(--color-text-muted);
+  margin-bottom: 4px;
+}
+/* Used on entity-table rows (Companies, Investors, Users) to lift the
+   primary identity into the institutional serif. */
+.cell-primary.serif {
+  font-family: var(--font-heading);
+  font-size: 15px;
+  font-weight: 400;
+  color: var(--color-text);
+  letter-spacing: -0.005em;
+}
+
+/* Single-line company name + composite secondary metadata line. */
+.company-cell .cell-primary {
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.company-cell .cell-secondary {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  flex-wrap: nowrap;
+  white-space: nowrap;
+  font-size: 11.5px;
+  color: var(--color-text-muted);
+  margin-top: 2px;
+}
+.company-cell .mono {
+  font-family: var(--font-mono);
+  font-size: 11px;
+  letter-spacing: 0.01em;
+}
+.cell-dot { color: var(--color-text-muted); opacity: 0.55; }
+
+/* 2-letter program code chips (UT · DC · KY). Reused on Companies and
+   Investors tables. */
+.program-chip-row {
+  display: inline-flex;
+  flex-wrap: wrap;
+  gap: 4px;
+}
+.program-chip {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 28px;
+  height: 22px;
+  padding: 0 7px;
+  border-radius: 5px;
+  background: var(--color-primary-container);
+  color: var(--color-primary);
+  font-family: var(--font-mono);
+  font-size: 10.5px;
+  font-weight: 600;
+  letter-spacing: 0.04em;
+  cursor: default;
+}
+
+/* Entity-table tweaks: tighter row padding, navy hover, sticky header. */
+.entity-table thead th {
+  background: #fff;
+  border-bottom: 1px solid var(--color-border);
+  font-family: var(--font-mono);
+  font-size: 10px;
+  font-weight: 600;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--color-text-muted);
+}
+.entity-table tbody tr.clickable:hover {
+  background: rgba(14, 42, 71, 0.025);
+}
+.entity-table tbody td { vertical-align: middle; }
+
+/* Ownership list on investor entity detail */
+.owner-list {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+.owner-row {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  padding: 10px 12px;
+  background: rgba(14, 42, 71, 0.025);
+  border: 1px solid var(--color-border);
+  border-radius: 8px;
+}
+.owner-name {
+  font-family: var(--font-heading);
+  font-size: 14.5px;
+  color: var(--color-text);
+  letter-spacing: -0.005em;
+}
+.owner-role {
+  font-size: 11.5px;
+  color: var(--color-text-muted);
+  font-family: var(--font-mono);
+  letter-spacing: 0.02em;
 }
 
 .page-subtitle {
@@ -2334,9 +2495,9 @@ label { font-size: 12px; font-weight: 600; color: var(--color-text); }
 }
 
 /* ---- Section Sub-tabs ---- */
-.section-tabs { display: flex; gap: 0; border-bottom: 1px solid var(--color-border); padding: 0 24px; background: var(--color-card); }
-.section-tab { padding: 11px 18px; font-size: 13px; font-weight: 500; color: var(--color-text-secondary); cursor: pointer; border-bottom: 2px solid transparent; transition: color 0.12s, border-color 0.12s; }
-.section-tab:hover { color: var(--color-text); }
+.section-tabs { display: flex; gap: 4px; border-bottom: 1px solid var(--color-border); padding: 0 40px; background: var(--color-card); }
+.section-tab { padding: 14px 4px; margin-right: 22px; font-size: 13px; font-weight: 500; color: var(--color-text-secondary); cursor: pointer; border-bottom: 2px solid transparent; transition: color 0.12s, border-color 0.12s; letter-spacing: 0.005em; }
+.section-tab:hover { color: var(--color-primary); }
 .section-tab.active { color: var(--color-primary); border-bottom-color: var(--color-primary); font-weight: 600; }
 
 /* ---- Breadcrumb ---- */

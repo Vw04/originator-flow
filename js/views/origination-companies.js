@@ -15,7 +15,7 @@
 const OriginationCompaniesView = {
   _selectedCompanyId: null,
   _activeTab: 'details',
-  _topTab: 'companies',  // 'companies' | 'branches' | 'users'
+  _topTab: 'companies',  // 'companies' | 'users'  (Branches lives inside each OC detail)
 
   render(fullPath) {
     const path = fullPath || '/origination-companies';
@@ -55,9 +55,10 @@ const OriginationCompaniesView = {
      ============================================================ */
   _renderHub() {
     const canEdit = State.can('manageCompany') || State.can('editAny');
+    // Branches tab removed from the hub — branches live inside each OC's detail page.
+    if (this._topTab === 'branches') this._topTab = 'companies';
     const tabs = [
       { key: 'companies', label: 'Companies' },
-      { key: 'branches',  label: 'Branches'  },
       { key: 'users',     label: 'Users'     },
     ];
     const tabsHtml = tabs.map(t =>
@@ -75,9 +76,6 @@ const OriginationCompaniesView = {
       CompaniesView._clickMode = 'panel';
       CompaniesView._headless  = false;
       if (canEdit) primaryAction = `<button class="btn btn-primary btn-sm" onclick="Router.navigate('/origination-companies/new')">+ New Origination Company</button>`;
-    } else if (this._topTab === 'branches') {
-      content = BranchesView.render({ acrossAll: true });
-      if (canEdit) primaryAction = `<button class="btn btn-primary btn-sm" onclick="BranchesView.openAddModal()">+ Add Branch</button>`;
     } else {
       content = UsersView.render({ scope: 'admin-hub', roles: ['prog_admin', 'lo', 'lp'] });
       const canInvite = canEdit || State.getRole() === 'prog_admin';
