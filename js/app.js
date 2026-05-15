@@ -58,7 +58,8 @@ const App = {
       const segs = path.replace('/branches', '').split('/').filter(Boolean);
       if (!segs.length) return Router.navigate('/origination-companies', { replace: true });
       if (segs[0] === 'new') return this.renderShell(BranchCreateView.render(path));
-      this.renderShell(BranchesView.renderDetailPage(segs[0]));
+      const edit = segs[1] === 'edit';
+      this.renderShell(BranchesView.renderDetailPage(segs[0], { edit }));
     });
     Router.register('/users',        (path) => {
       const segs = path.replace('/users', '').split('/').filter(Boolean);

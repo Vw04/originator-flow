@@ -308,7 +308,9 @@ const BranchesView = {
      BRANCH DETAIL PAGE (Round 3)
      Tabs: Details / Users / Permissions / Market Enablements / Eligible Programs
      ============================================================ */
-  renderDetailPage(branchId) {
+  renderDetailPage(branchId, opts) {
+    opts = opts || {};
+    const editing = !!opts.edit;
     const b = State.getBranch(branchId);
     if (!b) return '<div class="page-body"><p>Branch not found.</p></div>';
     const co = State.getCompany(b.companyId);
@@ -324,6 +326,7 @@ const BranchesView = {
       { key: 'programs',    label: 'Eligible Programs' },
     ];
     if (!tabs.find(t => t.key === this._branchTab)) this._branchTab = 'details';
+    if (editing) this._branchTab = 'details';
 
     const tabsHtml = tabs.map(t =>
       `<div class="section-tab ${t.key === this._branchTab ? 'active' : ''}"
@@ -331,13 +334,17 @@ const BranchesView = {
     ).join('');
 
     let content;
-    switch (this._branchTab) {
-      case 'details':     content = this._renderBranchDetails(b, co, canEdit); break;
-      case 'users':       content = this._renderBranchUsers(b, canEdit); break;
-      case 'permissions': content = this._renderBranchPermissions(b, canEdit); break;
-      case 'markets':     content = this._renderBranchMarkets(b, canEdit); break;
-      case 'programs':    content = this._renderBranchPrograms(b, canEdit); break;
-      default:            content = this._renderBranchDetails(b, co, canEdit);
+    if (editing) {
+      content = this._renderBranchDetails(b, co, canEdit, true);
+    } else {
+      switch (this._branchTab) {
+        case 'details':     content = this._renderBranchDetails(b, co, canEdit, false); break;
+        case 'users':       content = this._renderBranchUsers(b, canEdit); break;
+        case 'permissions': content = this._renderBranchPermissions(b, canEdit); break;
+        case 'markets':     content = this._renderBranchMarkets(b, canEdit); break;
+        case 'programs':    content = this._renderBranchPrograms(b, canEdit); break;
+        default:            content = this._renderBranchDetails(b, co, canEdit, false);
+      }
     }
 
     const users = State.getUsersByBranch(b.id);
@@ -387,7 +394,7 @@ const BranchesView = {
             <div class="entity-header-subtitle">${co ? co.name : 'Branch'}</div>
           </div>
           <div class="entity-header-actions">
-            ${canEdit ? `<button class="btn btn-secondary btn-sm" onclick="BranchesView.openEditModal('${b.id}')">Edit</button>` : ''}
+            ${canEdit && !editing ? `<button class="btn btn-secondary btn-sm" onclick="BranchesView.enterEditMode('${b.id}')">Edit</button>` : ''}
           </div>
         </div>
         <div class="entity-meta-row">
@@ -395,9 +402,34 @@ const BranchesView = {
           ${statusPill}
         </div>
       </div>
-      <div class="section-tabs">${tabsHtmlWithCounts}</div>
+      ${editing ? '' : `<div class="section-tabs">${tabsHtmlWithCounts}</div>`}
       <div class="page-body">${content}</div>
+      ${editing ? `
+        <div class="inst-footer-bar">
+          <button class="btn btn-secondary btn-sm" onclick="BranchesView.cancelEdit('${b.id}')">Cancel</button>
+          <button class="btn btn-primary btn-sm" onclick="BranchesView.saveEdit('${b.id}')">Save changes</button>
+        </div>` : ''}
       <div id="branch-modal-container"></div>`;
+  },
+
+  enterEditMode(branchId) { Router.navigate('/branches/' + branchId + '/edit'); },
+  cancelEdit(branchId)    { Router.navigate('/branches/' + branchId); },
+  saveEdit(branchId) {
+    const get = (id) => document.getElementById(id)?.value.trim();
+    const patch = {
+      name: get('br-name'),
+      nmlsId: get('br-nmls'),
+      managingLO: get('br-mgr') || null,
+      address1: get('br-addr1'),
+      suite: get('br-suite'),
+      city: get('br-city'),
+      state: get('br-state'),
+      zip: get('br-zip'),
+      contactPhone: get('br-phone'),
+    };
+    Object.keys(patch).forEach(k => { if (patch[k] === undefined || patch[k] === '') delete patch[k]; });
+    if (State.updateBranch) State.updateBranch(branchId, patch);
+    Router.navigate('/branches/' + branchId);
   },
 
   switchBranchTab(tab) {
@@ -406,10 +438,25 @@ const BranchesView = {
   },
 
   /* ---- Details tab — institutional MUI-form treatment per Figma. ---- */
-  _renderBranchDetails(b, co, canEdit) {
+  _renderBranchDetails(b, co, canEdit, editing) {
     const mgr = b.managingLO ? State.getUser(b.managingLO) : null;
-    const fieldRO = (label, value) => {
-      const v = (value === null || value === undefined || value === '') ? '' : value;
+    const field = (label, value, opts) => {
+      opts = opts || {};
+      const v = (value === null || value === undefined) ? '' : value;
+      if (editing && opts.id && !opts.locked) {
+        if (opts.select) {
+          return `
+            <div class="form-group">
+              <label>${label}</label>
+              <select class="select-input" id="${opts.id}">${opts.select(v)}</select>
+            </div>`;
+        }
+        return `
+          <div class="form-group">
+            <label>${label}</label>
+            <input class="input" id="${opts.id}" value="${String(v).replace(/"/g, '&quot;')}" />
+          </div>`;
+      }
       const empty = v === '' ? ' empty' : '';
       const shown = v === '' ? '—' : v;
       return `
@@ -418,20 +465,28 @@ const BranchesView = {
           <div class="input is-readonly${empty}">${shown}</div>
         </div>`;
     };
+
+    const ocUsers = co ? State.getUsersByCompany(co.id) : [];
+    const mgrSelect = (currentId) => {
+      const opts = ['<option value="">— none —</option>']
+        .concat(ocUsers.map(u => `<option value="${u.id}"${u.id === b.managingLO ? ' selected' : ''}>${Display.fullName(u)}</option>`));
+      return opts.join('');
+    };
+
     return `
       <div class="inst-card">
         <div class="inst-card-title">Branch information</div>
         <div class="inst-form-grid">
-          ${fieldRO('Branch name', b.name)}
-          ${fieldRO('Branch NMLS #', b.nmlsId)}
-          ${fieldRO('Branch manager', mgr ? Display.fullName(mgr) : '')}
-          ${fieldRO('Address 1', b.address1)}
-          ${fieldRO('Suite #', b.suite)}
-          ${fieldRO('City', b.city)}
-          ${fieldRO('State', b.state)}
-          ${fieldRO('Zip', b.zip)}
-          ${fieldRO('Contact phone', b.contactPhone)}
-          ${fieldRO('Company', co ? co.name : '')}
+          ${field('Branch name', b.name, { id: 'br-name' })}
+          ${field('Branch NMLS #', b.nmlsId, { id: 'br-nmls' })}
+          ${field('Branch manager', mgr ? Display.fullName(mgr) : '', { id: 'br-mgr', select: mgrSelect })}
+          ${field('Address 1', b.address1, { id: 'br-addr1' })}
+          ${field('Suite #', b.suite, { id: 'br-suite' })}
+          ${field('City', b.city, { id: 'br-city' })}
+          ${field('State', b.state, { id: 'br-state' })}
+          ${field('Zip', b.zip, { id: 'br-zip' })}
+          ${field('Contact phone', b.contactPhone, { id: 'br-phone' })}
+          ${field('Company', co ? co.name : '', { locked: true })}
         </div>
       </div>`;
   },

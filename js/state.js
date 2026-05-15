@@ -352,7 +352,7 @@ const State = (() => {
     /* ---- Investors & Funds ---- */
     getInvestorEntities: () => [..._investorEntities],
     getFunds:            () => [..._funds],
-    getPlatformUsers:    () => _users.filter(u => !u.companyId && u.role !== 'investor'),
+    getPlatformUsers:    () => _users.filter(u => u.role === 'sys_admin' || u.role === 'operator'),
     getInvestorUsers:    () => _users.filter(u => u.role === 'investor'),
     /* Homium internal staff — strict email match (Platform Operator surface). */
     getHomiumUsers:      () => _users.filter(u => /@homium\.io$/i.test(u.email || '')),

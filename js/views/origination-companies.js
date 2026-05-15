@@ -16,13 +16,14 @@ const OriginationCompaniesView = {
   _selectedCompanyId: null,
   _activeTab: 'details',
   _topTab: 'companies',  // 'companies' | 'users'  (Branches lives inside each OC detail)
+  _editMode: false,
 
   render(fullPath) {
     const path = fullPath || '/origination-companies';
     const role = State.getRole();
     const currentUser = State.getCurrentUser();
 
-    // Parse company ID from path: /origination-companies/co-001
+    // Parse company ID from path: /origination-companies/co-001 (optional /edit)
     const segments = path.replace('/origination-companies', '').split('/').filter(Boolean);
     const first = segments[0] || null;
 
@@ -33,6 +34,8 @@ const OriginationCompaniesView = {
     }
 
     const companyId = first;
+    this._editMode = segments[1] === 'edit';
+    if (this._editMode) this._activeTab = 'details';
 
     // prog_admin auto-drills into their own company
     if (role === 'prog_admin' && !companyId && currentUser?.companyId) {
@@ -46,8 +49,32 @@ const OriginationCompaniesView = {
     }
 
     this._selectedCompanyId = null;
+    this._editMode = false;
     if (this._activeTab === 'overview' || this._activeTab === 'settings') this._activeTab = 'details';
     return this._renderHub();
+  },
+
+  enterEditMode(companyId) { Router.navigate('/origination-companies/' + companyId + '/edit'); },
+  cancelEdit(companyId)    { Router.navigate('/origination-companies/' + companyId); },
+  saveEdit(companyId) {
+    const get = (id) => document.getElementById(id)?.value.trim();
+    const patch = {
+      name: get('co-name'),
+      nmlsId: get('co-nmls'),
+      address1: get('co-addr1'),
+      address2: get('co-addr2'),
+      city: get('co-city'),
+      state: get('co-state'),
+      zip: get('co-zip'),
+      contactPhone: get('co-phone'),
+      website: get('co-website'),
+      primaryContact: get('co-progadmin'),
+    };
+    const cc = get('co-cc');
+    if (cc !== undefined) patch.ccEmails = cc.split(',').map(s => s.trim()).filter(Boolean);
+    Object.keys(patch).forEach(k => { if (patch[k] === undefined || patch[k] === '') delete patch[k]; });
+    if (State.updateCompany) State.updateCompany(companyId, patch);
+    Router.navigate('/origination-companies/' + companyId);
   },
 
   /* ============================================================
@@ -113,6 +140,7 @@ const OriginationCompaniesView = {
     const role = State.getRole();
     const canEdit = State.can('manageCompany') || State.can('editAny');
     const showBack = role !== 'prog_admin';
+    const editing = this._editMode;
 
     const branches = State.getBranchesByCompany(c.id);
     const users    = State.getUsersByCompany(c.id);
@@ -133,11 +161,15 @@ const OriginationCompaniesView = {
     ).join('');
 
     let content;
-    switch (this._activeTab) {
-      case 'details':  content = this._renderDetails(c, canEdit); break;
-      case 'branches': content = BranchesView.render({ companyId }); break;
-      case 'users':    content = UsersView.render({ companyId, roles: ['prog_admin', 'lo', 'lp'] }); break;
-      default:         content = this._renderDetails(c, canEdit);
+    if (editing) {
+      content = this._renderDetails(c, canEdit, /* editing */ true);
+    } else {
+      switch (this._activeTab) {
+        case 'details':  content = this._renderDetails(c, canEdit, false); break;
+        case 'branches': content = BranchesView.render({ companyId }); break;
+        case 'users':    content = UsersView.render({ companyId, roles: ['prog_admin', 'lo', 'lp'] }); break;
+        default:         content = this._renderDetails(c, canEdit, false);
+      }
     }
 
     // Entity header card per Figma — ← Back, serif name, subtitle, meta row,
@@ -165,6 +197,17 @@ const OriginationCompaniesView = {
       ? `<span class="entity-status-pill">Active</span>`
       : `<span class="entity-status-pill" style="color:var(--color-warning)">Pending Setup</span>`;
 
+    const editAction = canEdit
+      ? (editing
+        ? ''
+        : `<button class="btn btn-secondary btn-sm" onclick="OriginationCompaniesView.enterEditMode('${c.id}')">Edit</button>`)
+      : '';
+    const footer = editing ? `
+      <div class="inst-footer-bar">
+        <button class="btn btn-secondary btn-sm" onclick="OriginationCompaniesView.cancelEdit('${c.id}')">Cancel</button>
+        <button class="btn btn-primary btn-sm" onclick="OriginationCompaniesView.saveEdit('${c.id}')">Save changes</button>
+      </div>` : '';
+
     return `
       ${backLink}
       <div class="entity-header">
@@ -173,17 +216,16 @@ const OriginationCompaniesView = {
             <h1 class="entity-header-title">${c.name}</h1>
             <div class="entity-header-subtitle">Origination company</div>
           </div>
-          <div class="entity-header-actions">
-            ${canEdit ? `<button class="btn btn-secondary btn-sm" onclick="CompaniesView.openEditModal('${c.id}')">Edit</button>` : ''}
-          </div>
+          <div class="entity-header-actions">${editAction}</div>
         </div>
         <div class="entity-meta-row">
           ${metaHtml}
           ${statusPill}
         </div>
       </div>
-      <div class="section-tabs">${tabsHtml}</div>
+      ${editing ? '' : `<div class="section-tabs">${tabsHtml}</div>`}
       <div class="page-body">${content}</div>
+      ${footer}
       <div id="company-modal-container"></div>
       <div id="company-panel-container"></div>`;
   },
@@ -192,7 +234,7 @@ const OriginationCompaniesView = {
      Headquarters card (read-only form fields), Eligible Programs (checkbox
      list lifted from old standalone tab), Market Enablements (50-state chip
      grid lifted from old standalone tab). No Branches sub-section. ---- */
-  _renderDetails(c, canEdit) {
+  _renderDetails(c, canEdit, editing) {
     const ocLpmIds = State.getOcEnablement(c.id);
     const ocSet    = new Set(ocLpmIds);
     const ocLpms   = ocLpmIds.map(id => State.getLPM(id)).filter(Boolean);
@@ -201,16 +243,26 @@ const OriginationCompaniesView = {
     const programs = State.getLoanPrograms();
     const markets = State.getMarkets();
 
-    const fieldRO = (label, value, opts) => {
-      const v = (value === null || value === undefined || value === '') ? '' : value;
+    /* Field renderer: editable input or read-only outlined box. */
+    const field = (label, value, opts) => {
+      opts = opts || {};
+      const v = (value === null || value === undefined) ? '' : value;
+      if (editing && opts.id) {
+        return `
+          <div class="form-group">
+            <label>${label}${opts.required ? ' <span class="req">*</span>' : ''}</label>
+            <input class="input" id="${opts.id}" value="${String(v).replace(/"/g, '&quot;')}" />
+          </div>`;
+      }
       const empty = v === '' ? ' empty' : '';
       const shown = v === '' ? '—' : v;
       return `
         <div class="form-group">
-          <label>${label}${opts?.required ? ' <span class="req">*</span>' : ''}</label>
+          <label>${label}${opts.required ? ' <span class="req">*</span>' : ''}</label>
           <div class="input is-readonly${empty}">${shown}</div>
         </div>`;
     };
+    const fieldRO = (label, value, opts) => field(label, value, opts);
 
     // Programs checklist
     const programRows = programs.length ? programs.map(p => {
@@ -249,17 +301,17 @@ const OriginationCompaniesView = {
       <div class="inst-card">
         <div class="inst-card-title">Headquarters information</div>
         <div class="inst-form-grid">
-          ${fieldRO('Company name', c.name, { required: true })}
-          ${fieldRO('Company NMLS #', c.nmlsId, { required: true })}
-          ${fieldRO('Address 1', c.address1)}
-          ${fieldRO('Suite #', c.address2)}
-          ${fieldRO('City', c.city)}
-          ${fieldRO('State', c.state || c.stateOfIncorporation)}
-          ${fieldRO('Zip', c.zip)}
-          ${fieldRO('Contact phone', c.contactPhone)}
-          ${fieldRO('Website', c.website ? c.website.replace(/^https?:\/\//, '') : '')}
-          ${fieldRO('Program admin', c.primaryContact)}
-          <div class="form-full">${fieldRO('CC email addresses', (c.ccEmails || []).join(', '))}</div>
+          ${field('Company name', c.name, { required: true, id: 'co-name' })}
+          ${field('Company NMLS #', c.nmlsId, { required: true, id: 'co-nmls' })}
+          ${field('Address 1', c.address1, { id: 'co-addr1' })}
+          ${field('Suite #', c.address2, { id: 'co-addr2' })}
+          ${field('City', c.city, { id: 'co-city' })}
+          ${field('State', c.state || c.stateOfIncorporation, { id: 'co-state' })}
+          ${field('Zip', c.zip, { id: 'co-zip' })}
+          ${field('Contact phone', c.contactPhone, { id: 'co-phone' })}
+          ${field('Website', c.website ? c.website.replace(/^https?:\/\//, '') : '', { id: 'co-website' })}
+          ${field('Program admin', c.primaryContact, { id: 'co-progadmin' })}
+          <div class="form-full">${field('CC email addresses', (c.ccEmails || []).join(', '), { id: 'co-cc' })}</div>
         </div>
       </div>
 

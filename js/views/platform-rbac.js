@@ -54,8 +54,9 @@ const PlatformRbacView = (() => {
   }
   function _category(u) {
     if (u.role === 'investor' || u.role === 'investor_prospect') return 'investor';
-    if (u.companyId) return 'origination';
-    return 'platform';
+    if (u.role === 'sys_admin' || u.role === 'operator') return 'platform';
+    // Everything else (lo, lp, prog_admin) is a loan-origination role.
+    return 'origination';
   }
   function _categoryLabel(c) {
     return c === 'platform' ? 'Platform Ops' : c === 'origination' ? 'Loan Origination' : 'Investor';
