@@ -322,9 +322,9 @@ img { max-width: 100%; display: block; }
 .sidenav .admin-flyout {
   position: absolute;
   left: calc(100% + 12px);
-  top: 0;
+  bottom: 0;
   min-width: 264px;
-  max-height: calc(100vh - 80px);
+  max-height: calc(100vh - 120px);
   background: #fff;
   border: 1px solid var(--color-border);
   border-radius: 12px;
@@ -332,12 +332,13 @@ img { max-width: 100%; display: block; }
   z-index: 150;
   display: none;
   overflow-y: auto;
+  text-align: left;
 }
 .sidenav .admin-flyout.open { display: block; }
 .sidenav .admin-flyout::before {
   content: '';
   position: absolute;
-  left: -7px; top: 22px;
+  left: -7px; bottom: 22px;
   width: 12px; height: 12px;
   background: #fff;
   border-left: 1px solid var(--color-border);
