@@ -47,7 +47,14 @@ const App = {
     Router.register('/origination-companies', (path) => this.renderShell(OriginationCompaniesView.render(path)));
     Router.register('/investors',             (path) => this.renderShell(InvestorsView.render(path)));
     Router.register('/platform-operator',     (path) => this.renderShell(PlatformOperatorView.render(path)));
-    Router.register('/user-management',       (path) => this.renderShell(PlatformOpsView.render(path)));
+    Router.register('/user-management',       (path) => {
+      // /user-management/u/:id is legacy — redirect to the consolidated profile URL.
+      if (path.startsWith('/user-management/u/')) {
+        const id = path.slice('/user-management/u/'.length);
+        return Router.navigate('/users/' + id, { replace: true });
+      }
+      this.renderShell(PlatformOpsView.render(path));
+    });
     Router.register('/platform',              ()     => Router.navigate('/user-management', { replace: true }));
     Router.register('/system-config',         (path) => this.renderShell(SystemConfigView.render(path)));
     Router.register('/bulk-invite',           (path) => this.renderShell(BulkInviteView.render(path)));
@@ -184,6 +191,13 @@ const App = {
       '/origination-companies':   () => OriginationCompaniesView.render(path),
       '/investors':               () => InvestorsView.render(path),
       '/user-management':         () => PlatformOpsView.render(path),
+      '/users':                   () => {
+        const segs = path.replace('/users', '').split('/').filter(Boolean);
+        const id = segs[0];
+        if (!id) return '';
+        const edit = segs[1] === 'edit';
+        return ProfileView.renderPage(id, { edit });
+      },
       '/system-config':           () => SystemConfigView.render(path),
       '/bulk-invite':             () => BulkInviteView.render(Router.getCurrentPath()),
       '/data/analytics':          () => { DataPlatformView._activeTab = 'analytics';    return DataPlatformView.render(); },

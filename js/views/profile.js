@@ -18,6 +18,12 @@ const ProfileView = {
   close() {},
 
   _editMode: false,
+  _activeTab: 'details',  // 'details' | 'permissions'
+
+  switchTab(tab) {
+    this._activeTab = tab;
+    App.renderView(Router.getCurrentPath());
+  },
 
   /* Full-page user profile — institutional treatment per Figma. Reachable
      via `/users/:userId` (view) or `/users/:userId/edit` (edit). */
@@ -57,11 +63,14 @@ const ProfileView = {
       return 'User Management';
     })();
 
-    /* No tabs — single-page layout (user info → LO details → licenses →
-       permissions sections inline). */
+    /* Sub-nav tabs: Details | Permissions. In edit mode we always force
+       Details (the edit sticky footer would otherwise compete with the
+       RBAC sticky footer). */
+    const editing = this._editMode;
+    if (editing) this._activeTab = 'details';
+    if (this._activeTab !== 'details' && this._activeTab !== 'permissions') this._activeTab = 'details';
 
     /* Page actions in header */
-    const editing = this._editMode;
     const actions = canEdit ? (editing ? '' : `
       ${State.can('impersonate') && u.id !== State.getCurrentUser()?.id && u.onboardingStatus !== 'suspended'
         ? `<button class="btn btn-secondary btn-sm" onclick="App.startImpersonation('${u.id}')">${u.onboardingStatus === 'active' ? 'Impersonate' : 'Run as invitee →'}</button>`
@@ -83,8 +92,25 @@ const ProfileView = {
       ? `<span class="entity-status-pill">Active</span>`
       : `<span class="entity-status-pill" style="color:var(--color-warning)">${Display.onboardingStatusLabel(u.onboardingStatus)}</span>`;
 
-    /* Body — single page (user info + LO details + licenses + permissions). */
-    const content = this._renderProfileDetails(u, { co, entity, isInvestor, isHomium, isOC, editing });
+    /* Tab strip + body. Details tab keeps the Figma layout (user info,
+       LO details, licenses, affiliation, org). Permissions tab houses
+       the role-specific interactivity (platform-op matrix or LO/LP
+       branch-assignment tuples). */
+    const tabs = [
+      { key: 'details',     label: 'Details' },
+      { key: 'permissions', label: 'Permissions' },
+    ];
+    const tabsHtml = editing ? '' : `
+      <div class="section-tabs">
+        ${tabs.map(t =>
+          `<div class="section-tab ${t.key === this._activeTab ? 'active' : ''}"
+                onclick="ProfileView.switchTab('${t.key}')">${t.label}</div>`
+        ).join('')}
+      </div>`;
+
+    const content = this._activeTab === 'permissions' && !editing
+      ? this._renderPermissionsTab(u, { co, entity, isInvestor, isHomium, isOC })
+      : this._renderProfileDetails(u, { co, entity, isInvestor, isHomium, isOC, editing });
 
     /* Sticky footer for edit mode */
     const footer = editing ? `
@@ -111,6 +137,7 @@ const ProfileView = {
           ${statusPill}
         </div>
       </div>
+      ${tabsHtml}
       <div class="page-body">${content}</div>
       ${footer}`;
   },
@@ -223,44 +250,61 @@ const ProfileView = {
         </div>
       </div>` : '';
 
-    /* Permissions sections — for LO/LP users this shows the live RBAC tuple
-       and per-branch assignment cards; for others (investor / Homium) we
-       show the matrix placeholder. */
-    const hasBranchAssignments = (State.getBranchAssignments(u.id) || []).length > 0;
-    let permsSection;
-    if (isOC && hasBranchAssignments) {
-      const eligibility = this._renderEligibilityLine(u, true);
-      const branchCards = this._renderBranchAssignmentCards(u, true);
-      const placeholder = `
-        <div class="inst-card">
-          <div class="inst-card-title">Permission matrix</div>
-          <div style="font-size:12.5px;color:var(--color-text-muted);line-height:1.6;max-width:760px">
-            Per-user permission matrix is coming soon. The branch assignments above describe this user's current effective access.
-          </div>
-        </div>`;
-      permsSection = `${eligibility}${branchCards}${placeholder}`;
-    } else {
-      const inheritsFrom = isHomium
-        ? 'platform-operator'
-        : isInvestor
-        ? 'investor-entity'
-        : 'company / branch';
-      permsSection = `
-        <div class="inst-card">
-          <div class="inst-card-title">Permissions</div>
-          <div style="font-size:12.5px;color:var(--color-text-muted);line-height:1.6;max-width:760px">
-            Per-user permission matrix is coming soon. Until then, this user inherits the ${inheritsFrom} policy assigned to their role.
-          </div>
-        </div>`;
-    }
+    /* Permissions content lives on its own tab (see _renderPermissionsTab).
+       The Details tab intentionally omits it so we don't double-render. */
 
     return `
       ${userInfoCard}
       ${loDetails}
       ${licenseTable}
       ${affiliationCard}
-      ${homiumCard}
-      ${permsSection}`;
+      ${homiumCard}`;
+  },
+
+  /* ---- Permissions tab body ----
+     Role-routed:
+       • Platform operator (sys_admin/operator): the rich PlatformRbacView
+         matrix (user-type chip, 5-tab matrix, sticky save/cancel, audit).
+       • Loan officer / loan processor / prog_admin with branch
+         assignments: Effective Access §1.4 summary + interactive branch
+         assignment cards with LO Assignment tuples.
+       • Everyone else (investor / prog_admin without assignments / etc.):
+         a short "inherits …" placeholder describing where their access
+         comes from.
+  */
+  _renderPermissionsTab(u, ctx) {
+    const { isInvestor, isHomium, isOC } = ctx;
+
+    if (isHomium) {
+      /* Hand off to PlatformRbacView. It owns the dirty-state model and
+         all the matrix/save/cancel/audit handlers — we just mount its
+         content inside the consolidated profile page. */
+      if (typeof PlatformRbacView !== 'undefined' && PlatformRbacView.renderPermissionsContent) {
+        PlatformRbacView.setCurrentPath('/users/' + u.id);
+        return `<div class="rbac-root">${PlatformRbacView.renderPermissionsContent(u.id)}</div>`;
+      }
+    }
+
+    const hasBranchAssignments = (State.getBranchAssignments(u.id) || []).length > 0;
+    if (isOC && hasBranchAssignments) {
+      const eligibility = this._renderEligibilityLine(u, true);
+      const branchCards = this._renderBranchAssignmentCards(u, true);
+      return `${eligibility}${branchCards}`;
+    }
+
+    const inheritsFrom = isHomium
+      ? 'platform-operator'
+      : isInvestor
+      ? 'investor-entity'
+      : 'company / branch';
+    return `
+      <div class="inst-card">
+        <div class="inst-card-title">Permissions</div>
+        <div style="font-size:12.5px;color:var(--color-text-muted);line-height:1.6;max-width:760px">
+          This user inherits the ${inheritsFrom} policy assigned to their role.
+          Per-user overrides are not configured.
+        </div>
+      </div>`;
   },
 
   /* ---- State licenses & registrations table (Figma user screenshot) ---- */

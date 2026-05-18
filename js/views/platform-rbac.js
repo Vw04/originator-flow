@@ -650,17 +650,25 @@ const PlatformRbacView = (() => {
 
   /* ===== RENDER: USER DETAIL (type-adaptive) ===== */
 
+  /* Legacy `/user-management/u/:id` dispatcher — kept only so direct hits
+     redirect cleanly to the consolidated `/users/:id` profile page. The
+     actual detail content for every category is now rendered by
+     ProfileView and (for platform ops) the public `renderPermissionsContent`
+     export below. */
   function _renderDetail(userId) {
-    const u = _findUser(userId);
-    if (!u) return _renderNotFound();
-    const cat = _category(u.raw);
-    if (cat === 'origination') return _renderOrigDetail(u);
-    if (cat === 'investor')    return _renderInvestorDetail(u);
-    return _renderPlatformDetail(u);
+    if (userId && typeof Router !== 'undefined') {
+      Router.navigate('/users/' + userId, { replace: true });
+    }
+    return '';
   }
 
-  function _renderPlatformDetail(u) {
-    const userId = u.id;
+  /* Permissions-tab body for a platform operator. Returns just the
+     user-type chip + view-only bar + 5-tab matrix + sticky footer
+     (no back link, no header, no user-profile fields — the consolidated
+     profile page owns those). */
+  function _renderPlatformPermsBody(userId) {
+    const u = _findUser(userId);
+    if (!u) return '';
     _ensureState(userId);
     const p = _state[userId];
     const t = p.type;
@@ -681,45 +689,20 @@ const PlatformRbacView = (() => {
     ).join('');
 
     return `
-      <div class="rbac-root">
-        <div class="rb-page">
-          <a class="rb-back" href="javascript:PlatformRbacView.goList()">
-            <svg width="13" height="13" viewBox="0 0 14 14" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M9 2L4 7l5 5"/></svg>
-            Back to User Management
-          </a>
-
-          <div class="rb-detail-header">
-            ${_avatar(u, 'lg')}
-            <div class="rb-detail-info">
-              <h1 class="rb-detail-name">${_esc(u.name)}</h1>
-              <div class="rb-detail-email">${_esc(u.email)}${u.raw.title ? ` <span class="rb-meta-sep">·</span> <span class="rb-meta-text">${_esc(u.raw.title)}</span>` : ''}</div>
-            </div>
-            <div class="rb-detail-head-right">
-              <label class="rb-typesel-row" for="rb-typesel-${userId}">
-                <span class="rb-typesel-lbl">User type</span>
-                <select class="rb-typesel ${typeClass}" id="rb-typesel-${userId}"
-                        onchange="PlatformRbacView.changeType('${userId}',this)">
-                  <option value="admin"${t==='admin'?' selected':''}>Admin</option>
-                  <option value="member"${t==='member'?' selected':''}>Member</option>
-                  <option value="view-only"${t==='view-only'?' selected':''}>View-only</option>
-                </select>
-              </label>
-            </div>
-          </div>
-
-          <div class="rb-card-wrap">
+          <div class="rb-card-wrap" style="margin-top:0">
             <div class="rb-section-hd">
-              <div class="rb-section-hd-title">User Profile</div>
-              <div class="rb-section-hd-sub">Read-only fields are populated from the operator's onboarding</div>
+              <div class="rb-section-hd-title">User Type</div>
+              <div class="rb-section-hd-sub">Admin grants full platform write. Member is the operator default. View-only disables every editing control below.</div>
             </div>
-            <div class="rb-profile-grid">
-              <div class="rb-fg"><label for="rb-pf-first-${userId}">First name</label><input class="rb-input rb-input-sm" id="rb-pf-first-${userId}" value="${_esc(u.raw.firstName||'')}" readonly /></div>
-              <div class="rb-fg"><label for="rb-pf-last-${userId}">Last name</label><input class="rb-input rb-input-sm" id="rb-pf-last-${userId}" value="${_esc(u.raw.lastName||'')}" readonly /></div>
-              <div class="rb-fg"><label for="rb-pf-email-${userId}">Email</label><input class="rb-input rb-input-sm" id="rb-pf-email-${userId}" value="${_esc(u.email)}" readonly /></div>
-              <div class="rb-fg"><label for="rb-pf-phone-${userId}">Phone</label><input class="rb-input rb-input-sm" id="rb-pf-phone-${userId}" placeholder="—" value="${_esc(u.raw.phone||'')}" /></div>
-              <div class="rb-fg"><label for="rb-pf-title-${userId}">Title</label><input class="rb-input rb-input-sm" id="rb-pf-title-${userId}" placeholder="—" value="${_esc(u.raw.title||'')}" oninput="PlatformRbacView.onTitleChange('${userId}',this.value)" /></div>
-              <div class="rb-fg"><label for="rb-pf-co-${userId}">Company</label><input class="rb-input rb-input-sm" id="rb-pf-co-${userId}" value="Homium" readonly /></div>
-            </div>
+            <label class="rb-typesel-row" for="rb-typesel-${userId}" style="margin:0">
+              <span class="rb-typesel-lbl">User type</span>
+              <select class="rb-typesel ${typeClass}" id="rb-typesel-${userId}"
+                      onchange="PlatformRbacView.changeType('${userId}',this)">
+                <option value="admin"${t==='admin'?' selected':''}>Admin</option>
+                <option value="member"${t==='member'?' selected':''}>Member</option>
+                <option value="view-only"${t==='view-only'?' selected':''}>View-only</option>
+              </select>
+            </label>
           </div>
 
           ${t === 'view-only' ? `
@@ -743,10 +726,7 @@ const PlatformRbacView = (() => {
             <button class="rb-btn rb-btn-danger-ghost rb-btn-sm" onclick="PlatformRbacView.confirmDeactivate('${userId}')">Deactivate User</button>
             <button class="rb-btn rb-btn-ghost rb-btn-sm" ${dirty?'':'disabled'} onclick="PlatformRbacView.cancelChanges('${userId}')">Cancel</button>
             <button class="rb-btn rb-btn-primary rb-btn-sm" ${dirty?'':'disabled'} onclick="PlatformRbacView.saveChanges('${userId}')">Save Changes</button>
-          </div>
-        </div>
-        ${_renderModal()}
-      </div>`;
+          </div>`;
   }
 
   function _renderOrigDetail(u) {
@@ -1070,9 +1050,13 @@ const PlatformRbacView = (() => {
 
   /* ===== RENDER: AUDIT LOG ===== */
 
-  function _renderAudit() {
-    const actors = ['all', ...Array.from(new Set(AUDIT.map(a => a.actor)))];
+  /* Reusable audit-list renderer. When `targetUserName` is supplied,
+     events are pre-filtered to those whose `target` matches that user
+     (used by the embedded audit panel under a user's Permissions tab).
+     The user-level filters (type/category/actor) still apply on top. */
+  function _renderAuditList(targetUserName) {
     const filtered = AUDIT.filter(e => {
+      if (targetUserName        && e.target          !== targetUserName)        return false;
       if (_auditTypeFilter     !== 'all' && e.type           !== _auditTypeFilter)     return false;
       if (_auditActorFilter    !== 'all' && e.actor          !== _auditActorFilter)    return false;
       if (_auditCategoryFilter !== 'all' && e.targetCategory !== _auditCategoryFilter) return false;
@@ -1098,6 +1082,30 @@ const PlatformRbacView = (() => {
           </div>
         </div>`);
     });
+
+    return rows.length ? rows.join('') : `<div class="rb-empty"><p>No events match the current filters.</p></div>`;
+  }
+
+  /* Compact audit panel for embedding inside a user's Permissions tab.
+     Defaults to events touching this user; offers a one-click "Show all"
+     toggle (just shows the global feed scrolled). */
+  function _renderAuditBody(userId) {
+    const u = _findUser(userId);
+    if (!u) return '';
+    const listHtml = _renderAuditList(u.name);
+    return `
+      <div class="rb-card-wrap">
+        <div class="rb-section-hd">
+          <div class="rb-section-hd-title">Recent activity</div>
+          <div class="rb-section-hd-sub">Permission, user-management, and system events affecting <strong>${_esc(u.name)}</strong>. <a href="javascript:Router.navigate('/user-management/audit')" style="color:var(--h-mint-700,#1f6f43);text-decoration:underline">View full audit log →</a></div>
+        </div>
+        <div class="rb-audit-list">${listHtml}</div>
+      </div>`;
+  }
+
+  function _renderAudit() {
+    const actors = ['all', ...Array.from(new Set(AUDIT.map(a => a.actor)))];
+    const listHtml = _renderAuditList(null);
 
     return `
       <div class="rbac-root">
@@ -1137,9 +1145,7 @@ const PlatformRbacView = (() => {
           </div>
 
           <div class="rb-card-wrap">
-            <div class="rb-audit-list">
-              ${rows.length ? rows.join('') : `<div class="rb-empty"><p>No events match the current filters.</p></div>`}
-            </div>
+            <div class="rb-audit-list">${listHtml}</div>
             <div class="rb-audit-foot">
               <button class="rb-btn rb-btn-ghost rb-btn-sm" onclick="PlatformRbacView.loadMoreAudit()">Load older events</button>
             </div>
@@ -1245,8 +1251,28 @@ const PlatformRbacView = (() => {
   return {
     render,
 
+    /* Permission-content fragments mounted by the consolidated user
+       profile page (ProfileView). Each returns just the section bodies
+       — no back-link, no header, no outer rbac-root wrapper (ProfileView
+       supplies that). */
+    renderPermissionsContent(userId) {
+      _ensureState(userId);
+      // Bind Esc/slash key handlers after the DOM lands so modals work
+      // and `/` focuses the search input as on /user-management.
+      setTimeout(_afterRender, 0);
+      return `<div class="rb-page" style="padding-top:0">
+        ${_renderPlatformPermsBody(userId)}
+        ${_renderAuditBody(userId)}
+      </div>${_renderModal()}`;
+    },
+
+    /* Called by ProfileView before invoking renderPermissionsContent so
+       internal _rerender() targets the consolidated profile URL, not the
+       legacy /user-management/u/:id route. */
+    setCurrentPath(path) { _currentPath = path; },
+
     /* Navigation */
-    openUser(userId) { _activeObjTab = 'platformsettings'; Router.navigate('/user-management/u/' + userId); },
+    openUser(userId) { _activeObjTab = 'platformsettings'; Router.navigate('/users/' + userId); },
     goList()         { Router.navigate('/user-management'); },
     goAudit()        { Router.navigate('/user-management/audit'); },
     goInvite()       { _initInvite(); Router.navigate('/user-management/invite'); },
