@@ -530,7 +530,13 @@ const OnboardingFlowView = {
   /* ---- Form / role handlers ---- */
   _setRole(value) {
     this._role = value === 'lo' ? 'lo' : 'lp';
-    if (this._userId) State.updateUser(this._userId, { role: this._role });
+    if (this._userId) {
+      const u = this._user();
+      // Never clobber platform-side roles (sys_admin/operator/prog_admin/investor).
+      if (!u || !u.role || ['lo', 'lp'].includes(u.role)) {
+        State.updateUser(this._userId, { role: this._role });
+      }
+    }
     this._render();
   },
 
@@ -564,7 +570,14 @@ const OnboardingFlowView = {
       return false;
     }
 
-    const role = isLO ? 'lo' : 'lp';
+    // Only overwrite role if the user is a fresh LO/LP signup. Never clobber
+     // existing platform-side roles (sys_admin, operator, prog_admin, investor)
+     // — this onboarding flow is shared by the demo "sign in as <role>" entry
+     // points, so without this guard, signing in as System Admin and clicking
+     // Submit would silently turn Alex Morgan into a Loan Processor.
+    const role = (u.role && !['lo', 'lp'].includes(u.role))
+      ? u.role
+      : (isLO ? 'lo' : 'lp');
     let branchId = fields.branchId;
     let nmlsId = fields.nmlsId;
     const branches = State.getBranchesByCompany(u.companyId || '');
