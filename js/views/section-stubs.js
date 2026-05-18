@@ -42,14 +42,11 @@ function renderStubContent(icon, heading, description) {
 }
 
 /* ============================================================
-   Investors View — 2-tab hub (Entities | Users) + entity detail page
+   Investors View — entities list + entity detail page.
+   Per the RBAC wireframe: the hub is a plain entities list (no tab
+   strip). System admins drill into an entity to see its users.
    ============================================================ */
 const InvestorsView = {
-  TABS: [
-    { key: 'entities', label: 'Entities', path: '/investors' },
-    { key: 'users',    label: 'Users',    path: '/investors/users' },
-  ],
-
   _detailTab: 'details',  // 'details' | 'users' | 'programs'
 
   render(fullPath) {
@@ -63,14 +60,22 @@ const InvestorsView = {
       else if (!sub) this._detailTab = 'details';
       return this._renderDetail(entityId);
     }
-    const tab = segs[0] === 'users' ? 'users' : 'entities';
-    const content = tab === 'users' ? this._renderUsers() : this._renderEntities();
-    return renderSectionShell(
-      'Investors',
-      'Investor entities and their users',
-      this.TABS, tab, content,
-      { eyebrow: 'Administration' }
-    );
+    // Legacy /investors/users path → redirect to the hub.
+    if (segs[0] === 'users') {
+      Router.navigate('/investors', { replace: true });
+      return '';
+    }
+    return `
+      <div class="page-header">
+        <div class="page-header-inner">
+          <div class="page-header-left">
+            <div class="page-title-eyebrow">Administration</div>
+            <div class="page-title">Investors</div>
+            <div class="page-subtitle">Investor entities and their users</div>
+          </div>
+        </div>
+      </div>
+      <div class="page-body">${this._renderEntities()}</div>`;
   },
 
   _renderEntities() {
@@ -108,11 +113,11 @@ const InvestorsView = {
         <table class="entity-table">
           <thead><tr>
             <th style="min-width:480px">Entity</th>
-            <th style="min-width:150px">Manager</th>
+            <th style="min-width:180px">Manager</th>
             <th style="width:90px">Users</th>
             <th style="width:180px">Programs</th>
             <th style="width:150px">Status</th>
-            <th style="width:130px">Created</th>
+            <th style="width:140px">Created</th>
             <th style="width:90px"></th>
           </tr></thead>
           <tbody>${rows}</tbody>

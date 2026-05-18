@@ -9698,16 +9698,48 @@ textarea:hover:not(:disabled) {
    Embedded PlatformRbacView permissions content on /users/:id.
    The user-profile page-body already provides the 28px gutter;
    drop rb-page's own 40px horizontal padding so cards align with
-   the entity-header and tab strip above them. Also align the
-   user-type row and sticky footer to the 24px card-internal grid
-   used by .rb-section-hd / .rb-obj-pane.
+   the entity-header and tab strip above them.
    ============================================================ */
 .page-body > .rbac-root > .rb-page {
   padding: 0 0 24px;
 }
-.page-body > .rbac-root .rb-card-wrap > .rb-typesel-row {
-  padding: 0 24px 18px;
-}
-.page-body > .rbac-root .rb-detail-foot {
+
+/* Sticky footer is nested INSIDE the Permissions Configuration card.
+   When embedded under /users/:id, render it as a continuous bottom
+   strip of that card — no float, no extra borders, no margin. */
+.page-body > .rbac-root .rb-card-wrap > .rb-detail-foot {
+  position: static;
+  border: 0;
+  border-top: 1px solid var(--color-border);
+  border-radius: 0 0 12px 12px;
+  margin-top: 0;
+  box-shadow: none;
   padding: 12px 24px;
 }
+
+/* User-type chip rendered in the entity-header actions bar — looks
+   like a sibling to the .btn btn-secondary buttons. */
+.rb-typesel.rb-typesel-header {
+  border-radius: var(--radius-full, 999px);
+  border: 1px solid var(--color-border);
+  padding: 6px 14px;
+  font-size: 13px;
+  background: #fff;
+  cursor: pointer;
+  height: 32px;
+}
+
+/* Collapsible Recent activity card — full-width clickable header. */
+.rb-audit-collapsible { padding: 0; }
+.rb-audit-toggle {
+  display: flex; align-items: baseline; gap: 8px;
+  width: 100%; padding: 14px 18px;
+  border: 0; background: transparent;
+  text-align: left; cursor: pointer; font: inherit;
+}
+.rb-audit-toggle:hover { background: var(--color-surface); }
+.rb-audit-chevron { font-size: 13px; color: var(--color-text-muted); width: 12px; }
+.rb-audit-title   { font-weight: 600; font-size: 14px; color: var(--color-text); }
+.rb-audit-sub     { font-size: 12px; color: var(--color-text-muted); margin-left: 6px; flex: 1; }
+.rb-audit-toggle:hover .rb-audit-title,
+.rb-audit-toggle:hover .rb-audit-chevron { color: var(--color-primary); }

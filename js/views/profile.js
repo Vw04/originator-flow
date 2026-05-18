@@ -70,8 +70,14 @@ const ProfileView = {
     if (editing) this._activeTab = 'details';
     if (this._activeTab !== 'details' && this._activeTab !== 'permissions') this._activeTab = 'details';
 
-    /* Page actions in header */
+    /* Page actions in header. For platform-operator users, prepend the
+       Admin/Member/View-only user-type chip — owned by PlatformRbacView
+       so the existing changeType handler + last-admin guard keep
+       working unchanged. */
+    const userTypeChip = (isHomium && typeof PlatformRbacView !== 'undefined' && PlatformRbacView.renderUserTypeSelect)
+      ? PlatformRbacView.renderUserTypeSelect(u.id) : '';
     const actions = canEdit ? (editing ? '' : `
+      ${userTypeChip}
       ${State.can('impersonate') && u.id !== State.getCurrentUser()?.id && u.onboardingStatus !== 'suspended'
         ? `<button class="btn btn-secondary btn-sm" onclick="App.startImpersonation('${u.id}')">${u.onboardingStatus === 'active' ? 'Impersonate' : 'Run as invitee →'}</button>`
         : ''}

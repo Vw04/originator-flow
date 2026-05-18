@@ -158,6 +158,7 @@ const PlatformRbacView = (() => {
   let _accessFilter   = 'all';                                   // 'all' | 'admin' | 'member' | 'view-only' | 'n/a'
   let _statusFilter   = 'all';
   let _companyFilter  = 'all';
+  let _auditOpen           = {};                                 // per-user collapse state for the embedded Recent activity panel
   let _auditTypeFilter     = 'all';
   let _auditActorFilter    = 'all';
   let _auditCategoryFilter = 'all';
@@ -689,22 +690,6 @@ const PlatformRbacView = (() => {
     ).join('');
 
     return `
-          <div class="rb-card-wrap" style="margin-top:0">
-            <div class="rb-section-hd">
-              <div class="rb-section-hd-title">User Type</div>
-              <div class="rb-section-hd-sub">Admin grants full platform write. Member is the operator default. View-only disables every editing control below.</div>
-            </div>
-            <label class="rb-typesel-row" for="rb-typesel-${userId}" style="margin:0">
-              <span class="rb-typesel-lbl">User type</span>
-              <select class="rb-typesel ${typeClass}" id="rb-typesel-${userId}"
-                      onchange="PlatformRbacView.changeType('${userId}',this)">
-                <option value="admin"${t==='admin'?' selected':''}>Admin</option>
-                <option value="member"${t==='member'?' selected':''}>Member</option>
-                <option value="view-only"${t==='view-only'?' selected':''}>View-only</option>
-              </select>
-            </label>
-          </div>
-
           ${t === 'view-only' ? `
             <div class="rb-vo-bar" role="status">
               <svg width="13" height="13" viewBox="0 0 12 12" fill="none" stroke="currentColor" stroke-width="1.4"><circle cx="6" cy="6" r="5"/><path d="M6 3v3.5M6 8.5v.01" stroke-linecap="round"/></svg>
@@ -718,14 +703,13 @@ const PlatformRbacView = (() => {
             </div>
             <div class="rb-obj-tabs" role="tablist" aria-label="Permission categories">${tabsHtml}</div>
             <div class="rb-obj-pane">${tabContent}</div>
-          </div>
-
-          <div class="rb-detail-foot">
-            ${dirty ? `<span class="rb-dirty"><span class="rb-dirty-dot"></span>${dirty} unsaved change${dirty===1?'':'s'}</span>` : '<span class="rb-clean">All changes saved</span>'}
-            <div class="rb-foot-spacer"></div>
-            <button class="rb-btn rb-btn-danger-ghost rb-btn-sm" onclick="PlatformRbacView.confirmDeactivate('${userId}')">Deactivate User</button>
-            <button class="rb-btn rb-btn-ghost rb-btn-sm" ${dirty?'':'disabled'} onclick="PlatformRbacView.cancelChanges('${userId}')">Cancel</button>
-            <button class="rb-btn rb-btn-primary rb-btn-sm" ${dirty?'':'disabled'} onclick="PlatformRbacView.saveChanges('${userId}')">Save Changes</button>
+            <div class="rb-detail-foot">
+              ${dirty ? `<span class="rb-dirty"><span class="rb-dirty-dot"></span>${dirty} unsaved change${dirty===1?'':'s'}</span>` : '<span class="rb-clean">All changes saved</span>'}
+              <div class="rb-foot-spacer"></div>
+              <button class="rb-btn rb-btn-danger-ghost rb-btn-sm" onclick="PlatformRbacView.confirmDeactivate('${userId}')">Deactivate User</button>
+              <button class="rb-btn rb-btn-ghost rb-btn-sm" ${dirty?'':'disabled'} onclick="PlatformRbacView.cancelChanges('${userId}')">Cancel</button>
+              <button class="rb-btn rb-btn-primary rb-btn-sm" ${dirty?'':'disabled'} onclick="PlatformRbacView.saveChanges('${userId}')">Save Changes</button>
+            </div>
           </div>`;
   }
 
@@ -1086,20 +1070,24 @@ const PlatformRbacView = (() => {
     return rows.length ? rows.join('') : `<div class="rb-empty"><p>No events match the current filters.</p></div>`;
   }
 
-  /* Compact audit panel for embedding inside a user's Permissions tab.
-     Defaults to events touching this user; offers a one-click "Show all"
-     toggle (just shows the global feed scrolled). */
+  /* Compact, collapse-by-default audit panel for embedding inside a
+     user's Permissions tab. Clicking the header toggles the list. */
   function _renderAuditBody(userId) {
     const u = _findUser(userId);
     if (!u) return '';
-    const listHtml = _renderAuditList(u.name);
+    const open = !!_auditOpen[userId];
+    const chevron = open ? '▾' : '▸';
+    const listHtml = open ? _renderAuditList(u.name) : '';
     return `
-      <div class="rb-card-wrap">
-        <div class="rb-section-hd">
-          <div class="rb-section-hd-title">Recent activity</div>
-          <div class="rb-section-hd-sub">Permission, user-management, and system events affecting <strong>${_esc(u.name)}</strong>. <a href="javascript:Router.navigate('/user-management/audit')" style="color:var(--h-mint-700,#1f6f43);text-decoration:underline">View full audit log →</a></div>
-        </div>
-        <div class="rb-audit-list">${listHtml}</div>
+      <div class="rb-card-wrap rb-audit-collapsible">
+        <button class="rb-audit-toggle" type="button"
+                onclick="PlatformRbacView.toggleAudit('${userId}')"
+                aria-expanded="${open}">
+          <span class="rb-audit-chevron">${chevron}</span>
+          <span class="rb-audit-title">Recent activity</span>
+          <span class="rb-audit-sub">Permission, user-management, and system events affecting ${_esc(u.name)}</span>
+        </button>
+        ${open ? `<div class="rb-audit-list">${listHtml}</div>` : ''}
       </div>`;
   }
 
@@ -1270,6 +1258,30 @@ const PlatformRbacView = (() => {
        internal _rerender() targets the consolidated profile URL, not the
        legacy /user-management/u/:id route. */
     setCurrentPath(path) { _currentPath = path; },
+
+    /* Header-variant of the user-type chip — rendered inside the
+       entity-header actions area of /users/:id for platform operators
+       (Admin / Member / View-only). Returns '' for non-platform users. */
+    renderUserTypeSelect(userId) {
+      _ensureState(userId);
+      const t = _state[userId]?.type;
+      if (!t || t === 'n/a') return '';
+      const typeClass = t === 'admin' ? 'rb-typesel-admin' : t === 'view-only' ? 'rb-typesel-view' : 'rb-typesel-member';
+      return `
+        <select class="rb-typesel rb-typesel-header ${typeClass}" id="rb-typesel-${userId}"
+                onchange="PlatformRbacView.changeType('${userId}',this)">
+          <option value="admin"${t==='admin'?' selected':''}>Admin</option>
+          <option value="member"${t==='member'?' selected':''}>Member</option>
+          <option value="view-only"${t==='view-only'?' selected':''}>View-only</option>
+        </select>`;
+    },
+
+    /* Toggle the embedded Recent activity panel under a user's
+       Permissions tab. State is per-userId, in-memory only. */
+    toggleAudit(userId) {
+      _auditOpen[userId] = !_auditOpen[userId];
+      _rerender();
+    },
 
     /* Navigation */
     openUser(userId) { _activeObjTab = 'platformsettings'; Router.navigate('/users/' + userId); },
