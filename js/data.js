@@ -1844,3 +1844,19 @@ function initColumnResize(container) {
 
   window.HOMIUM_DATA = { LOANS, STAGES, STAGES_FULL, PEOPLE };
 })();
+
+/* ---- Boot-time diagnostic for the "Alex Morgan as Loan Processor" report.
+   Logs the role + title of user-001 as they exist in DEMO_DATA right after
+   parse. Also prints what Display.roleName('sys_admin') resolves to. Delete
+   this block once the issue is confirmed resolved. */
+(function _bootDiagnostic() {
+  try {
+    const alex = (DEMO_DATA.users || []).find(u => u.id === 'user-001');
+    console.log('%c[data.js boot]', 'color:#0E2A47;font-weight:600',
+      'user-001 role =', alex && alex.role,
+      '| title =', alex && alex.title,
+      '| Display.roleName(role) =', Display.roleName(alex && alex.role));
+  } catch (e) {
+    console.warn('[data.js boot] diagnostic failed', e);
+  }
+})();
