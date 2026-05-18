@@ -107,7 +107,7 @@ const InvestorsView = {
       <div class="table-container">
         <table class="entity-table">
           <thead><tr>
-            <th style="min-width:340px">Entity</th>
+            <th style="min-width:480px">Entity</th>
             <th>Manager</th>
             <th>Users</th>
             <th>Programs</th>

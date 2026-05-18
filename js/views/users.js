@@ -281,16 +281,16 @@ const UsersView = {
           ${users.length ? `
             <table class="entity-table">
               <thead><tr>
-                <th class="${thClass('name')}" onclick="UsersView.setSort('name')">User</th>
+                <th class="${thClass('name')}" onclick="UsersView.setSort('name')" style="min-width:360px">User</th>
                 <th class="${thClass('role')}" onclick="UsersView.setSort('role')">Role</th>
                 ${columnMode === 'investor' ? `
                   <th>Title</th>
-                  ${!hideOrgCol ? '<th>Company</th>' : ''}
+                  ${!hideOrgCol ? '<th style="min-width:240px">Company</th>' : ''}
                 ` : columnMode === 'homium' ? `
                   <th>Title</th>
                 ` : `
                   <th>Branch Assignments</th>
-                  ${!hideOrgCol ? '<th>Company</th>' : ''}
+                  ${!hideOrgCol ? '<th style="min-width:240px">Company</th>' : ''}
                   <th>Licenses</th>
                 `}
                 <th class="${thClass('status')}" onclick="UsersView.setSort('status')">Status</th>

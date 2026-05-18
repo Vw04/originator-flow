@@ -148,10 +148,9 @@ const OriginationCompaniesView = {
     const tabs = [
       { key: 'details',  label: 'Details',  count: null },
       { key: 'branches', label: 'Branches', count: branches.length },
-      { key: 'users',    label: 'Users',    count: users.length },
     ];
-    // Migrate legacy active-tab keys to new (programs/markets/overview/settings → details)
-    const legacy = { overview: 'details', settings: 'details', access: 'details', permissions: 'details', programs: 'details', markets: 'details' };
+    // Migrate legacy active-tab keys (incl. former 'users' tab) → details.
+    const legacy = { overview: 'details', settings: 'details', access: 'details', permissions: 'details', programs: 'details', markets: 'details', users: 'details' };
     if (legacy[this._activeTab]) this._activeTab = legacy[this._activeTab];
     if (!tabs.find(t => t.key === this._activeTab)) this._activeTab = 'details';
 
@@ -167,7 +166,6 @@ const OriginationCompaniesView = {
       switch (this._activeTab) {
         case 'details':  content = this._renderDetails(c, canEdit, false); break;
         case 'branches': content = BranchesView.render({ companyId }); break;
-        case 'users':    content = UsersView.render({ companyId, roles: ['prog_admin', 'lo', 'lp'] }); break;
         default:         content = this._renderDetails(c, canEdit, false);
       }
     }

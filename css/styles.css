@@ -324,13 +324,14 @@ img { max-width: 100%; display: block; }
   left: calc(100% + 12px);
   top: 0;
   min-width: 264px;
+  max-height: calc(100vh - 80px);
   background: #fff;
   border: 1px solid var(--color-border);
   border-radius: 12px;
   box-shadow: 0 18px 48px rgba(14, 42, 71, 0.14), 0 2px 6px rgba(14, 42, 71, 0.06);
   z-index: 150;
   display: none;
-  overflow: hidden;
+  overflow-y: auto;
 }
 .sidenav .admin-flyout.open { display: block; }
 .sidenav .admin-flyout::before {
@@ -743,6 +744,14 @@ img { max-width: 100%; display: block; }
   flex: 1;
 }
 .page-body > .page-header { padding: 0; margin: -28px -40px 20px; padding: 28px 40px 0; }
+/* Entity-detail pages (entity-header → section-tabs → page-body) align
+   the page-body content gutter to 28px so inst-cards inside match the
+   entity-header's 28px margin. Also tightens the gap between the tab
+   strip and the first card. */
+.entity-header ~ .page-body,
+.section-tabs ~ .page-body {
+  padding: 12px 0 0;
+}
 /* When the page-body wraps an artboard mount as its primary child, suppress
    page-level padding so the artboard renders edge-to-edge (matching the
    /originations layout). Lets DataPlatformView keep its existing wrapper. */
@@ -9562,7 +9571,7 @@ textarea:hover:not(:disabled) {
    header card and need a softer surface treatment. */
 .entity-header + .section-tabs,
 .inst-card + .section-tabs {
-  margin: -4px 28px 16px;
+  margin: -4px 28px 12px;
   border: 1px solid var(--color-border);
   border-radius: 10px;
   background: #fff;
