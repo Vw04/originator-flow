@@ -165,13 +165,13 @@ const BranchesView = {
               <thead><tr>
                 <th class="${thClass('name')}" onclick="BranchesView.setSort('name')" style="min-width:340px">Branch</th>
                 ${(role !== 'prog_admin' && !scope?.companyId) ? '<th style="min-width:200px">Company</th>' : ''}
-                <th style="width:90px">Type</th>
-                <th style="width:70px">State</th>
-                <th style="min-width:160px">Managing LO</th>
-                <th style="width:70px">Users</th>
-                <th style="min-width:180px">Programs</th>
-                <th style="width:110px">NMLS Sync</th>
-                <th class="${thClass('status')}" onclick="BranchesView.setSort('status')" style="width:90px">Status</th>
+                <th style="width:70px">Type</th>
+                <th style="width:60px">State</th>
+                <th style="min-width:140px">Managing LO</th>
+                <th style="width:60px">Users</th>
+                <th style="min-width:200px">Programs</th>
+                <th style="width:100px">NMLS Sync</th>
+                <th class="${thClass('status')}" onclick="BranchesView.setSort('status')" style="width:80px">Status</th>
               </tr></thead>
               <tbody>${rows}</tbody>
             </table>
@@ -810,7 +810,7 @@ const BranchesView = {
       const on = branchMarketIds.has(id);
       const cls = `admin-pm-chip${on ? ' is-on' : ''}${canEdit ? '' : ' is-readonly'}`;
       const click = canEdit ? `onclick="BranchesView._toggleBranchMarket('${b.id}', '${id}', ${!on})"` : '';
-      return `<span class="${cls}" ${click}>${m.code} <span style="opacity:.7;font-weight:400;margin-left:4px">${m.name}</span></span>`;
+      return `<span class="${cls}" ${click}><span class="admin-pm-chip-code">${m.code}</span><span class="admin-pm-chip-name">${m.name}</span></span>`;
     }).join('');
     return `
       <div class="card admin-pm-section-card">
