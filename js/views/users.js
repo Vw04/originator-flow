@@ -148,7 +148,14 @@ const UsersView = {
     const investorEntities = State.getInvestorEntities();
     const entityById = (id) => investorEntities.find(e => e.id === id);
 
-    const rows = users.map(u => {
+    const rows = users.map(u0 => {
+      // Defensive re-fetch — bypass any potential closure-shadowing of u
+      // and guarantee we render the LIVE user record from State, not a
+      // stale snapshot. If the live record exists, prefer it.
+      const u = State.getUser(u0.id) || u0;
+      if (typeof console !== 'undefined' && u.role !== u0.role) {
+        console.warn('[users.js] role mismatch for', u.id, 'closure:', u0.role, 'live:', u.role);
+      }
       const co = State.getCompany(u.companyId);
       const entity = u.investorEntityId ? entityById(u.investorEntityId) : null;
       const assignments = State.getBranchAssignments(u.id);
