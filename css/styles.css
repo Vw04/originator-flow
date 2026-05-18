@@ -9694,3 +9694,20 @@ textarea:hover:not(:disabled) {
   font-style: italic;
 }
 
+/* ============================================================
+   Embedded PlatformRbacView permissions content on /users/:id.
+   The user-profile page-body already provides the 28px gutter;
+   drop rb-page's own 40px horizontal padding so cards align with
+   the entity-header and tab strip above them. Also align the
+   user-type row and sticky footer to the 24px card-internal grid
+   used by .rb-section-hd / .rb-obj-pane.
+   ============================================================ */
+.page-body > .rbac-root > .rb-page {
+  padding: 0 0 24px;
+}
+.page-body > .rbac-root .rb-card-wrap > .rb-typesel-row {
+  padding: 0 24px 18px;
+}
+.page-body > .rbac-root .rb-detail-foot {
+  padding: 12px 24px;
+}

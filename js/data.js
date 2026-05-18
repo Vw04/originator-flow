@@ -133,7 +133,7 @@ const DEMO_DATA = {
   /* ---- Users ---- */
   users: [
     // Homium Staff
-    { id: 'user-001', companyId: null, branchId: null, firstName: 'Alex',     lastName: 'Morgan',   email: 'alex.morgan@homium.io',   role: 'sys_admin', onboardingStatus: 'active', lastLogin: '2026-03-25', nmlsId: null, phone: '202-555-0100', title: 'Platform Admin',           policies: ['full_access'] },
+    { id: 'user-001', companyId: null, branchId: null, firstName: 'Alex',     lastName: 'Morgan',   email: 'alex.morgan@homium.io',   role: 'sys_admin', onboardingStatus: 'active', lastLogin: '2026-03-25', nmlsId: null, phone: '202-555-0100', title: 'System Admin',             policies: ['full_access'] },
     { id: 'user-002', companyId: null, branchId: null, firstName: 'Jordan',   lastName: 'Lee',      email: 'jordan.lee@homium.io',    role: 'operator',  onboardingStatus: 'active', lastLogin: '2026-03-24', nmlsId: null, phone: '202-555-0101', title: 'Platform Operator',        policies: ['platform_ops'] },
     /* ---- Additional Homium internal staff ---- */
     { id: 'user-h01', companyId: null, branchId: null, firstName: 'Maya',     lastName: 'Patel',    email: 'maya.patel@homium.io',    role: 'operator',  onboardingStatus: 'active', lastLogin: '2026-04-28', nmlsId: null, phone: '202-555-0110', title: 'Implementation Lead',      policies: ['platform_ops'] },
