@@ -437,6 +437,14 @@ const BranchesView = {
     App.renderView(Router.getCurrentPath());
   },
 
+  /* Deep-link from outside the branch detail (e.g. the user profile's
+     Companies / Branches tab) — sets the active tab BEFORE navigating
+     so the branch opens directly on that tab. */
+  openOnTab(branchId, tab) {
+    this._branchTab = tab || 'details';
+    Router.navigate('/branches/' + branchId);
+  },
+
   /* ---- Details tab — institutional MUI-form treatment per Figma. ---- */
   _renderBranchDetails(b, co, canEdit, editing) {
     const mgr = b.managingLO ? State.getUser(b.managingLO) : null;

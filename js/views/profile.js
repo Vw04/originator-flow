@@ -98,7 +98,7 @@ const ProfileView = {
        branch-assignment tuples). */
     const tabs = [
       { key: 'details',     label: 'Details' },
-      { key: 'permissions', label: 'Permissions' },
+      { key: 'permissions', label: isOC ? 'Companies / Branches' : 'Permissions' },
     ];
     const tabsHtml = editing ? '' : `
       <div class="section-tabs">
@@ -285,11 +285,8 @@ const ProfileView = {
       }
     }
 
-    const hasBranchAssignments = (State.getBranchAssignments(u.id) || []).length > 0;
-    if (isOC && hasBranchAssignments) {
-      const eligibility = this._renderEligibilityLine(u, true);
-      const branchCards = this._renderBranchAssignmentCards(u, true);
-      return `${eligibility}${branchCards}`;
+    if (isOC) {
+      return this._renderCompaniesBranchesTab(u);
     }
 
     const inheritsFrom = isHomium
@@ -303,6 +300,47 @@ const ProfileView = {
         <div style="font-size:12.5px;color:var(--color-text-muted);line-height:1.6;max-width:760px">
           This user inherits the ${inheritsFrom} policy assigned to their role.
           Per-user overrides are not configured.
+        </div>
+      </div>`;
+  },
+
+  /* ---- Companies / Branches tab body (LO / LP / prog_admin) ----
+     Per the RBAC wireframe: a simple roster of which branches the user
+     is assigned to, with a deep-link to the branch's Permissions tab
+     where the per-LO tuple editor lives. */
+  _renderCompaniesBranchesTab(u) {
+    const assignments = State.getBranchAssignments(u.id) || [];
+    const rows = assignments.map(a => {
+      const branch = State.getBranch(a.branchId);
+      const co = branch ? State.getCompany(branch.companyId) : null;
+      const isPrimary = a.branchId === u.branchId;
+      const pill = isPrimary
+        ? `<span class="entity-status-pill">Yes</span>`
+        : `<span style="font-size:12.5px;color:var(--color-text-muted)">No</span>`;
+      return `
+        <tr>
+          <td>${co ? co.name : '—'}</td>
+          <td>${branch ? branch.name : a.branchId}</td>
+          <td>${pill}</td>
+          <td><a href="javascript:BranchesView.openOnTab('${a.branchId}','permissions')" style="color:var(--color-primary);text-decoration:none">Go to branch permissions →</a></td>
+        </tr>`;
+    }).join('');
+    return `
+      <div class="inst-card">
+        <div style="font-size:13px;color:var(--color-text);margin-bottom:14px">
+          User can be assigned to multiple branches. Permissions are managed at the branch level.
+        </div>
+        <table class="entity-table" style="width:100%">
+          <thead><tr>
+            <th>Company</th>
+            <th>Branch</th>
+            <th style="width:120px">Primary</th>
+            <th style="width:200px"></th>
+          </tr></thead>
+          <tbody>${rows || `<tr><td colspan="4" style="text-align:center;color:var(--color-text-muted);padding:18px">No branch assignments yet.</td></tr>`}</tbody>
+        </table>
+        <div style="margin-top:14px">
+          <a href="javascript:void(0)" style="color:var(--color-primary);text-decoration:none;font-size:13px" onclick="alert('Assign-to-branch is coming soon')">+ Assign to branch</a>
         </div>
       </div>`;
   },

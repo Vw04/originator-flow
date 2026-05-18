@@ -15,7 +15,6 @@
 const OriginationCompaniesView = {
   _selectedCompanyId: null,
   _activeTab: 'details',
-  _topTab: 'companies',  // 'companies' | 'users'  (Branches lives inside each OC detail)
   _editMode: false,
 
   render(fullPath) {
@@ -78,36 +77,20 @@ const OriginationCompaniesView = {
   },
 
   /* ============================================================
-     HUB: top-level 3-tab navigation
+     HUB: page-header + companies list (no tab strip — per RBAC
+     wireframe, the OC hub is just a companies list; user
+     management lives at /user-management).
      ============================================================ */
   _renderHub() {
     const canEdit = State.can('manageCompany') || State.can('editAny');
-    // Branches tab removed from the hub — branches live inside each OC's detail page.
-    if (this._topTab === 'branches') this._topTab = 'companies';
-    const tabs = [
-      { key: 'companies', label: 'Companies' },
-      { key: 'users',     label: 'Users'     },
-    ];
-    const tabsHtml = tabs.map(t =>
-      `<div class="section-tab ${t.key === this._topTab ? 'active' : ''}"
-            onclick="OriginationCompaniesView.switchTopTab('${t.key}')">${t.label}</div>`
-    ).join('');
-
-    let content;
-    let primaryAction = '';
-
-    if (this._topTab === 'companies') {
-      CompaniesView._clickMode = 'navigate';
-      CompaniesView._headless  = true;
-      content = CompaniesView.render();
-      CompaniesView._clickMode = 'panel';
-      CompaniesView._headless  = false;
-      if (canEdit) primaryAction = `<button class="btn btn-primary btn-sm" onclick="Router.navigate('/origination-companies/new')">+ New Origination Company</button>`;
-    } else {
-      content = UsersView.render({ scope: 'admin-hub', roles: ['prog_admin', 'lo', 'lp'] });
-      const canInvite = canEdit || State.getRole() === 'prog_admin';
-      if (canInvite) primaryAction = `<button class="btn btn-primary btn-sm" onclick="BulkInviteView.start({ companyId: '', returnPath: '${Router.getCurrentPath() || '/origination-companies'}' })">+ Invite User</button>`;
-    }
+    CompaniesView._clickMode = 'navigate';
+    CompaniesView._headless  = true;
+    const content = CompaniesView.render();
+    CompaniesView._clickMode = 'panel';
+    CompaniesView._headless  = false;
+    const primaryAction = canEdit
+      ? `<button class="btn btn-primary btn-sm" onclick="Router.navigate('/origination-companies/new')">+ New Origination Company</button>`
+      : '';
 
     return `
       <div class="page-header">
@@ -119,15 +102,9 @@ const OriginationCompaniesView = {
           <div class="page-header-actions">${primaryAction}</div>
         </div>
       </div>
-      <div class="section-tabs">${tabsHtml}</div>
       <div class="page-body">${content}</div>
       <div id="company-modal-container"></div>
       <div id="company-panel-container"></div>`;
-  },
-
-  switchTopTab(key) {
-    this._topTab = key;
-    App.renderView('/origination-companies');
   },
 
   /* ============================================================
