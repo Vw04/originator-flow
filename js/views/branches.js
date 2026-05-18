@@ -165,13 +165,13 @@ const BranchesView = {
               <thead><tr>
                 <th class="${thClass('name')}" onclick="BranchesView.setSort('name')" style="min-width:340px">Branch</th>
                 ${(role !== 'prog_admin' && !scope?.companyId) ? '<th style="min-width:200px">Company</th>' : ''}
-                <th style="width:70px">Type</th>
-                <th style="width:60px">State</th>
+                <th style="width:100px">Type</th>
+                <th style="width:80px">State</th>
                 <th style="min-width:140px">Managing LO</th>
-                <th style="width:60px">Users</th>
-                <th style="min-width:200px">Programs</th>
-                <th style="width:100px">NMLS Sync</th>
-                <th class="${thClass('status')}" onclick="BranchesView.setSort('status')" style="width:80px">Status</th>
+                <th style="width:80px">Users</th>
+                <th style="width:200px">Programs</th>
+                <th style="width:130px">NMLS Sync</th>
+                <th class="${thClass('status')}" onclick="BranchesView.setSort('status')" style="width:110px">Status</th>
               </tr></thead>
               <tbody>${rows}</tbody>
             </table>
@@ -820,7 +820,7 @@ const BranchesView = {
             <div style="font-size:12px;color:var(--color-text-muted)">States this branch operates in. Bounded by ${co ? co.name : 'the company'}'s enabled markets. Disabling a market here also removes any of its programs from the Eligible Programs list.</div>
           </div>
         </div>
-        <div class="admin-pm-chip-grid" style="padding:6px 0">${chips}</div>
+        <div class="admin-pm-chip-grid" style="padding:10px 14px">${chips}</div>
       </div>`;
   },
 

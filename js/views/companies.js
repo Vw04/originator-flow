@@ -148,12 +148,12 @@ const CompaniesView = {
             <table class="entity-table">
               <thead><tr>
                 <th class="${thClass('name')}" onclick="CompaniesView.setSort('name')" style="min-width:480px">Company</th>
-                <th style="width:90px">Branches</th>
+                <th style="width:100px">Branches</th>
                 <th style="width:120px">Users</th>
-                <th style="min-width:200px">Programs</th>
-                <th class="${thClass('status')}" onclick="CompaniesView.setSort('status')" style="width:120px">Status</th>
+                <th style="width:180px">Programs</th>
+                <th class="${thClass('status')}" onclick="CompaniesView.setSort('status')" style="width:150px">Status</th>
                 <th style="width:140px">NMLS Sync</th>
-                <th style="width:70px"></th>
+                <th style="width:90px"></th>
               </tr></thead>
               <tbody>${rows}</tbody>
             </table>

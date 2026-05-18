@@ -108,12 +108,12 @@ const InvestorsView = {
         <table class="entity-table">
           <thead><tr>
             <th style="min-width:480px">Entity</th>
-            <th>Manager</th>
-            <th>Users</th>
-            <th>Programs</th>
-            <th>Status</th>
-            <th>Created</th>
-            <th></th>
+            <th style="min-width:150px">Manager</th>
+            <th style="width:90px">Users</th>
+            <th style="width:180px">Programs</th>
+            <th style="width:150px">Status</th>
+            <th style="width:130px">Created</th>
+            <th style="width:90px"></th>
           </tr></thead>
           <tbody>${rows}</tbody>
         </table>
