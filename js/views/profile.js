@@ -186,7 +186,7 @@ const ProfileView = {
       return `
         <div class="form-group">
           <label>${label}</label>
-          <div class="input is-readonly${empty}">${shown}</div>
+          <div class="field-value${empty}">${shown}</div>
         </div>`;
     };
 

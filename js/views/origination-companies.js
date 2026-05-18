@@ -257,7 +257,7 @@ const OriginationCompaniesView = {
       return `
         <div class="form-group">
           <label>${label}${opts.required ? ' <span class="req">*</span>' : ''}</label>
-          <div class="input is-readonly${empty}">${shown}</div>
+          <div class="field-value${empty}">${shown}</div>
         </div>`;
     };
     const fieldRO = (label, value, opts) => field(label, value, opts);

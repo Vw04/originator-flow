@@ -198,6 +198,13 @@ const App = {
         const edit = segs[1] === 'edit';
         return ProfileView.renderPage(id, { edit });
       },
+      '/branches':                () => {
+        const segs = path.replace('/branches', '').split('/').filter(Boolean);
+        const id = segs[0];
+        if (!id) { Router.navigate('/origination-companies', { replace: true }); return ''; }
+        const edit = segs[1] === 'edit';
+        return BranchesView.renderDetailPage(id, { edit });
+      },
       '/system-config':           () => SystemConfigView.render(path),
       '/bulk-invite':             () => BulkInviteView.render(Router.getCurrentPath()),
       '/data/analytics':          () => { DataPlatformView._activeTab = 'analytics';    return DataPlatformView.render(); },

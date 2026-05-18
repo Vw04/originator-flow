@@ -748,9 +748,10 @@ img { max-width: 100%; display: block; }
 /* Entity-detail pages (entity-header → section-tabs → page-body) align
    the page-body content gutter to 28px so inst-cards inside match the
    entity-header's 28px margin. Also tightens the gap between the tab
-   strip and the first card. */
-.entity-header ~ .page-body,
-.section-tabs ~ .page-body {
+   strip and the first card. Scoped to page-bodies that directly contain
+   an .inst-card so list-page page-bodies (with tables) keep their
+   default 28px 40px gutter. */
+.page-body:has(> .inst-card) {
   padding: 12px 0 0;
 }
 /* When the page-body wraps an artboard mount as its primary child, suppress
@@ -1221,6 +1222,18 @@ tbody td {
    ============================================================ */
 
 .form-group { display: flex; flex-direction: column; gap: 6px; }
+
+/* Plain-text value under a form label — used in view mode for entity
+   detail pages. Edit mode swaps this for an .input / .select-input.
+   No border, no fill — just text in the column flow. */
+.form-group > .field-value {
+  font-size: 14px;
+  color: var(--color-text);
+  line-height: 1.4;
+  padding: 4px 0 0;
+  min-height: 22px;
+}
+.form-group > .field-value.empty { color: var(--color-text-muted); }
 
 /* Institutional MUI-style outlined inputs.
    The eyebrow label uses the mono caps treatment from the Figma. */

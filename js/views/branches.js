@@ -163,15 +163,15 @@ const BranchesView = {
           ${ordered.length ? `
             <table>
               <thead><tr>
-                <th class="${thClass('name')}" onclick="BranchesView.setSort('name')">Branch</th>
-                ${(role !== 'prog_admin' && !scope?.companyId) ? '<th>Company</th>' : ''}
-                <th>Type</th>
-                <th>State</th>
-                <th>Managing LO</th>
-                <th>Users</th>
-                <th>Programs</th>
-                <th>NMLS Sync</th>
-                <th class="${thClass('status')}" onclick="BranchesView.setSort('status')">Status</th>
+                <th class="${thClass('name')}" onclick="BranchesView.setSort('name')" style="min-width:340px">Branch</th>
+                ${(role !== 'prog_admin' && !scope?.companyId) ? '<th style="min-width:200px">Company</th>' : ''}
+                <th style="width:90px">Type</th>
+                <th style="width:70px">State</th>
+                <th style="min-width:160px">Managing LO</th>
+                <th style="width:70px">Users</th>
+                <th style="min-width:180px">Programs</th>
+                <th style="width:110px">NMLS Sync</th>
+                <th class="${thClass('status')}" onclick="BranchesView.setSort('status')" style="width:90px">Status</th>
               </tr></thead>
               <tbody>${rows}</tbody>
             </table>
@@ -462,7 +462,7 @@ const BranchesView = {
       return `
         <div class="form-group">
           <label>${label}</label>
-          <div class="input is-readonly${empty}">${shown}</div>
+          <div class="field-value${empty}">${shown}</div>
         </div>`;
     };
 
