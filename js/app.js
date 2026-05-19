@@ -62,7 +62,8 @@ const App = {
     // Legacy redirects + branch detail
     Router.register('/companies',    () => Router.navigate('/origination-companies', { replace: true }));
     Router.register('/branches',     (path) => {
-      const segs = path.replace('/branches', '').split('/').filter(Boolean);
+      const [pathOnly] = path.split('?');
+      const segs = pathOnly.replace('/branches', '').split('/').filter(Boolean);
       if (!segs.length) return Router.navigate('/origination-companies', { replace: true });
       if (segs[0] === 'new') return this.renderShell(BranchCreateView.render(path));
       const edit = segs[1] === 'edit';
@@ -199,9 +200,11 @@ const App = {
         return ProfileView.renderPage(id, { edit });
       },
       '/branches':                () => {
-        const segs = path.replace('/branches', '').split('/').filter(Boolean);
+        const [pathOnly] = path.split('?');
+        const segs = pathOnly.replace('/branches', '').split('/').filter(Boolean);
         const id = segs[0];
         if (!id) { Router.navigate('/origination-companies', { replace: true }); return ''; }
+        if (id === 'new') return BranchCreateView.render(path);
         const edit = segs[1] === 'edit';
         return BranchesView.renderDetailPage(id, { edit });
       },

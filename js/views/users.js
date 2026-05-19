@@ -89,9 +89,24 @@ const UsersView = {
     const canEdit   = State.can('manageUsers') || State.can('editAny');
     const canInvite = canEdit || role === 'prog_admin';
     const currentPath = Router.getCurrentPath() || '';
-    const inviteOnclick = scope?.platformOnly
-      ? 'UsersView.openPlatformInviteModal()'
-      : `BulkInviteView.start({ companyId: '${scope?.companyId || ''}', returnPath: '${currentPath}' })`;
+    /* The Add-User affordance routes to the appropriate flow per scope:
+       - homiumOnly: PlatformRbacView wizard, category locked to 'platform'
+       - investorEntityId: PlatformRbacView wizard, category locked to 'investor'
+       - LO branch / company: existing BulkInviteView flow
+       - platformOnly: legacy platform-only modal */
+    let inviteOnclick;
+    let inviteLabel = '+ Invite User';
+    if (scope?.homiumOnly) {
+      inviteOnclick = `PlatformRbacView.invStartCategory('platform', { returnPath: '${currentPath}' })`;
+      inviteLabel = '+ Add Platform Operator';
+    } else if (scope?.investorEntityId) {
+      inviteOnclick = `PlatformRbacView.invStartCategory('investor', { investorEntityId: '${scope.investorEntityId}', returnPath: '${currentPath}' })`;
+      inviteLabel = '+ Add Investor User';
+    } else if (scope?.platformOnly) {
+      inviteOnclick = 'UsersView.openPlatformInviteModal()';
+    } else {
+      inviteOnclick = `BulkInviteView.start({ companyId: '${scope?.companyId || ''}', returnPath: '${currentPath}' })`;
+    }
 
     // Base user set — apply scope if provided
     let users;
@@ -237,7 +252,7 @@ const UsersView = {
             <div class="page-subtitle">${users.length} user${users.length !== 1 ? 's' : ''} shown</div>
           </div>
           <div class="page-header-actions">
-            ${canInvite ? `<button class="btn btn-primary btn-sm" onclick="${inviteOnclick}">+ Invite User</button>` : ''}
+            ${canInvite ? `<button class="btn btn-primary btn-sm" onclick="${inviteOnclick}">${inviteLabel}</button>` : ''}
           </div>
         </div>
       </div>`;
@@ -282,7 +297,7 @@ const UsersView = {
             ${rolePill}
             ${statusPill}
             ${anyActive ? `<button class="filter-clear-btn" onclick="UsersView.clearFilters()">Clear</button>` : ''}
-            ${scope && scope.scope !== 'admin-hub' && canInvite ? `<button class="btn btn-primary btn-sm" onclick="${inviteOnclick}" style="margin-left:auto">+ Invite User</button>` : ''}
+            ${scope && canInvite && (scope.scope !== 'admin-hub' || scope.homiumOnly || scope.investorEntityId) ? `<button class="btn btn-primary btn-sm" onclick="${inviteOnclick}" style="margin-left:auto">${inviteLabel}</button>` : ''}
           </div>
 
           ${users.length ? `

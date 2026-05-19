@@ -169,7 +169,11 @@ const PlatformRbacView = (() => {
   /* ---- Bulk-invite Stage 0/1/2 state ---- */
   let _inv = null;
   function _initInvite() {
-    _inv = { stage: 0, category: null, companyId: null, rawEmails: '', parsed: null, rows: [], nextRowId: 0 };
+    _inv = {
+      stage: 0, category: null, companyId: null, investorEntityId: null,
+      returnPath: null,
+      rawEmails: '', parsed: null, rows: [], nextRowId: 0,
+    };
   }
   function _companyDomain() {
     if (!_inv?.companyId) return null;
@@ -182,15 +186,22 @@ const PlatformRbacView = (() => {
     const tokens = raw.split(/[,;\s\n]+/).map(t => t.trim()).filter(Boolean);
     const re = /^[^\s@]+@[^\s@]+\.[^\s@]+$/i;
     const seen = new Set(State.getUsers().map(u => u.email.toLowerCase()));
+    /* valid[] is now { email, invalidReason } — bad-domain entries flow through
+       to Stage 2 so the inviter can see them flagged in red. Only format-broken
+       and duplicate emails are blocked at the paste step. */
     const valid = [], invalid = [], duplicates = [];
     tokens.forEach(t => {
       if (!re.test(t)) { invalid.push(t); return; }
       const lc = t.toLowerCase();
-      if (category === 'platform' && !lc.endsWith('@homium.io') && !lc.endsWith('@homium.com')) { invalid.push(t); return; }
-      if (category === 'origination' && domain && !lc.endsWith('@' + domain.toLowerCase()))      { invalid.push(t); return; }
       if (seen.has(lc)) { duplicates.push(t); return; }
       seen.add(lc);
-      valid.push(t);
+      let invalidReason = null;
+      if (category === 'platform' && !lc.endsWith('@homium.io') && !lc.endsWith('@homium.com')) {
+        invalidReason = 'Wrong domain (expected homium.io)';
+      } else if (category === 'origination' && domain && !lc.endsWith('@' + domain.toLowerCase())) {
+        invalidReason = 'Wrong domain (expected ' + domain + ')';
+      }
+      valid.push({ email: t, invalidReason });
     });
     return { valid, invalid, duplicates };
   }
@@ -348,7 +359,6 @@ const PlatformRbacView = (() => {
                 <svg width="13" height="13" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6"><path d="M3 2h7l3 3v9H3V2z"/><path d="M5.5 7h5M5.5 9.5h5M5.5 12h3"/></svg>
                 Audit Log
               </button>
-              <button class="rb-btn rb-btn-primary" onclick="PlatformRbacView.goInvite()">+ Invite Users</button>
             </div>
           </div>
 
@@ -627,15 +637,22 @@ const PlatformRbacView = (() => {
                 </tr>
               </thead>
               <tbody>
-                ${s.rows.map(r => `
-                  <tr>
-                    <td class="rb-bulk-cb"><input type="checkbox" ${r.selected ? 'checked' : ''} onchange="PlatformRbacView.invSetRow(${r.id},'selected',this.checked)" aria-label="Select ${_esc(r.email)}" /></td>
-                    <td><span class="rb-bulk-email">${_esc(r.email)}</span></td>
+                ${s.rows.map(r => {
+                  const bad = !!r.invalidReason;
+                  const trStyle = bad ? ' style="background:rgba(220,38,38,0.06);box-shadow:inset 3px 0 0 #dc2626"' : '';
+                  const flag = bad
+                    ? `<div style="margin-top:3px"><span style="display:inline-block;background:#fee2e2;color:#b91c1c;padding:1px 6px;border-radius:3px;font-size:10.5px;font-weight:600">${_esc(r.invalidReason)}</span></div>`
+                    : '';
+                  return `
+                  <tr${trStyle}>
+                    <td class="rb-bulk-cb"><input type="checkbox" ${r.selected ? 'checked' : ''} ${bad ? 'disabled' : ''} onchange="PlatformRbacView.invSetRow(${r.id},'selected',this.checked)" aria-label="Select ${_esc(r.email)}" /></td>
+                    <td><span class="rb-bulk-email">${_esc(r.email)}</span>${flag}</td>
                     ${rowCells(r)}
                     <td class="rb-row-act">
                       <button class="rb-revert" title="Remove from invite" aria-label="Remove ${_esc(r.email)}" onclick="PlatformRbacView.invRemoveRow(${r.id})">×</button>
                     </td>
-                  </tr>`).join('')}
+                  </tr>`;
+                }).join('')}
               </tbody>
             </table>
           </div>
@@ -1222,6 +1239,14 @@ const PlatformRbacView = (() => {
     } else if (fullPath.startsWith('/user-management/audit')) {
       html = _renderAudit();
     } else if (fullPath.startsWith('/user-management/invite')) {
+      // Invite wizard is reachable only via entity-level Add-User entry points
+      // (PlatformRbacView.invStartCategory). Direct URL hits with no seeded
+      // category bounce back to the roster.
+      if (!_inv || !_inv.category) {
+        _inv = null;
+        Router.navigate('/user-management', { replace: true });
+        return '';
+      }
       html = _renderInvite();
     } else if (fullPath.startsWith('/user-management/u/')) {
       const id = fullPath.split('/user-management/u/')[1];
@@ -1285,9 +1310,24 @@ const PlatformRbacView = (() => {
 
     /* Navigation */
     openUser(userId) { _activeObjTab = 'platformsettings'; Router.navigate('/users/' + userId); },
-    goList()         { Router.navigate('/user-management'); },
+    /* Returning to the roster also unseats any in-flight invite wizard state
+       so stale categories can't be revived by direct URL navigation. */
+    goList()         { _inv = null; Router.navigate('/user-management'); },
     goAudit()        { Router.navigate('/user-management/audit'); },
-    goInvite()       { _initInvite(); Router.navigate('/user-management/invite'); },
+
+    /* Entry point for the invite wizard, called from entity-level Add-User
+       buttons (PlatformOperatorView /users, InvestorsView /:id/users). The
+       wizard is no longer reachable from the /user-management header; the
+       caller must supply the category. */
+    invStartCategory(category, opts = {}) {
+      _initInvite();
+      _inv.category = category;
+      _inv.companyId = opts.companyId || null;
+      _inv.investorEntityId = opts.investorEntityId || null;
+      _inv.returnPath = opts.returnPath || null;
+      _inv.stage = 1;
+      Router.navigate('/user-management/invite');
+    },
 
     /* List filters */
     onSearch(v)            { _searchFilter   = v; _rerender(); },
@@ -1324,9 +1364,14 @@ const PlatformRbacView = (() => {
                         : _inv.category === 'origination' ? 'lo' : 'investor';
       const defaultBranch = _inv.category === 'origination' && _inv.companyId
         ? (State.getBranchesByCompany(_inv.companyId)[0]?.id || null) : null;
-      _inv.rows = parsed.valid.map((email) => ({
-        id: _inv.nextRowId++, email, role: defaultRole,
-        branchId: defaultBranch, title: '', selected: true,
+      _inv.rows = parsed.valid.map((v) => ({
+        id: _inv.nextRowId++,
+        email: v.email,
+        invalidReason: v.invalidReason || null,
+        role: defaultRole,
+        branchId: defaultBranch, title: '',
+        /* Default-select only the rows that will actually go out. */
+        selected: !v.invalidReason,
       }));
       _inv.stage = 2;
       _rerender();
@@ -1338,7 +1383,10 @@ const PlatformRbacView = (() => {
       r[key] = value;
       if (key === 'selected') _rerender();
     },
-    invSelectAll(checked) { _inv.rows.forEach(r => r.selected = checked); _rerender(); },
+    invSelectAll(checked) {
+      _inv.rows.forEach(r => { if (!r.invalidReason) r.selected = checked; });
+      _rerender();
+    },
     invBulkSetRole(value) {
       if (!value) return;
       _inv.rows.forEach(r => { if (r.selected) r.role = value; });
@@ -1351,7 +1399,11 @@ const PlatformRbacView = (() => {
     invSubmit() {
       const cat = _inv.category;
       const companyId = _inv.companyId || null;
-      _inv.rows.forEach(r => {
+      const investorEntityId = _inv.investorEntityId || null;
+      const returnPath = _inv.returnPath || '/user-management';
+      const sendable = _inv.rows.filter(r => !r.invalidReason);
+      const skipped  = _inv.rows.length - sendable.length;
+      sendable.forEach(r => {
         const local = r.email.split('@')[0];
         const parts = local.split(/[._]/);
         const firstName = parts[0] ? parts[0][0].toUpperCase() + parts[0].slice(1) : 'New';
@@ -1364,14 +1416,16 @@ const PlatformRbacView = (() => {
             : r.role,
           companyId: cat === 'origination' ? companyId : null,
           branchId:  cat === 'origination' ? r.branchId : null,
+          investorEntityId: cat === 'investor' ? investorEntityId : null,
           title: r.title || '',
         };
         State.inviteUser(data);
       });
-      const n = _inv.rows.length;
+      const n = sendable.length;
       _inv = null;
-      Router.navigate('/user-management');
-      _showToast(`${n} invite${n===1?'':'s'} sent`);
+      Router.navigate(returnPath);
+      const tail = skipped > 0 ? `, ${skipped} skipped (bad domain)` : '';
+      _showToast(`${n} invite${n===1?'':'s'} sent${tail}`);
     },
 
     /* Profile editing (title) — persisted to State */

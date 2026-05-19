@@ -69,7 +69,7 @@ const BulkInviteView = {
     const warnings = parsed && (parsed.invalid.length || parsed.duplicates.length) ? `
       <div class="bulk-invite-warnings">
         <div style="font-weight:600;margin-bottom:6px">These were not added:</div>
-        ${parsed.invalid.map(e => `<span class="tag">${e} <span style="opacity:.7">— invalid or wrong domain</span></span>`).join('')}
+        ${parsed.invalid.map(e => `<span class="tag">${e} <span style="opacity:.7">— invalid format</span></span>`).join('')}
         ${parsed.duplicates.map(e => `<span class="tag">${e} <span style="opacity:.7">— duplicate</span></span>`).join('')}
       </div>` : '';
 
@@ -123,13 +123,19 @@ const BulkInviteView = {
   _parseEmails(raw, companyDomain) {
     const tokens = (raw || '').split(/[\s,;]+/).map(t => t.trim().toLowerCase()).filter(Boolean);
     const seen = new Set();
+    /* valid[] entries are now { email, invalidReason } — bad-domain rows flow
+       through to Stage 2 so they can be flagged in red. Only format-broken
+       emails and duplicates are blocked at the paste step. */
     const valid = [], invalid = [], duplicates = [];
     const re = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
     for (const t of tokens) {
-      if (!re.test(t))                                       { invalid.push(t); continue; }
-      if (companyDomain && !t.endsWith('@' + companyDomain.toLowerCase())) { invalid.push(t); continue; }
-      if (seen.has(t))                                       { duplicates.push(t); continue; }
-      seen.add(t); valid.push(t);
+      if (!re.test(t))   { invalid.push(t); continue; }
+      if (seen.has(t))   { duplicates.push(t); continue; }
+      seen.add(t);
+      const invalidReason = companyDomain && !t.endsWith('@' + companyDomain.toLowerCase())
+        ? 'Wrong domain (expected ' + companyDomain + ')'
+        : null;
+      valid.push({ email: t, invalidReason });
     }
     return { valid, invalid, duplicates };
   },
@@ -143,11 +149,12 @@ const BulkInviteView = {
       this._rerender();
       return;
     }
-    s.rows = s.parsed.valid.map(email => {
+    s.rows = s.parsed.valid.map(v => {
       s.nextRowId += 1;
       return {
         id: s.nextRowId,
-        email,
+        email: v.email,
+        invalidReason: v.invalidReason || null,
         // Role + branch are required; default to empty so the inviter must
         // pick. Validation in _submitAll rejects rows missing either.
         role: '',
@@ -169,8 +176,9 @@ const BulkInviteView = {
     const companyName = company?.name || '';
     const branches = State.getBranchesByCompany(s.companyId);
     const total = s.rows.length;
+    const sendableTotal = s.rows.filter(r => !r.invalidReason).length;
     const selected = s.rows.filter(r => r.selected).length;
-    const allSelected = total > 0 && selected === total;
+    const allSelected = sendableTotal > 0 && selected === sendableTotal;
 
     const branchOptions = branches.map(b => `<option value="${b.id}">${b.name}</option>`).join('');
 
@@ -238,13 +246,18 @@ const BulkInviteView = {
     ).join('');
     const branchMissing = !row.branchId;
     const roleMissing = !row.role;
+    const bad = !!row.invalidReason;
+    const trStyle = bad ? ' style="background:rgba(220,38,38,0.06);box-shadow:inset 3px 0 0 #dc2626"' : '';
+    const badFlag = bad
+      ? `<div style="margin-top:3px"><span style="display:inline-block;background:#fee2e2;color:#b91c1c;padding:1px 6px;border-radius:3px;font-size:10.5px;font-weight:600">${row.invalidReason}</span></div>`
+      : '';
     return `
-      <tr>
+      <tr${trStyle}>
         <td class="col-checkbox">
-          <input type="checkbox" ${row.selected ? 'checked' : ''}
+          <input type="checkbox" ${row.selected ? 'checked' : ''} ${bad ? 'disabled' : ''}
             onchange="BulkInviteView._setRow(${row.id}, 'selected', this.checked)">
         </td>
-        <td class="cell-primary">${row.email}</td>
+        <td class="cell-primary">${row.email}${badFlag}</td>
         <td>
           <select class="select-input" style="${branchMissing ? 'border-color:var(--color-danger,#DC2626)' : ''}"
                   onchange="BulkInviteView._setRow(${row.id}, 'branchId', this.value)">
@@ -307,7 +320,7 @@ const BulkInviteView = {
   },
 
   _setSelectAll(checked) {
-    this._state.rows.forEach(r => { r.selected = checked; });
+    this._state.rows.forEach(r => { if (!r.invalidReason) r.selected = checked; });
     this._rerender();
   },
 
@@ -385,17 +398,26 @@ const BulkInviteView = {
     if (!s.rows.length) return;
     const companyId = s.companyId;
 
-    // Branch + Role are required for every row.
-    const missing = s.rows.filter(r => !r.branchId || !r.role);
+    /* Bad-domain rows surface on Stage 2 as red-flagged but un-selectable —
+       skip them at submit so the inviter can see what wasn't sent. */
+    const sendable = s.rows.filter(r => !r.invalidReason);
+    const skipped  = s.rows.length - sendable.length;
+    if (!sendable.length) {
+      alert('No valid rows to send. Bad-domain emails are flagged in red.');
+      return;
+    }
+
+    // Branch + Role are required for every sendable row.
+    const missing = sendable.filter(r => !r.branchId || !r.role);
     if (missing.length) {
       alert(`Set Branch and Role on every row before sending. ${missing.length} row${missing.length === 1 ? '' : 's'} missing one or both.`);
       // Mark missing rows as selected so the inviter can spot them
-      this._state.rows.forEach(r => { r.selected = (!r.branchId || !r.role); });
+      this._state.rows.forEach(r => { r.selected = !r.invalidReason && (!r.branchId || !r.role); });
       this._rerender();
       return;
     }
 
-    s.rows.forEach(row => {
+    sendable.forEach(row => {
       const { firstName, lastName } = this._deriveName(row.email);
       const branchAssignments = this._buildBranchAssignment(row);
       State.inviteUser({
@@ -415,8 +437,9 @@ const BulkInviteView = {
       });
     });
 
-    const n = s.rows.length;
-    UsersView.showSuccess(`Sent ${n} invite${n === 1 ? '' : 's'}`);
+    const n = sendable.length;
+    const tail = skipped > 0 ? `, ${skipped} skipped (bad domain)` : '';
+    UsersView.showSuccess(`Sent ${n} invite${n === 1 ? '' : 's'}${tail}`);
 
     const target = this._returnPath || ('/origination-companies/' + companyId);
     this._state = null;
