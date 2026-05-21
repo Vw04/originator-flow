@@ -1,0 +1,945 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<title>Homium Originator-Flow — Design Canon</title>
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=IvyPresto+Display:wght@300;400&family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+<style>
+  /* ============================================================
+     ORIGINATOR-FLOW DESIGN CANON — reference doc
+     Reconciled from the "Internal Homium 2.0" Figma file. Single
+     source of truth for tokens, components, and rollout scope.
+     ============================================================ */
+
+  :root {
+    --bg:        #f9f8f4;
+    --card:      #ffffff;
+    --border:    #e0ddd6;
+    --border-l:  #edebe6;
+    --surf:      #f8f7f4;
+    --ink:       #2d3e4a;
+    --ink-2:     #6b7a85;
+    --ink-mute:  #9ba6ae;
+    --ink-deep:  #00334a;
+    --danger:    #c4382a;
+    --success:   #16a34a;
+    --warning:   #d97706;
+    --info:      #2563eb;
+    --font:      'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+    --serif:     'IvyPresto Display', Georgia, serif;
+    --mono:      'SF Mono', Menlo, monospace;
+  }
+
+  * { box-sizing: border-box; }
+  html, body { margin: 0; padding: 0; }
+  body {
+    font-family: var(--font);
+    color: var(--ink);
+    background: var(--bg);
+    line-height: 1.5;
+    -webkit-font-smoothing: antialiased;
+  }
+
+  /* Header */
+  .doc-head {
+    padding: 48px 48px 32px;
+    background: var(--card);
+    border-bottom: 1px solid var(--border);
+  }
+  .doc-eyebrow {
+    font-family: var(--mono);
+    font-size: 11px;
+    font-weight: 600;
+    letter-spacing: 0.16em;
+    text-transform: uppercase;
+    color: var(--ink-mute);
+    margin: 0 0 10px;
+  }
+  .doc-title {
+    font-family: var(--serif);
+    font-weight: 300;
+    font-size: 44px;
+    line-height: 1.08;
+    color: var(--ink-deep);
+    margin: 0 0 12px;
+    letter-spacing: -0.01em;
+  }
+  .doc-lede {
+    font-size: 15px;
+    color: var(--ink-2);
+    max-width: 740px;
+    margin: 0;
+    line-height: 1.55;
+  }
+  .doc-toc {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 14px;
+    margin: 24px 0 0;
+    font-size: 13px;
+  }
+  .doc-toc a {
+    color: var(--ink-deep);
+    border-bottom: 1px dotted var(--ink-mute);
+    text-decoration: none;
+  }
+  .doc-toc a:hover { border-bottom-style: solid; }
+
+  /* Sections */
+  section {
+    padding: 48px 48px 32px;
+    max-width: 1280px;
+  }
+  section + section { border-top: 1px solid var(--border-l); }
+  .sec-eyebrow {
+    font-family: var(--mono);
+    font-size: 10.5px;
+    font-weight: 600;
+    letter-spacing: 0.16em;
+    text-transform: uppercase;
+    color: var(--ink-mute);
+    margin: 0 0 8px;
+  }
+  .sec-title {
+    font-family: var(--serif);
+    font-weight: 400;
+    font-size: 28px;
+    line-height: 33.6px;
+    color: var(--ink-deep);
+    margin: 0 0 8px;
+    letter-spacing: -0.005em;
+  }
+  .sec-lede {
+    font-size: 14px;
+    color: var(--ink-2);
+    margin: 0 0 28px;
+    max-width: 700px;
+    line-height: 1.55;
+  }
+
+  /* Color swatches */
+  .swatch-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+    gap: 12px;
+  }
+  .swatch {
+    background: var(--card);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 0;
+    overflow: hidden;
+  }
+  .swatch .chip {
+    height: 80px;
+    border-bottom: 1px solid var(--border);
+  }
+  .swatch-meta {
+    padding: 12px 14px;
+  }
+  .swatch-name {
+    font-size: 13px;
+    font-weight: 600;
+    color: var(--ink-deep);
+    margin: 0 0 2px;
+  }
+  .swatch-hex {
+    font-family: var(--mono);
+    font-size: 11.5px;
+    color: var(--ink-2);
+  }
+  .swatch-var {
+    font-family: var(--mono);
+    font-size: 10.5px;
+    color: var(--ink-mute);
+    margin-top: 4px;
+    display: block;
+  }
+  .swatch-use {
+    font-size: 11.5px;
+    color: var(--ink-2);
+    margin-top: 6px;
+    line-height: 1.4;
+  }
+
+  /* Typography samples */
+  .type-card {
+    background: var(--card);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 25px;
+    margin-bottom: 12px;
+  }
+  .type-sample-label {
+    font-family: var(--mono);
+    font-size: 10.5px;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    color: var(--ink-mute);
+    margin: 0 0 12px;
+    display: flex;
+    gap: 14px;
+    align-items: center;
+  }
+  .type-sample-label code {
+    font-size: 10.5px;
+    color: var(--ink-2);
+    background: var(--surf);
+    padding: 2px 8px;
+    border-radius: 4px;
+    border: 1px solid var(--border);
+  }
+  .t-page-title {
+    font-family: var(--serif);
+    font-size: 28px;
+    line-height: 33.6px;
+    font-weight: 300;
+    color: var(--ink-deep);
+    letter-spacing: -0.005em;
+    margin: 0;
+  }
+  .t-section-h {
+    font-size: 15px;
+    line-height: 22.5px;
+    font-weight: 600;
+    color: var(--ink);
+    margin: 0;
+  }
+  .t-body {
+    font-size: 14px;
+    line-height: 1.55;
+    color: var(--ink);
+    margin: 0;
+  }
+  .t-secondary {
+    font-size: 13px;
+    line-height: 19.5px;
+    color: var(--ink-2);
+    margin: 0;
+  }
+  .t-label {
+    font-size: 12px;
+    line-height: 18px;
+    font-weight: 500;
+    color: var(--ink);
+    margin: 0;
+  }
+  .t-placeholder {
+    font-size: 14px;
+    color: var(--ink-mute);
+    margin: 0;
+  }
+  .t-mono {
+    font-family: var(--mono);
+    font-size: 11px;
+    color: var(--ink-mute);
+    margin: 0;
+  }
+
+  /* Spacing demo */
+  .spacing-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+    gap: 14px;
+  }
+  .spacing-card {
+    background: var(--card);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 25px;
+  }
+  .spacing-name {
+    font-size: 13px;
+    font-weight: 600;
+    color: var(--ink-deep);
+    margin: 0 0 6px;
+  }
+  .spacing-meta {
+    font-family: var(--mono);
+    font-size: 11px;
+    color: var(--ink-2);
+    margin: 0 0 16px;
+  }
+  .demo-card {
+    background: var(--card);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 25px;
+    margin-bottom: 14px;
+  }
+  .demo-input {
+    width: 100%;
+    height: 36px;
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    padding: 0 13px;
+    font-size: 14px;
+    color: var(--ink);
+    font-family: inherit;
+    background: var(--card);
+    max-width: 320px;
+  }
+  .demo-input::placeholder { color: var(--ink-mute); }
+  .demo-chip {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    height: 28px;
+    min-width: 44px;
+    padding: 0 14px;
+    border-radius: 6px;
+    background: var(--surf);
+    border: 1px solid var(--border);
+    color: var(--ink-mute);
+    font-size: 11px;
+    font-weight: 500;
+    margin-right: 6px;
+  }
+  .demo-chip.on {
+    background: var(--card);
+    color: var(--ink-2);
+  }
+
+  /* Buttons */
+  .btn-row {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 10px;
+    align-items: center;
+  }
+  .btn {
+    height: 36px;
+    padding: 0 16px;
+    border-radius: 6px;
+    border: 1px solid transparent;
+    font-size: 13px;
+    font-weight: 500;
+    font-family: inherit;
+    cursor: pointer;
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+  }
+  .btn-primary { background: var(--ink-deep); color: #fff; }
+  .btn-outline { background: var(--card); border-color: var(--border); color: var(--ink); }
+  .btn-ghost   { background: transparent; color: var(--ink-2); }
+  .btn-danger  { background: transparent; border-color: var(--danger); color: var(--danger); }
+  .btn-danger-solid { background: var(--danger); color: #fff; }
+
+  /* Action bar demo */
+  .ab-demo {
+    background: var(--card);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    overflow: hidden;
+  }
+  .ab-demo .ab-top {
+    background: var(--bg);
+    border-bottom: 1px solid var(--border-l);
+    padding: 12px 25px 13px;
+    font-size: 13px;
+    font-weight: 500;
+    color: var(--ink-deep);
+    display: flex;
+    align-items: center;
+    gap: 6px;
+  }
+  .ab-demo .ab-body {
+    padding: 25px;
+    font-size: 13px;
+    color: var(--ink-2);
+    line-height: 1.6;
+  }
+  .ab-demo .ab-bot {
+    background: var(--card);
+    border-top: 1px solid var(--border);
+    padding: 14px 25px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+  .ab-demo .dirty {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    margin-right: auto;
+    font-size: 12px;
+    font-weight: 500;
+    color: var(--danger);
+  }
+  .ab-demo .dirty .dot {
+    width: 8px; height: 8px;
+    border-radius: 50%;
+    background: var(--danger);
+    box-shadow: 0 0 0 4px rgba(196, 56, 42, 0.12);
+  }
+
+  /* Tables */
+  .table-demo {
+    background: var(--card);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    overflow: hidden;
+  }
+  .table-demo table { width: 100%; border-collapse: collapse; font-size: 13px; }
+  .table-demo th {
+    text-align: left;
+    padding: 10px 16px;
+    font-size: 11px;
+    font-weight: 600;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+    color: var(--ink-mute);
+    background: var(--surf);
+    border-bottom: 1px solid var(--border);
+  }
+  .table-demo td {
+    padding: 14px 16px;
+    border-bottom: 1px solid var(--border-l);
+    color: var(--ink);
+  }
+  .table-demo tr:last-child td { border-bottom: 0; }
+
+  /* Rollout table */
+  .rollout {
+    background: var(--card);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    overflow: hidden;
+  }
+  .rollout table { width: 100%; border-collapse: collapse; font-size: 13px; }
+  .rollout th {
+    text-align: left;
+    padding: 12px 16px;
+    font-size: 11px;
+    font-weight: 600;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+    color: var(--ink-mute);
+    background: var(--surf);
+    border-bottom: 1px solid var(--border);
+  }
+  .rollout td {
+    padding: 14px 16px;
+    border-bottom: 1px solid var(--border-l);
+    vertical-align: top;
+  }
+  .rollout td.bucket {
+    font-weight: 600;
+    color: var(--ink-deep);
+    width: 220px;
+  }
+  .rollout td.views code {
+    font-family: var(--mono);
+    font-size: 11.5px;
+    color: var(--ink);
+    background: var(--surf);
+    padding: 2px 6px;
+    border-radius: 3px;
+    margin: 0 4px 2px 0;
+    display: inline-block;
+    border: 1px solid var(--border);
+  }
+  .rollout td.bar {
+    width: 140px;
+    text-align: center;
+  }
+  .rollout .yes { color: var(--success); font-weight: 600; font-size: 12px; }
+  .rollout .no  { color: var(--ink-mute); font-size: 12px; }
+
+  /* Kept-as-is callout */
+  .kept {
+    background: var(--card);
+    border: 1px solid var(--border);
+    border-left: 3px solid var(--ink-deep);
+    border-radius: 0 8px 8px 0;
+    padding: 20px 24px;
+    margin-bottom: 12px;
+  }
+  .kept-title {
+    font-family: var(--serif);
+    font-size: 18px;
+    color: var(--ink-deep);
+    margin: 0 0 8px;
+  }
+  .kept-body {
+    font-size: 13px;
+    color: var(--ink-2);
+    margin: 0;
+    line-height: 1.6;
+  }
+
+  /* Footer */
+  .doc-foot {
+    padding: 32px 48px;
+    color: var(--ink-mute);
+    font-size: 12px;
+    border-top: 1px solid var(--border);
+    background: var(--card);
+  }
+</style>
+</head>
+<body>
+
+<header class="doc-head">
+  <p class="doc-eyebrow">Phase 3 · Reference doc</p>
+  <h1 class="doc-title">Homium Originator-Flow Design Canon</h1>
+  <p class="doc-lede">
+    The single source of truth for the warm-institutional canon, reconciled from the "Internal Homium 2.0" Figma file.
+    Companion to the global token swap in <code>css/styles.css</code> and the canonical refactor of <code>js/views/branches.js</code>.
+    Subsequent views inherit colors automatically; structural action-bar wiring follows the rollout table below.
+  </p>
+  <nav class="doc-toc">
+    <a href="#colors">Colors</a>
+    <a href="#typography">Typography</a>
+    <a href="#spacing">Spacing &amp; radii</a>
+    <a href="#components">Components</a>
+    <a href="#action-bars">Action bars</a>
+    <a href="#tables">Tables</a>
+    <a href="#kept">What we kept</a>
+    <a href="#rollout">Rollout</a>
+  </nav>
+</header>
+
+<!-- ================================================== COLORS -->
+<section id="colors">
+  <p class="sec-eyebrow">01</p>
+  <h2 class="sec-title">Colors</h2>
+  <p class="sec-lede">Warm institutional palette adopted site-wide. Status semantics (success/warning/info) are kept from our previous system.</p>
+
+  <h3 style="margin:0 0 12px;font-size:13px;letter-spacing:0.08em;text-transform:uppercase;color:var(--ink-2);font-weight:600">Brand · adopted from Figma</h3>
+  <div class="swatch-grid">
+    <div class="swatch">
+      <div class="chip" style="background:#00334a"></div>
+      <div class="swatch-meta">
+        <p class="swatch-name">Deep navy</p>
+        <p class="swatch-hex">#00334a</p>
+        <code class="swatch-var">--color-primary</code>
+        <p class="swatch-use">Page titles, primary buttons, sidenav active state, sticky-top back-bar text.</p>
+      </div>
+    </div>
+    <div class="swatch">
+      <div class="chip" style="background:#f9f8f4"></div>
+      <div class="swatch-meta">
+        <p class="swatch-name">Cream paper</p>
+        <p class="swatch-hex">#f9f8f4</p>
+        <code class="swatch-var">--color-bg</code>
+        <p class="swatch-use">App background. Also the bg of the sticky-top back-bar.</p>
+      </div>
+    </div>
+    <div class="swatch">
+      <div class="chip" style="background:#ffffff;outline:1px solid var(--border);outline-offset:-1px"></div>
+      <div class="swatch-meta">
+        <p class="swatch-name">Card white</p>
+        <p class="swatch-hex">#ffffff</p>
+        <code class="swatch-var">--color-card</code>
+        <p class="swatch-use">Card surfaces, table bodies, modals.</p>
+      </div>
+    </div>
+    <div class="swatch">
+      <div class="chip" style="background:#e0ddd6"></div>
+      <div class="swatch-meta">
+        <p class="swatch-name">Warm beige border</p>
+        <p class="swatch-hex">#e0ddd6</p>
+        <code class="swatch-var">--color-border</code>
+        <p class="swatch-use">All card / input / chip borders. Sticky-bottom action bar top border.</p>
+      </div>
+    </div>
+    <div class="swatch">
+      <div class="chip" style="background:#edebe6"></div>
+      <div class="swatch-meta">
+        <p class="swatch-name">Soft outline</p>
+        <p class="swatch-hex">#edebe6</p>
+        <code class="swatch-var">--color-border-light</code>
+        <p class="swatch-use">Lighter dividers; the sticky-top back-bar bottom border.</p>
+      </div>
+    </div>
+    <div class="swatch">
+      <div class="chip" style="background:#f8f7f4"></div>
+      <div class="swatch-meta">
+        <p class="swatch-name">Warm surface</p>
+        <p class="swatch-hex">#f8f7f4</p>
+        <code class="swatch-var">--color-surface</code>
+        <p class="swatch-use">Chip / pill inactive bg. Table-header strip.</p>
+      </div>
+    </div>
+  </div>
+
+  <h3 style="margin:32px 0 12px;font-size:13px;letter-spacing:0.08em;text-transform:uppercase;color:var(--ink-2);font-weight:600">Ink · adopted from Figma</h3>
+  <div class="swatch-grid">
+    <div class="swatch">
+      <div class="chip" style="background:#2d3e4a"></div>
+      <div class="swatch-meta">
+        <p class="swatch-name">Slate body</p>
+        <p class="swatch-hex">#2d3e4a</p>
+        <code class="swatch-var">--color-text</code>
+        <p class="swatch-use">Body copy, field values, section headers, button labels.</p>
+      </div>
+    </div>
+    <div class="swatch">
+      <div class="chip" style="background:#6b7a85"></div>
+      <div class="swatch-meta">
+        <p class="swatch-name">Secondary slate</p>
+        <p class="swatch-hex">#6b7a85</p>
+        <code class="swatch-var">--color-text-secondary</code>
+        <p class="swatch-use">Subtitles, table secondary cells, helper text.</p>
+      </div>
+    </div>
+    <div class="swatch">
+      <div class="chip" style="background:#9ba6ae"></div>
+      <div class="swatch-meta">
+        <p class="swatch-name">Muted</p>
+        <p class="swatch-hex">#9ba6ae</p>
+        <code class="swatch-var">--color-text-muted</code>
+        <p class="swatch-use">Placeholders, disabled chips, table eyebrows, count badges.</p>
+      </div>
+    </div>
+    <div class="swatch">
+      <div class="chip" style="background:#c4382a"></div>
+      <div class="swatch-meta">
+        <p class="swatch-name">Brick (danger)</p>
+        <p class="swatch-hex">#c4382a</p>
+        <code class="swatch-var">--color-danger</code>
+        <p class="swatch-use">Required markers, destructive buttons, dirty-state dot.</p>
+      </div>
+    </div>
+  </div>
+
+  <h3 style="margin:32px 0 12px;font-size:13px;letter-spacing:0.08em;text-transform:uppercase;color:var(--ink-2);font-weight:600">Status · kept from previous system</h3>
+  <div class="swatch-grid">
+    <div class="swatch">
+      <div class="chip" style="background:#16a34a"></div>
+      <div class="swatch-meta">
+        <p class="swatch-name">Success</p>
+        <p class="swatch-hex">#16a34a</p>
+        <code class="swatch-var">--color-success</code>
+        <p class="swatch-use">Active status pills, success toasts.</p>
+      </div>
+    </div>
+    <div class="swatch">
+      <div class="chip" style="background:#d97706"></div>
+      <div class="swatch-meta">
+        <p class="swatch-name">Warning</p>
+        <p class="swatch-hex">#d97706</p>
+        <code class="swatch-var">--color-warning</code>
+        <p class="swatch-use">Setup-incomplete states, caution chips.</p>
+      </div>
+    </div>
+    <div class="swatch">
+      <div class="chip" style="background:#2563eb"></div>
+      <div class="swatch-meta">
+        <p class="swatch-name">Info</p>
+        <p class="swatch-hex">#2563eb</p>
+        <code class="swatch-var">--color-info</code>
+        <p class="swatch-use">Informational pills, links inside cards.</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ================================================== TYPOGRAPHY -->
+<section id="typography">
+  <p class="sec-eyebrow">02</p>
+  <h2 class="sec-title">Typography</h2>
+  <p class="sec-lede">IvyPresto Display 300 for page titles (Georgia is the Figma stand-in; we hold the license). Inter for everything else. SF Mono / Menlo for short codes.</p>
+
+  <div class="type-card">
+    <div class="type-sample-label">Page title · <code>IvyPresto Display 300</code> · <code>28px / 33.6 lh</code> · <code>--color-primary</code></div>
+    <h2 class="t-page-title">Cedar Hills Branch</h2>
+  </div>
+  <div class="type-card">
+    <div class="type-sample-label">Section header · <code>Inter Semibold</code> · <code>15px / 22.5 lh</code> · <code>--color-text</code></div>
+    <h3 class="t-section-h">Branch information</h3>
+  </div>
+  <div class="type-card">
+    <div class="type-sample-label">Body · <code>Inter Regular</code> · <code>14px / 1.55 lh</code> · <code>--color-text</code></div>
+    <p class="t-body">Edit branch information for Apex Home Finance. Programs and states are limited to the parent company's enabled set.</p>
+  </div>
+  <div class="type-card">
+    <div class="type-sample-label">Secondary · <code>Inter Regular</code> · <code>13px / 19.5 lh</code> · <code>--color-text-secondary</code></div>
+    <p class="t-secondary">Subset of programs enabled at parent company. Other states are locked.</p>
+  </div>
+  <div class="type-card">
+    <div class="type-sample-label">Field label · <code>Inter Medium</code> · <code>12px / 18 lh</code> · <code>--color-text</code></div>
+    <p class="t-label"><span style="color:var(--danger);margin-right:2px">*</span>Branch name</p>
+  </div>
+  <div class="type-card">
+    <div class="type-sample-label">Placeholder · <code>Inter Regular</code> · <code>14px</code> · <code>--color-text-muted</code></div>
+    <p class="t-placeholder">From NMLS: Office Locations → Company</p>
+  </div>
+  <div class="type-card">
+    <div class="type-sample-label">Mono · <code>SF Mono / Menlo</code> · <code>11px</code> · <code>--color-text-muted</code></div>
+    <p class="t-mono">UDF · DCDF · KEF · NMLS 2055891</p>
+  </div>
+</section>
+
+<!-- ================================================== SPACING -->
+<section id="spacing">
+  <p class="sec-eyebrow">03</p>
+  <h2 class="sec-title">Spacing &amp; radii</h2>
+  <p class="sec-lede">Tighter, more disciplined than our previous system. Card padding 25px, card radius 8px, input height 36px / 6px radius.</p>
+
+  <div class="spacing-grid">
+    <div class="spacing-card">
+      <p class="spacing-name">Card</p>
+      <p class="spacing-meta">padding 25px · radius 8px · border 1px <code>--color-border</code></p>
+      <div class="demo-card" style="margin:0">
+        <h4 class="t-section-h">Branch information</h4>
+        <p class="t-secondary" style="margin-top:6px">Use as the default container for every form group.</p>
+      </div>
+    </div>
+    <div class="spacing-card">
+      <p class="spacing-name">Input</p>
+      <p class="spacing-meta">height 36px · radius 6px · pad 0 13px</p>
+      <p class="t-label" style="margin-bottom:4px"><span style="color:var(--danger);margin-right:2px">*</span>Branch name</p>
+      <input class="demo-input" placeholder="From NMLS: Office Locations → Company" />
+    </div>
+    <div class="spacing-card">
+      <p class="spacing-name">Chip / pill</p>
+      <p class="spacing-meta">height 28px · min-w 44px · radius 6px</p>
+      <div>
+        <span class="demo-chip on">UT</span>
+        <span class="demo-chip">CA</span>
+        <span class="demo-chip">NV</span>
+        <span class="demo-chip">AZ</span>
+      </div>
+      <p class="t-secondary" style="margin-top:10px;font-size:11.5px">Inactive: <code style="font-family:var(--mono)">--color-surface</code> bg, <code style="font-family:var(--mono)">--color-text-muted</code> text. Active: <code style="font-family:var(--mono)">--color-card</code> bg.</p>
+    </div>
+    <div class="spacing-card">
+      <p class="spacing-name">Page gutter</p>
+      <p class="spacing-meta">28px on detail pages · 40px on form/wizard pages</p>
+      <p class="t-secondary" style="margin-top:8px">Listed-view pages keep existing gutters; refactored Branches uses 28px to align with the entity header.</p>
+    </div>
+    <div class="spacing-card">
+      <p class="spacing-name">Action bar height</p>
+      <p class="spacing-meta">~60px · pad 14px 28px</p>
+      <p class="t-secondary" style="margin-top:8px">Sticky bottom on edit/wizard. Includes dirty indicator (left) and primary/secondary buttons (right).</p>
+    </div>
+  </div>
+</section>
+
+<!-- ================================================== COMPONENTS -->
+<section id="components">
+  <p class="sec-eyebrow">04</p>
+  <h2 class="sec-title">Components</h2>
+  <p class="sec-lede">Buttons, inputs, chips. Status colors retained from previous system; warm tokens elsewhere.</p>
+
+  <h3 style="margin:0 0 12px;font-size:13px;letter-spacing:0.08em;text-transform:uppercase;color:var(--ink-2);font-weight:600">Buttons</h3>
+  <div class="demo-card">
+    <div class="btn-row">
+      <button class="btn btn-primary">Save branch</button>
+      <button class="btn btn-outline">Cancel</button>
+      <button class="btn btn-ghost">Skip</button>
+      <button class="btn btn-danger">Delete branch</button>
+      <button class="btn btn-danger-solid">Remove</button>
+    </div>
+    <p class="t-secondary" style="margin-top:14px;font-size:12px">36px height, 6px radius, 13px / 500 weight. Primary uses <code style="font-family:var(--mono)">--color-primary</code> (#00334a). Danger uses <code style="font-family:var(--mono)">--color-danger</code> (#c4382a).</p>
+  </div>
+
+  <h3 style="margin:24px 0 12px;font-size:13px;letter-spacing:0.08em;text-transform:uppercase;color:var(--ink-2);font-weight:600">Inputs</h3>
+  <div class="demo-card">
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:18px 24px;max-width:720px">
+      <div>
+        <p class="t-label" style="margin-bottom:4px"><span style="color:var(--danger);margin-right:2px">*</span>Branch name</p>
+        <input class="demo-input" placeholder="From NMLS: Office Locations → Company" />
+      </div>
+      <div>
+        <p class="t-label" style="margin-bottom:4px"><span style="color:var(--danger);margin-right:2px">*</span>Branch NMLS #</p>
+        <input class="demo-input" value="2055891" />
+      </div>
+    </div>
+  </div>
+
+  <h3 style="margin:24px 0 12px;font-size:13px;letter-spacing:0.08em;text-transform:uppercase;color:var(--ink-2);font-weight:600">State / program chips</h3>
+  <div class="demo-card">
+    <span class="demo-chip on">UT</span>
+    <span class="demo-chip">CA</span>
+    <span class="demo-chip">NV</span>
+    <span class="demo-chip">AZ</span>
+    <span class="demo-chip">CO</span>
+    <span class="demo-chip">OR</span>
+    <span class="demo-chip">WA</span>
+    <span class="demo-chip">ID</span>
+  </div>
+</section>
+
+<!-- ================================================== ACTION BARS -->
+<section id="action-bars">
+  <p class="sec-eyebrow">05</p>
+  <h2 class="sec-title">Action bars</h2>
+  <p class="sec-lede">Sticky top "Back to X" + sticky bottom Save/Submit/Next. Together they frame editable pages and keep primary actions reachable without scrolling.</p>
+
+  <div class="ab-demo">
+    <div class="ab-top">
+      <span style="display:inline-flex;width:16px;height:16px;align-items:center;justify-content:center">‹</span>
+      Back to Branches
+    </div>
+    <div class="ab-body">
+      Form content scrolls here. Title, section cards, fields. Both bars remain stuck.
+    </div>
+    <div class="ab-bot">
+      <span class="dirty">
+        <span class="dot"></span>
+        Unsaved changes
+      </span>
+      <button class="btn btn-outline">Cancel</button>
+      <button class="btn btn-primary">Save changes</button>
+    </div>
+  </div>
+
+  <div style="margin-top:18px;padding:16px 20px;background:var(--card);border:1px solid var(--border);border-radius:8px">
+    <h4 style="margin:0 0 8px;font-size:13px;font-weight:600;color:var(--ink-deep)">Scope rule</h4>
+    <p style="margin:0;font-size:13px;color:var(--ink-2);line-height:1.55">
+      The sticky-bottom action bar appears <strong>only on form/wizard pages and the edit sub-routes of hybrid pages</strong>.
+      List-only views (rosters, dashboards) <strong>do not</strong> get the bar — there's nothing to save. See the rollout table below.
+    </p>
+  </div>
+
+  <div style="margin-top:14px;padding:16px 20px;background:var(--card);border:1px solid var(--border);border-radius:8px">
+    <h4 style="margin:0 0 8px;font-size:13px;font-weight:600;color:var(--ink-deep)">Dirty state</h4>
+    <p style="margin:0;font-size:13px;color:var(--ink-2);line-height:1.55">
+      On entering edit mode, the body class <code style="font-family:var(--mono);font-size:11.5px">is-dirty</code> is unset and the indicator reads "No changes" in muted gray.
+      The first <code style="font-family:var(--mono);font-size:11.5px">input</code> event in the form bubbles up to a delegated handler that adds <code style="font-family:var(--mono);font-size:11.5px">is-dirty</code>, flipping the dot + label to brick-red ("Unsaved changes"). Save and Cancel both clear the flag.
+    </p>
+  </div>
+</section>
+
+<!-- ================================================== TABLES -->
+<section id="tables">
+  <p class="sec-eyebrow">06</p>
+  <h2 class="sec-title">Tables</h2>
+  <p class="sec-lede">Header pad 10px × 16px, body pad 14px × 16px. Header strip is <code>--color-surface</code>; row separators use <code>--color-border-light</code>.</p>
+
+  <div class="table-demo">
+    <table>
+      <thead>
+        <tr>
+          <th>Branch</th>
+          <th>State</th>
+          <th>Programs</th>
+          <th>Status</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr><td>Cedar Hills</td><td>UT</td><td>UDF · DCDF</td><td><span style="color:var(--success);font-weight:500">Active</span></td></tr>
+        <tr><td>Provo Main</td><td>UT</td><td>UDF</td><td><span style="color:var(--success);font-weight:500">Active</span></td></tr>
+        <tr><td>Boise West</td><td>ID</td><td>—</td><td><span style="color:var(--warning);font-weight:500">Setup incomplete</span></td></tr>
+      </tbody>
+    </table>
+  </div>
+</section>
+
+<!-- ================================================== KEPT -->
+<section id="kept">
+  <p class="sec-eyebrow">07</p>
+  <h2 class="sec-title">What we kept</h2>
+  <p class="sec-lede">Tokens and patterns deliberately NOT migrated. These represent areas where we lead the dev team, or where our existing implementation is non-negotiable.</p>
+
+  <div class="kept">
+    <h3 class="kept-title">92px left sidenav</h3>
+    <p class="kept-body">
+      The Figma file uses a top horizontal nav. We keep the fixed 92px icon rail (with logo, tile, divider, profile stack, flyouts). This is our direction; subsequent Figma iterations should adopt ours.
+    </p>
+  </div>
+  <div class="kept">
+    <h3 class="kept-title">IvyPresto Display 300</h3>
+    <p class="kept-body">
+      Figma frames use Georgia as a stand-in (no license required). We hold the IvyPresto license, so page titles use the premium serif. Both render at 28px / 33.6 lh / <code style="font-family:var(--mono)">--color-primary</code>.
+    </p>
+  </div>
+  <div class="kept">
+    <h3 class="kept-title">Semantic status colors</h3>
+    <p class="kept-body">
+      The Figma frames inspected don't include success / warning / info semantics. We keep our existing palette: <code style="font-family:var(--mono)">#16a34a</code> / <code style="font-family:var(--mono)">#d97706</code> / <code style="font-family:var(--mono)">#2563eb</code>.
+    </p>
+  </div>
+  <div class="kept">
+    <h3 class="kept-title">RBAC + permissions UI</h3>
+    <p class="kept-body">
+      The permission matrix and platform-operator RBAC patterns (<code style="font-family:var(--mono)">platform-rbac.js</code>) are ours alone. They inherit warm tokens; the screen layouts remain.
+    </p>
+  </div>
+  <div class="kept">
+    <h3 class="kept-title">Institutional artboard tokens</h3>
+    <p class="kept-body">
+      <code style="font-family:var(--mono)">css/institutional.css</code> (the <code style="font-family:var(--mono)">--h-*</code> token set) is untouched. The 8 directional mockups in <code style="font-family:var(--mono)">Loan Origination v2.html</code> consume it and represent exploratory work the canon does not constrain.
+    </p>
+  </div>
+</section>
+
+<!-- ================================================== ROLLOUT -->
+<section id="rollout">
+  <p class="sec-eyebrow">08</p>
+  <h2 class="sec-title">Rollout — which views get the action bar</h2>
+  <p class="sec-lede">Color tokens have already shifted globally. The structural sticky-top + sticky-bottom action bar is the remaining piece, applied per bucket below. <code>branches.js</code> is the template — every subsequent view follows the same pattern.</p>
+
+  <div class="rollout">
+    <table>
+      <thead>
+        <tr>
+          <th>Bucket</th>
+          <th>Views</th>
+          <th>Action bar?</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td class="bucket">Pure form / wizard</td>
+          <td class="views">
+            <code>onboarding-flow.js</code>
+            <code>oc-wizard.js</code>
+            <code>oc-create.js</code>
+            <code>branch-create.js</code>
+            <code>new-application-stepper.js</code>
+            <code>bulk-invite.js</code>
+            <code>login.js</code>
+            <code>welcome.js</code>
+          </td>
+          <td class="bar"><span class="yes">YES</span><br><span style="font-size:11px;color:var(--ink-mute)">Save / Submit / Next / Back</span></td>
+        </tr>
+        <tr>
+          <td class="bucket">Hybrid — edit sub-routes only</td>
+          <td class="views">
+            <code>profile.js</code> (edit mode)<br>
+            <code>companies.js</code> (detail panel)<br>
+            <code>branches.js</code> <span style="color:var(--success);font-size:11px">← THIS PR</span><br>
+            <code>origination-companies.js</code> (detail/edit)<br>
+            <code>platform-rbac.js</code> (user-detail edit)
+          </td>
+          <td class="bar"><span class="yes">YES</span><br><span style="font-size:11px;color:var(--ink-mute)">edit sub-route only</span></td>
+        </tr>
+        <tr>
+          <td class="bucket">Pure list / dashboard</td>
+          <td class="views">
+            <code>onboarding.js</code>
+            <code>dashboard.js</code>
+            <code>admin-dashboard.js</code>
+            <code>users.js</code>
+            <code>data-platform.js</code>
+            <code>prospect-dashboard.js</code>
+          </td>
+          <td class="bar"><span class="no">NO</span><br><span style="font-size:11px;color:var(--ink-mute)">nothing to save</span></td>
+        </tr>
+        <tr>
+          <td class="bucket">Utilities</td>
+          <td class="views">
+            <code>coachmarks.js</code>
+            <code>artboard-mount.js</code>
+            <code>section-stubs.js</code>
+          </td>
+          <td class="bar"><span class="no">N/A</span></td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+</section>
+
+<footer class="doc-foot">
+  <p>Companion files: <a href="design-canon-iterations.html" style="color:var(--ink-deep)">design-canon-iterations.html</a> · <a href="design-canon-action-bar.html" style="color:var(--ink-deep)">design-canon-action-bar.html</a> · <code>css/styles.css</code> · <code>js/views/branches.js</code></p>
+</footer>
+
+</body>
+</html>

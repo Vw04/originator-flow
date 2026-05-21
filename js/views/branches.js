@@ -362,10 +362,12 @@ const BranchesView = {
     ).join('');
 
     const backLink = showBack
-      ? `<button class="back-link" onclick="Router.navigate('/origination-companies/${b.companyId}')">
-           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="15 18 9 12 15 6"/></svg>
-           Back to Branches
-         </button>`
+      ? `<div class="back-bar">
+           <button class="back-link" onclick="Router.navigate('/origination-companies/${b.companyId}')">
+             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="15 18 9 12 15 6"/></svg>
+             Back to Branches
+           </button>
+         </div>`
       : '';
 
     const addr = b.address1 ? `${b.address1}${b.suite ? ', ' + b.suite : ''}, ${b.city || ''} ${b.state || ''} ${b.zip || ''}`.trim() : (b.address || '—');
@@ -403,17 +405,32 @@ const BranchesView = {
         </div>
       </div>
       ${editing ? '' : `<div class="section-tabs">${tabsHtmlWithCounts}</div>`}
-      <div class="page-body">${content}</div>
+      <div class="page-body"${editing ? ' oninput="BranchesView.markDirty()"' : ''}>${content}</div>
       ${editing ? `
         <div class="inst-footer-bar">
+          <span class="dirty-indicator">
+            <span class="dot"></span>
+            <span class="dirty-label">No changes</span>
+          </span>
           <button class="btn btn-secondary btn-sm" onclick="BranchesView.cancelEdit('${b.id}')">Cancel</button>
           <button class="btn btn-primary btn-sm" onclick="BranchesView.saveEdit('${b.id}')">Save changes</button>
         </div>` : ''}
       <div id="branch-modal-container"></div>`;
   },
 
-  enterEditMode(branchId) { Router.navigate('/branches/' + branchId + '/edit'); },
-  cancelEdit(branchId)    { Router.navigate('/branches/' + branchId); },
+  markDirty() {
+    if (document.body.classList.contains('is-dirty')) return;
+    document.body.classList.add('is-dirty');
+    const lbl = document.querySelector('.inst-footer-bar .dirty-label');
+    if (lbl) lbl.textContent = 'Unsaved changes';
+  },
+
+  _clearDirty() {
+    document.body.classList.remove('is-dirty');
+  },
+
+  enterEditMode(branchId) { this._clearDirty(); Router.navigate('/branches/' + branchId + '/edit'); },
+  cancelEdit(branchId)    { this._clearDirty(); Router.navigate('/branches/' + branchId); },
   saveEdit(branchId) {
     const get = (id) => document.getElementById(id)?.value.trim();
     const patch = {
@@ -429,6 +446,7 @@ const BranchesView = {
     };
     Object.keys(patch).forEach(k => { if (patch[k] === undefined || patch[k] === '') delete patch[k]; });
     if (State.updateBranch) State.updateBranch(branchId, patch);
+    this._clearDirty();
     Router.navigate('/branches/' + branchId);
   },
 
