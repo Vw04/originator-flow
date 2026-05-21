@@ -1,0 +1,70 @@
+{
+  "Homium Brand": {
+    "color": {
+      "brand": {
+        "teal-900": { "value": "#00334A", "type": "color", "description": "Logo, headings, nav — brand anchor" },
+        "teal-700": { "value": "#0A4D6B", "type": "color", "description": "Hover states" },
+        "teal-500": { "value": "#1A6E8E", "type": "color", "description": "Active / Focus / M3 Tertiary" },
+        "teal-200": { "value": "#A3C5D4", "type": "color", "description": "Subtle fills" },
+        "teal-50": { "value": "#E0EDF3", "type": "color", "description": "Tinted backgrounds, info bg" },
+        "green-900": { "value": "#0D6B40", "type": "color", "description": "Pressed state" },
+        "green-700": { "value": "#117A4A", "type": "color", "description": "Hover state" },
+        "green-500": { "value": "#14935F", "type": "color", "description": "Primary CTA — M3 Primary" },
+        "green-200": { "value": "#A8D7BE", "type": "color", "description": "Subtle fills" },
+        "green-50": { "value": "#E4F3EB", "type": "color", "description": "Success pill bg" }
+      },
+      "neutral": {
+        "midnight": { "value": "#061D29", "type": "color", "description": "Primary text" },
+        "slate": { "value": "#2D3E4A", "type": "color", "description": "Secondary text" },
+        "gray-500": { "value": "#6B7A85", "type": "color", "description": "Muted / captions" },
+        "gray-300": { "value": "#9BA6AE", "type": "color", "description": "Placeholders" },
+        "gray-200": { "value": "#C4C9CC", "type": "color", "description": "Disabled text" },
+        "stone": { "value": "#E0DDD6", "type": "color", "description": "Borders, dividers" },
+        "warm-gray": { "value": "#EDEBE6", "type": "color", "description": "Subtle borders" },
+        "sand": { "value": "#F2F1EC", "type": "color", "description": "Page background" },
+        "pearl": { "value": "#F8F7F4", "type": "color", "description": "Alt surface" },
+        "white": { "value": "#FFFFFF", "type": "color", "description": "Card surface" }
+      },
+      "semantic": {
+        "success": { "value": "#1A8754", "type": "color", "description": "Gains, confirmations, loan funded" },
+        "success-bg": { "value": "#E4F3EB", "type": "color", "description": "Success banners, pill fills" },
+        "warning": { "value": "#B8860B", "type": "color", "description": "Pending, approaching limits" },
+        "warning-bg": { "value": "#FEF3E2", "type": "color", "description": "Warning banners, pill fills" },
+        "error": { "value": "#C4382A", "type": "color", "description": "Failed, rejected, depreciation" },
+        "error-bg": { "value": "#FDE8E6", "type": "color", "description": "Error banners, pill fills" },
+        "info": { "value": "#1A6E8E", "type": "color", "description": "Tooltips, onboarding, neutral info" },
+        "info-bg": { "value": "#E0EDF3", "type": "color", "description": "Info banners, pill fills" }
+      },
+      "dataviz": {
+        "sequential-1": { "value": "#E0EDF3", "type": "color" },
+        "sequential-2": { "value": "#B0D4E3", "type": "color" },
+        "sequential-3": { "value": "#6AADC6", "type": "color" },
+        "sequential-4": { "value": "#3088A8", "type": "color" },
+        "sequential-5": { "value": "#0A4D6B", "type": "color" },
+        "sequential-6": { "value": "#00334A", "type": "color" },
+        "categorical-1": { "value": "#00334A", "type": "color" },
+        "categorical-2": { "value": "#14935F", "type": "color" },
+        "categorical-3": { "value": "#1A6E8E", "type": "color" },
+        "categorical-4": { "value": "#7B5EA7", "type": "color" },
+        "categorical-5": { "value": "#C4850C", "type": "color" },
+        "categorical-6": { "value": "#2D8B9E", "type": "color" }
+      },
+      "dark": {
+        "bg": { "value": "#071620", "type": "color", "description": "Page base" },
+        "surface-1": { "value": "#0A1F2E", "type": "color", "description": "Cards" },
+        "surface-2": { "value": "#122A3A", "type": "color", "description": "Elevated cards" },
+        "border": { "value": "#1A3A4D", "type": "color", "description": "Dividers" },
+        "hover": { "value": "#234A5E", "type": "color", "description": "Interactive hover" },
+        "text-primary": { "value": "#FFFFFF", "type": "color" },
+        "text-secondary": { "value": "#E8E4DF", "type": "color" },
+        "text-muted": { "value": "#8A9BAA", "type": "color" },
+        "text-disabled": { "value": "#5A6E7D", "type": "color" },
+        "green-cta": { "value": "#1EAA6E", "type": "color", "description": "Brightened for dark" },
+        "success": { "value": "#22B878", "type": "color" },
+        "error": { "value": "#E07B6F", "type": "color" },
+        "warning": { "value": "#DBA64A", "type": "color" },
+        "info": { "value": "#5AAFCC", "type": "color" }
+      }
+    }
+  }
+}

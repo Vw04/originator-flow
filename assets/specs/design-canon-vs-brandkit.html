@@ -1,0 +1,1371 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<title>Canon vs Brand Kit — Reconciliation Audit</title>
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=IvyPresto+Display:wght@300;400&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+  /* ============================================================
+     CANON vs BRAND KIT — AUDIT VISUALIZATION
+     Compares what we just shipped (commits 4a43e20 + 05ab465)
+     against the dev team's authoritative brand kit at
+     assets/devteambrandkit/homium-brand-kit/.
+     ============================================================ */
+
+  :root {
+    --bg:        #f9f8f4;
+    --card:      #ffffff;
+    --border:    #e0ddd6;
+    --border-l:  #edebe6;
+    --surf:      #f8f7f4;
+    --sand:      #f2f0ea;
+    --ink:       #2d3e4a;
+    --ink-2:     #6b7a85;
+    --ink-mute:  #9ba6ae;
+    --ink-deep:  #00334a;
+    --green-cta: #14935f;
+    --green-hov: #117a4a;
+    --success:   #1a8754;
+    --warning:   #b8860b;
+    --info-teal: #1a6e8e;
+    --danger:    #c4382a;
+    --font:      'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+    --serif:     Georgia, 'IvyPresto Display', serif;
+  }
+
+  * { box-sizing: border-box; }
+  html, body { margin: 0; padding: 0; }
+  body {
+    font-family: var(--font);
+    color: var(--ink);
+    background: var(--bg);
+    line-height: 1.5;
+    -webkit-font-smoothing: antialiased;
+    font-feature-settings: 'tnum' 1, 'lnum' 1;
+  }
+
+  /* ============== DOC HEAD ============== */
+  .doc-head {
+    padding: 48px 48px 28px;
+    background: var(--card);
+    border-bottom: 1px solid var(--border);
+  }
+  .doc-eyebrow {
+    font-family: 'SF Mono', Menlo, monospace;
+    font-size: 11px;
+    font-weight: 600;
+    letter-spacing: 0.16em;
+    text-transform: uppercase;
+    color: var(--ink-mute);
+    margin: 0 0 10px;
+  }
+  .doc-title {
+    font-family: var(--serif);
+    font-weight: 400;
+    font-size: 40px;
+    line-height: 1.1;
+    color: var(--ink-deep);
+    margin: 0 0 12px;
+    letter-spacing: -0.005em;
+  }
+  .doc-lede {
+    font-size: 15px;
+    color: var(--ink-2);
+    max-width: 800px;
+    margin: 0 0 22px;
+    line-height: 1.55;
+  }
+
+  /* Summary stat strip */
+  .stat-strip {
+    display: flex;
+    gap: 8px;
+    flex-wrap: wrap;
+  }
+  .stat {
+    background: var(--bg);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 10px 14px;
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    font-size: 13px;
+    color: var(--ink);
+    font-weight: 500;
+  }
+  .stat .n {
+    font-size: 18px;
+    font-weight: 700;
+    color: var(--ink-deep);
+    letter-spacing: -0.02em;
+  }
+  .stat .sev-dot {
+    width: 10px; height: 10px;
+    border-radius: 50%;
+    display: inline-block;
+  }
+  .sev-crit { background: var(--danger); }
+  .sev-high { background: #d97706; }
+  .sev-med  { background: #c8a04a; }
+  .sev-low  { background: var(--ink-mute); }
+  .sev-ok   { background: var(--success); }
+
+  /* ============== SECTIONS ============== */
+  section {
+    padding: 40px 48px 32px;
+    max-width: 1400px;
+  }
+  section + section { border-top: 1px solid var(--border-l); }
+
+  .sec-eyebrow {
+    font-family: 'SF Mono', Menlo, monospace;
+    font-size: 10.5px;
+    font-weight: 600;
+    letter-spacing: 0.16em;
+    text-transform: uppercase;
+    color: var(--ink-mute);
+    margin: 0 0 8px;
+  }
+  .sec-title {
+    font-family: var(--serif);
+    font-weight: 400;
+    font-size: 28px;
+    line-height: 33.6px;
+    color: var(--ink-deep);
+    margin: 0 0 8px;
+    letter-spacing: -0.005em;
+  }
+  .sec-lede {
+    font-size: 14px;
+    color: var(--ink-2);
+    margin: 0 0 24px;
+    max-width: 760px;
+    line-height: 1.55;
+  }
+
+  /* ============== OPEN CONFLICT CALLOUTS ============== */
+  .conflict {
+    background: var(--card);
+    border: 1px solid var(--border);
+    border-left: 4px solid var(--danger);
+    border-radius: 8px;
+    padding: 24px 28px;
+    margin-bottom: 16px;
+  }
+  .conflict-head {
+    display: flex;
+    align-items: baseline;
+    gap: 12px;
+    margin-bottom: 14px;
+    flex-wrap: wrap;
+  }
+  .conflict-title {
+    font-family: var(--serif);
+    font-weight: 400;
+    font-size: 22px;
+    color: var(--ink-deep);
+    margin: 0;
+    flex: 1;
+    min-width: 220px;
+  }
+  .conflict-badge {
+    background: var(--danger);
+    color: #fff;
+    font-size: 10px;
+    font-weight: 700;
+    letter-spacing: 0.14em;
+    text-transform: uppercase;
+    padding: 4px 10px;
+    border-radius: 999px;
+  }
+  .conflict-meta {
+    font-family: 'SF Mono', Menlo, monospace;
+    font-size: 11px;
+    color: var(--ink-mute);
+  }
+  .conflict-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 16px;
+    margin: 14px 0 16px;
+  }
+  .conflict-side {
+    background: var(--bg);
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    padding: 16px 18px;
+  }
+  .conflict-side h4 {
+    font-family: 'SF Mono', Menlo, monospace;
+    font-size: 10.5px;
+    font-weight: 600;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    color: var(--ink-mute);
+    margin: 0 0 8px;
+  }
+  .conflict-side .what {
+    font-size: 13px;
+    color: var(--ink);
+    margin: 0 0 8px;
+    line-height: 1.55;
+  }
+  .conflict-side .visual {
+    margin-top: 10px;
+  }
+  .conflict-rec {
+    background: var(--surf);
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    padding: 12px 16px;
+    display: flex;
+    gap: 12px;
+    align-items: baseline;
+  }
+  .conflict-rec .rec-label {
+    font-family: 'SF Mono', Menlo, monospace;
+    font-size: 10.5px;
+    font-weight: 700;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    color: var(--ink-deep);
+    white-space: nowrap;
+  }
+  .conflict-rec .rec-text {
+    font-size: 13px;
+    color: var(--ink);
+    line-height: 1.55;
+  }
+
+  /* Mini button mock used in callout */
+  .mini-btn {
+    display: inline-flex;
+    align-items: center;
+    height: 32px;
+    padding: 0 14px;
+    border-radius: 6px;
+    font-size: 13px;
+    font-weight: 500;
+    font-family: var(--font);
+    margin-right: 8px;
+    border: 1px solid transparent;
+  }
+  .mini-btn-navy { background: #00334a; color: #fff; }
+  .mini-btn-green { background: #14935f; color: #fff; }
+
+  /* Mini nav mock used in callout */
+  .mini-nav-rail {
+    width: 60px;
+    background: #fff;
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    padding: 10px 0;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 6px;
+    height: 130px;
+  }
+  .mini-nav-rail .lg {
+    font-family: var(--serif);
+    font-size: 18px;
+    color: var(--ink-deep);
+    margin-bottom: 8px;
+  }
+  .mini-nav-rail .tile {
+    width: 36px; height: 36px;
+    border-radius: 6px;
+    background: #eaf1f6;
+    display: flex; align-items: center; justify-content: center;
+    color: var(--ink-deep);
+    font-size: 11px;
+  }
+  .mini-nav-top {
+    height: 36px;
+    background: #00334a;
+    border-radius: 6px;
+    display: flex;
+    align-items: center;
+    padding: 0 14px;
+    gap: 20px;
+    color: #fff;
+    font-size: 11px;
+    font-weight: 500;
+  }
+  .mini-nav-top .item { opacity: 0.7; }
+  .mini-nav-top .item.active { opacity: 1; position: relative; }
+  .mini-nav-top .item.active::after {
+    content: '';
+    position: absolute;
+    bottom: -10px; left: -4px; right: -4px;
+    height: 3px; background: #14935f;
+    border-radius: 2px 2px 0 0;
+  }
+
+  /* ============== ROW TABLE ============== */
+  .row-table {
+    background: var(--card);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    overflow: hidden;
+  }
+  .row {
+    display: grid;
+    grid-template-columns: 220px 1fr 1fr 80px 1fr;
+    gap: 0;
+    align-items: stretch;
+    border-bottom: 1px solid var(--border-l);
+  }
+  .row:last-child { border-bottom: 0; }
+  .row > div {
+    padding: 14px 16px;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+  }
+  .row > div + div {
+    border-left: 1px solid var(--border-l);
+  }
+  .row .lbl {
+    font-size: 12px;
+    font-weight: 600;
+    color: var(--ink-deep);
+    background: var(--surf);
+  }
+  .row .lbl-meta {
+    font-size: 11px;
+    font-weight: 400;
+    color: var(--ink-2);
+    margin-top: 2px;
+  }
+  .row .sw {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+  .row .sw .chip {
+    width: 26px; height: 26px;
+    border-radius: 4px;
+    border: 1px solid var(--border);
+    flex-shrink: 0;
+  }
+  .row .sw code {
+    font-family: 'SF Mono', Menlo, monospace;
+    font-size: 11.5px;
+    color: var(--ink);
+  }
+  .row .sev-cell {
+    align-items: center;
+    flex-direction: row;
+    justify-content: center;
+    gap: 6px;
+  }
+  .row .sev-cell .sev-dot {
+    width: 10px; height: 10px;
+    border-radius: 50%;
+    flex-shrink: 0;
+  }
+  .row .sev-cell .sev-label {
+    font-size: 10.5px;
+    font-weight: 600;
+    letter-spacing: 0.04em;
+    text-transform: uppercase;
+    color: var(--ink-2);
+  }
+  .row .rec {
+    font-size: 12.5px;
+    color: var(--ink);
+    line-height: 1.45;
+  }
+  .row .rec strong {
+    color: var(--ink-deep);
+  }
+
+  .row-head {
+    display: grid;
+    grid-template-columns: 220px 1fr 1fr 80px 1fr;
+    background: var(--surf);
+    border-bottom: 1px solid var(--border);
+    font-family: 'SF Mono', Menlo, monospace;
+    font-size: 10.5px;
+    font-weight: 600;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    color: var(--ink-mute);
+  }
+  .row-head > div { padding: 10px 16px; }
+  .row-head > div + div { border-left: 1px solid var(--border-l); }
+
+  /* ============== TYPE SAMPLE ROWS ============== */
+  .type-row .sample {
+    font-size: 22px;
+  }
+  .type-row .sample-our {
+    font-family: 'IvyPresto Display', Georgia, serif;
+    font-weight: 300;
+  }
+  .type-row .sample-kit {
+    font-family: Georgia, serif;
+    font-weight: 400;
+  }
+  .type-row .num-sample {
+    font-family: 'Inter', sans-serif;
+    font-size: 24px;
+    font-weight: 700;
+    letter-spacing: -0.02em;
+  }
+  .type-row .num-sample.tabular {
+    font-feature-settings: 'tnum' 1, 'lnum' 1, 'zero' 0;
+    font-variant-numeric: tabular-nums lining-nums;
+  }
+
+  /* ============== COMPONENT MOCKS ============== */
+  .comp-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(360px, 1fr));
+    gap: 16px;
+  }
+  .comp-card {
+    background: var(--card);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 22px 24px;
+  }
+  .comp-title {
+    font-family: var(--serif);
+    font-weight: 400;
+    font-size: 18px;
+    color: var(--ink-deep);
+    margin: 0 0 4px;
+  }
+  .comp-sev-line {
+    display: flex; align-items: center; gap: 6px;
+    margin-bottom: 16px;
+    font-size: 11px;
+    color: var(--ink-2);
+    font-weight: 600;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+  }
+  .comp-mocks {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 14px;
+    margin-bottom: 14px;
+  }
+  .comp-side {
+    background: var(--bg);
+    border: 1px solid var(--border-l);
+    border-radius: 6px;
+    padding: 14px;
+    display: flex;
+    flex-direction: column;
+    min-height: 90px;
+  }
+  .comp-side h5 {
+    font-family: 'SF Mono', Menlo, monospace;
+    font-size: 9.5px;
+    font-weight: 600;
+    letter-spacing: 0.14em;
+    text-transform: uppercase;
+    color: var(--ink-mute);
+    margin: 0 0 10px;
+  }
+  .comp-rec {
+    font-size: 12.5px;
+    color: var(--ink);
+    line-height: 1.5;
+    padding-top: 12px;
+    border-top: 1px solid var(--border-l);
+  }
+  .comp-rec strong {
+    color: var(--ink-deep);
+    text-transform: uppercase;
+    font-size: 10.5px;
+    letter-spacing: 0.1em;
+    margin-right: 6px;
+  }
+
+  /* Mini action-bar mocks */
+  .ab-mock {
+    background: #fff;
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    padding: 10px 12px;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    margin-top: auto;
+  }
+  .ab-mock .dirty-dot {
+    width: 8px; height: 8px;
+    border-radius: 50%;
+    background: var(--danger);
+    box-shadow: 0 0 0 3px rgba(196,56,42,0.12);
+  }
+  .ab-mock .dirty-lbl {
+    font-size: 11px;
+    color: var(--danger);
+    margin-right: auto;
+    font-weight: 500;
+  }
+  .ab-mock .ab-mini-btn {
+    height: 26px;
+    padding: 0 10px;
+    border-radius: 4px;
+    font-size: 11px;
+    font-weight: 500;
+    border: 1px solid transparent;
+  }
+  .ab-mock .ab-mini-btn.cancel { background: #fff; border-color: var(--border); color: var(--ink); }
+  .ab-mock .ab-mini-btn.save { background: var(--ink-deep); color: #fff; }
+  .ab-mock .ab-mini-btn.save-green { background: var(--green-cta); color: #fff; }
+
+  /* Card shadow demo */
+  .shadow-card {
+    background: #fff;
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    padding: 16px;
+    box-shadow: 0 4px 12px rgba(0,0,0,0.10), 0 2px 4px rgba(0,0,0,0.06);
+    font-size: 11px;
+    color: var(--ink);
+  }
+  .flat-card {
+    background: #fff;
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    padding: 16px;
+    font-size: 11px;
+    color: var(--ink);
+  }
+
+  /* Status pill mocks */
+  .pill {
+    display: inline-flex;
+    align-items: center;
+    gap: 5px;
+    height: 22px;
+    padding: 0 9px;
+    border-radius: 999px;
+    font-size: 11px;
+    font-weight: 500;
+  }
+  .pill .dot {
+    width: 6px; height: 6px;
+    border-radius: 50%;
+  }
+  .pill-active { background: #E4F3EB; color: var(--success); }
+  .pill-active .dot { background: var(--success); }
+  .pill-pending { background: #FEF3E2; color: var(--warning); }
+  .pill-pending .dot { background: var(--warning); }
+  .pill-role-ghost {
+    background: transparent;
+    border: 1px solid var(--border);
+    color: var(--ink-2);
+    height: 22px;
+    padding: 0 9px;
+    border-radius: 999px;
+    font-size: 11px;
+    font-weight: 500;
+    display: inline-flex;
+    align-items: center;
+  }
+  .pill-role-filled {
+    background: var(--ink-deep);
+    color: #fff;
+    height: 22px;
+    padding: 0 9px;
+    border-radius: 999px;
+    font-size: 11px;
+    font-weight: 500;
+    display: inline-flex;
+    align-items: center;
+  }
+
+  /* Avatar mock */
+  .avatar {
+    width: 32px; height: 32px;
+    border-radius: 50%;
+    background: #E0EDF3;
+    color: var(--info-teal);
+    font-size: 11px;
+    font-weight: 600;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+  }
+
+  /* Input mock */
+  .input-mock-36 {
+    height: 36px;
+    width: 180px;
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    padding: 0 12px;
+    background: #fff;
+    font-size: 13px;
+    color: var(--ink);
+    font-family: var(--font);
+  }
+  .input-mock-32 {
+    height: 32px;
+    width: 180px;
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    padding: 0 12px;
+    background: #fff;
+    font-size: 13px;
+    color: var(--ink);
+    font-family: var(--font);
+  }
+
+  /* ============== NEW CONCEPTS CARDS ============== */
+  .new-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
+    gap: 12px;
+  }
+  .new-card {
+    background: var(--card);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 18px 20px;
+  }
+  .new-card h3 {
+    font-family: var(--serif);
+    font-weight: 400;
+    font-size: 17px;
+    color: var(--ink-deep);
+    margin: 0 0 6px;
+  }
+  .new-card .what {
+    font-size: 12.5px;
+    color: var(--ink-2);
+    margin: 0 0 12px;
+    line-height: 1.5;
+  }
+  .new-card .new-rec {
+    font-size: 11.5px;
+    color: var(--ink);
+    padding-top: 10px;
+    border-top: 1px solid var(--border-l);
+    display: flex;
+    gap: 8px;
+    align-items: baseline;
+  }
+  .new-card .new-rec strong {
+    font-family: 'SF Mono', Menlo, monospace;
+    font-size: 9.5px;
+    letter-spacing: 0.12em;
+    color: var(--ink-deep);
+    text-transform: uppercase;
+  }
+
+  /* ============== ALREADY-CONSISTENT WINS ============== */
+  .wins-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+    gap: 10px;
+  }
+  .win {
+    background: var(--card);
+    border: 1px solid var(--border);
+    border-left: 3px solid var(--success);
+    border-radius: 0 6px 6px 0;
+    padding: 10px 14px;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+  }
+  .win .chip {
+    width: 22px; height: 22px;
+    border-radius: 4px;
+    border: 1px solid var(--border);
+    flex-shrink: 0;
+  }
+  .win .label {
+    font-size: 12px;
+    font-weight: 500;
+    color: var(--ink-deep);
+    line-height: 1.3;
+  }
+  .win .meta {
+    font-family: 'SF Mono', Menlo, monospace;
+    font-size: 10px;
+    color: var(--ink-mute);
+    margin-left: auto;
+  }
+
+  /* ============== RESOLUTION LEGEND ============== */
+  .legend {
+    background: var(--card);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 20px 24px;
+  }
+  .legend-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+    gap: 14px;
+    margin-top: 14px;
+  }
+  .legend-item {
+    padding: 12px 14px;
+    background: var(--bg);
+    border: 1px solid var(--border-l);
+    border-radius: 6px;
+  }
+  .legend-item .verb {
+    font-family: 'SF Mono', Menlo, monospace;
+    font-size: 11px;
+    font-weight: 700;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    color: var(--ink-deep);
+    margin: 0 0 4px;
+  }
+  .legend-item .verb-desc {
+    font-size: 12px;
+    color: var(--ink-2);
+    line-height: 1.5;
+  }
+
+  /* ============== FOOTER ============== */
+  .doc-foot {
+    padding: 32px 48px;
+    background: var(--card);
+    border-top: 1px solid var(--border);
+    color: var(--ink-2);
+    font-size: 12.5px;
+    line-height: 1.6;
+  }
+  .doc-foot a {
+    color: var(--ink-deep);
+    border-bottom: 1px dotted var(--ink-mute);
+    text-decoration: none;
+  }
+  .doc-foot code {
+    font-family: 'SF Mono', Menlo, monospace;
+    font-size: 11.5px;
+    background: var(--surf);
+    padding: 1px 5px;
+    border-radius: 3px;
+    border: 1px solid var(--border-l);
+  }
+
+  @media (max-width: 900px) {
+    .row, .row-head { grid-template-columns: 1fr; }
+    .row > div + div, .row-head > div + div { border-left: 0; border-top: 1px solid var(--border-l); }
+    .conflict-grid { grid-template-columns: 1fr; }
+  }
+</style>
+</head>
+<body>
+
+<header class="doc-head">
+  <p class="doc-eyebrow">Phase 4 · Brand-kit audit</p>
+  <h1 class="doc-title">Canon&nbsp;vs&nbsp;Brand&nbsp;Kit — Reconciliation Audit</h1>
+  <p class="doc-lede">
+    Side-by-side comparison of the design canon we just shipped (commits <code style="font-family:'SF Mono',Menlo,monospace;font-size:12.5px;background:var(--surf);padding:1px 5px;border-radius:3px">4a43e20</code>
+    + <code style="font-family:'SF Mono',Menlo,monospace;font-size:12.5px;background:var(--surf);padding:1px 5px;border-radius:3px">05ab465</code>)
+    against the dev team's authoritative brand kit at <code style="font-family:'SF Mono',Menlo,monospace;font-size:12.5px;background:var(--surf);padding:1px 5px;border-radius:3px">assets/devteambrandkit/homium-brand-kit/</code>.
+    Each row carries a one-line recommendation (Adopt kit / Defer / Negotiate / Keep ours) — use it as the input for the next round of changes.
+  </p>
+  <div class="stat-strip">
+    <span class="stat"><span class="sev-dot sev-crit"></span><span class="n">2</span>Critical conflicts</span>
+    <span class="stat"><span class="sev-dot sev-high"></span><span class="n">8</span>High</span>
+    <span class="stat"><span class="sev-dot sev-med"></span><span class="n">10</span>Medium</span>
+    <span class="stat"><span class="sev-dot sev-low"></span><span class="n">3</span>Low / new concepts</span>
+    <span class="stat"><span class="sev-dot sev-ok"></span><span class="n">12</span>Already consistent</span>
+  </div>
+</header>
+
+<!-- ================================================== OPEN CONFLICTS -->
+<section>
+  <p class="sec-eyebrow">01 · Open conflicts</p>
+  <h2 class="sec-title">Decisions locked in Phase 3 that the kit overrides</h2>
+  <p class="sec-lede">
+    These two items were explicitly locked during your Phase 3 sign-off and have already shipped to <code style="font-family:'SF Mono',Menlo,monospace;font-size:11.5px;background:var(--surf);padding:1px 5px;border-radius:3px">css/styles.css</code>
+    and <code style="font-family:'SF Mono',Menlo,monospace;font-size:11.5px;background:var(--surf);padding:1px 5px;border-radius:3px">js/views/branches.js</code>. The brand kit contradicts both. Resolve these first.
+  </p>
+
+  <!-- Conflict 1: Primary CTA color -->
+  <div class="conflict">
+    <div class="conflict-head">
+      <h3 class="conflict-title">Primary CTA color</h3>
+      <span class="conflict-badge">Critical</span>
+      <span class="conflict-meta">locked in 05ab465 · btn-primary</span>
+    </div>
+    <div class="conflict-grid">
+      <div class="conflict-side">
+        <h4>What we shipped</h4>
+        <p class="what">Navy <code style="font-family:'SF Mono',Menlo,monospace;font-size:11.5px">--color-primary: #00334a</code> drives <code style="font-family:'SF Mono',Menlo,monospace;font-size:11.5px">.btn-primary</code> across every view. The same token does double duty as the brand anchor for page titles and the sidenav active state.</p>
+        <div class="visual">
+          <button class="mini-btn mini-btn-navy">Save changes</button>
+        </div>
+      </div>
+      <div class="conflict-side">
+        <h4>What the kit says</h4>
+        <p class="what">Green-500 <code style="font-family:'SF Mono',Menlo,monospace;font-size:11.5px">#14935F</code> is the **Primary CTA / M3 Primary**. Navy is the brand anchor (logo, headings, nav) and the action color in dark mode is gold — but in light mode, green is the only color that signals "click me."</p>
+        <div class="visual">
+          <button class="mini-btn mini-btn-green">Save changes</button>
+        </div>
+      </div>
+    </div>
+    <div class="conflict-rec">
+      <span class="rec-label">Recommendation · Adopt kit</span>
+      <span class="rec-text">
+        Introduce <code style="font-family:'SF Mono',Menlo,monospace;font-size:11.5px">--color-cta: #14935F</code> and rewire <code style="font-family:'SF Mono',Menlo,monospace;font-size:11.5px">.btn-primary</code> to use it.
+        Keep <code style="font-family:'SF Mono',Menlo,monospace;font-size:11.5px">--color-primary</code> = navy for headings + nav + brand anchor. Pair with the kit's hover/active scale: <code style="font-family:'SF Mono',Menlo,monospace;font-size:11.5px">green-700 #117A4A</code> (hover), <code style="font-family:'SF Mono',Menlo,monospace;font-size:11.5px">green-900 #0D6B40</code> (pressed). Note: kit's success status uses a different green (<code style="font-family:'SF Mono',Menlo,monospace;font-size:11.5px">#1A8754</code>) — don't conflate the two.
+      </span>
+    </div>
+  </div>
+
+  <!-- Conflict 2: Nav architecture -->
+  <div class="conflict">
+    <div class="conflict-head">
+      <h3 class="conflict-title">Navigation architecture</h3>
+      <span class="conflict-badge">Critical</span>
+      <span class="conflict-meta">locked in design-canon.html · "What we kept"</span>
+    </div>
+    <div class="conflict-grid">
+      <div class="conflict-side">
+        <h4>What we shipped</h4>
+        <p class="what">Fixed <strong>92px left icon rail</strong> with the existing sidenav (logo, tile icons + labels, profile stack, flyouts). Our canon doc explicitly says: <em>"We keep ours — we lead here. Figma uses top nav."</em></p>
+        <div class="visual">
+          <div class="mini-nav-rail">
+            <div class="lg">H</div>
+            <div class="tile">⌂</div>
+            <div class="tile">▤</div>
+            <div class="tile">◫</div>
+          </div>
+        </div>
+      </div>
+      <div class="conflict-side">
+        <h4>What the kit says</h4>
+        <p class="what">Two-layer top NavBar (full-width <code style="font-family:'SF Mono',Menlo,monospace;font-size:11.5px">teal-900</code>, <strong>56px</strong>) with logo + nav items + user dropdown. Side nav <strong>only</strong> for detail pages (220px white card, sticky at <code style="font-family:'SF Mono',Menlo,monospace;font-size:11.5px">top: 80px</code>). Mobile collapses to hamburger + centered logo.</p>
+        <div class="visual">
+          <div class="mini-nav-top">
+            <span style="font-family:Georgia,serif;font-size:14px">Homium</span>
+            <span class="item active">Dashboard</span>
+            <span class="item">Originations</span>
+            <span class="item">Setup</span>
+          </div>
+        </div>
+      </div>
+    </div>
+    <div class="conflict-rec">
+      <span class="rec-label">Recommendation · Negotiate</span>
+      <span class="rec-text">
+        This is a substantive UX architecture call — bring the left-rail prototype to the dev team before flipping. Our rail is icon-only (92px); the kit's top-nav is text-label (56px). They're different mental models. If the platform is a multi-role institutional tool with deep sections, the left rail wins on hierarchy; if it's a 5–7 top-level destination tool, the top nav wins on horizontal real-estate. The kit's spec is detailed (active green underline, dropdown groups, user area on right) — they've thought it through. Bring data on use-cases, then decide.
+      </span>
+    </div>
+  </div>
+</section>
+
+<!-- ================================================== COLOR DISCREPANCIES -->
+<section>
+  <p class="sec-eyebrow">02 · Color discrepancies</p>
+  <h2 class="sec-title">Tokens that drifted from the kit</h2>
+  <p class="sec-lede">Eight per-token deltas. All swatches reflect the actual current values in <code style="font-family:'SF Mono',Menlo,monospace;font-size:11.5px;background:var(--surf);padding:1px 4px;border-radius:3px">css/styles.css</code>:root vs the kit JSON.</p>
+
+  <div class="row-table">
+    <div class="row-head">
+      <div>Token</div>
+      <div>Our canon (live)</div>
+      <div>Brand kit</div>
+      <div>Severity</div>
+      <div>Recommendation</div>
+    </div>
+
+    <div class="row">
+      <div class="lbl">Success<div class="lbl-meta">status pill / "Active" / loan funded</div></div>
+      <div class="sw"><span class="chip" style="background:#16A34A"></span><code>#16A34A</code></div>
+      <div class="sw"><span class="chip" style="background:#1A8754"></span><code>#1A8754</code></div>
+      <div class="sev-cell"><span class="sev-dot sev-high"></span><span class="sev-label">High</span></div>
+      <div class="rec"><strong>Adopt kit.</strong> Update <code style="font-family:'SF Mono',Menlo,monospace;font-size:11px">--color-success</code> to <code style="font-family:'SF Mono',Menlo,monospace;font-size:11px">#1A8754</code>.</div>
+    </div>
+
+    <div class="row">
+      <div class="lbl">Warning<div class="lbl-meta">"Setup incomplete" / pending</div></div>
+      <div class="sw"><span class="chip" style="background:#D97706"></span><code>#D97706</code></div>
+      <div class="sw"><span class="chip" style="background:#B8860B"></span><code>#B8860B</code></div>
+      <div class="sev-cell"><span class="sev-dot sev-high"></span><span class="sev-label">High</span></div>
+      <div class="rec"><strong>Adopt kit.</strong> Update <code style="font-family:'SF Mono',Menlo,monospace;font-size:11px">--color-warning</code> to <code style="font-family:'SF Mono',Menlo,monospace;font-size:11px">#B8860B</code> (deeper, more institutional amber).</div>
+    </div>
+
+    <div class="row">
+      <div class="lbl">Info<div class="lbl-meta">tooltips, neutral info</div></div>
+      <div class="sw"><span class="chip" style="background:#2563EB"></span><code>#2563EB</code> <span style="font-size:10.5px;color:var(--ink-mute);margin-left:4px">(cool blue)</span></div>
+      <div class="sw"><span class="chip" style="background:#1A6E8E"></span><code>#1A6E8E</code> <span style="font-size:10.5px;color:var(--ink-mute);margin-left:4px">(teal-500)</span></div>
+      <div class="sev-cell"><span class="sev-dot sev-high"></span><span class="sev-label">High</span></div>
+      <div class="rec"><strong>Adopt kit.</strong> The kit uses teal — info ties to the brand-anchor family, not generic cool blue. Update <code style="font-family:'SF Mono',Menlo,monospace;font-size:11px">--color-info</code>.</div>
+    </div>
+
+    <div class="row">
+      <div class="lbl">Card border (hover)<div class="lbl-meta">clickable card hover state</div></div>
+      <div class="sw"><span class="chip" style="background:#00334a"></span><code>navy default</code></div>
+      <div class="sw"><span class="chip" style="background:#14935f"></span><code>green-500</code></div>
+      <div class="sev-cell"><span class="sev-dot sev-med"></span><span class="sev-label">Medium</span></div>
+      <div class="rec"><strong>Adopt kit.</strong> "Green = interactivity" is the kit's load-bearing pattern. Card hover, table row hover, focus rings all use green.</div>
+    </div>
+
+    <div class="row">
+      <div class="lbl">Table row hover<div class="lbl-meta">clickable row state</div></div>
+      <div class="sw"><span class="chip" style="background:#eaf1f6"></span><code>navy-tinted bg</code></div>
+      <div class="sw"><span class="chip" style="background:#F2F0EA"></span><code>sand bg + 3px green left-border</code></div>
+      <div class="sev-cell"><span class="sev-dot sev-med"></span><span class="sev-label">Medium</span></div>
+      <div class="rec"><strong>Adopt kit.</strong> Add a 3px left-border accent in green-500 on table-row hover; switch the bg to sand <code style="font-family:'SF Mono',Menlo,monospace;font-size:11px">#F2F0EA</code>.</div>
+    </div>
+
+    <div class="row">
+      <div class="lbl">Focus ring<div class="lbl-meta">keyboard accessibility</div></div>
+      <div class="sw"><span class="chip" style="background:#00334a"></span><code>navy / default</code></div>
+      <div class="sw"><span class="chip" style="background:#14935f"></span><code>green-500 outline</code></div>
+      <div class="sev-cell"><span class="sev-dot sev-med"></span><span class="sev-label">Medium</span></div>
+      <div class="rec"><strong>Adopt kit.</strong> All focus rings go green so the "green = action" pattern extends to keyboard users.</div>
+    </div>
+
+    <div class="row">
+      <div class="lbl">Surface inactive<div class="lbl-meta">chip / pill bg, table header strip</div></div>
+      <div class="sw"><span class="chip" style="background:#f8f7f4"></span><code>#f8f7f4 (pearl)</code></div>
+      <div class="sw"><span class="chip" style="background:#f8f7f4"></span><code>#F8F7F4 (pearl)</code></div>
+      <div class="sev-cell"><span class="sev-dot sev-ok"></span><span class="sev-label">Consistent</span></div>
+      <div class="rec">Match. (Kit calls this "pearl" / alt surface — we use it slightly differently but the hex is identical.)</div>
+    </div>
+
+    <div class="row">
+      <div class="lbl">--color-purple<div class="lbl-meta">unused decorative</div></div>
+      <div class="sw"><span class="chip" style="background:#7C3AED"></span><code>#7C3AED</code></div>
+      <div class="sw"><span class="chip" style="background:transparent;border:1px dashed var(--border)"></span><code style="color:var(--ink-mute)">absent</code></div>
+      <div class="sev-cell"><span class="sev-dot sev-low"></span><span class="sev-label">Low</span></div>
+      <div class="rec"><strong>Defer / drop.</strong> Kit forbids decorative purple. Token is unused; consider removing in cleanup.</div>
+    </div>
+  </div>
+</section>
+
+<!-- ================================================== TYPOGRAPHY DISCREPANCIES -->
+<section>
+  <p class="sec-eyebrow">03 · Typography discrepancies</p>
+  <h2 class="sec-title">Font and numeric rules</h2>
+  <p class="sec-lede">The kit explicitly deprecates IvyPresto Display and JetBrains Mono in favor of Georgia (serif headings, regular weight only) and Inter with tabular-num features (for every numeric site). This is a substantive type-system change.</p>
+
+  <div class="row-table">
+    <div class="row-head">
+      <div>Item</div>
+      <div>Our canon (live)</div>
+      <div>Brand kit</div>
+      <div>Severity</div>
+      <div>Recommendation</div>
+    </div>
+
+    <div class="row type-row">
+      <div class="lbl">Heading font<div class="lbl-meta">page titles, section headers</div></div>
+      <div class="sw" style="flex-direction:column;align-items:flex-start;gap:4px"><span class="sample sample-our">Cedar Hills Branch</span><code>IvyPresto 300</code></div>
+      <div class="sw" style="flex-direction:column;align-items:flex-start;gap:4px"><span class="sample sample-kit">Cedar Hills Branch</span><code>Georgia 400</code></div>
+      <div class="sev-cell"><span class="sev-dot sev-high"></span><span class="sev-label">High</span></div>
+      <div class="rec"><strong>Negotiate.</strong> We hold the IvyPresto license; the kit chose Georgia for system-font / zero-load reasons. Question for dev: is the IvyPresto license fine to keep? If yes, the visual character of our pages is more elegant.</div>
+    </div>
+
+    <div class="row type-row">
+      <div class="lbl">Heading weight<div class="lbl-meta">all serif sites</div></div>
+      <div class="sw" style="flex-direction:column;align-items:flex-start;gap:4px"><span style="font-family:'IvyPresto Display',Georgia,serif;font-size:22px;font-weight:300;color:var(--ink-deep)">Cedar Hills Branch</span><code>300 (light)</code></div>
+      <div class="sw" style="flex-direction:column;align-items:flex-start;gap:4px"><span style="font-family:Georgia,serif;font-size:22px;font-weight:400;color:var(--ink-deep)">Cedar Hills Branch</span><code>400 (regular) only — <strong>never bold</strong></code></div>
+      <div class="sev-cell"><span class="sev-dot sev-high"></span><span class="sev-label">High</span></div>
+      <div class="rec"><strong>Adopt kit.</strong> "Never bold the serif" is a load-bearing rule — bold reads as heavy/corporate, regular reads as elegant/permanent. Update <code style="font-family:'SF Mono',Menlo,monospace;font-size:11px">.page-title</code>, <code style="font-family:'SF Mono',Menlo,monospace;font-size:11px">.entity-header-title</code> to weight 400.</div>
+    </div>
+
+    <div class="row type-row">
+      <div class="lbl">Tabular numerals<div class="lbl-meta">all numeric content</div></div>
+      <div class="sw" style="flex-direction:column;align-items:flex-start;gap:4px"><span class="num-sample" style="color:var(--ink-deep)">$1,140,200</span><span class="num-sample" style="color:var(--ink-deep)">$2,008,900</span><code style="margin-top:4px">no feature settings</code></div>
+      <div class="sw" style="flex-direction:column;align-items:flex-start;gap:4px"><span class="num-sample tabular" style="color:var(--ink-deep)">$1,140,200</span><span class="num-sample tabular" style="color:var(--ink-deep)">$2,008,900</span><code style="margin-top:4px">'tnum' 1, 'lnum' 1, 'zero' 0</code></div>
+      <div class="sev-cell"><span class="sev-dot sev-high"></span><span class="sev-label">High</span></div>
+      <div class="rec"><strong>Adopt kit.</strong> Apply <code style="font-family:'SF Mono',Menlo,monospace;font-size:11px">font-feature-settings: 'tnum' 1, 'lnum' 1, 'zero' 0; font-variant-numeric: tabular-nums lining-nums;</code> globally to numeric sites. Notice the digits align column-perfect in the right column.</div>
+    </div>
+
+    <div class="row">
+      <div class="lbl">Monospace usage<div class="lbl-meta">technical IDs, code chips</div></div>
+      <div class="sw"><code>SF Mono / Fira Code 11px<br><span style="font-family:'SF Mono',Menlo,monospace;font-size:14px">LN-2024-0142</span></code></div>
+      <div class="sw"><code>Inter tabular (mono deprecated)<br><span style="font-family:Inter,sans-serif;font-size:14px;font-feature-settings:'tnum' 1,'lnum' 1">LN-2024-0142</span></code></div>
+      <div class="sev-cell"><span class="sev-dot sev-high"></span><span class="sev-label">High</span></div>
+      <div class="rec"><strong>Conditional.</strong> If we keep IvyPresto/system mono, we keep our mono. If we go all-in on the kit, drop mono entirely and rely on Inter tabular for ID alignment.</div>
+    </div>
+
+    <div class="row">
+      <div class="lbl">Section title in card<div class="lbl-meta">e.g. "Branch information"</div></div>
+      <div class="sw" style="flex-direction:column;align-items:flex-start;gap:2px"><span style="font-family:Inter,sans-serif;font-size:15px;font-weight:600;color:var(--ink)">Branch information</span><code>Inter Semibold 15px</code></div>
+      <div class="sw" style="flex-direction:column;align-items:flex-start;gap:2px"><span style="font-family:Georgia,serif;font-size:20px;font-weight:400;color:var(--ink-deep)">Branch information</span><code>Georgia 400 20px</code></div>
+      <div class="sev-cell"><span class="sev-dot sev-med"></span><span class="sev-label">Medium</span></div>
+      <div class="rec"><strong>Adopt kit.</strong> Kit treats section titles inside cards as a serif rank between the page H1 (28px) and field labels (12px). Update <code style="font-family:'SF Mono',Menlo,monospace;font-size:11px">.SectionTitle</code>.</div>
+    </div>
+
+    <div class="row">
+      <div class="lbl">Page H1 size<div class="lbl-meta">entity headers, page titles</div></div>
+      <div class="sw"><code>28px / 33.6 lh</code></div>
+      <div class="sw"><code>28px / 33.6 lh ✓</code></div>
+      <div class="sev-cell"><span class="sev-dot sev-ok"></span><span class="sev-label">Match</span></div>
+      <div class="rec">Match.</div>
+    </div>
+  </div>
+</section>
+
+<!-- ================================================== COMPONENT DISCREPANCIES -->
+<section>
+  <p class="sec-eyebrow">04 · Component discrepancies</p>
+  <h2 class="sec-title">Action bars, cards, inputs, pills</h2>
+  <p class="sec-lede">Ten component-level deltas. The action-bar one is the most consequential — it changes a pattern we just shipped in <code style="font-family:'SF Mono',Menlo,monospace;font-size:11.5px;background:var(--surf);padding:1px 4px;border-radius:3px">branches.js</code>.</p>
+
+  <div class="comp-grid">
+    <!-- Action bar -->
+    <div class="comp-card">
+      <h3 class="comp-title">Save / action bar</h3>
+      <div class="comp-sev-line"><span class="sev-dot sev-crit"></span>Critical</div>
+      <div class="comp-mocks">
+        <div class="comp-side">
+          <h5>Our canon (shipped)</h5>
+          <div class="ab-mock">
+            <span class="dirty-dot"></span>
+            <span class="dirty-lbl">Unsaved changes</span>
+            <button class="ab-mini-btn cancel">Cancel</button>
+            <button class="ab-mini-btn save">Save changes</button>
+          </div>
+        </div>
+        <div class="comp-side">
+          <h5>Brand kit</h5>
+          <div class="ab-mock">
+            <span class="dirty-dot"></span>
+            <span class="dirty-lbl" style="font-size:10.5px;color:var(--ink-mute)">auto-save · synced</span>
+            <button class="ab-mini-btn save-green">Save branch</button>
+          </div>
+        </div>
+      </div>
+      <p class="comp-rec"><strong>Adopt kit</strong> Save-only — no Cancel. The sticky top "Back to Branches" is the cancel route; two paths back is redundancy. Save label includes the entity: "Save branch" / "Save user". Button is green CTA, not navy.</p>
+    </div>
+
+    <!-- Input height -->
+    <div class="comp-card">
+      <h3 class="comp-title">Input height (compact density)</h3>
+      <div class="comp-sev-line"><span class="sev-dot sev-high"></span>High</div>
+      <div class="comp-mocks">
+        <div class="comp-side">
+          <h5>Our canon (shipped)</h5>
+          <input class="input-mock-36" placeholder="Branch NMLS #" />
+          <code style="font-family:'SF Mono',Menlo,monospace;font-size:10.5px;color:var(--ink-mute);margin-top:8px">--input-height: 36px</code>
+        </div>
+        <div class="comp-side">
+          <h5>Brand kit</h5>
+          <input class="input-mock-32" placeholder="Branch NMLS #" />
+          <code style="font-family:'SF Mono',Menlo,monospace;font-size:10.5px;color:var(--ink-mute);margin-top:8px">32px compact · 40px wizard</code>
+        </div>
+      </div>
+      <p class="comp-rec"><strong>Adopt kit</strong> 32px for compact density (table-aligned forms). 40px for wizard fields (more breathable for primary entry). Add <code style="font-family:'SF Mono',Menlo,monospace;font-size:11px">--input-height-wizard: 40px</code>.</p>
+    </div>
+
+    <!-- Card shadows -->
+    <div class="comp-card">
+      <h3 class="comp-title">Card elevation</h3>
+      <div class="comp-sev-line"><span class="sev-dot sev-med"></span>Medium</div>
+      <div class="comp-mocks">
+        <div class="comp-side">
+          <h5>Our canon (shipped)</h5>
+          <div class="shadow-card">Card with MD3 shadow scale (currently available as <code style="font-family:'SF Mono',Menlo,monospace;font-size:10px">--shadow-sm…xl</code>)</div>
+        </div>
+        <div class="comp-side">
+          <h5>Brand kit</h5>
+          <div class="flat-card">Flat card — 1px stone border only. Drop shadows <strong>only</strong> on overlays (modals, dropdowns, tooltips).</div>
+        </div>
+      </div>
+      <p class="comp-rec"><strong>Adopt kit</strong> Strip <code style="font-family:'SF Mono',Menlo,monospace;font-size:11px">box-shadow</code> from <code style="font-family:'SF Mono',Menlo,monospace;font-size:11px">.inst-card</code>, <code style="font-family:'SF Mono',Menlo,monospace;font-size:11px">.entity-header</code>, <code style="font-family:'SF Mono',Menlo,monospace;font-size:11px">.hm-card</code>. Keep the shadow scale tokens — but use only on modals/dropdowns/tooltips.</p>
+    </div>
+
+    <!-- Status pills -->
+    <div class="comp-card">
+      <h3 class="comp-title">Status pills</h3>
+      <div class="comp-sev-line"><span class="sev-dot sev-med"></span>Medium</div>
+      <div class="comp-mocks">
+        <div class="comp-side">
+          <h5>Our canon (varies)</h5>
+          <div style="display:flex;gap:6px;flex-wrap:wrap">
+            <span class="pill pill-active"><span class="dot"></span>Active</span>
+            <span class="pill pill-pending"><span class="dot"></span>Pending</span>
+          </div>
+          <code style="font-family:'SF Mono',Menlo,monospace;font-size:10.5px;color:var(--ink-mute);margin-top:8px">inconsistent fills + radii</code>
+        </div>
+        <div class="comp-side">
+          <h5>Brand kit (canonical)</h5>
+          <div style="display:flex;gap:6px;flex-wrap:wrap">
+            <span class="pill pill-active"><span class="dot"></span>Active</span>
+            <span class="pill pill-pending"><span class="dot"></span>KYC Pending</span>
+          </div>
+          <code style="font-family:'SF Mono',Menlo,monospace;font-size:10.5px;color:var(--ink-mute);margin-top:8px">always 999px · dot + tinted bg</code>
+        </div>
+      </div>
+      <p class="comp-rec"><strong>Adopt kit</strong> Every status cell uses a pill (never bare text). Shape always 999px. 6px colored dot + same-color text on tinted bg per status. Inactive uses pearl bg + muted text via a neutral variant — not bare gray.</p>
+    </div>
+
+    <!-- Role / entity pills -->
+    <div class="comp-card">
+      <h3 class="comp-title">Role &amp; entity pills</h3>
+      <div class="comp-sev-line"><span class="sev-dot sev-med"></span>Medium</div>
+      <div class="comp-mocks">
+        <div class="comp-side">
+          <h5>Our canon (varies, filled)</h5>
+          <div style="display:flex;gap:6px;flex-wrap:wrap;align-items:center">
+            <span class="pill-role-filled">Loan Officer</span>
+            <span class="pill-role-filled" style="background:var(--info-teal)">Origination</span>
+          </div>
+        </div>
+        <div class="comp-side">
+          <h5>Brand kit (ghost outlined, identical)</h5>
+          <div style="display:flex;gap:6px;flex-wrap:wrap;align-items:center">
+            <span class="pill-role-ghost">Loan Officer</span>
+            <span class="pill-role-ghost">Origination</span>
+          </div>
+        </div>
+      </div>
+      <p class="comp-rec"><strong>Adopt kit</strong> ALL role and entity pills are visually identical: transparent bg, stone border, gray-500 text. Label text alone differentiates. Only status pills carry color. This eliminates "rainbow salad" in dense rows.</p>
+    </div>
+
+    <!-- Avatar -->
+    <div class="comp-card">
+      <h3 class="comp-title">Avatar</h3>
+      <div class="comp-sev-line"><span class="sev-dot sev-med"></span>Medium</div>
+      <div class="comp-mocks">
+        <div class="comp-side">
+          <h5>Our canon (per-role colors)</h5>
+          <div style="display:flex;gap:8px">
+            <span class="avatar" style="background:#fde8e6;color:#c4382a">AM</span>
+            <span class="avatar" style="background:#e0edf3;color:#0a4d6b">JR</span>
+            <span class="avatar" style="background:#e4f3eb;color:#1a8754">SC</span>
+          </div>
+          <code style="font-family:'SF Mono',Menlo,monospace;font-size:10.5px;color:var(--ink-mute);margin-top:8px">varied bg per user role</code>
+        </div>
+        <div class="comp-side">
+          <h5>Brand kit (single style)</h5>
+          <div style="display:flex;gap:8px">
+            <span class="avatar">AM</span>
+            <span class="avatar">JR</span>
+            <span class="avatar">SC</span>
+          </div>
+          <code style="font-family:'SF Mono',Menlo,monospace;font-size:10.5px;color:var(--ink-mute);margin-top:8px">teal-50 bg · teal-500 text · all same</code>
+        </div>
+      </div>
+      <p class="comp-rec"><strong>Adopt kit</strong> All avatars use teal-50 <code style="font-family:'SF Mono',Menlo,monospace;font-size:11px">#E0EDF3</code> bg + teal-500 <code style="font-family:'SF Mono',Menlo,monospace;font-size:11px">#1A6E8E</code> text. No per-user colors. Avatars are "invisible infrastructure" — the eye skips to name → status.</p>
+    </div>
+
+    <!-- Card padding -->
+    <div class="comp-card">
+      <h3 class="comp-title">Card padding</h3>
+      <div class="comp-sev-line"><span class="sev-dot sev-low"></span>Low</div>
+      <div class="comp-mocks">
+        <div class="comp-side">
+          <h5>Our canon</h5>
+          <code style="font-family:'SF Mono',Menlo,monospace;font-size:11px;color:var(--ink)">--card-pad: 25px</code>
+        </div>
+        <div class="comp-side">
+          <h5>Brand kit</h5>
+          <code style="font-family:'SF Mono',Menlo,monospace;font-size:11px;color:var(--ink)">--h-space-24: 24px</code>
+        </div>
+      </div>
+      <p class="comp-rec"><strong>Adopt kit</strong> 1px difference. Align to the spacing scale by setting <code style="font-family:'SF Mono',Menlo,monospace;font-size:11px">--card-pad: 24px</code>.</p>
+    </div>
+
+    <!-- Discard modal -->
+    <div class="comp-card">
+      <h3 class="comp-title">Dirty-form modal</h3>
+      <div class="comp-sev-line"><span class="sev-dot sev-med"></span>Medium</div>
+      <div class="comp-mocks">
+        <div class="comp-side">
+          <h5>Our canon</h5>
+          <span style="font-size:11.5px;color:var(--ink-mute)">No modal — leaving an edit silently navigates away.</span>
+        </div>
+        <div class="comp-side">
+          <h5>Brand kit (canonical copy)</h5>
+          <div style="background:#fff;border:1px solid var(--border);border-radius:8px;padding:10px 12px">
+            <div style="font-family:Georgia,serif;font-size:14px;color:var(--ink-deep);margin-bottom:4px">Discard changes?</div>
+            <div style="font-size:11px;color:var(--ink-2);margin-bottom:8px">Your unsaved changes will be lost.</div>
+            <div style="display:flex;gap:6px;justify-content:flex-end">
+              <button class="ab-mini-btn" style="color:var(--danger);background:transparent">Discard changes</button>
+              <button class="ab-mini-btn save">Keep editing</button>
+            </div>
+          </div>
+        </div>
+      </div>
+      <p class="comp-rec"><strong>Adopt kit</strong> Required for every nav exit path (BackToMain click, sidebar nav, top nav, browser back, reload). "Keep editing" autofocused, right; "Discard changes" ghost-destructive, left. Copy is exact.</p>
+    </div>
+
+    <!-- Button hierarchy -->
+    <div class="comp-card">
+      <h3 class="comp-title">Button action hierarchy</h3>
+      <div class="comp-sev-line"><span class="sev-dot sev-med"></span>Medium</div>
+      <div class="comp-mocks">
+        <div class="comp-side">
+          <h5>Our canon</h5>
+          <span style="font-size:11.5px;color:var(--ink-mute)">All primary buttons are full-size navy.</span>
+        </div>
+        <div class="comp-side">
+          <h5>Brand kit (by nesting depth)</h5>
+          <div style="display:flex;flex-direction:column;gap:6px;align-items:flex-start;font-size:10.5px;color:var(--ink-2)">
+            <button class="ab-mini-btn save-green" style="height:30px;padding:0 12px">+ New company</button><span>page-level main → Btn--primary full</span>
+            <button class="ab-mini-btn save-green">+ Add user</button><span>tab-section main → Btn--primary--sm</span>
+            <button class="ab-mini-btn cancel">+ Add user</button><span>sub-section → Btn--outlined--sm</span>
+          </div>
+        </div>
+      </div>
+      <p class="comp-rec"><strong>Adopt kit</strong> Per-context sizing. Sub-actions step DOWN visually as nesting deepens. One primary per section.</p>
+    </div>
+
+    <!-- Sidenav -->
+    <div class="comp-card">
+      <h3 class="comp-title">Sidenav scope</h3>
+      <div class="comp-sev-line"><span class="sev-dot sev-low"></span>Low (overlapping use)</div>
+      <div class="comp-mocks">
+        <div class="comp-side">
+          <h5>Our canon</h5>
+          <span style="font-size:11.5px;color:var(--ink-mute)">92px fixed left rail — global, every view.</span>
+        </div>
+        <div class="comp-side">
+          <h5>Brand kit</h5>
+          <span style="font-size:11.5px;color:var(--ink-mute)">220px white card sidenav, reserved for <strong>detail pages only</strong> (e.g., loan detail).</span>
+        </div>
+      </div>
+      <p class="comp-rec">Tied to the open conflict above (nav architecture). If you negotiate to keep the left rail globally, the kit's detail-page sidenav becomes additive — not a conflict.</p>
+    </div>
+  </div>
+</section>
+
+<!-- ================================================== NEW CONCEPTS -->
+<section>
+  <p class="sec-eyebrow">05 · New concepts from the kit</p>
+  <h2 class="sec-title">Things we didn't have, that the kit declares canonical</h2>
+  <p class="sec-lede">These are additive — not in conflict with anything we shipped. Recommendation on each is when to adopt.</p>
+
+  <div class="new-grid">
+    <div class="new-card">
+      <h3>Data viz palette</h3>
+      <p class="what">Sequential teal ramp, categorical 6-color (navy, green, teal, purple, gold, teal-2), diverging red→green pair (only place red/green appear in charts). Opacity stepping <code style="font-family:'SF Mono',Menlo,monospace;font-size:11px">--step-1…5</code> for single-variable bars.</p>
+      <p class="new-rec"><strong>Adopt</strong> when we build the first chart. Don't reinvent.</p>
+    </div>
+
+    <div class="new-card">
+      <h3>Chart tooltip pattern</h3>
+      <p class="what">White bg, 1px stone border on all sides, <strong>3px green-500 top accent</strong> (direction-independent — never left/right). Two-line content: Inter 11px label + Georgia 18px value. JS-positioned, never CSS pseudo-element.</p>
+      <p class="new-rec"><strong>Adopt</strong> with the first chart.</p>
+    </div>
+
+    <div class="new-card">
+      <h3>Dim-siblings hover</h3>
+      <p class="what">On chart bar hover: container gets <code style="font-family:'SF Mono',Menlo,monospace;font-size:11px">.is-hovering</code>, bar gets <code style="font-family:'SF Mono',Menlo,monospace;font-size:11px">.is-hovered</code>. All bars dim to opacity 0.40, hovered bar to 0.85. Never <code style="font-family:'SF Mono',Menlo,monospace;font-size:11px">filter: brightness()</code>.</p>
+      <p class="new-rec"><strong>Adopt</strong> with first chart.</p>
+    </div>
+
+    <div class="new-card">
+      <h3>Tabler Icons (1.5px stroke)</h3>
+      <p class="what">Standard icon library — 5,700+ line icons. 20px standalone, 16px inside components. Stroke always 1.5 to match border weights. Never mix libraries.</p>
+      <p class="new-rec"><strong>Adopt</strong> immediately. Audit existing inline SVGs.</p>
+    </div>
+
+    <div class="new-card">
+      <h3>Spacing scale tokens</h3>
+      <p class="what"><code style="font-family:'SF Mono',Menlo,monospace;font-size:11px">--h-space-2 / 4 / 8 / 12 / 16 / 20 / 24 / 32 / 40 / 48 / 64</code>. Every padding, margin, gap. No arbitrary pixel values.</p>
+      <p class="new-rec"><strong>Adopt</strong> in <code style="font-family:'SF Mono',Menlo,monospace;font-size:11px">:root</code>; migrate ad-hoc spacing over time.</p>
+    </div>
+
+    <div class="new-card">
+      <h3>Shape vocabulary</h3>
+      <p class="what">4px squares (chart bars, code blocks), 6px controls (buttons, chips, inputs), 8px cards, 12px modals, 50% circles (avatars, dots), 999px pills (badges).</p>
+      <p class="new-rec"><strong>Adopt</strong> as the audit lens — check each component's radius against this scale.</p>
+    </div>
+
+    <div class="new-card">
+      <h3>Surface hierarchy</h3>
+      <p class="what">Page <code style="font-family:'SF Mono',Menlo,monospace;font-size:11px">#F9F8F4</code> → card white → nested expanded sand <code style="font-family:'SF Mono',Menlo,monospace;font-size:11px">#F2F0EA</code> → inner card white → table zebra <code style="font-family:'SF Mono',Menlo,monospace;font-size:11px">#FAFAF8</code>. Pearl <code style="font-family:'SF Mono',Menlo,monospace;font-size:11px">#F8F7F4</code> reserved for readonly inputs.</p>
+      <p class="new-rec"><strong>Adopt</strong> incrementally as views are refactored.</p>
+    </div>
+
+    <div class="new-card">
+      <h3>Dark mode (complete spec)</h3>
+      <p class="what">Page <code style="font-family:'SF Mono',Menlo,monospace;font-size:11px">#071620</code>, action color flips from green to <strong>gold</strong> <code style="font-family:'SF Mono',Menlo,monospace;font-size:11px">#D4A017</code>, dark-green-cta brightens to <code style="font-family:'SF Mono',Menlo,monospace;font-size:11px">#1EAA6E</code>, semantic colors all softened.</p>
+      <p class="new-rec"><strong>Defer.</strong> Phase 3 explicitly out-of-scoped dark; capture in canon doc for the future.</p>
+    </div>
+
+    <div class="new-card">
+      <h3>Compact density rule</h3>
+      <p class="what">Default: 36px table rows / 32px inputs / 28px chips. Comfortable toggle available for users who prefer M3 default density.</p>
+      <p class="new-rec"><strong>Adopt</strong> — partial overlap with input height delta above.</p>
+    </div>
+  </div>
+</section>
+
+<!-- ================================================== ALREADY CONSISTENT -->
+<section>
+  <p class="sec-eyebrow">06 · Already consistent</p>
+  <h2 class="sec-title">Wins — what we got right</h2>
+  <p class="sec-lede">Twelve tokens and patterns where Phase 3 already lines up with the brand kit exactly. The bulk of the warm institutional palette landed correctly.</p>
+
+  <div class="wins-grid">
+    <div class="win"><span class="chip" style="background:#E0DDD6"></span><div><div class="label">Stone border</div><div class="meta">#E0DDD6</div></div></div>
+    <div class="win"><span class="chip" style="background:#EDEBE6"></span><div><div class="label">Soft border</div><div class="meta">#EDEBE6</div></div></div>
+    <div class="win"><span class="chip" style="background:#2D3E4A"></span><div><div class="label">Slate primary text</div><div class="meta">#2D3E4A</div></div></div>
+    <div class="win"><span class="chip" style="background:#6B7A85"></span><div><div class="label">Gray-500 secondary</div><div class="meta">#6B7A85</div></div></div>
+    <div class="win"><span class="chip" style="background:#9BA6AE"></span><div><div class="label">Gray-300 muted</div><div class="meta">#9BA6AE</div></div></div>
+    <div class="win"><span class="chip" style="background:#F8F7F4"></span><div><div class="label">Pearl surface</div><div class="meta">#F8F7F4</div></div></div>
+    <div class="win"><span class="chip" style="background:#F9F8F4"></span><div><div class="label">Page background</div><div class="meta">#F9F8F4</div></div></div>
+    <div class="win"><span class="chip" style="background:#00334A"></span><div><div class="label">Brand anchor (navy)</div><div class="meta">#00334A</div></div></div>
+    <div class="win"><span class="chip" style="background:#C4382A"></span><div><div class="label">Brick danger</div><div class="meta">#C4382A</div></div></div>
+    <div class="win"><span class="chip" style="background:#FFFFFF;outline:1px solid var(--border);outline-offset:-1px"></span><div><div class="label">Card white</div><div class="meta">#FFFFFF</div></div></div>
+    <div class="win" style="grid-column:span 2"><div style="font-family:'SF Mono',Menlo,monospace;font-size:14px;color:var(--ink-deep)">8px</div><div><div class="label">Card border-radius</div><div class="meta">all card containers</div></div></div>
+    <div class="win" style="grid-column:span 2"><div style="font-family:'SF Mono',Menlo,monospace;font-size:14px;color:var(--ink-deep)">28×44</div><div><div class="label">Chip dimensions</div><div class="meta">h × min-w · 6px radius</div></div></div>
+  </div>
+</section>
+
+<!-- ================================================== RESOLUTION LEGEND -->
+<section>
+  <p class="sec-eyebrow">07 · Resolution legend</p>
+  <h2 class="sec-title">Vocabulary for per-row decisions</h2>
+  <p class="sec-lede">Use this when you reply with your per-row calls — the same four verbs the recommendations use.</p>
+
+  <div class="legend">
+    <div class="legend-grid">
+      <div class="legend-item">
+        <p class="verb">Adopt kit</p>
+        <p class="verb-desc">Update our canon to match the brand kit value verbatim. Most common for token-level deltas where the kit is more thought-through.</p>
+      </div>
+      <div class="legend-item">
+        <p class="verb">Keep ours</p>
+        <p class="verb-desc">Our value stands. The kit is wrong, or the delta is a deliberate platform choice we'd lose by matching.</p>
+      </div>
+      <div class="legend-item">
+        <p class="verb">Negotiate</p>
+        <p class="verb-desc">Bring it to the dev team. The choice has trade-offs and needs alignment before either side moves.</p>
+      </div>
+      <div class="legend-item">
+        <p class="verb">Defer</p>
+        <p class="verb-desc">Note and capture, but don't change yet. Common for additive concepts we haven't built (charts, dark mode).</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<footer class="doc-foot">
+  <p>
+    Source files:
+    <a href="../devteambrandkit/homium-brand-kit/CLAUDE.md">brandkit/CLAUDE.md</a> (authoritative) ·
+    <a href="../devteambrandkit/homium-brand-kit/homium-design-tokens.json">brandkit tokens JSON</a> ·
+    <a href="../devteambrandkit/homium-brand-kit/Homium_Brand_Guidelines_v1.pdf">brandkit guidelines PDF</a> ·
+    <a href="design-canon.html">our canon doc</a> ·
+    <code>css/styles.css</code> :root ·
+    <code>js/views/branches.js</code>
+  </p>
+  <p style="margin-top:10px;font-size:11.5px;color:var(--ink-mute)">
+    No live code was changed in this audit round — the canon at <code>05ab465</code> remains as shipped. Your per-row decisions become the input for the next PR.
+  </p>
+</footer>
+
+</body>
+</html>
