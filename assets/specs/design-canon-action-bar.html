@@ -1,0 +1,573 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<title>Design canon — action-bar pattern</title>
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+<style>
+  /* ============================================================
+     DESIGN CANON — ACTION-BAR PATTERN VISUALIZATION
+     Sticky-top "Back to X" + sticky-bottom Save/Submit bar
+     on an example "edit branch" page. Toggle the page mode
+     to see edit-mode (Save/Cancel) vs wizard-mode (Back/Next).
+     ============================================================ */
+
+  * { box-sizing: border-box; }
+  html, body { margin: 0; padding: 0; }
+  body {
+    font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+    background: #e8e4dc;
+    color: #2d3e4a;
+    line-height: 1.45;
+    -webkit-font-smoothing: antialiased;
+  }
+
+  /* Doc-level header (the user reading this — outside the simulated app) */
+  .doc-header {
+    padding: 28px 40px 22px;
+    background: #f5f1ea;
+    border-bottom: 1px solid #d8d3ca;
+  }
+  .doc-eyebrow {
+    font-size: 11px;
+    font-weight: 600;
+    letter-spacing: 0.16em;
+    text-transform: uppercase;
+    color: #6b7a85;
+    margin: 0 0 8px;
+  }
+  .doc-title {
+    font-family: Georgia, 'IvyPresto Display', serif;
+    font-weight: 400;
+    font-size: 32px;
+    line-height: 1.15;
+    color: #00334a;
+    margin: 0 0 8px;
+    letter-spacing: -0.01em;
+  }
+  .doc-lede {
+    font-size: 14px;
+    color: #4b5563;
+    margin: 0 0 18px;
+    max-width: 880px;
+    line-height: 1.55;
+  }
+  .mode-row {
+    display: flex; gap: 8px; align-items: center;
+    font-size: 13px;
+  }
+  .mode-row .mode-label {
+    font-size: 11px;
+    font-weight: 600;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    color: #6b7a85;
+    margin-right: 4px;
+  }
+  .mode-btn {
+    height: 30px;
+    padding: 0 13px;
+    border-radius: 6px;
+    background: #fff;
+    border: 1px solid #d8d3ca;
+    color: #4b5563;
+    font-size: 12px;
+    font-weight: 500;
+    font-family: inherit;
+    cursor: pointer;
+  }
+  .mode-btn.active {
+    background: #00334a;
+    color: #fff;
+    border-color: #00334a;
+  }
+  .dirty-btn {
+    height: 30px;
+    padding: 0 13px;
+    border-radius: 6px;
+    background: #fff;
+    border: 1px solid #d8d3ca;
+    color: #4b5563;
+    font-size: 12px;
+    font-weight: 500;
+    font-family: inherit;
+    cursor: pointer;
+    margin-left: 16px;
+  }
+  .dirty-btn.on {
+    background: #c4382a; color: #fff; border-color: #c4382a;
+  }
+
+  /* ============ Simulated app shell ============ */
+  .app-shell {
+    display: grid;
+    grid-template-columns: 92px 1fr;
+    min-height: calc(100vh - 200px);
+    background: #f9f8f4;
+    border-top: 1px solid #d8d3ca;
+  }
+
+  /* ============ Left sidenav (kept ours, 92px) ============ */
+  .sidenav {
+    background: #ffffff;
+    border-right: 1px solid #e0ddd6;
+    padding: 16px 0;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 6px;
+  }
+  .sidenav .logo {
+    font-family: Georgia, 'IvyPresto Display', serif;
+    font-size: 28px;
+    color: #00334a;
+    margin-bottom: 18px;
+    line-height: 1;
+  }
+  .sidenav .tile {
+    width: 60px; height: 60px;
+    display: flex; flex-direction: column;
+    align-items: center; justify-content: center;
+    gap: 4px;
+    border-radius: 8px;
+    cursor: pointer;
+    color: #6b7a85;
+    position: relative;
+  }
+  .sidenav .tile.active {
+    background: #eaf1f6;
+    color: #00334a;
+  }
+  .sidenav .tile.active::before {
+    content: '';
+    position: absolute; left: -16px; top: 14px;
+    width: 3px; height: 32px;
+    background: #00334a;
+    border-radius: 0 2px 2px 0;
+  }
+  .sidenav .tile .icon {
+    width: 22px; height: 22px;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 16px;
+  }
+  .sidenav .tile .lbl {
+    font-size: 9.5px;
+    font-weight: 500;
+    letter-spacing: 0.04em;
+  }
+
+  /* ============ Main content area ============ */
+  .main {
+    display: flex;
+    flex-direction: column;
+    position: relative;
+    /* leaves space for sticky bottom action bar */
+  }
+
+  /* ----- Sticky top: Back to X ----- */
+  .back-bar {
+    position: sticky;
+    top: 0;
+    z-index: 5;
+    background: #f9f8f4;
+    border-bottom: 1px solid #edebe6;
+    padding: 12px 40px 13px;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    font-size: 13px;
+    font-weight: 500;
+    color: #00334a;
+    cursor: pointer;
+  }
+  .back-bar .arrow {
+    width: 16px; height: 16px;
+    display: inline-flex; align-items: center; justify-content: center;
+    font-size: 14px;
+  }
+  .back-bar:hover { background: #f3eee5; }
+
+  /* ----- Page header (the canon: IvyPresto/Georgia 28px) ----- */
+  .page-head {
+    padding: 24px 40px 4px;
+  }
+  .page-title {
+    font-family: Georgia, 'IvyPresto Display', serif;
+    font-weight: 400;
+    font-size: 28px;
+    line-height: 33.6px;
+    color: #00334a;
+    margin: 0;
+    letter-spacing: -0.005em;
+  }
+  .page-sub {
+    font-size: 13px;
+    line-height: 19.5px;
+    color: #6b7a85;
+    margin: 4px 0 0;
+    max-width: 720px;
+  }
+
+  /* ----- Body cards ----- */
+  .page-body {
+    padding: 20px 40px 120px; /* bottom pad keeps content above sticky bar */
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+  }
+
+  .card {
+    background: #ffffff;
+    border: 1px solid #e0ddd6;
+    border-radius: 8px;
+    padding: 25px;
+  }
+  .card-title {
+    font-size: 15px;
+    line-height: 22.5px;
+    font-weight: 600;
+    color: #2d3e4a;
+    margin: 0 0 18px;
+  }
+  .form-grid {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 16px 24px;
+    max-width: 832px;
+  }
+  .field { display: flex; flex-direction: column; gap: 4px; }
+  .field-full { grid-column: 1 / -1; }
+  .field-label {
+    font-size: 12px;
+    line-height: 18px;
+    font-weight: 500;
+    color: #2d3e4a;
+  }
+  .field-label .req { color: #c4382a; margin-right: 2px; }
+  .field-input {
+    height: 36px;
+    border: 1px solid #e0ddd6;
+    border-radius: 6px;
+    padding: 0 13px;
+    font-size: 14px;
+    font-family: inherit;
+    color: #2d3e4a;
+    background: #fff;
+    max-width: 400px;
+    transition: border-color 0.15s, box-shadow 0.15s;
+  }
+  .field-input::placeholder { color: #9ba6ae; }
+  .field-input:focus {
+    outline: none;
+    border-color: #00334a;
+    box-shadow: 0 0 0 3px rgba(0, 51, 74, 0.08);
+  }
+
+  /* ----- Sticky bottom action bar ----- */
+  .action-bar {
+    position: sticky;
+    bottom: 0;
+    z-index: 5;
+    background: #ffffff;
+    border-top: 1px solid #e0ddd6;
+    padding: 12px 40px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    box-shadow: 0 -2px 8px rgba(0, 51, 74, 0.04);
+  }
+  .action-bar .dirty {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    margin-right: auto;
+    color: #9ba6ae;
+    font-size: 12px;
+    font-weight: 500;
+    transition: opacity 0.2s, color 0.2s;
+  }
+  .action-bar .dirty .dot {
+    width: 8px; height: 8px;
+    border-radius: 50%;
+    background: #d8d3ca;
+    transition: background 0.2s;
+  }
+  body.is-dirty .action-bar .dirty {
+    color: #c4382a;
+  }
+  body.is-dirty .action-bar .dirty .dot {
+    background: #c4382a;
+    box-shadow: 0 0 0 4px rgba(196, 56, 42, 0.12);
+  }
+  body.is-dirty .action-bar .btn-primary {
+    background: #00334a;
+  }
+  body:not(.is-dirty) .action-bar .btn-primary {
+    background: #6b7a85;
+    cursor: not-allowed;
+  }
+
+  .btn {
+    height: 36px;
+    padding: 0 16px;
+    border-radius: 6px;
+    border: 1px solid transparent;
+    font-size: 13px;
+    font-weight: 500;
+    font-family: inherit;
+    cursor: pointer;
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    transition: background 0.15s, border-color 0.15s;
+  }
+  .btn-primary { background: #00334a; color: #fff; }
+  .btn-primary:hover { background: #00415e; }
+  .btn-outline {
+    background: #ffffff;
+    border-color: #e0ddd6;
+    color: #2d3e4a;
+  }
+  .btn-outline:hover { background: #f8f7f4; }
+  .btn-ghost {
+    background: transparent;
+    color: #6b7a85;
+  }
+  .btn-ghost:hover { color: #2d3e4a; }
+
+  /* Wizard mode shows Back/Next + step pip; edit mode shows Cancel/Save */
+  body.mode-edit   .wizard-controls { display: none; }
+  body.mode-wizard .edit-controls   { display: none; }
+  body.mode-wizard .back-bar-label  { content: 'Onboarding · Step 2 of 4'; }
+
+  .step-pips {
+    display: flex; gap: 4px;
+    margin-right: 14px;
+  }
+  .pip {
+    width: 24px; height: 4px;
+    background: #e0ddd6;
+    border-radius: 2px;
+  }
+  .pip.done { background: #00334a; }
+  .pip.now  { background: #00334a; }
+  .pip.todo { background: #e0ddd6; }
+
+  .step-label {
+    font-size: 12px;
+    color: #6b7a85;
+    margin-right: auto;
+    font-weight: 500;
+  }
+
+  /* Annotation callouts — for understanding the pattern */
+  .note {
+    position: relative;
+  }
+  .note::after {
+    content: attr(data-note);
+    position: absolute;
+    right: 40px;
+    background: #00334a;
+    color: #fff;
+    font-size: 10.5px;
+    font-weight: 600;
+    letter-spacing: 0.04em;
+    padding: 4px 9px;
+    border-radius: 4px;
+    pointer-events: none;
+    white-space: nowrap;
+  }
+  .back-bar.note::after { top: 12px; }
+  .action-bar.note::after { top: 13px; right: 200px; }
+
+  /* Show/hide annotations */
+  body.show-notes .note::after { display: block; }
+  body:not(.show-notes) .note::after { display: none; }
+
+  /* Visual hint to scroll */
+  .scroll-hint {
+    text-align: center;
+    color: #9ba6ae;
+    font-size: 11px;
+    padding: 8px 0 20px;
+    font-style: italic;
+  }
+</style>
+</head>
+<body class="mode-edit show-notes">
+  <!-- Doc-level header (this is the explainer, not part of the simulated app) -->
+  <header class="doc-header">
+    <p class="doc-eyebrow">Phase 2 — for review</p>
+    <h1 class="doc-title">Action-bar pattern (sticky top + bottom)</h1>
+    <p class="doc-lede">
+      Below is a lightweight example of an "edit branch" page using the Figma canon's sticky-top
+      "Back to X" + sticky-bottom Save/Submit pattern. Toggle the mode and dirty state to see how the bar
+      reacts. Decide: should this pattern roll out to <em>form/wizard pages only</em>, or <em>all editable pages</em>?
+    </p>
+    <div class="mode-row">
+      <span class="mode-label">Page mode</span>
+      <button class="mode-btn active" id="modeEdit">Edit (Cancel / Save)</button>
+      <button class="mode-btn" id="modeWizard">Wizard (Back / Next)</button>
+      <button class="dirty-btn" id="dirtyToggle">Toggle dirty state</button>
+      <button class="mode-btn" id="notesToggle" style="margin-left:auto">Toggle annotations</button>
+    </div>
+  </header>
+
+  <!-- Simulated app shell with left rail + main -->
+  <div class="app-shell">
+    <!-- Sidenav: KEPT from current project, 92px icon rail -->
+    <aside class="sidenav">
+      <div class="logo">H</div>
+      <div class="tile"><div class="icon">⌂</div><div class="lbl">Home</div></div>
+      <div class="tile"><div class="icon">▤</div><div class="lbl">Apps</div></div>
+      <div class="tile active"><div class="icon">◫</div><div class="lbl">Branches</div></div>
+      <div class="tile"><div class="icon">✦</div><div class="lbl">Admin</div></div>
+    </aside>
+
+    <!-- Main content -->
+    <main class="main">
+      <div class="back-bar note" data-note="STICKY TOP — Back to {parent context}">
+        <span class="arrow">‹</span>
+        <span>Back to Branches</span>
+      </div>
+
+      <div class="page-head">
+        <h1 class="page-title">Cedar Hills Branch</h1>
+        <p class="page-sub">Edit branch information for Apex Home Finance. Programs and states are limited to the parent company's enabled set.</p>
+      </div>
+
+      <div class="page-body">
+        <section class="card">
+          <h3 class="card-title">Branch information</h3>
+          <div class="form-grid">
+            <div class="field">
+              <label class="field-label"><span class="req">*</span>Branch name</label>
+              <input class="field-input" value="Cedar Hills" />
+            </div>
+            <div class="field">
+              <label class="field-label"><span class="req">*</span>Branch NMLS #</label>
+              <input class="field-input" value="2055891" />
+            </div>
+            <div class="field">
+              <label class="field-label">Branch manager</label>
+              <input class="field-input" placeholder="Select user…" />
+            </div>
+            <div class="field">
+              <label class="field-label">Address 1</label>
+              <input class="field-input" value="4140 N Thanksgiving Way" />
+            </div>
+            <div class="field">
+              <label class="field-label">City</label>
+              <input class="field-input" value="Lehi" />
+            </div>
+            <div class="field">
+              <label class="field-label">State</label>
+              <input class="field-input" value="UT" />
+            </div>
+          </div>
+        </section>
+
+        <section class="card">
+          <h3 class="card-title">Eligible programs</h3>
+          <div class="form-grid">
+            <div class="field field-full">
+              <label class="field-label">Subset of programs enabled at parent company.</label>
+              <input class="field-input" placeholder="Search programs…" />
+            </div>
+          </div>
+        </section>
+
+        <section class="card">
+          <h3 class="card-title">Audit history</h3>
+          <div class="form-grid">
+            <div class="field field-full">
+              <label class="field-label">Last edited 2 days ago by Alex Morgan</label>
+            </div>
+          </div>
+        </section>
+
+        <p class="scroll-hint">↓ scroll within the frame above — the top "Back to Branches" and the bottom action bar stay stuck ↓</p>
+      </div>
+
+      <!-- Sticky bottom action bar -->
+      <div class="action-bar note" data-note="STICKY BOTTOM — Save/Submit/Next">
+        <div class="edit-controls" style="display:contents">
+          <div class="dirty">
+            <span class="dot"></span>
+            <span class="dirty-text">No changes</span>
+          </div>
+          <button class="btn btn-ghost">Cancel</button>
+          <button class="btn btn-primary">Save changes</button>
+        </div>
+
+        <div class="wizard-controls" style="display:contents">
+          <div class="step-pips">
+            <span class="pip done"></span>
+            <span class="pip now"></span>
+            <span class="pip todo"></span>
+            <span class="pip todo"></span>
+          </div>
+          <span class="step-label">Step 2 of 4 · Branch details</span>
+          <button class="btn btn-outline">‹ Back</button>
+          <button class="btn btn-primary">Next ›</button>
+        </div>
+      </div>
+    </main>
+  </div>
+
+<script>
+  const body = document.body;
+  const dirtyText = document.querySelector('.dirty-text');
+
+  document.getElementById('modeEdit').addEventListener('click', (e) => {
+    body.classList.remove('mode-wizard');
+    body.classList.add('mode-edit');
+    document.querySelectorAll('.mode-row .mode-btn').forEach(b => b.classList.remove('active'));
+    e.currentTarget.classList.add('active');
+  });
+
+  document.getElementById('modeWizard').addEventListener('click', (e) => {
+    body.classList.remove('mode-edit');
+    body.classList.add('mode-wizard');
+    document.querySelectorAll('.mode-row .mode-btn').forEach(b => b.classList.remove('active'));
+    e.currentTarget.classList.add('active');
+  });
+
+  document.getElementById('dirtyToggle').addEventListener('click', (e) => {
+    body.classList.toggle('is-dirty');
+    e.currentTarget.classList.toggle('on');
+    e.currentTarget.textContent = body.classList.contains('is-dirty')
+      ? 'Dirty state: ON'
+      : 'Toggle dirty state';
+    if (dirtyText) {
+      dirtyText.textContent = body.classList.contains('is-dirty')
+        ? 'Unsaved changes'
+        : 'No changes';
+    }
+  });
+
+  document.getElementById('notesToggle').addEventListener('click', (e) => {
+    body.classList.toggle('show-notes');
+    e.currentTarget.textContent = body.classList.contains('show-notes')
+      ? 'Hide annotations'
+      : 'Show annotations';
+  });
+
+  // Edits to inputs flip dirty state automatically
+  document.querySelectorAll('.field-input').forEach(inp => {
+    inp.addEventListener('input', () => {
+      if (!body.classList.contains('is-dirty')) {
+        body.classList.add('is-dirty');
+        document.getElementById('dirtyToggle').classList.add('on');
+        document.getElementById('dirtyToggle').textContent = 'Dirty state: ON';
+        if (dirtyText) dirtyText.textContent = 'Unsaved changes';
+      }
+    });
+  });
+</script>
+</body>
+</html>
