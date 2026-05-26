@@ -1551,9 +1551,9 @@ function initColumnResize(container) {
   const PEOPLE = {
     priya:  { name: 'Priya Shah',    initials: 'PS', org: 'Homium',     bg: '#1E3F62', role: 'Underwriter' },
     james:  { name: 'James Okafor',  initials: 'JO', org: 'CC Lending', bg: '#0E2A47', role: 'Originator' },
-    marcus: { name: 'Marcus Webb',   initials: 'MW', org: 'Homium',     bg: '#7C3AED', role: 'Underwriter' },
-    dana:   { name: 'Dana Hill',     initials: 'DH', org: 'CC Lending', bg: '#16A34A', role: 'Processor' },
-    rhea:   { name: 'Rhea Tanaka',   initials: 'RT', org: 'DC HFA',     bg: '#7C3AED', role: 'Portfolio Manager' },
+    marcus: { name: 'Marcus Webb',   initials: 'MW', org: 'Homium',     bg: '#1A6E8E', role: 'Underwriter' },
+    dana:   { name: 'Dana Hill',     initials: 'DH', org: 'CC Lending', bg: '#1A8754', role: 'Processor' },
+    rhea:   { name: 'Rhea Tanaka',   initials: 'RT', org: 'DC HFA',     bg: '#1A6E8E', role: 'Portfolio Manager' },
     evelyn: { name: 'Evelyn Ross',   initials: 'ER', org: 'borrower',   bg: '#C2A14A', role: 'Borrower' },
   };
 

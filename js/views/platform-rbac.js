@@ -1160,30 +1160,13 @@ const PlatformRbacView = (() => {
       </div>`;
   }
 
-  /* ===== MODAL ===== */
+  /* ===== MODAL =====
+     2026-05-26 canon: confirm/destructive modals migrated to the shared
+     AppModal primitive (js/modal.js). This stub stays so existing template
+     interpolations `${_renderModal()}` keep producing empty strings; the
+     AppModal host (#app-modal-host) is global and renders independently. */
 
-  function _renderModal() {
-    if (!_modal) return '';
-    const actions = _modal.actions.map(([lbl, fn], i) => {
-      const last = i === _modal.actions.length - 1 && _modal.actions.length > 1;
-      const cls = _modal.danger && last ? 'rb-btn rb-btn-danger rb-btn-sm' : last ? 'rb-btn rb-btn-primary rb-btn-sm' : 'rb-btn rb-btn-ghost rb-btn-sm';
-      return `<button class="${cls}" onclick="${fn}">${_esc(lbl)}</button>`;
-    }).join('');
-    return `
-      <div class="rb-modal-overlay" onclick="if(event.target===this)PlatformRbacView.closeModal()">
-        <div class="rb-modal" role="dialog" aria-modal="true" aria-labelledby="rb-modal-title">
-          <div class="rb-modal-header">
-            <div>
-              <div class="rb-modal-title" id="rb-modal-title">${_esc(_modal.title)}</div>
-              ${_modal.subtitle ? `<div class="rb-modal-subtitle">${_esc(_modal.subtitle)}</div>` : ''}
-            </div>
-            <button class="rb-modal-close" aria-label="Close" onclick="PlatformRbacView.closeModal()">×</button>
-          </div>
-          <div class="rb-modal-body">${_modal.body}</div>
-          <div class="rb-modal-footer">${actions}</div>
-        </div>
-      </div>`;
-  }
+  function _renderModal() { return ''; }
 
   /* ===== TOAST ===== */
 
@@ -1470,15 +1453,18 @@ const PlatformRbacView = (() => {
       const u = _findUser(userId);
       if (!u) return;
       if (oldType === 'admin' && newType !== 'admin' && _adminCount() <= 1) {
-        _modal = { title: 'Cannot change user type',
+        AppModal.open({
+          title: 'Cannot change user type',
           body: `<strong>${_esc(u.name)}</strong> is the only Admin on this platform. At least one Admin must remain. Promote another user to Admin first.`,
-          actions: [['OK', 'PlatformRbacView.closeModal()']] };
-        _rerender(); return;
+          actions: [['OK', 'PlatformRbacView.closeModal()']],
+        });
+        return;
       }
-      _modal = { title: 'Change user type',
+      AppModal.open({
+        title: 'Change user type',
         body: `Set <strong>${_esc(u.name)}</strong> to <strong>${_esc(newType)}</strong>? Their existing per-entity permission overrides will be preserved; if the new type has stricter caps, those overrides are clamped on save.`,
-        actions: [['Cancel', 'PlatformRbacView.closeModal()'], ['Confirm', `PlatformRbacView.applyType('${userId}','${newType}')`]] };
-      _rerender();
+        actions: [['Cancel', 'PlatformRbacView.closeModal()'], ['Confirm', `PlatformRbacView.applyType('${userId}','${newType}')`]],
+      });
     },
     applyType(userId, newType) {
       _ensureState(userId);
@@ -1487,7 +1473,7 @@ const PlatformRbacView = (() => {
         const plat = _state[userId].platform;
         Object.keys(plat).forEach(k => { if (plat[k] === 'edit' || plat[k] === 'full') plat[k] = 'view'; });
       }
-      _modal = null; _rerender(); _showToast('User type updated');
+      AppModal.close(); _rerender(); _showToast('User type updated');
     },
 
     /* Save / cancel */
@@ -1506,26 +1492,30 @@ const PlatformRbacView = (() => {
       if (!u) return;
       const cat = _category(u.raw);
       if (cat === 'platform' && _ensureState(userId)?.type === 'admin' && _adminCount() <= 1) {
-        _modal = { title: 'Cannot deactivate user',
+        AppModal.open({
+          title: 'Cannot deactivate user',
           body: `<strong>${_esc(u.name)}</strong> is the only Admin. Promote another user to Admin first.`,
-          actions: [['OK', 'PlatformRbacView.closeModal()']] };
-        _rerender(); return;
+          actions: [['OK', 'PlatformRbacView.closeModal()']],
+        });
+        return;
       }
-      _modal = { title: 'Deactivate ' + _esc(u.name) + '?', danger: true,
+      AppModal.open({
+        title: 'Deactivate ' + _esc(u.name) + '?',
+        danger: true,
         body: `<p style="margin-bottom:10px">This immediately revokes platform access:</p>
                <ul style="margin:0 0 10px 18px;color:var(--h-ink-2);font-size:13px;line-height:1.55">
                  <li><strong>Stops:</strong> active sessions, future logins, in-flight notifications</li>
                  <li><strong>Preserves:</strong> permission configuration (so reactivation is one click) and historic audit attribution</li>
                </ul>
                <p style="font-size:12px;color:var(--h-ink-3)">You can reactivate ${_esc(u.name)} from the user list at any time.</p>`,
-        actions: [['Cancel', 'PlatformRbacView.closeModal()'], ['Deactivate', 'PlatformRbacView.doDeactivate()']] };
-      _rerender();
+        actions: [['Cancel', 'PlatformRbacView.closeModal()'], ['Deactivate', 'PlatformRbacView.doDeactivate()']],
+      });
     },
     doDeactivate() {
-      _modal = null; Router.navigate('/user-management'); _showToast('User deactivated');
+      AppModal.close(); Router.navigate('/user-management'); _showToast('User deactivated');
     },
 
-    closeModal() { _modal = null; _rerender(); },
+    closeModal() { AppModal.close(); },
 
     /* Audit */
     setAuditTypeFilter(v)     { _auditTypeFilter     = v; _rerender(); },

@@ -20,14 +20,16 @@
     --border:    #e0ddd6;
     --border-l:  #edebe6;
     --surf:      #f8f7f4;
+    --sand:      #f2f0ea;       /* 2026-05-26: warm hover-state tint */
     --ink:       #2d3e4a;
     --ink-2:     #6b7a85;
     --ink-mute:  #9ba6ae;
     --ink-deep:  #00334a;
+    --action:    #00334a;       /* 2026-05-26: explicit action alias */
     --danger:    #c4382a;
-    --success:   #16a34a;
-    --warning:   #d97706;
-    --info:      #2563eb;
+    --success:   #1a8754;       /* 2026-05-26 re-audit: was #16a34a — kit-aligned */
+    --warning:   #b8860b;       /* 2026-05-26 re-audit: was #d97706 — darker amber */
+    --info:      #1a6e8e;       /* 2026-05-26 re-audit: was #2563eb — kit info-teal */
     --font:      'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
     --serif:     'IvyPresto Display', Georgia, serif;
     --mono:      'SF Mono', Menlo, monospace;
@@ -488,21 +490,66 @@
   <p class="doc-eyebrow">Phase 3 · Reference doc</p>
   <h1 class="doc-title">Homium Originator-Flow Design Canon</h1>
   <p class="doc-lede">
-    The single source of truth for the warm-institutional canon, reconciled from the "Internal Homium 2.0" Figma file.
-    Companion to the global token swap in <code>css/styles.css</code> and the canonical refactor of <code>js/views/branches.js</code>.
-    Subsequent views inherit colors automatically; structural action-bar wiring follows the rollout table below.
+    The single source of truth for the warm-institutional canon, reconciled from the "Internal Homium 2.0" Figma file
+    and the 2026-05-19 Homium brand-kit handoff. Companion to the global token source in <code>css/styles.css</code>
+    and the canonical refactor of <code>js/views/branches.js</code>. Subsequent views inherit colors automatically;
+    structural action-bar wiring follows the rollout table below.
+  </p>
+  <p class="doc-lede" style="margin-top:10px;color:var(--ink-deep);font-weight:500">
+    <strong>Updated 2026-05-26:</strong> Re-audit decisions applied — semantic colors aligned to the brand-kit
+    (success/warning/info), decorative purple retired, IvyPresto Display weight locked to 300, single shared
+    <code>AppModal</code> primitive adopted, Tabler Icons set as going-forward standard, spacing scale tokens added.
+    See <a href="design-canon-vs-brandkit.html">design-canon-vs-brandkit.html</a> for the full reconciliation.
   </p>
   <nav class="doc-toc">
+    <a href="#agreement">Working Agreement</a>
     <a href="#colors">Colors</a>
     <a href="#typography">Typography</a>
     <a href="#spacing">Spacing &amp; radii</a>
     <a href="#components">Components</a>
+    <a href="#modal">Modal primitive</a>
+    <a href="#icons">Icons</a>
     <a href="#action-bars">Action bars</a>
     <a href="#tables">Tables</a>
     <a href="#kept">What we kept</a>
     <a href="#rollout">Rollout</a>
+    <a href="#backlog">Backlog</a>
   </nav>
 </header>
+
+<!-- ================================================== WORKING AGREEMENT -->
+<section id="agreement">
+  <p class="sec-eyebrow">00 · Adopted 2026-05-26</p>
+  <h2 class="sec-title">Working Agreement</h2>
+  <p class="sec-lede">Behavioral contract Claude Code (and any contributor) follows when working on this codebase. Adopted verbatim from the 2026-05-19 brand-kit handoff.</p>
+
+  <div style="display:grid;grid-template-columns:repeat(2,1fr);gap:14px">
+    <div style="padding:16px 20px;background:var(--card);border:1px solid var(--border);border-radius:8px">
+      <h4 style="margin:0 0 6px;font-size:13px;font-weight:600;color:var(--ink-deep)">1 · Describe before tweaking</h4>
+      <p style="margin:0;font-size:13px;color:var(--ink-2);line-height:1.55">State the change and affected files before editing. Don't surprise the reviewer.</p>
+    </div>
+    <div style="padding:16px 20px;background:var(--card);border:1px solid var(--border);border-radius:8px">
+      <h4 style="margin:0 0 6px;font-size:13px;font-weight:600;color:var(--ink-deep)">2 · Reuse over invent</h4>
+      <p style="margin:0;font-size:13px;color:var(--ink-2);line-height:1.55">Never introduce a new color, spacing unit, component variant, or pattern without approval. Reach for existing tokens first.</p>
+    </div>
+    <div style="padding:16px 20px;background:var(--card);border:1px solid var(--border);border-radius:8px">
+      <h4 style="margin:0 0 6px;font-size:13px;font-weight:600;color:var(--ink-deep)">3 · Surface options</h4>
+      <p style="margin:0;font-size:13px;color:var(--ink-2);line-height:1.55">When ambiguous, present 1–3 approaches with trade-offs. Let the user choose; don't pick silently.</p>
+    </div>
+    <div style="padding:16px 20px;background:var(--card);border:1px solid var(--border);border-radius:8px">
+      <h4 style="margin:0 0 6px;font-size:13px;font-weight:600;color:var(--ink-deep)">4 · Files are source of truth</h4>
+      <p style="margin:0;font-size:13px;color:var(--ink-2);line-height:1.55">Read the file before editing. Don't work from memory of "what it should say."</p>
+    </div>
+  </div>
+
+  <div style="margin-top:16px;padding:16px 20px;background:var(--surf);border:1px solid var(--border-l);border-radius:8px">
+    <h4 style="margin:0 0 6px;font-size:13px;font-weight:600;color:var(--ink-deep)">Navigation architecture — Keep ours (resolved)</h4>
+    <p style="margin:0;font-size:13px;color:var(--ink-2);line-height:1.55">
+      The <strong>92px fixed left icon rail</strong> is the platform-wide global nav. Locked. The kit's 56px top NavBar is <strong>not adopted</strong>.
+      The kit's 220px white-card sidenav may appear as an <strong>additive sub-nav within detail-page sub-routes</strong> (not a replacement). No double-nav on Setup pages.
+    </p>
+  </div>
+</section>
 
 <!-- ================================================== COLORS -->
 <section id="colors">
@@ -608,35 +655,40 @@
     </div>
   </div>
 
-  <h3 style="margin:32px 0 12px;font-size:13px;letter-spacing:0.08em;text-transform:uppercase;color:var(--ink-2);font-weight:600">Status · kept from previous system</h3>
+  <h3 style="margin:32px 0 12px;font-size:13px;letter-spacing:0.08em;text-transform:uppercase;color:var(--ink-2);font-weight:600">Status · aligned to brand-kit (2026-05-26 re-audit)</h3>
   <div class="swatch-grid">
     <div class="swatch">
-      <div class="chip" style="background:#16a34a"></div>
+      <div class="chip" style="background:#1a8754"></div>
       <div class="swatch-meta">
         <p class="swatch-name">Success</p>
-        <p class="swatch-hex">#16a34a</p>
+        <p class="swatch-hex">#1a8754 <span style="color:var(--ink-mute);font-size:10.5px">(was #16a34a)</span></p>
         <code class="swatch-var">--color-success</code>
-        <p class="swatch-use">Active status pills, success toasts.</p>
+        <p class="swatch-use">Active status pills, success toasts. Darker, more institutional green.</p>
       </div>
     </div>
     <div class="swatch">
-      <div class="chip" style="background:#d97706"></div>
+      <div class="chip" style="background:#b8860b"></div>
       <div class="swatch-meta">
         <p class="swatch-name">Warning</p>
-        <p class="swatch-hex">#d97706</p>
+        <p class="swatch-hex">#b8860b <span style="color:var(--ink-mute);font-size:10.5px">(was #d97706)</span></p>
         <code class="swatch-var">--color-warning</code>
-        <p class="swatch-use">Setup-incomplete states, caution chips.</p>
+        <p class="swatch-use">Setup-incomplete states, caution chips. Darker amber matches kit.</p>
       </div>
     </div>
     <div class="swatch">
-      <div class="chip" style="background:#2563eb"></div>
+      <div class="chip" style="background:#1a6e8e"></div>
       <div class="swatch-meta">
-        <p class="swatch-name">Info</p>
-        <p class="swatch-hex">#2563eb</p>
+        <p class="swatch-name">Info (teal)</p>
+        <p class="swatch-hex">#1a6e8e <span style="color:var(--ink-mute);font-size:10.5px">(was #2563eb)</span></p>
         <code class="swatch-var">--color-info</code>
-        <p class="swatch-use">Informational pills, links inside cards.</p>
+        <p class="swatch-use">Informational pills, links inside cards, KYC badges. Kit info-teal.</p>
       </div>
     </div>
+  </div>
+
+  <h3 style="margin:32px 0 12px;font-size:13px;letter-spacing:0.08em;text-transform:uppercase;color:var(--ink-2);font-weight:600">Retired tokens (2026-05-26 re-audit)</h3>
+  <div style="padding:14px 18px;background:var(--card);border:1px solid var(--border);border-radius:8px;font-size:13px;color:var(--ink-2);line-height:1.6">
+    <p style="margin:0"><strong style="color:var(--ink-deep)"><code style="font-family:var(--mono);font-size:12px">--color-purple</code> (#7c3aed) — removed.</strong> The brand kit forbids decorative purple. KYC badges now use <code style="font-family:var(--mono);font-size:12px">--color-info</code>; previous chart/avatar usages were re-mapped to teal or amber. Grep returns no remaining usages.</p>
   </div>
 </section>
 
@@ -644,11 +696,31 @@
 <section id="typography">
   <p class="sec-eyebrow">02</p>
   <h2 class="sec-title">Typography</h2>
-  <p class="sec-lede">IvyPresto Display 300 for page titles (Georgia is the Figma stand-in; we hold the license). Inter for everything else. SF Mono / Menlo for short codes.</p>
+  <p class="sec-lede">
+    IvyPresto Display <strong>300</strong> for all heading sites (page titles, section headers, entity detail titles, KPI numerals). Inter for body and UI labels. SF Mono / Menlo for short codes.
+    <strong>Never bold the heading serif.</strong> Weight 300 only — no <code>font-weight: 400+</code> on IvyPresto.
+    Token: <code style="font-family:var(--mono);font-size:12px">--font-heading-weight: 300</code>.
+  </p>
+
+  <div style="padding:14px 18px;background:var(--card);border:1px solid var(--border);border-radius:8px;font-size:13px;color:var(--ink-2);line-height:1.6;margin-bottom:24px">
+    <p style="margin:0 0 6px;color:var(--ink-deep);font-weight:600">Tabular numerals (global rule)</p>
+    <p style="margin:0">Any element rendering currency, percentages, loan amounts, or columnar numbers must apply:</p>
+    <pre style="margin:8px 0 0;padding:10px 12px;background:var(--surf);border-radius:6px;font-family:var(--mono);font-size:11.5px;overflow-x:auto">font-feature-settings: 'tnum' 1, 'lnum' 1, 'zero' 0;
+font-variant-numeric: tabular-nums lining-nums;</pre>
+    <p style="margin:8px 0 0">Use the <code style="font-family:var(--mono);font-size:11.5px">.num-tabular</code>, <code style="font-family:var(--mono);font-size:11.5px">.kpi-value</code>, or <code style="font-family:var(--mono);font-size:11.5px">.entity-meta-value</code> utility classes (defined in <code style="font-family:var(--mono);font-size:11.5px">css/styles.css</code>).</p>
+  </div>
 
   <div class="type-card">
     <div class="type-sample-label">Page title · <code>IvyPresto Display 300</code> · <code>28px / 33.6 lh</code> · <code>--color-primary</code></div>
     <h2 class="t-page-title">Cedar Hills Branch</h2>
+  </div>
+  <div class="type-card">
+    <div class="type-sample-label">Branch info label · <code>Inter Semibold</code> · <code>15px</code> · <code>.branch-info-label</code></div>
+    <p style="font-family:var(--font);font-weight:600;font-size:15px;letter-spacing:-0.005em;color:var(--ink);margin:0">Cedar Hills · NMLS 2055891</p>
+  </div>
+  <div class="type-card">
+    <div class="type-sample-label">KPI / display numeral · <code>IvyPresto Display 300</code> · <code>36px</code> · tabular features</div>
+    <p style="font-family:var(--serif);font-weight:300;font-size:36px;letter-spacing:-0.01em;color:var(--ink-deep);margin:0;font-feature-settings:'tnum' 1, 'lnum' 1;font-variant-numeric:tabular-nums lining-nums">$1,847,200</p>
   </div>
   <div class="type-card">
     <div class="type-sample-label">Section header · <code>Inter Semibold</code> · <code>15px / 22.5 lh</code> · <code>--color-text</code></div>
@@ -680,22 +752,33 @@
 <section id="spacing">
   <p class="sec-eyebrow">03</p>
   <h2 class="sec-title">Spacing &amp; radii</h2>
-  <p class="sec-lede">Tighter, more disciplined than our previous system. Card padding 25px, card radius 8px, input height 36px / 6px radius.</p>
+  <p class="sec-lede">Tighter, more disciplined than our previous system. Card padding <strong>24px</strong> (was 25px), card radius 8px, modal radius 12px. Inputs split into compact (32px) and form (40px) variants — see notes below.</p>
+
+  <div style="padding:12px 16px;background:var(--card);border:1px solid var(--border);border-radius:8px;font-size:13px;color:var(--ink-2);line-height:1.6;margin-bottom:24px">
+    <strong style="color:var(--ink-deep)">Spacing scale tokens (2026-05-26):</strong>
+    <code style="font-family:var(--mono);font-size:11.5px">--h-space-2/4/8/12/16/20/24/32/40/48/64</code> available in <code style="font-family:var(--mono);font-size:11.5px">:root</code>. Migrate ad-hoc px values opportunistically; new code uses tokens.
+  </div>
 
   <div class="spacing-grid">
     <div class="spacing-card">
       <p class="spacing-name">Card</p>
-      <p class="spacing-meta">padding 25px · radius 8px · border 1px <code>--color-border</code></p>
+      <p class="spacing-meta">padding <strong>24px</strong> · radius 8px · border 1px <code>--color-border</code> · <strong>no shadow</strong></p>
       <div class="demo-card" style="margin:0">
         <h4 class="t-section-h">Branch information</h4>
         <p class="t-secondary" style="margin-top:6px">Use as the default container for every form group.</p>
       </div>
     </div>
     <div class="spacing-card">
-      <p class="spacing-name">Input</p>
-      <p class="spacing-meta">height 36px · radius 6px · pad 0 13px</p>
+      <p class="spacing-name">Input — form (40px)</p>
+      <p class="spacing-meta">height <strong>40px</strong> · radius 6px · pad 0 13px · <code>--input-height-form</code></p>
       <p class="t-label" style="margin-bottom:4px"><span style="color:var(--danger);margin-right:2px">*</span>Branch name</p>
-      <input class="demo-input" placeholder="From NMLS: Office Locations → Company" />
+      <input class="demo-input" placeholder="Wizard / form pages use this height" style="height:40px" />
+    </div>
+    <div class="spacing-card">
+      <p class="spacing-name">Input — compact (32px)</p>
+      <p class="spacing-meta">height <strong>32px</strong> · <code>--input-height-compact</code></p>
+      <input class="demo-input" placeholder="Inline filters / dense lists" style="height:32px" />
+      <p class="t-secondary" style="margin-top:10px;font-size:11.5px">Legacy <code style="font-family:var(--mono)">--input-height: 36px</code> retained as default; new contexts opt into 32 or 40.</p>
     </div>
     <div class="spacing-card">
       <p class="spacing-name">Chip / pill</p>
@@ -763,6 +846,80 @@
     <span class="demo-chip">OR</span>
     <span class="demo-chip">WA</span>
     <span class="demo-chip">ID</span>
+  </div>
+</section>
+
+<!-- ================================================== MODAL PRIMITIVE -->
+<section id="modal">
+  <p class="sec-eyebrow">04a · Adopted 2026-05-26</p>
+  <h2 class="sec-title">Modal primitive — <code>AppModal</code></h2>
+  <p class="sec-lede">
+    Single shared modal primitive at <code>js/modal.js</code>. All confirm/destructive flows (discard changes, delete entity, deactivate user, revoke access) MUST reuse it. No per-page modal reinvention. Esc dismisses, Tab is trapped within the panel, focus restores to the trigger on close.
+  </p>
+
+  <div style="padding:14px 18px;background:var(--card);border:1px solid var(--border);border-radius:8px;margin-bottom:14px">
+    <h4 style="margin:0 0 6px;font-size:13px;font-weight:600;color:var(--ink-deep)">API</h4>
+    <pre style="margin:6px 0 0;padding:12px;background:var(--surf);border-radius:6px;font-family:var(--mono);font-size:11.5px;line-height:1.6;overflow-x:auto">AppModal.open({
+  title:    'Deactivate Marcus Webb?',
+  subtitle: 'This revokes platform access immediately',
+  body:     '&lt;p&gt;...&lt;/p&gt;',
+  danger:   true,
+  size:     'lg',                          // 'sm' | '' (default ~520px) | 'lg' | 'xl'
+  actions:  [['Cancel',     'X.close()'],
+             ['Deactivate', 'X.confirm()']],
+});
+AppModal.close();</pre>
+  </div>
+
+  <div style="display:grid;grid-template-columns:1fr 1fr;gap:14px">
+    <div style="padding:14px 18px;background:var(--card);border:1px solid var(--border);border-radius:8px">
+      <h4 style="margin:0 0 6px;font-size:13px;font-weight:600;color:var(--ink-deep)">Visual</h4>
+      <ul style="margin:0;padding-left:18px;font-size:13px;color:var(--ink-2);line-height:1.6">
+        <li>Radius <code style="font-family:var(--mono);font-size:11.5px">12px</code> on the panel</li>
+        <li>Title: IvyPresto 300, 20px</li>
+        <li>Last action button is primary (or danger if <code>danger: true</code>); preceding buttons are secondary</li>
+        <li>Overlay: <code style="font-family:var(--mono);font-size:11.5px">rgba(10,20,15,0.45)</code> + 2px backdrop blur</li>
+      </ul>
+    </div>
+    <div style="padding:14px 18px;background:var(--card);border:1px solid var(--border);border-radius:8px">
+      <h4 style="margin:0 0 6px;font-size:13px;font-weight:600;color:var(--ink-deep)">Migrated callers</h4>
+      <ul style="margin:0;padding-left:18px;font-size:13px;color:var(--ink-2);line-height:1.6">
+        <li><code>app.js</code> · OriginationsView "New Application"</li>
+        <li><code>platform-rbac.js</code> · Change user type, Deactivate user</li>
+      </ul>
+      <p style="margin:10px 0 0;font-size:12px;color:var(--ink-mute)">Welcome hero overlay (<code>welcome.js</code>) keeps its bespoke layout — it's a marketing splash, not a confirm/destructive flow, so the primitive's scope doesn't apply.</p>
+    </div>
+  </div>
+
+  <div style="margin-top:14px;padding:14px 18px;background:var(--surf);border:1px solid var(--border-l);border-radius:8px">
+    <h4 style="margin:0 0 6px;font-size:13px;font-weight:600;color:var(--ink-deep)">PermissionsMatrix — binary on/off OR explicit "View"/"Edit" text</h4>
+    <p style="margin:0;font-size:13px;color:var(--ink-2);line-height:1.55">
+      Dot vocabulary (hollow ring / filled gray / filled blue / filled green) <strong>NOT adopted</strong>. Permissions
+      express access in one of two ways: <strong>(A)</strong> binary toggle (filled blue selected · no fill off), or
+      <strong>(B)</strong> explicit text labels ("View" / "Edit"). Do not introduce intermediate dot states. No
+      <code style="font-family:var(--mono);font-size:11.5px">platform-rbac.js</code> code changes required this pass.
+    </p>
+  </div>
+</section>
+
+<!-- ================================================== ICONS -->
+<section id="icons">
+  <p class="sec-eyebrow">04b · Adopted 2026-05-26</p>
+  <h2 class="sec-title">Icons — Tabler (going-forward standard)</h2>
+  <p class="sec-lede">
+    <a href="https://tabler.io/icons" style="color:var(--ink-deep)">Tabler Icons</a> (1.5px stroke webfont) is the canonical icon set. 20px standalone, 16px in-component (<code>.ti-sm</code>), 24px (<code>.ti-lg</code>). Loaded via CDN in <code>css/styles.css</code>.
+  </p>
+
+  <div style="padding:14px 18px;background:var(--card);border:1px solid var(--border);border-radius:8px">
+    <h4 style="margin:0 0 6px;font-size:13px;font-weight:600;color:var(--ink-deep)">Usage</h4>
+    <pre style="margin:6px 0 0;padding:12px;background:var(--surf);border-radius:6px;font-family:var(--mono);font-size:11.5px;line-height:1.6;overflow-x:auto">&lt;i class="ti ti-home"&gt;&lt;/i&gt;
+&lt;i class="ti ti-search ti-sm"&gt;&lt;/i&gt;
+&lt;i class="ti ti-plus ti-lg"&gt;&lt;/i&gt;</pre>
+    <p style="margin:8px 0 0;font-size:12px;color:var(--ink-2);line-height:1.55">
+      <strong>Migrated:</strong> Left rail nav (14 routes) — <code>nav.js</code> ICONS map. <strong>Going-forward rule:</strong>
+      New icon usages use Tabler. Legacy inline-SVG usages convert opportunistically. The hand-drawn primitives in
+      <code>jsx/_helpers/primitives.jsx</code> remain as fallback for the artboard explorations.
+    </p>
   </div>
 </section>
 
@@ -851,9 +1008,10 @@
     </p>
   </div>
   <div class="kept">
-    <h3 class="kept-title">Semantic status colors</h3>
+    <h3 class="kept-title">Status semantics <span style="font-size:11px;color:var(--ink-mute);font-weight:400">(updated 2026-05-26)</span></h3>
     <p class="kept-body">
-      The Figma frames inspected don't include success / warning / info semantics. We keep our existing palette: <code style="font-family:var(--mono)">#16a34a</code> / <code style="font-family:var(--mono)">#d97706</code> / <code style="font-family:var(--mono)">#2563eb</code>.
+      The semantic concept (success / warning / info) is kept, but the <strong>hex values</strong> shifted in the 2026-05-19 re-audit to align with the brand-kit:
+      <code style="font-family:var(--mono)">#1a8754</code> · <code style="font-family:var(--mono)">#b8860b</code> · <code style="font-family:var(--mono)">#1a6e8e</code>.
     </p>
   </div>
   <div class="kept">
@@ -937,8 +1095,60 @@
   </div>
 </section>
 
+<!-- ================================================== BACKLOG -->
+<section id="backlog">
+  <p class="sec-eyebrow">09 · Backlog</p>
+  <h2 class="sec-title">Backlog tickets (not implemented this pass)</h2>
+  <p class="sec-lede">Decisions deferred for follow-up — captured here so they don't fall out of scope.</p>
+
+  <div style="display:grid;grid-template-columns:1fr;gap:14px">
+    <div style="padding:16px 20px;background:var(--card);border:1px solid var(--border);border-radius:8px">
+      <h4 style="margin:0 0 6px;font-size:14px;font-weight:600;color:var(--ink-deep)">1 · Cancel button removal + dirty-form modal</h4>
+      <p style="margin:0;font-size:13px;color:var(--ink-2);line-height:1.55">
+        <strong style="color:var(--danger)">BLOCKER on FE mockup delivery.</strong>
+        Save-only action bar (no Cancel button) and the "Discard changes?" modal are not implemented until aligned with Soren. Items to resolve:
+        is save-only the right model for Branches detail? What triggers the dirty-form modal (left-rail click, browser back, BackToMain)? What's the exact "Discard"/"Keep editing" copy?
+      </p>
+    </div>
+    <div style="padding:16px 20px;background:var(--card);border:1px solid var(--border);border-radius:8px">
+      <h4 style="margin:0 0 6px;font-size:14px;font-weight:600;color:var(--ink-deep)">2 · User-type avatar colors</h4>
+      <p style="margin:0;font-size:13px;color:var(--ink-2);line-height:1.55">
+        Map avatar background by role: Platform operators → gold · Investors → green · Loan origination users → blue. Current implementation uses a single info-teal tint for all (post-purple cleanup). Add role-based class on <code style="font-family:var(--mono);font-size:11.5px">.avatar</code>; map to token-backed bg colors.
+      </p>
+    </div>
+    <div style="padding:16px 20px;background:var(--card);border:1px solid var(--border);border-radius:8px">
+      <h4 style="margin:0 0 6px;font-size:14px;font-weight:600;color:var(--ink-deep)">3 · Form-page nav — evaluate for Origination flow</h4>
+      <p style="margin:0;font-size:13px;color:var(--ink-2);line-height:1.55">
+        The sticky-BackToMain + save-only bar works for the application flow. For <strong>origination state</strong>, the pattern may not fit. Evaluate whether origination needs a different exit/save model.
+      </p>
+    </div>
+    <div style="padding:16px 20px;background:var(--card);border:1px solid var(--border);border-radius:8px">
+      <h4 style="margin:0 0 6px;font-size:14px;font-weight:600;color:var(--ink-deep)">4 · Role pill convention</h4>
+      <p style="margin:0;font-size:13px;color:var(--ink-2);line-height:1.55">
+        Role pill styling deferred to a future free-entry tagging feature (user types a role; tag is created from input value). No locked-in role pill vocabulary until that feature is scoped.
+      </p>
+    </div>
+    <div style="padding:16px 20px;background:var(--card);border:1px solid var(--border);border-radius:8px">
+      <h4 style="margin:0 0 6px;font-size:14px;font-weight:600;color:var(--ink-deep)">5 · Data viz palette &amp; chart tooltips</h4>
+      <p style="margin:0;font-size:13px;color:var(--ink-2);line-height:1.55">
+        Adopt the kit's sequential teal, 6-color categorical, and diverging red→green palettes <strong>when the first real chart is built</strong>. Same for chart tooltips (white bg, 1px stone border, 3px green-500 top accent) and the <code style="font-family:var(--mono);font-size:11.5px">.is-hovering</code> dim-siblings hover pattern.
+      </p>
+    </div>
+    <div style="padding:16px 20px;background:var(--card);border:1px solid var(--border);border-radius:8px">
+      <h4 style="margin:0 0 6px;font-size:14px;font-weight:600;color:var(--ink-deep)">6 · Dark mode</h4>
+      <p style="margin:0;font-size:13px;color:var(--ink-2);line-height:1.55">Phase 3, deferred. Capture spec in this doc only; no implementation yet.</p>
+    </div>
+    <div style="padding:16px 20px;background:var(--card);border:1px solid var(--border);border-radius:8px">
+      <h4 style="margin:0 0 6px;font-size:14px;font-weight:600;color:var(--ink-deep)">7 · Full Tabler icon migration</h4>
+      <p style="margin:0;font-size:13px;color:var(--ink-2);line-height:1.55">
+        Left rail done. Long-tail SVG icons (modal close X, chevrons, status indicators) convert opportunistically when a view is otherwise being touched. Going-forward rule already in effect.
+      </p>
+    </div>
+  </div>
+</section>
+
 <footer class="doc-foot">
-  <p>Companion files: <a href="design-canon-iterations.html" style="color:var(--ink-deep)">design-canon-iterations.html</a> · <a href="design-canon-action-bar.html" style="color:var(--ink-deep)">design-canon-action-bar.html</a> · <code>css/styles.css</code> · <code>js/views/branches.js</code></p>
+  <p>Companion files: <a href="design-canon-vs-brandkit.html" style="color:var(--ink-deep)">design-canon-vs-brandkit.html</a> · <a href="design-canon-iterations.html" style="color:var(--ink-deep)">design-canon-iterations.html</a> · <a href="design-canon-action-bar.html" style="color:var(--ink-deep)">design-canon-action-bar.html</a> · <code>css/styles.css</code> · <code>js/modal.js</code> · <code>js/views/branches.js</code></p>
 </footer>
 
 </body>

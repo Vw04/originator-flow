@@ -222,9 +222,9 @@ const OnboardingView = {
         <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:12px;margin-bottom:20px">
           ${[
             { label: 'Invite Sent',    value: statusCounts['invited'],              svgColor: 'var(--color-accent)' },
-            { label: 'Email Verified', value: statusCounts['email_verified'],       svgColor: '#2563EB' },
-            { label: '2FA Complete',   value: statusCounts['2fa_complete'],         svgColor: '#7C3AED' },
-            { label: 'KYC Pending',    value: statusCounts['verification_pending'], svgColor: '#D97706' },
+            { label: 'Email Verified', value: statusCounts['email_verified'],       svgColor: '#1A6E8E' },   /* 2026-05-26 canon info-teal */
+            { label: '2FA Complete',   value: statusCounts['2fa_complete'],         svgColor: '#1A8754' },   /* 2026-05-26 canon success */
+            { label: 'KYC Pending',    value: statusCounts['verification_pending'], svgColor: '#B8860B' },   /* 2026-05-26 canon warning */
           ].map(s => `
             <div class="stat-card">
               <div class="stat-card-header">

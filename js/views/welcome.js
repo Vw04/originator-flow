@@ -15,7 +15,12 @@ const WelcomeView = {
   /* ---- Modal entry point ----
      Mounts the welcome card as an overlay over the current page
      (intended use: /data/applications). Idempotent — calling open
-     twice replaces existing content. */
+     twice replaces existing content.
+
+     NOTE 2026-05-26 canon: the shared AppModal primitive applies to
+     confirm/destructive flows. This hero/splash overlay keeps its own
+     `.welcome-modal-overlay` markup so the welcome layout (full-bleed
+     hero, no traditional title/footer chrome) stays intact. */
   openModal() {
     const u = State.getCurrentUser();
     if (!u) return;

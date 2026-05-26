@@ -1184,52 +1184,44 @@ const OriginationsView = {
     App.renderView('/originations/' + this._selectedLoanId);
   },
 
-  /* ── New Application Modal (retained) ── */
+  /* ── New Application Modal (migrated to AppModal primitive — 2026-05-26 canon) ── */
   showNewAppModal() {
-    document.getElementById('originations-modal').innerHTML = `
-      <div class="modal-overlay" onclick="if(event.target===this)OriginationsView.closeModal()">
-        <div class="modal modal-lg">
-          <div class="modal-header">
-            <div>
-              <div class="modal-title">New Application</div>
-              <div class="modal-subtitle">Start a Home Equity Investment origination</div>
-            </div>
-            <button class="modal-close" onclick="OriginationsView.closeModal()">×</button>
-          </div>
-          <div class="modal-body">
-            <div class="alert alert-info">
-              <span class="alert-icon">&#8505;&#65039;</span>
-              <span>This will open a new origination in draft status. You can complete and submit it at any time.</span>
-            </div>
-            <div class="form-grid">
-              <div class="form-group form-full">
-                <label>Borrower Full Name *</label>
-                <input class="input" id="new-app-borrower" placeholder="Jane & John Smith" />
-              </div>
-              <div class="form-group form-full">
-                <label>Property Address *</label>
-                <input class="input" id="new-app-address" placeholder="123 Main St, Nashville, TN 37201" />
-              </div>
-              <div class="form-group">
-                <label>Loan Amount ($) *</label>
-                <input class="input" id="new-app-amount" type="number" placeholder="150000" />
-              </div>
-              <div class="form-group">
-                <label>Program *</label>
-                <select class="select-input" id="new-app-program">
-                  <option value="DC Dream Fund">DC Dream Fund</option>
-                  <option value="Kentucky Dream Fund">Kentucky Dream Fund</option>
-                  <option value="Multi-State Dream Fund">Multi-State Dream Fund</option>
-                </select>
-              </div>
-            </div>
-          </div>
-          <div class="modal-footer">
-            <button class="btn btn-secondary" onclick="OriginationsView.closeModal()">Cancel</button>
-            <button class="btn btn-primary" onclick="OriginationsView.submitNew()">Create Draft</button>
-          </div>
+    AppModal.open({
+      title: 'New Application',
+      subtitle: 'Start a Home Equity Investment origination',
+      size: 'lg',
+      body: `
+        <div class="alert alert-info">
+          <span class="alert-icon">&#8505;&#65039;</span>
+          <span>This will open a new origination in draft status. You can complete and submit it at any time.</span>
         </div>
-      </div>`;
+        <div class="form-grid">
+          <div class="form-group form-full">
+            <label>Borrower Full Name *</label>
+            <input class="input" id="new-app-borrower" placeholder="Jane & John Smith" />
+          </div>
+          <div class="form-group form-full">
+            <label>Property Address *</label>
+            <input class="input" id="new-app-address" placeholder="123 Main St, Nashville, TN 37201" />
+          </div>
+          <div class="form-group">
+            <label>Loan Amount ($) *</label>
+            <input class="input" id="new-app-amount" type="number" placeholder="150000" />
+          </div>
+          <div class="form-group">
+            <label>Program *</label>
+            <select class="select-input" id="new-app-program">
+              <option value="DC Dream Fund">DC Dream Fund</option>
+              <option value="Kentucky Dream Fund">Kentucky Dream Fund</option>
+              <option value="Multi-State Dream Fund">Multi-State Dream Fund</option>
+            </select>
+          </div>
+        </div>`,
+      actions: [
+        ['Cancel',       'OriginationsView.closeModal()'],
+        ['Create Draft', 'OriginationsView.submitNew()'],
+      ],
+    });
   },
 
   submitNew() {
@@ -1264,8 +1256,7 @@ const OriginationsView = {
   },
 
   closeModal() {
-    const el = document.getElementById('originations-modal');
-    if (el) el.innerHTML = '';
+    AppModal.close();
   },
 };
 

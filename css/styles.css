@@ -3,6 +3,7 @@
    ============================================================ */
 
 @import url('https://fonts.googleapis.com/css2?family=IvyPresto+Display:ital,wght@0,300;0,400;0,700;1,300&family=Inter:wght@300;400;500;600&display=swap');
+@import url('https://cdn.jsdelivr.net/npm/@tabler/icons-webfont@latest/dist/tabler-icons.min.css');   /* 2026-05-26 canon: going-forward icon standard */
 
 /* ---- Variables — Figma "Internal Homium 2.0" warm institutional canon
    (Phase 3 of design canon reconciliation — see assets/specs/design-canon.html)
@@ -37,22 +38,43 @@
   --color-text-muted:     #9ba6ae;   /* Figma muted (was #9CA3AF) */
   --color-text-inverse:   #FFFFFF;
 
-  --color-success:    #16A34A;
+  --color-success:    #1A8754;   /* 2026-05-26 canon: darker, kit-aligned (was #16A34A) */
   --color-success-bg: #DCFCE7;
-  --color-warning:    #D97706;
+  --color-warning:    #B8860B;   /* 2026-05-26 canon: darker amber (was #D97706) */
   --color-warning-bg: #FEF3C7;
   --color-danger:     #c4382a;   /* Figma brick red (was #DC2626) */
   --color-danger-bg:  #FEE2E2;
-  --color-info:       #2563EB;
+  --color-info:       #1A6E8E;   /* 2026-05-26 canon: kit info-teal (was #2563EB) */
   --color-info-bg:    #DBEAFE;
-  --color-purple:     #7C3AED;
-  --color-purple-bg:  #EDE9FE;
+  /* --color-purple removed 2026-05-26 — kit forbids decorative purple */
+
+  /* Action surface (explicit alias to primary navy — kit convention) */
+  --action: #00334a;
+  --h-action: #00334a;
+
+  /* Warm hover-state tint */
+  --sand: #f2f0ea;
 
   /* Figma canon sizing — inputs, cards, action bars */
-  --input-height: 36px;
+  --input-height: 36px;           /* legacy default — kept for backward compat */
+  --input-height-compact: 32px;   /* 2026-05-26 canon: compact inputs */
+  --input-height-form:    40px;   /* 2026-05-26 canon: wizard/form inputs */
   --input-radius: 6px;
-  --card-pad:     25px;
+  --card-pad:     24px;           /* 2026-05-26 canon: was 25px */
   --action-bar-h: 60px;
+
+  /* Spacing scale (kit canon) */
+  --h-space-2:  2px;
+  --h-space-4:  4px;
+  --h-space-8:  8px;
+  --h-space-12: 12px;
+  --h-space-16: 16px;
+  --h-space-20: 20px;
+  --h-space-24: 24px;
+  --h-space-32: 32px;
+  --h-space-40: 40px;
+  --h-space-48: 48px;
+  --h-space-64: 64px;
 
   /* MD3 shape scale */
   --radius-sm:   4px;    /* extra-small = 4dp */
@@ -72,9 +94,10 @@
   --topnav-height: 0px;       /* legacy token — kept at 0 so existing sticky offsets still work */
   --sidenav-width: 92px;
 
-  --font:         'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
-  --font-heading: 'IvyPresto Display', Georgia, 'Times New Roman', serif;
-  --font-mono:    'SF Mono', 'Fira Code', monospace;
+  --font:                 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+  --font-heading:         'IvyPresto Display', Georgia, 'Times New Roman', serif;
+  --font-heading-weight:  300;        /* 2026-05-26 canon: never bold the heading serif */
+  --font-mono:            'SF Mono', 'Fira Code', monospace;
 }
 
 /* ---- Reset ---- */
@@ -160,6 +183,7 @@ img { max-width: 100%; display: block; }
   color: var(--color-primary);
 }
 .sidenav-search svg { width: 18px; height: 18px; stroke: currentColor; fill: none; stroke-width: 1.8; stroke-linecap: round; stroke-linejoin: round; }
+.sidenav-search .ti { font-size: 18px; line-height: 1; }              /* 2026-05-26 canon: Tabler icon sizing in nav search */
 
 .sidenav-divider {
   margin: 12px 12px 4px;
@@ -208,6 +232,7 @@ img { max-width: 100%; display: block; }
   stroke: currentColor; fill: none; stroke-width: 1.7;
   stroke-linecap: round; stroke-linejoin: round;
 }
+.sidenav-tile .ti { font-size: 22px; line-height: 1; }                /* 2026-05-26 canon: Tabler icon sizing in nav rail */
 
 .sidenav-spacer { flex: 1 1 auto; }
 
@@ -235,6 +260,7 @@ img { max-width: 100%; display: block; }
   stroke: currentColor; fill: none; stroke-width: 1.7;
   stroke-linecap: round; stroke-linejoin: round;
 }
+.sidenav-icon-btn .ti { font-size: 20px; line-height: 1; }            /* 2026-05-26 canon: Tabler icon sizing in nav footer */
 
 .sidenav-profile {
   position: relative;
@@ -371,7 +397,7 @@ img { max-width: 100%; display: block; }
 .admin-flyout-title {
   font-family: var(--font-heading);
   font-size: 18px;
-  font-weight: 400;
+  font-weight: var(--font-heading-weight);
   color: var(--color-primary);
   letter-spacing: -0.01em;
   line-height: 1.1;
@@ -553,7 +579,7 @@ img { max-width: 100%; display: block; }
 .cell-primary.serif {
   font-family: var(--font-heading);
   font-size: 15px;
-  font-weight: 400;
+  font-weight: var(--font-heading-weight);
   color: var(--color-text);
   letter-spacing: -0.005em;
 }
@@ -845,8 +871,8 @@ img { max-width: 100%; display: block; }
   background: var(--color-card);
   border: 1px solid var(--color-border);
   border-radius: var(--radius-lg);
-  padding: 20px;
-  box-shadow: var(--shadow-sm);
+  padding: var(--card-pad);
+  box-shadow: none;            /* 2026-05-26 canon: no drop shadow on standard cards */
 }
 
 .card-header {
@@ -859,7 +885,7 @@ img { max-width: 100%; display: block; }
 .card-title {
   font-family: var(--font-heading);
   font-size: 16px;
-  font-weight: 400;
+  font-weight: var(--font-heading-weight);
   color: var(--color-text);
 }
 
@@ -1193,7 +1219,7 @@ tbody td {
 .badge-suspended, .pill-suspended { color: var(--color-danger); }
 .badge-failed,    .pill-failed    { color: var(--color-danger); }
 .badge-verified,  .pill-verified  { color: var(--color-success); }
-.badge-kyc,       .pill-kyc       { color: var(--color-purple); }
+.badge-kyc,       .pill-kyc       { color: var(--color-info); }    /* 2026-05-26 canon: was purple */
 .badge-2fa,       .pill-2fa       { color: var(--color-warning); }
 .badge-neutral,   .pill-neutral   { color: var(--color-text-secondary); }
 .badge-info,      .pill-info      { color: var(--color-info); }
@@ -2316,7 +2342,7 @@ textarea:hover:not(:disabled) {
 .loan-card-borrower { font-size: 14px; font-weight: 600; color: var(--color-text); margin-top: 2px; }
 .loan-card-address { font-size: 12px; color: var(--color-text-secondary); margin-top: 2px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 .loan-card-meta { text-align: right; }
-.loan-amount { font-family: var(--font-heading); font-size: 15px; font-weight: 400; color: var(--color-text); }
+.loan-amount { font-family: var(--font-heading); font-size: 15px; font-weight: var(--font-heading-weight); color: var(--color-text); font-feature-settings: 'tnum' 1, 'lnum' 1, 'zero' 0; font-variant-numeric: tabular-nums lining-nums; }
 .loan-program { font-size: 11px; color: var(--color-text-muted); margin-top: 2px; }
 
 /* ============================================================
@@ -2360,6 +2386,36 @@ textarea:hover:not(:disabled) {
 .fw-500 { font-weight: 500; }
 .fw-600 { font-weight: 600; }
 .fw-700 { font-weight: 700; }
+
+/* 2026-05-26 canon: tabular numerals for currency / percentages / columnar numbers.
+   Apply to any element rendering numeric data — KPIs, table cells, meta-rows. */
+.num-tabular,
+.kpi-value,
+.entity-meta-value {
+  font-feature-settings: 'tnum' 1, 'lnum' 1, 'zero' 0;
+  font-variant-numeric: tabular-nums lining-nums;
+}
+
+/* 2026-05-26 canon: branch-level informational text (branch names in cards,
+   branch headers below entity title, compact branch identifiers). Inter 600 15px. */
+.branch-info-label {
+  font-family: var(--font);
+  font-weight: 600;
+  font-size: 15px;
+  letter-spacing: -0.005em;
+  color: var(--color-text);
+}
+
+/* 2026-05-26 canon: Tabler Icons (1.5px stroke) is the going-forward
+   icon standard. 20px standalone, 16px in-component (.ti-sm). */
+.ti {
+  font-size: 20px;
+  line-height: 1;
+  vertical-align: middle;
+  display: inline-block;
+}
+.ti.ti-sm { font-size: 16px; }
+.ti.ti-lg { font-size: 24px; }
 .mt-4  { margin-top: 4px; }
 .mt-8  { margin-top: 8px; }
 .mt-12 { margin-top: 12px; }
@@ -4904,8 +4960,8 @@ textarea:hover:not(:disabled) {
   line-height: 1;
 }
 .m-kpi-value.accent-danger { color: var(--color-danger, #DC2626); }
-.m-kpi-value.accent-warning { color: var(--color-warning, #D97706); }
-.m-kpi-value.accent-success { color: var(--color-success, #16A34A); }
+.m-kpi-value.accent-warning { color: var(--color-warning, #B8860B); }
+.m-kpi-value.accent-success { color: var(--color-success, #1A8754); }
 .m-kpi-label {
   font-size: 10px;
   color: var(--color-text-muted);
@@ -4964,7 +5020,7 @@ textarea:hover:not(:disabled) {
 }
 .m-list-item:active { box-shadow: 0 2px 8px rgba(0,0,0,0.1); }
 .m-list-item.attention {
-  border-left: 3px solid var(--color-warning, #D97706);
+  border-left: 3px solid var(--color-warning, #B8860B);
 }
 .m-list-item.danger {
   border-left: 3px solid var(--color-danger, #DC2626);
@@ -5017,7 +5073,7 @@ textarea:hover:not(:disabled) {
   font-weight: 700;
   border-radius: 9999px;
   background: var(--color-warning-bg, #FEF3C7);
-  color: var(--color-warning, #D97706);
+  color: var(--color-warning, #B8860B);
   flex-shrink: 0;
 }
 .m-days-badge.ok {
@@ -5619,7 +5675,7 @@ textarea:hover:not(:disabled) {
   align-items: center;
   gap: 4px;
   font-size: 12px;
-  color: var(--color-info, #2563EB);
+  color: var(--color-info, #1A6E8E);
   cursor: pointer;
 }
 .upload-action-zone:hover {
@@ -5676,7 +5732,7 @@ textarea:hover:not(:disabled) {
   color: #fff;
 }
 .process-tracker-check.active {
-  background: var(--color-info, #2563EB);
+  background: var(--color-info, #1A6E8E);
   color: #fff;
 }
 .process-tracker-check.pending {
@@ -5801,7 +5857,7 @@ textarea:hover:not(:disabled) {
   z-index: 1;
 }
 .disclosure-timeline-dot.done { background: var(--color-success); }
-.disclosure-timeline-dot.active { background: var(--color-info, #2563EB); }
+.disclosure-timeline-dot.active { background: var(--color-info, #1A6E8E); }
 .disclosure-timeline-dot.pending { background: var(--color-border); }
 .disclosure-timeline-label {
   font-size: 11px;
@@ -7826,7 +7882,7 @@ textarea:hover:not(:disabled) {
 }
 .welcome-card-title {
   font-family: var(--font-heading);
-  font-weight: 400;
+  font-weight: var(--font-heading-weight);
   font-size: 22px;
   margin-bottom: 6px;
 }
@@ -8033,7 +8089,7 @@ textarea:hover:not(:disabled) {
 .profile-identity-text { min-width: 0; }
 .profile-identity-name {
   font-family: var(--font-heading);
-  font-weight: 400;
+  font-weight: var(--font-heading-weight);
   font-size: 20px;
   letter-spacing: -0.01em;
   margin-bottom: 6px;
@@ -8140,7 +8196,7 @@ textarea:hover:not(:disabled) {
 }
 .cm-tooltip-title {
   font-family: var(--font-heading);
-  font-weight: 400;
+  font-weight: var(--font-heading-weight);
   font-size: 16px;
   line-height: 1.25;
   color: var(--color-text);
@@ -8210,7 +8266,7 @@ textarea:hover:not(:disabled) {
 }
 .newapp-title {
   font-family: var(--font-heading);
-  font-weight: 400; font-size: 22px;
+  font-weight: var(--font-heading-weight); font-size: 22px;
   display: flex; justify-content: space-between; align-items: center;
 }
 .newapp-steps {
@@ -9505,7 +9561,7 @@ textarea:hover:not(:disabled) {
 .entity-header-title {
   font-family: var(--font-heading);
   font-size: 28px;
-  font-weight: 400;
+  font-weight: var(--font-heading-weight);
   color: var(--color-primary);
   letter-spacing: -0.005em;
   line-height: 33.6px;
