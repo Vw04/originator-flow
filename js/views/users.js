@@ -499,7 +499,11 @@ const UsersView = {
   },
 };
 
-/* Color per section for avatars — Platform Ops = gold, Origination = blue, Investors = green */
-function avatarColor(role) {
-  return { sys_admin:'#C6952B', operator:'#C6952B', prog_admin:'#1D4ED8', lo:'#1D4ED8', lp:'#1D4ED8', investor:'#1D3D2A' }[role] || '#1B3564';
+/* 2026-05-27 canon: one style for ALL avatars (teal-50 bg, teal-500 text).
+   Role-based avatar colors are a deferred backlog ticket — see
+   assets/specs/homium-design-canon-v2 2/CLAUDE.md "Deferred Items".
+   This helper is kept as a stable callsite API (8+ views call it) but its
+   return value is now the canon token, regardless of role. */
+function avatarColor(/* role */) {
+  return 'var(--h-teal-50)';
 }

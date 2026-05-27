@@ -4,9 +4,11 @@
 
 const MobileProfileView = {
 
+  /* 2026-05-27 canon: one style for all avatars (teal-50 bg, teal-500 text).
+     Map kept for callsite stability; every role resolves to the canon token. */
   _AVATAR_COLORS: {
-    sys_admin: '#C6952B', operator: '#C6952B', prog_admin: '#1D4ED8',
-    lo: '#1D4ED8', lp: '#1D4ED8', investor: '#1D3D2A',
+    sys_admin: 'var(--h-teal-50)', operator: 'var(--h-teal-50)', prog_admin: 'var(--h-teal-50)',
+    lo: 'var(--h-teal-50)', lp: 'var(--h-teal-50)', investor: 'var(--h-teal-50)',
   },
 
   render() {
@@ -17,7 +19,7 @@ const MobileProfileView = {
     const initials = Display.initials(user);
     const name = Display.fullName(user);
     const roleLabel = Display.roleName(role);
-    const bgColor = this._AVATAR_COLORS[role] || '#1B3564';
+    const bgColor = this._AVATAR_COLORS[role] || 'var(--h-teal-50)';
 
     const co = user.companyId ? State.getCompany(user.companyId) : null;
     const br = user.branchId ? State.getBranch(user.branchId) : null;

@@ -47,8 +47,8 @@ const PlatformRbacView = (() => {
       name: Display.fullName(u),
       initials: Display.initials(u),
       email: u.email,
-      bg: avatarColor(u.role),
-      color: '#fff',
+      bg: avatarColor(u.role),       /* canon token — returns var(--h-teal-50) post 2026-05-27 */
+      color: 'var(--h-teal-500)',    /* 2026-05-27 canon — was '#fff' */
       raw: u,
     };
   }

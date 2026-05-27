@@ -325,8 +325,11 @@ img { max-width: 100%; display: block; }
   width: 36px; height: 36px;
   border-radius: 50%;
   display: inline-flex; align-items: center; justify-content: center;
-  color: #fff; font-size: 12px; font-weight: 600;
+  background: var(--h-teal-50);        /* 2026-05-27 canon: one style for all avatars */
+  color: var(--h-teal-500);
+  font-size: 12px; font-weight: 600;
   font-family: var(--font);
+  text-transform: uppercase;
 }
 .sidenav-avatar-name {
   font-size: 10.5px; font-weight: 600;
@@ -824,10 +827,10 @@ img { max-width: 100%; display: block; }
 }
 
 .page-body {
-  padding: 28px 40px;
+  padding: var(--h-space-32) var(--h-space-32) var(--h-space-64);   /* 2026-05-27 canon: 32 32 64 desktop */
   flex: 1;
 }
-.page-body > .page-header { padding: 0; margin: -28px -40px 20px; padding: 28px 40px 0; }
+.page-body > .page-header { padding: 0; margin: calc(-1 * var(--h-space-32)) calc(-1 * var(--h-space-32)) var(--h-space-20); padding: var(--h-space-32) var(--h-space-32) 0; }
 /* Entity-detail pages (entity-header → section-tabs → page-body) align
    the page-body content gutter to 28px so its first child sits at the
    same x-offset as the entity-header above. Tightens the tab→content
@@ -835,13 +838,13 @@ img { max-width: 100%; display: block; }
    Triggered by entity-header (list pages use page-header, so they keep
    the default 28px×40px gutter). */
 .entity-header ~ .page-body {
-  padding: 12px 28px 0;
+  padding: var(--h-space-12) var(--h-space-32) 0;                  /* 2026-05-27 canon tokens */
 }
 /* inst-cards inside an entity-detail page-body already carry their own
-   28px horizontal margin; zero it so they sit flush within the
-   28px-padded page-body and don't double-indent. */
+   32px horizontal margin; zero it so they sit flush within the
+   32px-padded page-body and don't double-indent. */
 .entity-header ~ .page-body > .inst-card {
-  margin: 0 0 16px;
+  margin: 0 0 var(--h-space-16);
 }
 /* When the page-body wraps an artboard mount as its primary child, suppress
    page-level padding so the artboard renders edge-to-edge (matching the
@@ -2207,10 +2210,11 @@ textarea:hover:not(:disabled) {
   width: 28px;
   height: 28px;
   border-radius: var(--radius-full);
-  background: var(--h-action);
-  color: #fff;
+  background: var(--h-teal-50);         /* 2026-05-27 canon */
+  color: var(--h-teal-500);
   font-size: 10px;
-  font-weight: 700;
+  font-weight: 600;
+  text-transform: uppercase;
   display: flex;
   align-items: center;
   justify-content: center;
@@ -4092,13 +4096,14 @@ textarea:hover:not(:disabled) {
   width: 28px;
   height: 28px;
   border-radius: 50%;
-  background: var(--h-action);
-  color: #fff;
+  background: var(--h-teal-50);          /* 2026-05-27 canon */
+  color: var(--h-teal-500);
   display: flex;
   align-items: center;
   justify-content: center;
   font-size: 10px;
-  font-weight: 700;
+  font-weight: 600;
+  text-transform: uppercase;
   flex-shrink: 0;
 }
 .activity-feed-body { flex: 1; color: var(--h-text-primary); line-height: 1.4; }
@@ -5382,8 +5387,10 @@ textarea:hover:not(:disabled) {
   align-items: center;
   justify-content: center;
   font-size: 26px;
-  font-weight: 700;
-  color: #fff;
+  font-weight: 600;
+  background: var(--h-teal-50);          /* 2026-05-27 canon */
+  color: var(--h-teal-500);
+  text-transform: uppercase;
   margin-bottom: 12px;
   flex-shrink: 0;
 }
@@ -8568,23 +8575,9 @@ textarea:hover:not(:disabled) {
 .admin-pm-popover-item:last-child { border-bottom: none; }
 .admin-pm-popover-item:hover { background: var(--h-pearl); color: var(--h-action); }
 
-/* Branch program card (used in branch Eligible Programs tab) */
-.admin-pm-prog-card {
-  border: 1px solid var(--h-border-subtle); border-radius: 6px;
-  margin: 0 0 10px; overflow: hidden; background: #fff;
-}
-.admin-pm-prog-card:last-child { margin-bottom: 0; }
-.admin-pm-prog-card-head { padding: 10px 12px; background: var(--h-pearl); border-bottom: 1px solid var(--h-border-subtle); font-size: 13px; }
-.admin-pm-prog-row {
-  display: flex; align-items: center; gap: 10px;
-  padding: 7px 12px; border-bottom: 1px solid var(--h-border-subtle);
-  font-size: 12px; color: var(--h-text-primary);
-  cursor: pointer;
-}
-.admin-pm-prog-row:last-child { border-bottom: none; }
-.admin-pm-prog-row:hover { background: var(--h-pearl); }
-.admin-pm-prog-row input[type="checkbox"] { width: 13px; height: 13px; accent-color: var(--h-action); cursor: pointer; }
-.admin-pm-prog-row input[type="checkbox"]:disabled { cursor: not-allowed; }
+/* Branch Eligible Programs tab CSS removed 2026-05-27 — refactored to use
+   canonical .inst-card + .program-checklist + .program-check-row pattern
+   (matching origination-companies.js). See branches.js _renderBranchPrograms. */
 
 /* ============================================================
    LOAN DETAIL — INSTITUTIONAL STYLE OVERLAY
@@ -9081,8 +9074,17 @@ textarea:hover:not(:disabled) {
 .rb-uemail { font-size: 11px; color: var(--h-ink-3); margin-top: 2px; }
 .rb-utitle { font-size: 12px; color: var(--h-ink-2); }
 
-/* Avatars */
-.rb-av { display: inline-flex; align-items: center; justify-content: center; border-radius: 50%; font-weight: 600; flex-shrink: 0; font-family: var(--font-sans); }
+/* Avatars — 2026-05-27 canon: one style for all (teal-50 bg, teal-500 text).
+   Inline style="background:..." overrides at callsites now resolve to the
+   same token via avatarColor() returning var(--h-teal-50). */
+.rb-av {
+  display: inline-flex; align-items: center; justify-content: center;
+  border-radius: 50%; font-weight: 600; flex-shrink: 0;
+  font-family: var(--font-sans);
+  background: var(--h-teal-50);
+  color: var(--h-teal-500);
+  text-transform: uppercase;
+}
 .rb-av-sm { width: 26px; height: 26px; font-size: 10px; }
 .rb-av-md { width: 36px; height: 36px; font-size: 11px; }
 .rb-av-lg { width: 56px; height: 56px; font-size: 18px; }
@@ -9632,7 +9634,7 @@ textarea:hover:not(:disabled) {
   gap: 6px;
   font-size: 12.5px;
   color: var(--h-text-secondary);
-  padding: 14px 28px 0;
+  padding: var(--h-space-16) var(--h-space-32) 0;          /* 2026-05-27 canon tokens (was 14px 28px 0) */
   cursor: pointer;
   background: transparent;
   border: none;
@@ -9642,11 +9644,11 @@ textarea:hover:not(:disabled) {
 .back-link svg { width: 12px; height: 12px; }
 
 .entity-header {
-  margin: 10px 28px 14px;
-  padding: 20px 24px;
+  margin: var(--h-space-8) var(--h-space-32) var(--h-space-16); /* 2026-05-27 canon tokens (was 10px 28px 14px) */
+  padding: var(--h-space-24);                                   /* 2026-05-27 canon: 24px all sides (was 20px 24px) */
   background: #fff;
   border: 1px solid var(--h-border);
-  border-radius: 10px;
+  border-radius: var(--radius);                                 /* 2026-05-27 canon: 8px (was 10px) */
 }
 .entity-header-row {
   display: flex;
@@ -9716,9 +9718,9 @@ textarea:hover:not(:disabled) {
 .inst-card {
   background: #fff;
   border: 1px solid var(--h-border);
-  border-radius: 10px;
-  padding: 22px 24px;
-  margin: 0 28px 16px;
+  border-radius: var(--radius);                                  /* 2026-05-27 canon: 8px */
+  padding: var(--h-space-24);                                    /* 2026-05-27 canon: 24px all sides (was 22px 24px) */
+  margin: 0 var(--h-space-32) var(--h-space-16);                 /* 2026-05-27 canon tokens (was 0 28px 16px) */
 }
 .inst-card-title {
   font-family: var(--font);
@@ -9817,11 +9819,11 @@ body.is-dirty .inst-footer-bar .dirty-indicator .dot {
    header card and need a softer surface treatment. */
 .entity-header + .section-tabs,
 .inst-card + .section-tabs {
-  margin: -4px 28px 12px;
+  margin: -4px var(--h-space-32) var(--h-space-12);              /* 2026-05-27 canon tokens */
   border: 1px solid var(--h-border);
-  border-radius: 10px;
+  border-radius: var(--radius);
   background: #fff;
-  padding: 0 22px;
+  padding: 0 var(--h-space-24);
 }
 
 /* Institutional 50-state chip grid (for OC / branch market enablement card) */
@@ -9877,7 +9879,7 @@ body.is-dirty .inst-footer-bar .dirty-indicator .dot {
   gap: 12px;
   padding: 12px 14px;
   border-bottom: 1px solid var(--h-border-subtle);
-  font-size: 13.5px;
+  font-size: 14px;                      /* 2026-05-27 canon body */
 }
 .program-check-row:last-child { border-bottom: 0; }
 .program-check-row input[type="checkbox"] {
@@ -9886,17 +9888,36 @@ body.is-dirty .inst-footer-bar .dirty-indicator .dot {
   cursor: pointer;
   margin: 0;
 }
-.program-check-row .pc-name { flex: 1; color: var(--h-text-primary); font-weight: 500; }
+.program-check-row .pc-name {
+  flex: 1;
+  color: var(--h-text-primary);
+  font-weight: 600;                     /* 2026-05-27 canon: Inter 600 for branch-info-style labels */
+}
 .program-check-row .pc-code {
   font-family: var(--font-mono);
-  font-size: 10.5px;
-  font-weight: 600;
+  font-size: 11px;                      /* 2026-05-27 canon: Tag--code size */
+  font-weight: 400;                     /* 2026-05-27 canon: SF Mono 400 */
   color: var(--h-text-muted);
   letter-spacing: 0.06em;
   padding: 4px 8px;
   border: 1px solid var(--h-border);
   border-radius: 4px;
 }
+
+/* 2026-05-27 canon: nested program → markets structure used on the branch
+   eligible-programs tab. Head row is the program label; nested rows are the
+   market subset of that program. */
+.program-check-row--head {
+  background: var(--h-pearl);
+  font-weight: 600;
+}
+.program-check-row--nested {
+  padding-left: 32px;
+}
+.program-check-group {
+  border-bottom: 2px solid var(--h-border);
+}
+.program-check-group:last-child { border-bottom: 0; }
 .program-check-row .pc-note {
   font-size: 11.5px;
   color: var(--h-text-muted);

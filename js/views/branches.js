@@ -863,56 +863,72 @@ const BranchesView = {
     App.renderView(Router.getCurrentPath());
   },
 
-  /* ---- Eligible Programs tab — branch subset of OC's enabled programs ---- */
+  /* ---- Eligible Programs tab — branch subset of OC's enabled programs.
+     2026-05-27 canon: uses .inst-card + .program-checklist + .pc-name/.pc-code
+     to match the typography and container of the company-level page
+     (origination-companies.js). Two-level program → markets structure is
+     preserved via .program-check-group + .program-check-row--head/--nested. */
   _renderBranchPrograms(b, canEdit) {
     const co = State.getCompany(b.companyId);
     const ocLpms = State.getOcEnablement(b.companyId);
     if (!ocLpms.length) {
-      return `<div class="card"><div style="text-align:center;color:var(--h-text-muted);padding:32px;font-size:13px">No programs enabled at <strong>${co ? co.name : 'the company'}</strong> yet. Configure under the company's <a class="breadcrumb-link" onclick="Router.navigate('/origination-companies/${b.companyId}')">Eligible Programs</a> tab first.</div></div>`;
+      return `
+        <div class="inst-card">
+          <div style="text-align:center;color:var(--h-text-muted);padding:32px;font-size:13px">
+            No programs enabled at <strong>${co ? co.name : 'the company'}</strong> yet.
+            Configure under the company's
+            <a class="breadcrumb-link" onclick="Router.navigate('/origination-companies/${b.companyId}')">Eligible Programs</a>
+            tab first.
+          </div>
+        </div>`;
     }
     const enabledMarkets = new Set(State.getBranchEnabledMarkets(b.id));
     const branchSet = new Set(State.getBranchEnabledPrograms(b.id));
-    // Group OC's lpms by program, but only those whose market the branch has on
     const programs = State.getLoanPrograms();
-    const rows = programs.map(p => {
+    let enabledCount = 0;
+    const groups = programs.map(p => {
       const ocLpmsForProg = State.getLPMsForProgram(p.id).filter(l => ocLpms.includes(l.id));
-      if (!ocLpmsForProg.length) return ''; // not enabled at OC — hide entirely per spec
-      // Per program, list each market the OC has enabled
+      if (!ocLpmsForProg.length) return '';     // not enabled at OC — hide
       const marketRows = ocLpmsForProg.map(lpm => {
         const m = State.getMarket(lpm.marketId);
         const reachable = enabledMarkets.has(lpm.marketId);
         const on = branchSet.has(lpm.id) && reachable;
         const dis = !canEdit || !reachable;
-        const note = !reachable ? `<span style="font-size:10px;color:var(--h-warning);margin-left:8px">market not enabled at branch</span>` : '';
+        if (on) enabledCount++;
+        const note = !reachable
+          ? `<span class="pc-note">market not enabled at branch</span>`
+          : '';
         return `
-          <label class="admin-pm-prog-row" style="opacity:${dis && !canEdit ? 1 : (reachable ? 1 : .5)}">
+          <label class="program-check-row program-check-row--nested" style="opacity:${reachable ? 1 : .5}">
             <input type="checkbox" ${on ? 'checked' : ''} ${dis ? 'disabled' : ''}
                    onchange="BranchesView._toggleBranchProgram('${b.id}', '${lpm.id}', this.checked)">
-            <span style="flex:1">${m ? m.code + ' · ' + m.name : lpm.marketId}${note}</span>
-            <span class="mono" style="font-size:10px;color:var(--h-text-muted)">${p.code}-${m ? m.code : ''}</span>
+            <div class="pc-name">${m ? m.code + ' · ' + m.name : lpm.marketId}</div>
+            ${note}
+            <span class="pc-code">${p.code}-${m ? m.code : ''}</span>
           </label>`;
       }).join('');
       return `
-        <div class="admin-pm-prog-card">
-          <div class="admin-pm-prog-card-head">
-            <div>
-              <div style="font-size:14px;font-weight:600;color:var(--h-text-primary)">${p.name}</div>
-              <div style="font-size:11px;color:var(--h-text-muted);margin-top:2px">Available markets at OC: ${ocLpmsForProg.map(l => State.getMarket(l.marketId)?.code).filter(Boolean).join(', ')}</div>
-            </div>
+        <div class="program-check-group">
+          <div class="program-check-row program-check-row--head">
+            <div class="pc-name">${p.name}</div>
+            <span class="pc-code">${p.code}</span>
           </div>
-          <div>${marketRows}</div>
+          ${marketRows}
         </div>`;
     }).filter(Boolean).join('');
 
+    const emptyMsg = `<div style="text-align:center;color:var(--h-text-muted);padding:24px;font-size:13px">No programs match the branch's enabled markets.</div>`;
+
     return `
-      <div class="card admin-pm-section-card">
-        <div class="admin-pm-section-head">
-          <div>
-            <div class="card-title" style="margin-bottom:2px">Eligible Programs</div>
-            <div style="font-size:12px;color:var(--h-text-muted)">Programs available at this branch. Only programs enabled at ${co ? co.name : 'the company'} are listed; only markets enabled at this branch are selectable.</div>
-          </div>
+      <div class="inst-card">
+        <div class="inst-card-title">
+          <span>Eligible programs</span>
+          <span class="count">${enabledCount} enabled</span>
         </div>
-        <div style="padding:4px 0">${rows || '<div style="text-align:center;color:var(--h-text-muted);padding:24px;font-size:13px">No programs match the branch\'s enabled markets.</div>'}</div>
+        <div style="font-size:12px;color:var(--h-text-muted);margin-bottom:var(--h-space-16)">
+          Programs available at this branch. Only programs enabled at ${co ? co.name : 'the company'} are listed; only markets enabled at this branch are selectable.
+        </div>
+        <div class="program-checklist">${groups || emptyMsg}</div>
       </div>`;
   },
 

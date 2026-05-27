@@ -303,7 +303,7 @@ const DashboardView = {
       const actor = State.getUser(a.userId);
       return `
         <div class="activity-item">
-          <div class="activity-avatar" style="background:${actor ? avatarColor(actor.role) : 'var(--h-action)'}">${actor ? Display.initials(actor) : 'SY'}</div>
+          <div class="activity-avatar" style="background:${actor ? avatarColor(actor.role) : 'var(--h-teal-50)'}">${actor ? Display.initials(actor) : 'SY'}</div>
           <div class="activity-content">
             <strong>${actor ? Display.fullName(actor) : 'System'}</strong> ${a.action} <strong>${a.subject}</strong>
           </div>
