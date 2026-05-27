@@ -204,7 +204,7 @@ const UsersView = {
           <div style="display:flex;align-items:center;gap:10px">
             <div class="avatar avatar-sm" style="background:${avatarColor(u.role)}">${Display.initials(u)}</div>
             <div>
-              <div class="cell-primary serif">${Display.fullName(u)}</div>
+              <div class="cell-primary">${Display.fullName(u)}</div>
               <div class="cell-secondary">${u.email}</div>
             </div>
           </div>
