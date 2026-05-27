@@ -1035,7 +1035,7 @@ img { max-width: 100%; display: block; }
 .table-container {
   background: var(--h-surface-1);
   border: 1px solid var(--h-border);
-  border-radius: var(--radius-lg);
+  border-radius: 8px;
   overflow: hidden;
   max-width: 100%;
 }
@@ -9065,8 +9065,15 @@ textarea:hover:not(:disabled) {
 
 /* User cell */
 .rb-user-cell { display: flex; align-items: center; gap: 12px; }
-.rb-uname { font-size: 13px; font-weight: 600; color: var(--h-ink); line-height: 1.25; }
-.rb-uemail { font-size: 11px; color: var(--h-ink-3); margin-top: 2px; }
+.rb-uname {
+  font-family: var(--font-heading);
+  font-size: 15px;
+  font-weight: var(--font-heading-weight);
+  color: var(--h-text-primary);
+  letter-spacing: -0.005em;
+  line-height: 1.25;
+}
+.rb-uemail { font-size: 12px; color: var(--h-text-secondary); margin-top: 2px; }
 .rb-utitle { font-size: 12px; color: var(--h-ink-2); }
 
 /* Avatars — 2026-05-27 canon: one style for all (teal-50 bg, teal-500 text).
@@ -9819,7 +9826,7 @@ body.is-dirty .inst-footer-bar .dirty-indicator .dot {
    header card and need a softer surface treatment. */
 .entity-header + .section-tabs,
 .inst-card + .section-tabs {
-  margin: -4px var(--h-space-32) var(--h-space-12);              /* 2026-05-27 canon tokens */
+  margin: -4px var(--h-space-32) 0;
   border: 1px solid var(--h-border);
   border-radius: var(--radius);
   background: #fff;
@@ -9876,14 +9883,14 @@ body.is-dirty .inst-footer-bar .dirty-indicator .dot {
 .program-check-row {
   display: flex;
   align-items: center;
-  gap: 12px;
-  padding: 12px 14px;
+  gap: 10px;
+  padding: var(--h-space-8) var(--h-space-12);
   border-bottom: 1px solid var(--h-border-subtle);
-  font-size: 14px;                      /* 2026-05-27 canon body */
+  font-size: 13px;
 }
 .program-check-row:last-child { border-bottom: 0; }
 .program-check-row input[type="checkbox"] {
-  width: 16px; height: 16px;
+  width: 14px; height: 14px;
   accent-color: var(--h-action);
   cursor: pointer;
   margin: 0;
@@ -9891,7 +9898,7 @@ body.is-dirty .inst-footer-bar .dirty-indicator .dot {
 .program-check-row .pc-name {
   flex: 1;
   color: var(--h-text-primary);
-  font-weight: 600;                     /* 2026-05-27 canon: Inter 600 for branch-info-style labels */
+  font-weight: 500;
 }
 .program-check-row .pc-code {
   font-family: var(--font-mono);

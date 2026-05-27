@@ -76,12 +76,16 @@ const ProfileView = {
        working unchanged. */
     const userTypeChip = (isHomium && typeof PlatformRbacView !== 'undefined' && PlatformRbacView.renderUserTypeSelect)
       ? PlatformRbacView.renderUserTypeSelect(u.id) : '';
+    const deactivateBtn = (isHomium && canEdit && typeof PlatformRbacView !== 'undefined' && PlatformRbacView.confirmDeactivate && u.onboardingStatus !== 'suspended')
+      ? `<button class="btn btn-ghost btn-sm" style="color:var(--h-error)" onclick="PlatformRbacView.confirmDeactivate('${u.id}')">Deactivate User</button>`
+      : '';
     const actions = canEdit ? (editing ? '' : `
       ${userTypeChip}
       ${State.can('impersonate') && u.id !== State.getCurrentUser()?.id && u.onboardingStatus !== 'suspended'
         ? `<button class="btn btn-secondary btn-sm" onclick="App.startImpersonation('${u.id}')">${u.onboardingStatus === 'active' ? 'Impersonate' : 'Run as invitee →'}</button>`
         : ''}
       <button class="btn btn-secondary btn-sm" onclick="ProfileView.enterEditMode('${u.id}')">Edit</button>
+      ${deactivateBtn}
     `) : '';
 
     /* Header meta row: Role | NMLS # | Timezone */

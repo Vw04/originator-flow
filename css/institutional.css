@@ -8,7 +8,7 @@
    override the global --h-* token set in styles.css. These tokens are an
    exploratory palette used only by the v2 loan-origination artboards. */
 .ab-institutional, .ab-investor, .ab-spatial, .ab-atrium,
-.ab-terminal, .ab-mission, .ab-briefing, .ab-command-dashboard {
+.ab-terminal, .ab-mission, .ab-briefing, .ab-command-dashboard, .ab-cmd-dash {
   --h-green:         #00334A;     /* 2026-05-27: aligned to canon --h-action (teal-900) */
   --h-green-dark:    #001F2E;     /* canon --h-action-pressed */
   --h-green-light:   #0A4D6B;     /* canon --h-action-hover (teal-700) */

@@ -723,7 +723,7 @@ const PlatformRbacView = (() => {
             <div class="rb-detail-foot">
               ${dirty ? `<span class="rb-dirty"><span class="rb-dirty-dot"></span>${dirty} unsaved change${dirty===1?'':'s'}</span>` : '<span class="rb-clean">All changes saved</span>'}
               <div class="rb-foot-spacer"></div>
-              <button class="rb-btn rb-btn-danger-ghost rb-btn-sm" onclick="PlatformRbacView.confirmDeactivate('${userId}')">Deactivate User</button>
+              <button class="rb-btn rb-btn-ghost rb-btn-sm" ${dirty?'':'disabled'} onclick="PlatformRbacView.cancelChanges('${userId}')">Cancel</button>
               <button class="rb-btn rb-btn-primary rb-btn-sm" ${dirty?'':'disabled'} onclick="PlatformRbacView.saveChanges('${userId}')">Save Changes</button>
             </div>
           </div>`;
