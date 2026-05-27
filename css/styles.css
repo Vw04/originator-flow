@@ -76,6 +76,13 @@
   --h-mint:        #E0EDF3;   /* canon teal-50 */
   --h-pearl:       #F8F7F4;   /* canon pearl (alt surface) */
 
+  /* Font token globals — .rb-* / .cmd-* selectors reference these and were
+     undefined outside artboard scope, so font-family declarations silently
+     fell back to Inter (body inherit). Globalize so they resolve to canon
+     chains everywhere. */
+  --font-serif: 'IvyPresto Display', Georgia, 'Times New Roman', serif;
+  --font-sans:  'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+
   /* Layout sizing */
   --h-content-max-width: 1500px;
   --h-form-max-width:    960px;

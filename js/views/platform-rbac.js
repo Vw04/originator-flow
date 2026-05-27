@@ -1283,6 +1283,22 @@ const PlatformRbacView = (() => {
         </select>`;
     },
 
+    /* Form-field variant of the user-type dropdown — rendered inside the
+       User information card as a normal rectangular select that matches
+       Title / Phone / Timezone. Same options + handler as renderUserTypeSelect. */
+    renderUserTypeFormField(userId) {
+      _ensureState(userId);
+      const t = _state[userId]?.type;
+      if (!t || t === 'n/a') return '';
+      return `
+        <select class="select-input" id="rb-typesel-${userId}"
+                onchange="PlatformRbacView.changeType('${userId}',this)">
+          <option value="admin"${t==='admin'?' selected':''}>Admin</option>
+          <option value="member"${t==='member'?' selected':''}>Member</option>
+          <option value="view-only"${t==='view-only'?' selected':''}>View-only</option>
+        </select>`;
+    },
+
     /* Toggle the embedded Recent activity panel under a user's
        Permissions tab. State is per-userId, in-memory only. */
     toggleAudit(userId) {
