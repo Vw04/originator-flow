@@ -59,6 +59,23 @@
   --h-error:      #C4382A;   --h-error-bg:   #FDE8E6;
   --h-info:       #1A6E8E;   --h-info-bg:    #E0EDF3;
 
+  /* Canon-aligned aliases for artboard-local tokens (--h-line, --h-ink, etc.).
+     Artboard scopes (.ab-*) re-define these with cool-gray hex; outside of
+     artboards (e.g., .rbac-root user-management page) these globals supply
+     canon-correct values so borders and colors render correctly. */
+  --h-line:        #E0DDD6;   /* canon stone (same as --h-border) */
+  --h-line-2:      #EDEBE6;   /* canon warm-gray subtle divider */
+  --h-ink:         #2D3E4A;   /* canon slate (same as --h-text-primary) */
+  --h-ink-2:       #6B7A85;   /* canon gray-500 (same as --h-text-secondary) */
+  --h-ink-3:       #9BA6AE;   /* canon gray-300 (same as --h-text-muted) */
+  --h-green:       #00334A;   /* canon teal-900 (same as --h-action) */
+  --h-green-light: #0A4D6B;   /* canon --h-action-hover */
+  --h-red:         #C4382A;   /* canon --h-error */
+  --h-paper:       #F9F8F4;   /* canon --h-bg */
+  --h-paper-warm:  #F2F0EA;   /* canon sand */
+  --h-mint:        #E0EDF3;   /* canon teal-50 */
+  --h-pearl:       #F8F7F4;   /* canon pearl (alt surface) */
+
   /* Layout sizing */
   --h-content-max-width: 1500px;
   --h-form-max-width:    960px;
@@ -838,6 +855,12 @@ img { max-width: 100%; display: block; }
 .entity-header ~ .page-body {
   padding: var(--h-space-16) var(--h-space-32) 0;
 }
+/* Edit mode: when no section-tabs sit between entity-header and page-body,
+   collapse the page-body top padding — the entity-header's 16px bottom
+   margin already provides the canon gap. */
+.entity-header + .page-body {
+  padding-top: 0;
+}
 /* inst-cards inside an entity-detail page-body already carry their own
    32px horizontal margin; zero it so they sit flush within the
    32px-padded page-body and don't double-indent. */
@@ -1369,8 +1392,12 @@ tbody td {
 
 /* Canon card-label treatment for form field labels: Inter 600 11px,
    uppercase, 0.06em tracking, muted color. SF Mono is reserved for
-   loan IDs / code tags only. */
-label {
+   loan IDs / code tags only.
+   Scoped to form-field labels only so it doesn't bleed into <label>
+   wrappers used elsewhere (e.g., eligible-programs checkbox rows). */
+.form-group > label,
+.form-grid label:not(.program-check-row),
+.inst-form-grid label:not(.program-check-row) {
   display: block;
   font-family: var(--font);
   font-size: 11px;
@@ -1380,7 +1407,9 @@ label {
   color: var(--h-text-muted);
   margin-bottom: var(--h-space-4);
 }
-label .req { color: var(--color-danger, #DC2626); margin-left: 2px; }
+.form-group > label .req,
+.form-grid label .req,
+.inst-form-grid label .req { color: var(--color-danger, #DC2626); margin-left: 2px; }
 
 .input, .select-input, textarea {
   width: 100%;
@@ -9065,14 +9094,7 @@ textarea:hover:not(:disabled) {
 
 /* User cell */
 .rb-user-cell { display: flex; align-items: center; gap: 12px; }
-.rb-uname {
-  font-family: var(--font-heading);
-  font-size: 15px;
-  font-weight: var(--font-heading-weight);
-  color: var(--h-text-primary);
-  letter-spacing: -0.005em;
-  line-height: 1.25;
-}
+.rb-uname { font-size: 13px; font-weight: 600; color: var(--h-text-primary); line-height: 1.25; }
 .rb-uemail { font-size: 12px; color: var(--h-text-secondary); margin-top: 2px; }
 .rb-utitle { font-size: 12px; color: var(--h-ink-2); }
 
@@ -9385,14 +9407,36 @@ textarea:hover:not(:disabled) {
   outline: none;
   transition: border-color .12s, color .12s;
 }
-.rb-ps option { text-align: left; color: var(--h-ink); }
-.rb-ps:hover:not(:disabled) { border-color: var(--h-ink-3); }
-.rb-ps:focus { border-color: var(--h-green); box-shadow: 0 0 0 3px rgba(0,51,74,0.12); }
+.rb-ps option { text-align: left; color: var(--h-text-primary); }
+.rb-ps:hover:not(:disabled) { border-color: var(--h-text-muted); }
+.rb-ps:focus { border-color: var(--h-action); box-shadow: 0 0 0 3px rgba(0,51,74,0.12); }
 .rb-ps:disabled { opacity: 0.45; cursor: not-allowed; }
-.rb-ps.pf { color: var(--h-ink);   font-weight: 600; }
-.rb-ps.pe { color: var(--h-ink);   font-weight: 600; }
-.rb-ps.pv { color: var(--h-ink);   font-weight: 500; }
-.rb-ps.pn { color: var(--h-ink-3); font-weight: 400; }
+/* Canon-aligned pill backgrounds per access level */
+.rb-ps.pf {
+  background-color: var(--h-action);
+  color: #fff;
+  border-color: var(--h-action);
+  font-weight: 600;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='10' viewBox='0 0 10 10' fill='none' stroke='%23ffffff' stroke-width='1.6' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M2 3.5l3 3 3-3'/%3E%3C/svg%3E");
+}
+.rb-ps.pe {
+  background-color: #E0EDF3;
+  color: var(--h-action);
+  border-color: #B0D4E3;
+  font-weight: 600;
+}
+.rb-ps.pv {
+  background-color: #F8F7F4;
+  color: var(--h-text-primary);
+  border-color: var(--h-border);
+  font-weight: 500;
+}
+.rb-ps.pn {
+  background-color: #fff;
+  color: var(--h-text-muted);
+  border-color: var(--h-border);
+  font-weight: 400;
+}
 .rb-ps.ps-inh { opacity: 0.55; }
 
 /* Toggle */

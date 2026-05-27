@@ -74,15 +74,12 @@ const ProfileView = {
        Admin/Member/View-only user-type chip — owned by PlatformRbacView
        so the existing changeType handler + last-admin guard keep
        working unchanged. */
-    const userTypeChip = (isHomium && typeof PlatformRbacView !== 'undefined' && PlatformRbacView.renderUserTypeSelect)
-      ? PlatformRbacView.renderUserTypeSelect(u.id) : '';
-    const deactivateBtn = (isHomium && canEdit && typeof PlatformRbacView !== 'undefined' && PlatformRbacView.confirmDeactivate && u.onboardingStatus !== 'suspended')
-      ? `<button class="btn btn-ghost btn-sm" style="color:var(--h-error)" onclick="PlatformRbacView.confirmDeactivate('${u.id}')">Deactivate User</button>`
+    const deactivateBtn = (canEdit && u.onboardingStatus !== 'suspended')
+      ? `<button class="btn btn-secondary btn-sm" style="color:var(--h-error);border-color:var(--h-error)" onclick="ProfileView.confirmDeactivate('${u.id}')">Deactivate User</button>`
       : '';
     const actions = canEdit ? (editing ? '' : `
-      ${userTypeChip}
       ${State.can('impersonate') && u.id !== State.getCurrentUser()?.id && u.onboardingStatus !== 'suspended'
-        ? `<button class="btn btn-secondary btn-sm" onclick="App.startImpersonation('${u.id}')">${u.onboardingStatus === 'active' ? 'Impersonate' : 'Run as invitee →'}</button>`
+        ? `<button class="btn btn-impersonate btn-sm" onclick="App.startImpersonation('${u.id}')">${u.onboardingStatus === 'active' ? 'Impersonate' : 'Run as invitee →'}</button>`
         : ''}
       <button class="btn btn-secondary btn-sm" onclick="ProfileView.enterEditMode('${u.id}')">Edit</button>
       ${deactivateBtn}
@@ -210,6 +207,14 @@ const ProfileView = {
         </div>`;
     };
 
+    /* Platform-operator user type — Member/Admin/View-only dropdown
+       lives inside the user-info card (moved out of header actions). */
+    const userTypeSelect = (isHomium && typeof PlatformRbacView !== 'undefined' && PlatformRbacView.renderUserTypeSelect)
+      ? PlatformRbacView.renderUserTypeSelect(u.id) : '';
+    const userTypeField = userTypeSelect
+      ? `<div class="form-group"><label>User type</label>${userTypeSelect}</div>`
+      : '';
+
     /* "User information" card per Figma */
     const userInfoCard = `
       <div class="inst-card">
@@ -219,6 +224,7 @@ const ProfileView = {
           ${field('Last name', u.lastName, { id: 'edit-last' })}
           ${field('Email', u.email, { id: 'edit-email' })}
           ${field('Role', Display.roleName(u.role), { locked: true })}
+          ${userTypeField}
           ${field('Title', u.title, { id: 'edit-title' })}
           ${field('Phone', u.phone, { id: 'edit-phone' })}
           ${field('Timezone', u.timezone || 'PT', { id: 'edit-tz' })}
@@ -456,6 +462,31 @@ const ProfileView = {
     State.suspendUser(userId);
     if (typeof UsersView !== 'undefined' && UsersView.showSuccess) UsersView.showSuccess('User suspended');
     App.renderView(Router.getCurrentPath() || '/user-management');
+  },
+
+  /* Deactivate any user type (platform op / loan officer / investor).
+     For platform operators, delegate to PlatformRbacView.confirmDeactivate
+     to preserve the last-admin guard. For other roles, use the standard
+     suspend flow with a confirmation modal. */
+  confirmDeactivate(userId) {
+    const u = State.getUser(userId);
+    if (!u) return;
+    const isHomium = /@homium\.io$/i.test(u.email || '');
+    if (isHomium && typeof PlatformRbacView !== 'undefined' && PlatformRbacView.confirmDeactivate) {
+      PlatformRbacView.confirmDeactivate(userId);
+      return;
+    }
+    const name = Display.fullName(u);
+    if (typeof openModal === 'function') {
+      const html = `<div class="modal-body"><p>Deactivate <strong>${name}</strong>? They will lose access immediately and the account will be marked suspended.</p></div>
+        <div class="modal-actions">
+          <button class="btn btn-ghost btn-sm" onclick="closeModal()">Cancel</button>
+          <button class="btn btn-danger btn-sm" onclick="closeModal(); ProfileView.suspend('${userId}')">Deactivate</button>
+        </div>`;
+      openModal('Deactivate user', html);
+    } else if (confirm(`Deactivate ${name}? They will lose access immediately.`)) {
+      this.suspend(userId);
+    }
   },
 
   openEditModal(userId) {
