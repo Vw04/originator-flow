@@ -9101,7 +9101,14 @@ textarea:hover:not(:disabled) {
 
 /* User cell */
 .rb-user-cell { display: flex; align-items: center; gap: 12px; }
-.rb-uname { font-size: 13px; font-weight: 600; color: var(--h-text-primary); line-height: 1.25; }
+.rb-uname {
+  font-family: var(--font-heading);
+  font-size: 15px;
+  font-weight: var(--font-heading-weight);
+  color: var(--h-text-primary);
+  letter-spacing: -0.005em;
+  line-height: 1.25;
+}
 .rb-uemail { font-size: 12px; color: var(--h-text-secondary); margin-top: 2px; }
 .rb-utitle { font-size: 12px; color: var(--h-ink-2); }
 
