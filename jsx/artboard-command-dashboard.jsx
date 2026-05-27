@@ -38,7 +38,7 @@ const COMMAND_PROGRAMS = {
       { cx: 320, cy: 420, r: 60 },
     ],
     // CRA assessment zones (roughly East-of-the-River)
-    cra: <path d="M 540 540 L 720 600 L 600 760 L 480 700 Z" fill="#0E2A47" fillOpacity="0.06" stroke="#0E2A47" strokeOpacity="0.35" strokeWidth="1" strokeDasharray="3 4"/>,
+    cra: <path d="M 540 540 L 720 600 L 600 760 L 480 700 Z" fill="#00334A" fillOpacity="0.06" stroke="#00334A" strokeOpacity="0.35" strokeWidth="1" strokeDasharray="3 4"/>,
     // MSA appreciation sub-regions — colored polygons (red = depreciation, blue = appreciation)
     appreciation: [
       { d: 'M 80 400 L 360 200 L 400 50 L 200 240 Z',  pct: 3.9, label: 'NW' },
@@ -79,7 +79,7 @@ const COMMAND_PROGRAMS = {
       { cx: 400, cy: 380, r: 80 },
       { cx: 380, cy: 540, r: 70 },
     ],
-    cra: <path d="M 290 320 L 510 320 L 480 460 L 320 460 Z" fill="#0E2A47" fillOpacity="0.06" stroke="#0E2A47" strokeOpacity="0.35" strokeWidth="1" strokeDasharray="3 4"/>,
+    cra: <path d="M 290 320 L 510 320 L 480 460 L 320 460 Z" fill="#00334A" fillOpacity="0.06" stroke="#00334A" strokeOpacity="0.35" strokeWidth="1" strokeDasharray="3 4"/>,
     appreciation: [
       { d: 'M 200 80 L 600 80 L 600 280 L 200 280 Z', pct: 3.2, label: 'North · Ogden' },
       { d: 'M 200 280 L 600 280 L 600 460 L 200 460 Z', pct: 5.4, label: 'SLC Metro' },
@@ -113,7 +113,7 @@ const COMMAND_PROGRAMS = {
       { cx: 540, cy: 360, r: 60 },
       { cx: 280, cy: 480, r: 60 },
     ],
-    cra: <path d="M 280 220 L 480 220 L 480 360 L 280 360 Z" fill="#0E2A47" fillOpacity="0.06" stroke="#0E2A47" strokeOpacity="0.35" strokeWidth="1" strokeDasharray="3 4"/>,
+    cra: <path d="M 280 220 L 480 220 L 480 360 L 280 360 Z" fill="#00334A" fillOpacity="0.06" stroke="#00334A" strokeOpacity="0.35" strokeWidth="1" strokeDasharray="3 4"/>,
     appreciation: [
       { d: 'M 220 100 L 580 100 L 460 280 L 280 280 Z', pct: 6.8, label: 'North' },
       { d: 'M 280 280 L 460 280 L 460 460 L 280 460 Z', pct: 4.5, label: 'Center / W. Philly' },
@@ -130,7 +130,7 @@ function appColor(pct) {
   if (pct < 4.5)       return { fill: '#FBE8C9', stroke: '#E5BC83' };
   if (pct < 5.5)       return { fill: '#DBE6F0', stroke: '#9DBAD2' };
   if (pct < 6.5)       return { fill: '#9DBAD2', stroke: '#5C89B5' };
-  return                      { fill: '#5C89B5', stroke: '#0E2A47' };
+  return                      { fill: '#5C89B5', stroke: '#00334A' };
 }
 
 const CommandDashboardArtboard = ({ context = 'operator' } = {}) => {
@@ -193,7 +193,7 @@ const CommandDashboardArtboard = ({ context = 'operator' } = {}) => {
     if (l.stageKey === 'funded') return '#16A34A';
     if (l.sla === 'red')   return '#DC2626';
     if (l.sla === 'amber') return '#D97706';
-    return '#0E2A47';
+    return '#00334A';
   };
   const toggleLayer = (k) => setLayers(prev => ({ ...prev, [k]: !prev[k] }));
 
@@ -235,7 +235,7 @@ const CommandDashboardArtboard = ({ context = 'operator' } = {}) => {
             <div className="cmd-map-legend">
               {[
                 { c: '#16A34A', l: 'Funded',       n: funded.length },
-                { c: '#0E2A47', l: 'On track',     n: scopedLoans.filter(l => l.stageKey !== 'funded' && l.sla === 'green').length },
+                { c: '#00334A', l: 'On track',     n: scopedLoans.filter(l => l.stageKey !== 'funded' && l.sla === 'green').length },
                 { c: '#D97706', l: 'Stage aging',  n: scopedLoans.filter(l => l.sla === 'amber').length },
                 { c: '#DC2626', l: 'Stalled',      n: scopedLoans.filter(l => l.sla === 'red').length },
               ].map((k, i) => (
@@ -289,7 +289,7 @@ const CommandDashboardArtboard = ({ context = 'operator' } = {}) => {
                 const x = m ? parseFloat(m[1]) + 30 : 100;
                 const y = m ? parseFloat(m[2]) + 40 : 100;
                 return (
-                  <text key={'a-' + i} x={x} y={y} fontSize="9" fill="#0E2A47" fontFamily="JetBrains Mono, monospace" fontWeight="600" opacity="0.7">
+                  <text key={'a-' + i} x={x} y={y} fontSize="9" fill="#00334A" fontFamily="JetBrains Mono, monospace" fontWeight="600" opacity="0.7">
                     +{a.pct.toFixed(1)}%
                   </text>
                 );

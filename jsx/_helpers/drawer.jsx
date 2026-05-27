@@ -168,7 +168,7 @@ const Drawer = ({ loan, open, onClose }) => {
                 </div>
                 {(loan.owners || []).map((o, i) => (
                   <div key={i} className="stip-row">
-                    <Avatar person={{ initials: o.initials, bg: '#0E2A47' }}/>
+                    <Avatar person={{ initials: o.initials, bg: '#00334A' }}/>
                     <div>
                       <div className="stip-label">{o.name}</div>
                       <div className="stip-owner">{o.org}</div>
@@ -224,7 +224,7 @@ const Drawer = ({ loan, open, onClose }) => {
               </div>
               {(loan.owners || []).map((o, i) => (
                 <div key={i} className="act-item">
-                  <div className="act-ava"><Avatar person={{ initials: o.initials, bg: '#0E2A47' }}/></div>
+                  <div className="act-ava"><Avatar person={{ initials: o.initials, bg: '#00334A' }}/></div>
                   <div className="act-body">
                     <div><b>{o.name}</b> — origination team</div>
                     <div className="act-detail">{o.org}</div>

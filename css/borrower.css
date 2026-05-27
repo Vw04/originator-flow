@@ -125,7 +125,7 @@
   font-weight: 600;
 }
 .timeline-dot-big.done { background: var(--h-green); border-color: var(--h-green); color: #fff; }
-.timeline-dot-big.current { border-color: var(--h-green); color: var(--h-green); box-shadow: 0 0 0 4px rgba(14,42,71,0.12); }
+.timeline-dot-big.current { border-color: var(--h-green); color: var(--h-green); box-shadow: 0 0 0 4px rgba(0,51,74,0.12); }
 .timeline-conn { flex: 1; height: 2px; background: var(--h-line); max-width:100%; }
 .timeline-conn.done { background: var(--h-green); }
 .timeline-lbl { font-size: 10px; color: var(--h-ink-3); text-transform: uppercase; letter-spacing: 0.05em; text-align: center; }

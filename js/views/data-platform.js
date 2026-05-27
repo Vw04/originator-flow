@@ -220,7 +220,7 @@ const DataPlatformView = {
       kpis.map(k => `
         <div class="stat-item">
           <div class="stat-label">${k.label}</div>
-          <div class="stat-value" style="font-size:26px${k.accent ? `;color:${k.accentColor}` : ''}">${k.value}</div>
+          <div class="stat-value"${k.accent ? ` style="color:${k.accentColor}"` : ''}>${k.value}</div>
           <div class="stat-desc">${k.sub}</div>
         </div>`).join('')
     }</div>`;
@@ -517,7 +517,7 @@ const DataPlatformView = {
           ${kpis.map(k => `
             <div class="stat-item">
               <div class="stat-label">${k.label}</div>
-              <div class="stat-value" style="font-size:26px">${k.value}</div>
+              <div class="stat-value">${k.value}</div>
               <div class="stat-desc">${k.sub}</div>
             </div>`).join('')}
         </div>
@@ -824,7 +824,7 @@ const DataPlatformView = {
       { label: 'Distributions',      value: '$' + (p.distributions / 1e3).toFixed(1) + 'K' },
     ];
     const kpiHtml = `<div class="stat-row" style="margin-bottom:24px">${kpis.map(k =>
-      `<div class="stat-item"><div class="stat-label">${k.label}</div><div class="stat-value" style="font-size:24px${k.accent ? ';color:var(--h-action)' : ''}">${k.value}</div></div>`
+      `<div class="stat-item"><div class="stat-label">${k.label}</div><div class="stat-value"${k.accent ? ' style="color:var(--h-action)"' : ''}>${k.value}</div></div>`
     ).join('')}</div>`;
 
     /* ── Token / Secondary Market ── */
@@ -1466,7 +1466,7 @@ const DataPlatformView = {
       kpis.map(k => `
         <div class="stat-item">
           <div class="stat-label">${k.label}</div>
-          <div class="stat-value" style="font-size:26px${k.accent ? ';color:var(--h-error)' : ''}">${k.value}</div>
+          <div class="stat-value"${k.accent ? ' style="color:var(--h-error)"' : ''}>${k.value}</div>
           <div class="stat-desc">${k.sub}</div>
         </div>`).join('')
     }</div>`;
@@ -3090,23 +3090,23 @@ const DataPlatformView = {
       <div class="stat-row" style="margin-bottom:24px">
         <div class="stat-item">
           <div class="stat-label">Total Batches</div>
-          <div class="stat-value" style="font-size:26px">${batches.length}</div>
+          <div class="stat-value">${batches.length}</div>
         </div>
         <div class="stat-divider"></div>
         <div class="stat-item">
           <div class="stat-label">Eligible for Batching</div>
-          <div class="stat-value" style="font-size:26px;color:${eligible.length > 0 ? 'var(--h-action)' : 'inherit'}">${eligible.length}</div>
+          <div class="stat-value"${eligible.length > 0 ? ' style="color:var(--h-action)"' : ''}>${eligible.length}</div>
           <div class="stat-desc">completed, unbatched</div>
         </div>
         <div class="stat-divider"></div>
         <div class="stat-item">
           <div class="stat-label">Pending Issuance</div>
-          <div class="stat-value" style="font-size:26px">${pendingIssuance}</div>
+          <div class="stat-value">${pendingIssuance}</div>
         </div>
         <div class="stat-divider"></div>
         <div class="stat-item">
           <div class="stat-label">Issued</div>
-          <div class="stat-value" style="font-size:26px;color:var(--h-success)">${issued}</div>
+          <div class="stat-value" style="color:var(--h-success)">${issued}</div>
         </div>
       </div>`;
 
@@ -3238,17 +3238,17 @@ const DataPlatformView = {
       <div class="stat-row" style="margin-bottom:24px">
         <div class="stat-item">
           <div class="stat-label">Total Activations</div>
-          <div class="stat-value" style="font-size:26px">${activations.length}</div>
+          <div class="stat-value">${activations.length}</div>
         </div>
         <div class="stat-divider"></div>
         <div class="stat-item">
           <div class="stat-label">Total HOM Minted</div>
-          <div class="stat-value" style="font-size:26px">${totalTokens.toFixed(1)}</div>
+          <div class="stat-value">${totalTokens.toFixed(1)}</div>
         </div>
         <div class="stat-divider"></div>
         <div class="stat-item">
           <div class="stat-label">Total USD Value</div>
-          <div class="stat-value" style="font-size:26px">${Display.currency(totalUSD)}</div>
+          <div class="stat-value">${Display.currency(totalUSD)}</div>
         </div>
         <div class="stat-divider"></div>
         <div class="stat-item">

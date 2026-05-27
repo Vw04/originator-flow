@@ -276,7 +276,7 @@ const CommandCenterMap = ({ LOANS, STAGES, openLoan, selected, hovered, setHover
     if (l.stageKey === 'funded') return '#16A34A';
     if (l.sla === 'red') return '#DC2626';
     if (l.sla === 'amber') return '#D97706';
-    return '#0E2A47';
+    return '#00334A';
   };
   const loanById = (id) => LOANS.find(l => l.id === id);
 
@@ -290,7 +290,7 @@ const CommandCenterMap = ({ LOANS, STAGES, openLoan, selected, hovered, setHover
         <div style={{display:'flex', gap:14}}>
           {[
             { c:'#16A34A', l:'Funded', n:1 },
-            { c:'#0E2A47', l:'On track', n:5 },
+            { c:'#00334A', l:'On track', n:5 },
             { c:'#D97706', l:'Stage aging', n:1 },
             { c:'#DC2626', l:'Stage stalled', n:1 },
           ].map((k,i) => (

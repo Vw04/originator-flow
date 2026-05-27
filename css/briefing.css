@@ -13,7 +13,7 @@
 .brf-mast-l { display: flex; align-items: baseline; gap: 14px; }
 .brf-mast-mark {
   width: 38px; height: 38px; border-radius: 8px;
-  background: #0E2A47; color: #fff;
+  background: #00334A; color: #fff;
   font-family: var(--font-serif); font-size: 22px;
   display: grid; place-items: center; align-self: center;
 }
@@ -35,7 +35,7 @@
   line-height: 1.05; letter-spacing: -0.03em; margin-bottom: 18px;
   text-wrap: pretty;
 }
-.brf-lead em { font-style: italic; color: #0E2A47; }
+.brf-lead em { font-style: italic; color: #00334A; }
 .brf-deck {
   font-family: var(--font-serif); font-size: 18px; font-weight: 300; font-style: italic;
   color: #4D4A42; line-height: 1.45; max-width: 660px; margin-bottom: 38px;
@@ -97,13 +97,13 @@
 }
 .brf-loan-ribbon.red { background: #FBE7E3; color: #B0382C; }
 .brf-loan-ribbon.amber { background: #FBF1D6; color: #8A6414; }
-.brf-loan-ribbon.green { background: #DDEBE2; color: #0E2A47; }
+.brf-loan-ribbon.green { background: #DDEBE2; color: #00334A; }
 .brf-loan-headline {
   font-family: var(--font-serif); font-size: 24px; font-weight: 300;
   line-height: 1.2; letter-spacing: -0.015em; margin-bottom: 8px;
   cursor: pointer;
 }
-.brf-loan-headline:hover { color: #0E2A47; text-decoration: underline; text-underline-offset: 4px; }
+.brf-loan-headline:hover { color: #00334A; text-decoration: underline; text-underline-offset: 4px; }
 .brf-loan-byline {
   font-size: 12px; color: #8B8473; font-family: var(--font-mono);
   margin-bottom: 14px; letter-spacing: 0.02em;
@@ -145,7 +145,7 @@
 .brf-aside-stage-seg {
   flex: 1; height: 4px; border-radius: 1px; background: #EBE5D2;
 }
-.brf-aside-stage-seg.done { background: #0E2A47; }
+.brf-aside-stage-seg.done { background: #00334A; }
 .brf-aside-stage-seg.cur { background: #C2A14A; }
 .brf-aside-stage-seg.bad { background: #B0382C; }
 

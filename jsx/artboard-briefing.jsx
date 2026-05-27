@@ -154,7 +154,7 @@ const BriefingArtboard = () => {
 
         {sortedLoans.filter(l => l.sla === 'green' && l.stageKey !== 'funded').slice(0, 3).map((l, idx) => (
           <article key={l.id} className="brf-loan">
-            <div className="brf-loan-rank" style={{color:'#0E2A47'}}>{String(idx+1).padStart(2,'0')}</div>
+            <div className="brf-loan-rank" style={{color:'#00334A'}}>{String(idx+1).padStart(2,'0')}</div>
             <div>
               <h2 className="brf-loan-headline" onClick={() => openLoan(l)}>
                 {headlines[l.id] || `${l.borrower} progressing through ${STAGES[l.stageIdx].label}`}
@@ -170,7 +170,7 @@ const BriefingArtboard = () => {
               </div>
             </div>
             <div className="brf-loan-aside" style={{background:'transparent', borderColor:'transparent', padding:0, width:160}}>
-              <div className="brf-aside-row"><span className="lbl">Stage</span><span className="val" style={{fontSize:12, fontFamily:'var(--font-sans)', color:'#0E2A47', fontWeight:600}}>{STAGES[l.stageIdx].short}</span></div>
+              <div className="brf-aside-row"><span className="lbl">Stage</span><span className="val" style={{fontSize:12, fontFamily:'var(--font-sans)', color:'#00334A', fontWeight:600}}>{STAGES[l.stageIdx].short}</span></div>
               <div className="brf-aside-stage">
                 {l.progress.map((s, i) => (
                   <div key={i} className={`brf-aside-stage-seg ${s === 'done' ? 'done' : s === 'current' ? 'cur' : ''}`}/>
@@ -189,7 +189,7 @@ const BriefingArtboard = () => {
 
         {LOANS.filter(l => l.stageKey === 'funded').map(l => (
           <article key={l.id} className="brf-loan">
-            <div className="brf-loan-rank" style={{color:'#0E2A47', fontStyle:'italic'}}>✓</div>
+            <div className="brf-loan-rank" style={{color:'#00334A', fontStyle:'italic'}}>✓</div>
             <div>
               <span className="brf-loan-ribbon green">Funded · {fmt$(l.amount)}</span>
               <h2 className="brf-loan-headline" onClick={() => openLoan(l)}>

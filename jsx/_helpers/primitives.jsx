@@ -12,7 +12,7 @@ const Avatar = ({ person, size = 'md', live = false, style = {} }) => {
   if (!person) return null;
   const cls = 'ava' + (size === 'lg' ? ' ava-lg' : '') + (live ? ' ava-live' : '');
   return (
-    <span className={cls} style={{ background: person.bg || '#0E2A47', position: 'relative', ...style }}>
+    <span className={cls} style={{ background: person.bg || '#00334A', position: 'relative', ...style }}>
       {person.initials || (person.name || '?').split(' ').map(s => s[0]).slice(0, 2).join('')}
     </span>
   );

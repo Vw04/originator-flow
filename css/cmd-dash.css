@@ -21,17 +21,18 @@
 }
 .cmd-kpi:last-child { border-right: 0; }
 .cmd-kpi-lbl {
-  font-size: 10px; letter-spacing: 0.08em; text-transform: uppercase;
-  color: var(--h-ink-3, #9CA3AF); font-weight: 600; margin-bottom: 6px;
+  font-size: 11px; letter-spacing: 0.06em; text-transform: uppercase;
+  color: var(--h-text-muted, #9BA6AE); font-weight: 600; margin-bottom: 6px;
 }
 .cmd-kpi-val {
   font-family: var(--font-serif, 'IvyPresto Display', serif);
-  font-size: 26px; font-weight: 300; line-height: 1;
-  letter-spacing: -0.02em;
+  font-size: 36px; font-weight: 300; line-height: 1;
+  color: var(--h-text-heading, #00334A);
+  font-feature-settings: 'tnum' 1, 'lnum' 1, 'zero' 0;
 }
 .cmd-kpi-val.danger { color: var(--h-red, #DC2626); }
 .cmd-kpi-sub {
-  font-size: 11px; color: var(--h-ink-3, #9CA3AF);
+  font-size: 11px; color: var(--h-text-muted, #9BA6AE);
   margin-top: 6px;
 }
 
@@ -56,9 +57,9 @@
 }
 .cmd-map-title {
   font-family: var(--font-serif, 'IvyPresto Display', serif);
-  font-size: 22px; font-weight: 300; letter-spacing: -0.02em;
+  font-size: 20px; font-weight: 300; color: var(--h-text-heading, #00334A);
 }
-.cmd-map-title em { font-style: italic; color: var(--h-green, #0E2A47); }
+.cmd-map-title em { font-style: italic; color: var(--h-green, #00334A); }
 .cmd-map-sub { font-size: 11px; color: var(--h-ink-3, #9CA3AF); margin-top: 2px; }
 
 /* Program selector dropdown — switches map between DC / Utah / Tobias Harris. */
@@ -67,7 +68,7 @@
   font-family: var(--font-sans, 'Inter', sans-serif);
   font-size: 13px;
   font-weight: 500;
-  color: var(--h-green, #0E2A47);
+  color: var(--h-green, #00334A);
   padding: 4px 28px 4px 10px;
   background: #fff;
   border: 1px solid #BFD3E8;
@@ -75,12 +76,12 @@
   cursor: pointer;
   appearance: none;
   -webkit-appearance: none;
-  background-image: url("data:image/svg+xml,%3Csvg width='10' height='6' viewBox='0 0 10 6' fill='none' xmlns='http://www.w3.org/2000/svg'%3E%3Cpath d='M1 1l4 4 4-4' stroke='%230E2A47' stroke-width='1.4' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E");
+  background-image: url("data:image/svg+xml,%3Csvg width='10' height='6' viewBox='0 0 10 6' fill='none' xmlns='http://www.w3.org/2000/svg'%3E%3Cpath d='M1 1l4 4 4-4' stroke='%2300334A' stroke-width='1.4' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E");
   background-repeat: no-repeat;
   background-position: right 10px center;
 }
-.cmd-program-select:hover { border-color: #0E2A47; }
-.cmd-program-select:focus { outline: none; border-color: #0E2A47; box-shadow: 0 0 0 3px rgba(14,42,71,0.12); }
+.cmd-program-select:hover { border-color: #00334A; }
+.cmd-program-select:focus { outline: none; border-color: #00334A; box-shadow: 0 0 0 3px rgba(0,51,74,0.12); }
 
 /* MSA appreciation legend */
 .cmd-app-legend {
@@ -101,7 +102,7 @@
 
 /* Highlight active program in the by-program rail */
 .cmd-prog-row.active {
-  background: rgba(14,42,71,0.05);
+  background: rgba(0,51,74,0.05);
   margin: 0 -8px; padding-left: 8px; padding-right: 8px;
   border-radius: 6px;
 }
@@ -166,7 +167,7 @@
   height: 8px; background: var(--h-line-2, #F0EEE8);
   border-radius: 4px; overflow: hidden;
 }
-.cmd-stage-fill { height: 100%; background: var(--h-green, #0E2A47); border-radius: 4px; transition: width 0.3s; }
+.cmd-stage-fill { height: 100%; background: var(--h-green, #00334A); border-radius: 4px; transition: width 0.3s; }
 .cmd-stage-num { font-size: 11px; color: var(--h-ink, #1A1A18); font-weight: 600; text-align: right; }
 
 /* Program rows */
@@ -193,7 +194,7 @@
 .cmd-co-sub { font-size: 11px; color: var(--h-ink-3, #9CA3AF); margin-top: 2px; }
 .cmd-co-loans {
   font-family: var(--font-mono, 'JetBrains Mono', monospace);
-  font-size: 16px; font-weight: 600; color: var(--h-green, #0E2A47);
+  font-size: 16px; font-weight: 600; color: var(--h-green, #00334A);
 }
 .cmd-co-vol { font-size: 11px; color: var(--h-ink-3, #9CA3AF); margin-top: 2px; }
 

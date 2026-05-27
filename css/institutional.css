@@ -9,9 +9,9 @@
    exploratory palette used only by the v2 loan-origination artboards. */
 .ab-institutional, .ab-investor, .ab-spatial, .ab-atrium,
 .ab-terminal, .ab-mission, .ab-briefing, .ab-command-dashboard {
-  --h-green:         #0E2A47;     /* exploratory artboard token */
-  --h-green-dark:    #0A2038;
-  --h-green-light:   #1E3F62;
+  --h-green:         #00334A;     /* 2026-05-27: aligned to canon --h-action (teal-900) */
+  --h-green-dark:    #001F2E;     /* canon --h-action-pressed */
+  --h-green-light:   #0A4D6B;     /* canon --h-action-hover (teal-700) */
   --h-mint:          #E6EDF5;
   --h-mint-strong:   #BFD3E8;
   --h-paper:         #FBFAF7;
@@ -122,7 +122,7 @@
   display: flex; align-items: flex-end; justify-content: space-between;
   border-bottom: 1px solid var(--h-line-2);
 }
-.inst-title { font-family: var(--font-serif); font-size: 34px; font-weight: 300; line-height: 1.05; letter-spacing: -0.02em; }
+.inst-title { font-family: var(--font-serif); font-size: 28px; font-weight: 300; line-height: 1.05; color: var(--h-green); }
 .inst-title em { font-style: italic; color: var(--h-green); }
 .inst-subtitle { font-size: 12px; color: var(--h-ink-3); margin-top: 4px; }
 
@@ -161,16 +161,16 @@
 .inst-stat { padding: 18px 22px; border-right: 1px solid var(--h-line-2); }
 .inst-stat:last-child { border-right: none; }
 .inst-stat-label {
-  font-size: 10px; font-weight: 600; letter-spacing: 0.1em;
+  font-size: 11px; font-weight: 600; letter-spacing: 0.06em;
   text-transform: uppercase; color: var(--h-ink-3); margin-bottom: 6px;
 }
-.inst-stat-value { font-family: var(--font-serif); font-size: 28px; font-weight: 300; line-height: 1; letter-spacing: -0.02em; }
+.inst-stat-value { font-family: var(--font-serif); font-size: 36px; font-weight: 300; line-height: 1; color: var(--h-green); font-feature-settings: 'tnum' 1, 'lnum' 1, 'zero' 0; }
 .inst-stat-value.danger { color: var(--h-red); }
 .inst-stat-desc { font-size: 11px; color: var(--h-ink-3); margin-top: 6px; }
 
 /* filter bar */
 .inst-filters {
-  display: flex; align-items: center; gap: 10px;
+  display: flex; align-items: center; gap: 8px;
   padding: 20px 40px 12px;
 }
 .inst-filter-search {
@@ -188,7 +188,7 @@
   color: var(--h-ink-2); cursor: pointer;
   display: inline-flex; align-items: center; gap: 6px;
 }
-.inst-filter.active { background: var(--h-mint); color: var(--h-green); border-color: transparent; font-weight: 600; }
+.inst-filter.active { background: #F2F0EA; color: var(--h-green); border-color: var(--h-line); font-weight: 500; }
 .inst-view-toggle { display: flex; border: 1px solid var(--h-line); border-radius: 8px; overflow: hidden; background: #fff; margin-left: auto; }
 .inst-view-toggle button { padding: 7px 12px; font-size: 12px; color: var(--h-ink-2); }
 .inst-view-toggle button.active { background: var(--h-green); color: #fff; }
@@ -242,7 +242,7 @@
 .stage-dot.done { background: var(--h-green); border-color: var(--h-green); }
 .stage-dot.current {
   background: #fff; border-color: var(--h-green);
-  box-shadow: 0 0 0 3px rgba(14,42,71,0.15);
+  box-shadow: 0 0 0 3px rgba(0,51,74,0.15);
 }
 .stage-dot.current::before {
   content: ''; position: absolute; inset: 2.5px; border-radius: 50%;
