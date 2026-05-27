@@ -209,12 +209,24 @@ const ProfileView = {
 
     /* Platform-operator user type — Member/Admin/View-only dropdown
        lives inside the user-info card (moved out of header actions).
-       Uses the form-field variant so it matches Title / Phone / etc. */
-    const userTypeSelect = (isHomium && typeof PlatformRbacView !== 'undefined' && PlatformRbacView.renderUserTypeFormField)
-      ? PlatformRbacView.renderUserTypeFormField(u.id) : '';
-    const userTypeField = userTypeSelect
-      ? `<div class="form-group"><label>User type</label>${userTypeSelect}</div>`
-      : '';
+       Inline the markup so an undefined PlatformRbacView method or an
+       uninitialized _state never silently suppresses the field. */
+    const userTypeField = isHomium ? (() => {
+      const initial = (typeof PlatformRbacView !== 'undefined' && PlatformRbacView._ensureState)
+        ? (PlatformRbacView._ensureState(u.id)?.type || 'member')
+        : 'member';
+      const t = (initial === 'n/a') ? 'member' : initial;
+      return `
+        <div class="form-group">
+          <label>User type</label>
+          <select class="select-input" id="rb-typesel-${u.id}"
+                  onchange="if(typeof PlatformRbacView!=='undefined'&&PlatformRbacView.changeType)PlatformRbacView.changeType('${u.id}', this)">
+            <option value="admin"${t==='admin'?' selected':''}>Admin</option>
+            <option value="member"${t==='member'?' selected':''}>Member</option>
+            <option value="view-only"${t==='view-only'?' selected':''}>View-only</option>
+          </select>
+        </div>`;
+    })() : '';
 
     /* "User information" card per Figma */
     const userInfoCard = `

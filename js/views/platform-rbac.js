@@ -1246,6 +1246,11 @@ const PlatformRbacView = (() => {
   return {
     render,
 
+    /* Lazy-initializes per-user permission state and returns it. Exposed
+       so ProfileView can read the current user-type for the inline User
+       type dropdown without going through the IIFE-local _state map. */
+    _ensureState,
+
     /* Permission-content fragments mounted by the consolidated user
        profile page (ProfileView). Each returns just the section bodies
        — no back-link, no header, no outer rbac-root wrapper (ProfileView
