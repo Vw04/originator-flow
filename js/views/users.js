@@ -73,7 +73,7 @@ const UsersView = {
           </div>
         </div>
         <div class="onboarding-banner-actions">
-          ${pending > 0 ? `<span style="font-size:12px;color:var(--color-warning);font-weight:600">${pending} pending</span>` : ''}
+          ${pending > 0 ? `<span style="font-size:12px;color:var(--h-warning);font-weight:600">${pending} pending</span>` : ''}
           <a class="btn btn-ghost btn-sm" onclick="Router.navigate('/onboarding')">View Full Report →</a>
         </div>
       </div>`;
@@ -179,8 +179,8 @@ const UsersView = {
         const branchObj = State.getBranch(a.branchId);
         const branchLabel = branchObj?.name?.replace(/^Branch ([A-Z]) — /, '$1 — ') || a.branchId;
         const ut = a.userType === 'lo' ? 'LO' : 'Std';
-        const utColor = a.userType === 'lo' ? '#1f6f43' : 'var(--color-text-muted)';
-        const utBg = a.userType === 'lo' ? '#e6f4ec' : 'var(--color-surface)';
+        const utColor = a.userType === 'lo' ? '#1f6f43' : 'var(--h-text-muted)';
+        const utBg = a.userType === 'lo' ? '#e6f4ec' : 'var(--h-pearl)';
         const bmDot = a.flags?.branchManager ? `<span style="margin-left:4px;background:#fff7e6;color:#a35c00;padding:0 4px;border-radius:3px;font-size:9px;font-weight:700">BM</span>` : '';
         return `<span class="tag" style="margin-right:4px;font-size:10px;background:${utBg};color:${utColor};padding:2px 6px">${branchLabel} · ${ut}${bmDot}</span>`;
       }).join('') || '<span class="text-muted" style="font-size:11px">—</span>';
@@ -194,7 +194,7 @@ const UsersView = {
           const s = State.getLicenseExpiryStatus(l, today);
           if (s && (s.tier === 'critical' || s.tier === 'warning' || s.tier === 'expired' || s.tier === 'inactive')) expiring++;
         });
-        const color = expiring > 0 ? 'var(--color-warning)' : 'var(--color-success)';
+        const color = expiring > 0 ? 'var(--h-warning)' : 'var(--h-success)';
         const text = expiring > 0 ? `${licenses.length} states · ${expiring} alert${expiring === 1 ? '' : 's'}` : `${licenses.length} states · valid`;
         licChip = `<span class="tag" style="font-size:10px;background:${expiring > 0 ? '#fff7e6' : '#e6f4ec'};color:${color}">${text}</span>`;
       }
@@ -461,9 +461,9 @@ const UsersView = {
     const match = State.getUsers().find(u => u.agentNmlsId === id);
     if (match && Array.isArray(match.licenses) && match.licenses.length) {
       const codes = match.licenses.filter(l => l.active).map(l => State.getMarket(l.marketId)?.code).filter(Boolean);
-      return `<span style="color:var(--color-success)">✓ NMLS preview: ${match.licenses.length} license${match.licenses.length === 1 ? '' : 's'} on file (${codes.join(', ')}). Daily sync will keep these current.</span>`;
+      return `<span style="color:var(--h-success)">✓ NMLS preview: ${match.licenses.length} license${match.licenses.length === 1 ? '' : 's'} on file (${codes.join(', ')}). Daily sync will keep these current.</span>`;
     }
-    return `<span style="color:var(--color-text-muted)">NMLS ID ${id} — no preview seeded. Licenses will populate after the daily sync.</span>`;
+    return `<span style="color:var(--h-text-muted)">NMLS ID ${id} — no preview seeded. Licenses will populate after the daily sync.</span>`;
   },
 
   submitInvite() {

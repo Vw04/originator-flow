@@ -115,7 +115,7 @@ const NewApplicationStepperView = {
                    oninput="NewApplicationStepperView._set('coBorrower', this.value)"
                    placeholder="John Smith" />
           </div>
-          <div style="font-size:12px;color:var(--color-text-secondary);background:var(--color-bg);padding:10px 12px;border-radius:var(--radius);margin-top:4px">
+          <div style="font-size:12px;color:var(--h-text-secondary);background:var(--h-bg);padding:10px 12px;border-radius:var(--radius);margin-top:4px">
             Names must match the IDs on file. Mismatches block downstream KYC re-checks at our underwriting partner.
           </div>
         </div>
@@ -198,7 +198,7 @@ const NewApplicationStepperView = {
 
     // review
     const d = this._data;
-    const nice = (v) => v && v.length ? v : '<span style="color:var(--color-text-muted)">—</span>';
+    const nice = (v) => v && v.length ? v : '<span style="color:var(--h-text-muted)">—</span>';
     return `
       <div class="newapp-review">
         <div><b>Borrower:</b> ${nice([d.borrowerFirst, d.borrowerLast].filter(Boolean).join(' '))}</div>
@@ -208,7 +208,7 @@ const NewApplicationStepperView = {
         <div><b>Program:</b> ${nice(d.program)}</div>
         <div><b>Amount:</b> ${d.amount ? '$' + Number(d.amount).toLocaleString() : '—'}</div>
         <div><b>Term:</b> ${nice(d.term)} years</div>
-        <div style="margin-top:14px;padding-top:14px;border-top:1px solid var(--color-border-light);color:var(--color-text-secondary);font-size:12px;line-height:1.5">
+        <div style="margin-top:14px;padding-top:14px;border-top:1px solid var(--h-border-subtle);color:var(--h-text-secondary);font-size:12px;line-height:1.5">
           On submit, this application is flagged to our underwriting team for review.
           You'll receive notifications as it advances — or if our team places a note
           requesting more from you or your borrower.
@@ -244,7 +244,7 @@ const NewApplicationStepperView = {
       position: 'fixed',
       bottom: '24px',
       right: '24px',
-      background: 'var(--color-primary)',
+      background: 'var(--h-action)',
       color: '#fff',
       padding: '12px 18px',
       borderRadius: 'var(--radius)',

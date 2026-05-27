@@ -50,7 +50,7 @@ const MobileNotificationsView = {
                 <div class="m-notif-msg">${n.msg}</div>
                 <div class="m-notif-meta">
                   ${n.loanId ? `<span class="m-notif-loan-id">${n.loanId}</span><span class="m-notif-dot">&middot;</span>` : ''}
-                  ${n.borrowerName ? `<span style="font-size:11px;color:var(--color-text-secondary)">${n.borrowerName}</span><span class="m-notif-dot">&middot;</span>` : ''}
+                  ${n.borrowerName ? `<span style="font-size:11px;color:var(--h-text-secondary)">${n.borrowerName}</span><span class="m-notif-dot">&middot;</span>` : ''}
                   <span class="m-notif-time">${n.time}</span>
                 </div>
               </div>

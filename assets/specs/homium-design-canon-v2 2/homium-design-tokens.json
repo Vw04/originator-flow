@@ -1,0 +1,139 @@
+{
+  "_meta": {
+    "version": "2026-05-26",
+    "note": "Homium design tokens — canon override pass. Purple removed. Semantic tokens confirmed. IvyPresto Display is the heading font; Source Serif 4 is not used. See CLAUDE.md for full typography spec.",
+    "changes_from_prior": [
+      "Removed: color.purple (#7C3AED) — brand forbids decorative purple, token was unused",
+      "Confirmed canonical: success #1A8754, warning #B8860B, info #1A6E8E",
+      "Typography note added: heading font is IvyPresto Display 300 (not Source Serif 4)"
+    ]
+  },
+  "Homium Brand": {
+    "color": {
+      "brand": {
+        "teal-900": { "value": "#00334A", "type": "color", "description": "Logo, headings, nav — brand anchor. Action color (light mode)." },
+        "teal-700": { "value": "#0A4D6B", "type": "color", "description": "Hover states" },
+        "teal-500": { "value": "#1A6E8E", "type": "color", "description": "Active / Focus / Info semantic" },
+        "teal-200": { "value": "#A3C5D4", "type": "color", "description": "Subtle fills" },
+        "teal-50":  { "value": "#E0EDF3", "type": "color", "description": "Tinted backgrounds, info bg, avatar bg" },
+        "green-900": { "value": "#0D6B40", "type": "color", "description": "Pressed state" },
+        "green-700": { "value": "#117A4A", "type": "color", "description": "Hover state" },
+        "green-500": { "value": "#14935F", "type": "color", "description": "Primary CTA / Action Accent. All primary buttons. NEVER in charts or avatars." },
+        "green-200": { "value": "#A8D7BE", "type": "color", "description": "Subtle fills" },
+        "green-50":  { "value": "#E4F3EB", "type": "color", "description": "Success pill bg, success banner bg" }
+      },
+      "neutral": {
+        "midnight":  { "value": "#061D29", "type": "color", "description": "Reserved — prefer --h-text-heading for headings" },
+        "slate":     { "value": "#2D3E4A", "type": "color", "description": "Default text color (--h-text-primary)" },
+        "gray-500":  { "value": "#6B7A85", "type": "color", "description": "Muted text, captions (--h-text-secondary)" },
+        "gray-300":  { "value": "#9BA6AE", "type": "color", "description": "Placeholders, column headers (--h-text-muted)" },
+        "gray-200":  { "value": "#C4C9CC", "type": "color", "description": "Disabled text (--h-text-disabled)" },
+        "stone":     { "value": "#E0DDD6", "type": "color", "description": "Borders, dividers, card outlines" },
+        "warm-gray": { "value": "#EDEBE6", "type": "color", "description": "Subtle borders, row dividers" },
+        "bg":        { "value": "#F9F8F4", "type": "color", "description": "Page background (--h-bg). Warm, airy." },
+        "sand":      { "value": "#F2F0EA", "type": "color", "description": "Hover-state tint; nested expanded backgrounds" },
+        "pearl":     { "value": "#F8F7F4", "type": "color", "description": "Alt surface, zebra rows, readonly/disabled input fills" },
+        "white":     { "value": "#FFFFFF", "type": "color", "description": "Card surfaces" }
+      },
+      "semantic": {
+        "success":      { "value": "#1A8754", "type": "color", "description": "Gains, confirmations, loan funded, appreciation. Status dots for Active/Complete. NOT the CTA green." },
+        "success-bg":   { "value": "#E4F3EB", "type": "color", "description": "Success banners, positive pill fills" },
+        "warning":      { "value": "#B8860B", "type": "color", "description": "Pending review, approaching limits. Status dots for KYC Pending." },
+        "warning-bg":   { "value": "#FEF3E2", "type": "color", "description": "Warning banners, alert pill fills" },
+        "error":        { "value": "#C4382A", "type": "color", "description": "Failed, rejected, overdue, depreciation. Alert KPI (text only)." },
+        "error-bg":     { "value": "#FDE8E6", "type": "color", "description": "Error banners, destructive pill fills" },
+        "info":         { "value": "#1A6E8E", "type": "color", "description": "Neutral info, tooltips, onboarding. Same as teal-500." },
+        "info-bg":      { "value": "#E0EDF3", "type": "color", "description": "Info banners, help pill fills. Same as teal-50." }
+      },
+      "dataviz": {
+        "note": "Teal monochromatic. Single-variable: teal-900 with opacity stepping. Multi-series: categorical order below. NEVER use green in chart fills.",
+        "sequential-1": { "value": "#E0EDF3", "type": "color", "description": "Lightest — choropleth, heatmap step 1" },
+        "sequential-2": { "value": "#B0D4E3", "type": "color" },
+        "sequential-3": { "value": "#6AADC6", "type": "color" },
+        "sequential-4": { "value": "#3088A8", "type": "color" },
+        "sequential-5": { "value": "#0A4D6B", "type": "color" },
+        "sequential-6": { "value": "#00334A", "type": "color", "description": "Darkest — teal-900" },
+        "categorical-1": { "value": "#00334A", "type": "color", "description": "Multi-series series 1" },
+        "categorical-2": { "value": "#1A6E8E", "type": "color", "description": "Multi-series series 2" },
+        "categorical-3": { "value": "#A3C5D4", "type": "color", "description": "Multi-series series 3" },
+        "step-opacity-1": { "value": "40%",  "type": "opacity", "description": "Funnel step 1 (earliest)" },
+        "step-opacity-2": { "value": "55%",  "type": "opacity" },
+        "step-opacity-3": { "value": "70%",  "type": "opacity" },
+        "step-opacity-4": { "value": "85%",  "type": "opacity" },
+        "step-opacity-5": { "value": "100%", "type": "opacity", "description": "Funnel step 5 (final)" }
+      },
+      "dark": {
+        "_note": "Dark mode deferred — Phase 3. Spec captured here for reference only.",
+        "bg":            { "value": "#071620", "type": "color", "description": "Page base" },
+        "surface-1":     { "value": "#0A1F2E", "type": "color", "description": "Cards" },
+        "surface-2":     { "value": "#122A3A", "type": "color", "description": "Elevated cards" },
+        "border":        { "value": "#1A3A4D", "type": "color", "description": "Dividers" },
+        "hover":         { "value": "#234A5E", "type": "color", "description": "Interactive hover" },
+        "text-primary":  { "value": "#FFFFFF", "type": "color" },
+        "text-secondary":{ "value": "#E8E4DF", "type": "color", "description": "Warm white — not pure white" },
+        "text-muted":    { "value": "#8A9BAA", "type": "color" },
+        "text-disabled": { "value": "#5A6E7D", "type": "color" },
+        "action":        { "value": "#D4A017", "type": "color", "description": "Dark mode action color (gold)" },
+        "green-cta":     { "value": "#1EAA6E", "type": "color", "description": "CTA brightened for dark bg" },
+        "success":       { "value": "#22B878", "type": "color" },
+        "error":         { "value": "#E07B6F", "type": "color", "description": "Softened red" },
+        "warning":       { "value": "#DBA64A", "type": "color", "description": "Softened amber" },
+        "info":          { "value": "#5AAFCC", "type": "color", "description": "Brightened teal" }
+      }
+    },
+    "typography": {
+      "font-heading": {
+        "value": "'IvyPresto Display', Georgia, 'Times New Roman', serif",
+        "type": "fontFamily",
+        "description": "Heading serif. Weight: ALWAYS 300 (light). Never bold. Used for page titles, section titles, entity headers, KPI display numbers."
+      },
+      "font-body": {
+        "value": "'Inter', -apple-system, BlinkMacSystemFont, sans-serif",
+        "type": "fontFamily",
+        "description": "Body / UI font. Used for everything that is not a heading. Tabular feature settings on all numeric content."
+      },
+      "font-mono": {
+        "value": "'SF Mono', Menlo, 'Courier New', monospace",
+        "type": "fontFamily",
+        "description": "Monospace. Retained for Tag--code (Loan IDs, MIN numbers, program codes) and dev widget. NOT used for general financial data — Inter tabular-nums handles that."
+      },
+      "font-heading-weight": {
+        "value": "300",
+        "type": "fontWeight",
+        "description": "IvyPresto Display — always weight 300. Never 400 or bold."
+      },
+      "numeric-feature-settings": {
+        "value": "'tnum' 1, 'lnum' 1, 'zero' 0",
+        "type": "other",
+        "description": "Apply to ALL numeric content rendered in Inter. Tabular nums + lining nums + plain circular zero."
+      }
+    },
+    "spacing": {
+      "--h-space-2":  { "value": "2px",  "type": "spacing", "description": "Micro: borders, tiny gaps" },
+      "--h-space-4":  { "value": "4px",  "type": "spacing", "description": "Tight: inside pills, label→value gaps" },
+      "--h-space-8":  { "value": "8px",  "type": "spacing", "description": "Compact: between inline elements" },
+      "--h-space-12": { "value": "12px", "type": "spacing", "description": "Snug: between related items, pill padding-x" },
+      "--h-space-16": { "value": "16px", "type": "spacing", "description": "Base: standard element spacing" },
+      "--h-space-20": { "value": "20px", "type": "spacing", "description": "Comfortable: between progress rows" },
+      "--h-space-24": { "value": "24px", "type": "spacing", "description": "Card padding — ALL cards, ALL sides. No exceptions." },
+      "--h-space-32": { "value": "32px", "type": "spacing", "description": "Reserved" },
+      "--h-space-40": { "value": "40px", "type": "spacing", "description": "Major section" },
+      "--h-space-48": { "value": "48px", "type": "spacing", "description": "Page section: large vertical breaks" },
+      "--h-space-64": { "value": "64px", "type": "spacing", "description": "Page bottom" }
+    },
+    "borderRadius": {
+      "pill":       { "value": "999px", "type": "borderRadius", "description": "Static labels/badges: role pills, status pills, entity type pills" },
+      "control":    { "value": "6px",   "type": "borderRadius", "description": "Interactive controls: filter chips, inputs, dropdown triggers, buttons" },
+      "bar-top":    { "value": "4px",   "type": "borderRadius", "description": "Contained elements: chart bar tops, code blocks" },
+      "card":       { "value": "8px",   "type": "borderRadius", "description": "Content containers: all cards, panels" },
+      "modal":      { "value": "12px",  "type": "borderRadius", "description": "Overlays: modals, dialogs" },
+      "avatar":     { "value": "50%",   "type": "borderRadius", "description": "Identity/indicator: avatars, status dots" }
+    },
+    "navigation": {
+      "rail-width":  { "value": "92px",  "type": "sizing", "description": "Global left icon rail width. Fixed position, full viewport height." },
+      "subnav-width":{ "value": "220px", "type": "sizing", "description": "Detail-page sub-nav width. Additive — not global." },
+      "content-max-width": { "value": "1500px", "type": "sizing", "description": "Max width for all page content containers." },
+      "form-max-width":    { "value": "960px",  "type": "sizing", "description": "Max width for form/wizard inner column." }
+    }
+  }
+}

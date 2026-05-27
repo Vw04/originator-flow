@@ -178,7 +178,7 @@ const MobileDetailView = {
         ${nextAction && loan.status !== 'completed' ? `
           <div class="m-info-row">
             <span class="m-info-label">Next Action</span>
-            <span class="m-info-value" style="color:var(--color-warning);font-weight:600;font-size:12px">${nextAction}</span>
+            <span class="m-info-value" style="color:var(--h-warning);font-weight:600;font-size:12px">${nextAction}</span>
           </div>
         ` : ''}
       </div>
@@ -222,14 +222,14 @@ const MobileDetailView = {
       <div class="m-section-header" style="padding-top:10px"><span class="m-section-title">Approved (${approved.length})</span></div>
       <div class="m-list">
         ${approved.map(d => `
-          <div class="m-list-item" style="border-left:3px solid var(--color-success)" onclick="MobileDetailView.viewDocument('${d.name}')">
+          <div class="m-list-item" style="border-left:3px solid var(--h-success)" onclick="MobileDetailView.viewDocument('${d.name}')">
             <div class="m-list-item-header">
               <span class="m-list-item-title" style="font-size:13px">${d.name}</span>
               <span class="status-badge status-success" style="font-size:9px;padding:2px 6px">Approved</span>
             </div>
             <div style="display:flex;align-items:center;gap:6px;margin-top:4px">
-              ${d.sentToBorrower ? '<span style="font-size:11px;color:var(--color-success)">&#10003; Sent to borrower</span>' : ''}
-              <span style="font-size:11px;color:var(--color-primary);margin-left:auto">View PDF &#8250;</span>
+              ${d.sentToBorrower ? '<span style="font-size:11px;color:var(--h-success)">&#10003; Sent to borrower</span>' : ''}
+              <span style="font-size:11px;color:var(--h-action);margin-left:auto">View PDF &#8250;</span>
             </div>
           </div>
         `).join('')}
@@ -238,7 +238,7 @@ const MobileDetailView = {
       <div class="m-section-header"><span class="m-section-title">Pending Upload (${pending.length})</span></div>
       <div class="m-list" style="padding-bottom:14px">
         ${pending.map(d => `
-          <div class="m-list-item" style="border-left:3px solid var(--color-warning)">
+          <div class="m-list-item" style="border-left:3px solid var(--h-warning)">
             <div class="m-list-item-header">
               <span class="m-list-item-title" style="font-size:13px">${d.name}</span>
               <span class="status-badge status-warning" style="font-size:9px;padding:2px 6px">Pending</span>
@@ -249,7 +249,7 @@ const MobileDetailView = {
                 <button class="m-btn-sm m-btn-sm-secondary" onclick="MobileDetailView.sendReminder('${d.name}')">Send Reminder</button>
               </div>
             ` : `
-              <div style="font-size:11px;color:var(--color-text-muted);margin-top:4px">Awaiting upload from loan officer</div>
+              <div style="font-size:11px;color:var(--h-text-muted);margin-top:4px">Awaiting upload from loan officer</div>
             `}
           </div>
         `).join('')}
@@ -275,7 +275,7 @@ const MobileDetailView = {
         </div>
         <div class="m-info-row">
           <span class="m-info-label">Rate Lock</span>
-          <span class="m-info-value">${loan.id === 'DCDC000002' ? '<span style="color:var(--color-danger)">Apr 12, 2026</span>' : 'Apr 30, 2026'}</span>
+          <span class="m-info-value">${loan.id === 'DCDC000002' ? '<span style="color:var(--h-error)">Apr 12, 2026</span>' : 'Apr 30, 2026'}</span>
         </div>
         <div class="m-info-row">
           <span class="m-info-label">Est. Close</span>
@@ -307,10 +307,10 @@ const MobileDetailView = {
       <div class="m-section-header"><span class="m-section-title">Communications</span></div>
       <div class="m-activity-list" style="padding:0 14px 14px">
         ${comms.map(c => {
-          const dotColor = { sent: 'var(--color-info, #2563EB)', done: 'var(--color-success)', due: 'var(--color-danger)' }[c.tag] || 'var(--color-text-muted)';
+          const dotColor = { sent: 'var(--h-info, #1A6E8E)', done: 'var(--h-success)', due: 'var(--h-error)' }[c.tag] || 'var(--h-text-muted)';
           const tagLabel = { sent: 'Sent', done: 'Done', due: 'Due' }[c.tag] || c.tag;
-          const tagBg = { sent: '#DBEAFE', done: '#D1FAE5', due: '#FEE2E2' }[c.tag] || 'var(--color-surface)';
-          const tagColor = { sent: '#1D4ED8', done: '#065F46', due: '#991B1B' }[c.tag] || 'var(--color-text-muted)';
+          const tagBg = { sent: '#DBEAFE', done: '#D1FAE5', due: '#FEE2E2' }[c.tag] || 'var(--h-pearl)';
+          const tagColor = { sent: '#1D4ED8', done: '#065F46', due: '#991B1B' }[c.tag] || 'var(--h-text-muted)';
           return `
             <div class="m-activity-item">
               <div class="m-activity-dot" style="background:${dotColor};border-color:${dotColor}"></div>

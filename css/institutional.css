@@ -4,8 +4,12 @@
 
 @import url('https://fonts.googleapis.com/css2?family=IvyPresto+Display:ital,wght@0,300;0,400;0,700;1,300&family=Inter:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap');
 
-:root {
-  --h-green:         #0E2A47;
+/* 2026-05-27 v2 canon: artboard tokens scoped to .ab-* roots so they don't
+   override the global --h-* token set in styles.css. These tokens are an
+   exploratory palette used only by the v2 loan-origination artboards. */
+.ab-institutional, .ab-investor, .ab-spatial, .ab-atrium,
+.ab-terminal, .ab-mission, .ab-briefing, .ab-command-dashboard {
+  --h-green:         #0E2A47;     /* exploratory artboard token */
   --h-green-dark:    #0A2038;
   --h-green-light:   #1E3F62;
   --h-mint:          #E6EDF5;
@@ -21,8 +25,8 @@
   --h-card:          #FFFFFF;
   --h-red:           #DC2626;
   --h-amber:         #D97706;
-  --h-success:       #16A34A;
-  --h-info:          #0369A1;
+  --h-success:       #16A34A;     /* artboard-local — global token = #1A8754 */
+  --h-info:          #0369A1;     /* artboard-local — global token = #1A6E8E */
   /* --h-purple removed 2026-05-26 — kit forbids decorative purple */
   --font-serif:      'IvyPresto Display', Georgia, serif;
   --font-sans:       'Inter', -apple-system, sans-serif;

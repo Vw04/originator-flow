@@ -166,7 +166,7 @@ const InvestorsView = {
       </div>`).join('') || '<span class="text-muted" style="font-size:12px">No ownership disclosed</span>';
 
     const addr = [e.address1, [e.city, e.state, e.zip].filter(Boolean).join(', ')].filter(Boolean).join(' · ') || '—';
-    const webLink = e.website ? `<a href="https://${e.website}" target="_blank" style="color:var(--color-primary)">${e.website}</a>` : '—';
+    const webLink = e.website ? `<a href="https://${e.website}" target="_blank" style="color:var(--h-action)">${e.website}</a>` : '—';
     const programChips = programs.length
       ? programs.map(p => {
           const code = (p.code || p.name.replace(/[^A-Za-z]/g, '').slice(0, 2)).toUpperCase();
@@ -194,7 +194,7 @@ const InvestorsView = {
             <div class="card-title" style="margin-bottom:14px">Contact &amp; Approver</div>
             <div class="info-grid">
               <div class="info-row"><div class="info-label">Primary Contact</div><div class="info-value">${e.contactName || '—'}</div></div>
-              <div class="info-row"><div class="info-label">Email</div><div class="info-value">${e.contactEmail ? `<a href="mailto:${e.contactEmail}" style="color:var(--color-primary)">${e.contactEmail}</a>` : '—'}</div></div>
+              <div class="info-row"><div class="info-label">Email</div><div class="info-value">${e.contactEmail ? `<a href="mailto:${e.contactEmail}" style="color:var(--h-action)">${e.contactEmail}</a>` : '—'}</div></div>
               <div class="info-row"><div class="info-label">Phone</div><div class="info-value">${e.contactPhone || '—'}</div></div>
               <div class="info-row"><div class="info-label">Investor Manager</div><div class="info-value">${e.manager || '—'}</div></div>
               <div class="info-row"><div class="info-label">Approval Role</div><div class="info-value">${e.manager ? `${e.manager} (Approver)` : '—'}</div></div>
@@ -273,8 +273,8 @@ const PlatformOperatorView = {
             <div class="info-row"><div class="info-label">Legal Name</div><div class="info-value">Homium, Inc.</div></div>
             <div class="info-row"><div class="info-label">Headquarters</div><div class="info-value">Washington, DC</div></div>
             <div class="info-row"><div class="info-label">Founded</div><div class="info-value">2024</div></div>
-            <div class="info-row"><div class="info-label">Website</div><div class="info-value"><a href="https://homium.io" target="_blank" style="color:var(--color-primary)">homium.io</a></div></div>
-            <div class="info-row"><div class="info-label">Support Email</div><div class="info-value"><a href="mailto:support@homium.io" style="color:var(--color-primary)">support@homium.io</a></div></div>
+            <div class="info-row"><div class="info-label">Website</div><div class="info-value"><a href="https://homium.io" target="_blank" style="color:var(--h-action)">homium.io</a></div></div>
+            <div class="info-row"><div class="info-label">Support Email</div><div class="info-value"><a href="mailto:support@homium.io" style="color:var(--h-action)">support@homium.io</a></div></div>
             <div class="info-row"><div class="info-label">Support Phone</div><div class="info-value">1-800-HOMIUM-0</div></div>
             <div class="info-row"><div class="info-label">Status</div><div class="info-value"><span class="badge badge-active">Operating</span></div></div>
           </div>
@@ -285,23 +285,23 @@ const PlatformOperatorView = {
             <div class="card-title" style="margin-bottom:14px">Platform at a Glance</div>
             <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:12px;text-align:center">
               <div>
-                <div style="font-family:var(--font-heading);font-size:28px;font-weight:300;color:var(--color-primary)">${homiumUsers.length}</div>
-                <div style="font-size:11px;color:var(--color-text-secondary);text-transform:uppercase;letter-spacing:0.08em">Staff</div>
+                <div style="font-family:var(--font-heading);font-size:28px;font-weight:300;color:var(--h-action)">${homiumUsers.length}</div>
+                <div style="font-size:11px;color:var(--h-text-secondary);text-transform:uppercase;letter-spacing:0.08em">Staff</div>
               </div>
               <div>
-                <div style="font-family:var(--font-heading);font-size:28px;font-weight:300;color:var(--color-primary)">${supportedMarkets}</div>
-                <div style="font-size:11px;color:var(--color-text-secondary);text-transform:uppercase;letter-spacing:0.08em">Live Markets</div>
+                <div style="font-family:var(--font-heading);font-size:28px;font-weight:300;color:var(--h-action)">${supportedMarkets}</div>
+                <div style="font-size:11px;color:var(--h-text-secondary);text-transform:uppercase;letter-spacing:0.08em">Live Markets</div>
               </div>
               <div>
-                <div style="font-family:var(--font-heading);font-size:28px;font-weight:300;color:var(--color-primary)">${livePrograms}</div>
-                <div style="font-size:11px;color:var(--color-text-secondary);text-transform:uppercase;letter-spacing:0.08em">Active Programs</div>
+                <div style="font-family:var(--font-heading);font-size:28px;font-weight:300;color:var(--h-action)">${livePrograms}</div>
+                <div style="font-size:11px;color:var(--h-text-secondary);text-transform:uppercase;letter-spacing:0.08em">Active Programs</div>
               </div>
             </div>
           </div>
 
           <div class="card">
             <div class="card-title" style="margin-bottom:10px">Regulatory</div>
-            <div style="font-size:12.5px;color:var(--color-text-secondary);line-height:1.55">
+            <div style="font-size:12.5px;color:var(--h-text-secondary);line-height:1.55">
               Homium operates as a technology platform for loan origination programs. NMLS-licensed activity is conducted by the origination companies onboarded to the platform, not by Homium directly.
             </div>
           </div>
@@ -310,7 +310,7 @@ const PlatformOperatorView = {
 
       <div class="card">
         <div class="card-title" style="margin-bottom:10px">About</div>
-        <div style="font-size:13px;color:var(--color-text);line-height:1.65;max-width:780px">
+        <div style="font-size:13px;color:var(--h-text-primary);line-height:1.65;max-width:780px">
           Homium is the institutional infrastructure for affordable-housing finance. We power Down Payment Assistance programs end to end — borrower intake, originator workflow, investor capital, and program-level reporting — so program sponsors can serve more buyers with less operational drag.
         </div>
       </div>`;
@@ -431,7 +431,7 @@ const SystemConfigView = {
     });
     const rows = ocEnab.map(({ m, ocCount, programCount }) => `
       <tr>
-        <td><span style="color:var(--color-text-muted);margin-right:6px" title="System-defined market — locked">🔒</span><strong>${m.code}</strong></td>
+        <td><span style="color:var(--h-text-muted);margin-right:6px" title="System-defined market — locked">🔒</span><strong>${m.code}</strong></td>
         <td>${m.name}</td>
         <td><span class="tag" style="text-transform:capitalize">${m.kind}</span></td>
         <td><span class="badge ${m.supported ? 'badge-active' : 'badge-pending'}">${m.supported ? 'Supported' : 'Not Live'}</span></td>
@@ -447,7 +447,7 @@ const SystemConfigView = {
     return `
       <div class="table-container">
         <div class="filter-toolbar">
-          <div style="font-size:12px;color:var(--color-text-muted)">
+          <div style="font-size:12px;color:var(--h-text-muted)">
             Markets are system-defined and cannot be deleted. Use <strong>Coming Soon</strong> to flag a market that is in pipeline but not yet live.
           </div>
         </div>
@@ -488,14 +488,14 @@ const SystemConfigView = {
           </td>
         </tr>
         ${this._expandedProgramId === p.id ? `
-        <tr><td colspan="8" style="background:var(--color-surface);padding:14px 18px">
-          <div style="font-size:12px;color:var(--color-text-muted);margin-bottom:8px"><strong>${p.name}</strong> — Pick which Markets this program can exist in. Cells the platform allows here become available for OC-level enablement.</div>
+        <tr><td colspan="8" style="background:var(--h-pearl);padding:14px 18px">
+          <div style="font-size:12px;color:var(--h-text-muted);margin-bottom:8px"><strong>${p.name}</strong> — Pick which Markets this program can exist in. Cells the platform allows here become available for OC-level enablement.</div>
           <div style="display:flex;flex-wrap:wrap;gap:10px">
             ${markets.map(m => `
-              <label style="display:inline-flex;align-items:center;gap:6px;font-size:13px;padding:5px 10px;border:1px solid var(--color-border);border-radius:6px;background:var(--color-card);cursor:pointer">
+              <label style="display:inline-flex;align-items:center;gap:6px;font-size:13px;padding:5px 10px;border:1px solid var(--h-border);border-radius:6px;background:var(--h-surface-1);cursor:pointer">
                 <input type="checkbox" ${(p.allowedMarketIds || []).includes(m.id) ? 'checked' : ''} ${!m.supported ? 'disabled' : ''}
                        onchange="SystemConfigView._toggleProgramMarket('${p.id}', '${m.id}', this.checked)">
-                <span>${m.code}</span><span style="color:var(--color-text-muted)">${m.name}</span>${!m.supported ? '<span class="tag" style="margin-left:4px;font-size:10px">soon</span>' : ''}
+                <span>${m.code}</span><span style="color:var(--h-text-muted)">${m.name}</span>${!m.supported ? '<span class="tag" style="margin-left:4px;font-size:10px">soon</span>' : ''}
               </label>`).join('')}
           </div>
         </td></tr>` : ''}`;
@@ -549,7 +549,7 @@ const SystemConfigView = {
                 <label>Allowed Markets</label>
                 <div style="display:flex;flex-wrap:wrap;gap:8px;margin-top:6px">
                   ${markets.map(m => `
-                    <label style="display:inline-flex;align-items:center;gap:5px;font-size:13px;padding:4px 9px;border:1px solid var(--color-border);border-radius:5px;cursor:pointer">
+                    <label style="display:inline-flex;align-items:center;gap:5px;font-size:13px;padding:4px 9px;border:1px solid var(--h-border);border-radius:5px;cursor:pointer">
                       <input type="checkbox" data-market-id="${m.id}" class="lp-mkt-pick"> ${m.code}
                     </label>`).join('')}
                 </div>

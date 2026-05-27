@@ -100,7 +100,7 @@ const OCCreateView = {
             <span>Eligible programs</span>
             <span class="count">${this._countEnabledPrograms()} of ${programs.length}</span>
           </div>
-          <div class="program-checklist">${programRows || '<div style="padding:14px;color:var(--color-text-muted);font-size:13px">No programs defined yet.</div>'}</div>
+          <div class="program-checklist">${programRows || '<div style="padding:14px;color:var(--h-text-muted);font-size:13px">No programs defined yet.</div>'}</div>
         </div>
 
         <div class="inst-card">
@@ -108,7 +108,7 @@ const OCCreateView = {
             <span>Market enablements</span>
             <span class="count">${enabledMarketIds.size} state${enabledMarketIds.size === 1 ? '' : 's'}</span>
           </div>
-          <div style="font-size:12px;color:var(--color-text-muted);margin-bottom:14px">Select states where this company is authorized to operate. Locked states aren't yet supported by the platform.</div>
+          <div style="font-size:12px;color:var(--h-text-muted);margin-bottom:14px">Select states where this company is authorized to operate. Locked states aren't yet supported by the platform.</div>
           <div class="state-grid">${chips}</div>
         </div>
       </div>
@@ -134,6 +134,8 @@ const OCCreateView = {
   _set(key, value) {
     if (!this._form) this._initForm();
     this._form[key] = value;
+    // 2026-05-27 canon Pattern D: mark dirty on any field change.
+    FormState.markFormDirty('oc-create-form');
   },
 
   _toggleProgram(programId, on) {
@@ -150,12 +152,15 @@ const OCCreateView = {
     App.renderView(Router.getCurrentPath());
   },
 
+  /* 2026-05-27 canon Pattern D — Cancel: explicit intent, no modal. */
   _cancel() {
     this._form = null;
     this._ocLpmIds = new Set();
-    Router.navigate('/origination-companies');
+    FormState.cancelEditForm('oc-create-form',
+      () => Router.navigateForce('/origination-companies'));
   },
 
+  /* 2026-05-27 canon Pattern D — Save: commit then force-navigate. */
   _save() {
     const f = this._form || {};
     if (!f.name || !f.nmlsId) {
@@ -178,6 +183,8 @@ const OCCreateView = {
     }
     this._form = null;
     this._ocLpmIds = new Set();
-    Router.navigate('/origination-companies/' + co.id);
+    FormState.saveEditForm('oc-create-form',
+      () => {},
+      () => Router.navigateForce('/origination-companies/' + co.id));
   },
 };

@@ -53,8 +53,19 @@ const OriginationCompaniesView = {
     return this._renderHub();
   },
 
-  enterEditMode(companyId) { Router.navigate('/origination-companies/' + companyId + '/edit'); },
-  cancelEdit(companyId)    { Router.navigate('/origination-companies/' + companyId); },
+  /* 2026-05-27 canon Pattern D — Cancel/Save via FormState. */
+  markDirty() { FormState.markFormDirty('oc-edit-form'); },
+
+  enterEditMode(companyId) {
+    Router.navigate('/origination-companies/' + companyId + '/edit');
+    setTimeout(() => FormState.captureFormSnapshot('oc-edit-form'), 0);
+  },
+
+  cancelEdit(companyId) {
+    FormState.cancelEditForm('oc-edit-form',
+      () => Router.navigateForce('/origination-companies/' + companyId));
+  },
+
   saveEdit(companyId) {
     const get = (id) => document.getElementById(id)?.value.trim();
     const patch = {
@@ -72,8 +83,9 @@ const OriginationCompaniesView = {
     const cc = get('co-cc');
     if (cc !== undefined) patch.ccEmails = cc.split(',').map(s => s.trim()).filter(Boolean);
     Object.keys(patch).forEach(k => { if (patch[k] === undefined || patch[k] === '') delete patch[k]; });
-    if (State.updateCompany) State.updateCompany(companyId, patch);
-    Router.navigate('/origination-companies/' + companyId);
+    FormState.saveEditForm('oc-edit-form',
+      () => { if (State.updateCompany) State.updateCompany(companyId, patch); },
+      () => Router.navigateForce('/origination-companies/' + companyId));
   },
 
   /* ============================================================
@@ -160,7 +172,7 @@ const OriginationCompaniesView = {
     const meta = [
       { label: 'NMLS #', value: c.nmlsId },
       { label: 'Phone',  value: c.contactPhone || '—' },
-      { label: 'Website', value: c.website ? `<a href="${c.website}" target="_blank" style="color:var(--color-primary);text-decoration:none">${websiteShort}</a>` : '—' },
+      { label: 'Website', value: c.website ? `<a href="${c.website}" target="_blank" style="color:var(--h-action);text-decoration:none">${websiteShort}</a>` : '—' },
       { label: 'Branches', value: branches.length },
       { label: 'Users',    value: users.length },
     ];
@@ -170,7 +182,7 @@ const OriginationCompaniesView = {
 
     const statusPill = c.status === 'active'
       ? `<span class="entity-status-pill">Active</span>`
-      : `<span class="entity-status-pill" style="color:var(--color-warning)">Pending Setup</span>`;
+      : `<span class="entity-status-pill" style="color:var(--h-warning)">Pending Setup</span>`;
 
     const editAction = canEdit
       ? (editing
@@ -179,6 +191,10 @@ const OriginationCompaniesView = {
       : '';
     const footer = editing ? `
       <div class="inst-footer-bar">
+        <span class="dirty-indicator">
+          <span class="dot"></span>
+          <span class="dirty-label">No changes</span>
+        </span>
         <button class="btn btn-secondary btn-sm" onclick="OriginationCompaniesView.cancelEdit('${c.id}')">Cancel</button>
         <button class="btn btn-primary btn-sm" onclick="OriginationCompaniesView.saveEdit('${c.id}')">Save changes</button>
       </div>` : '';
@@ -199,7 +215,7 @@ const OriginationCompaniesView = {
         </div>
       </div>
       ${editing ? '' : `<div class="section-tabs">${tabsHtml}</div>`}
-      <div class="page-body">${content}</div>
+      <div id="oc-edit-form" class="page-body"${editing ? ' oninput="OriginationCompaniesView.markDirty()"' : ''}>${content}</div>
       ${footer}
       <div id="company-modal-container"></div>
       <div id="company-panel-container"></div>`;
@@ -254,7 +270,7 @@ const OriginationCompaniesView = {
           ${note ? `<span class="pc-note">${note}</span>` : ''}
           <span class="pc-code">${code}</span>
         </label>`;
-    }).join('') : `<div style="padding:16px 14px;color:var(--color-text-muted);font-size:13px">No platform-defined loan programs yet.${canEdit ? ' Define one under <a href="javascript:Router.navigate(\'/system-config\')" style="color:var(--color-primary);font-weight:600">System Configuration</a>.' : ''}</div>`;
+    }).join('') : `<div style="padding:16px 14px;color:var(--h-text-muted);font-size:13px">No platform-defined loan programs yet.${canEdit ? ' Define one under <a href="javascript:Router.navigate(\'/system-config\')" style="color:var(--h-action);font-weight:600">System Configuration</a>.' : ''}</div>`;
 
     // 50-state chip grid — full set of US states. States supported by the
     // platform are clickable; unsupported states render muted/locked.
@@ -303,7 +319,7 @@ const OriginationCompaniesView = {
           <span>Market enablements</span>
           <span class="count">${enabledMarketIds.size} state${enabledMarketIds.size === 1 ? '' : 's'}</span>
         </div>
-        <div style="font-size:12px;color:var(--color-text-muted);margin-bottom:14px">Select states where this company is authorized to originate. Locked states aren't yet supported by the platform.</div>
+        <div style="font-size:12px;color:var(--h-text-muted);margin-bottom:14px">Select states where this company is authorized to originate. Locked states aren't yet supported by the platform.</div>
         <div class="state-grid">${chips}</div>
       </div>`;
   },

@@ -253,7 +253,7 @@ const App = {
     // If the impersonated user hasn't finished onboarding yet, open the wizard
     // for them. This drives the bulk-invite → impersonate → wizard demo flow.
     if (target && target.onboardingStatus !== 'active' && target.onboardingStatus !== 'suspended') {
-      this.renderShell('<div style="padding:40px;text-align:center;color:var(--color-text-muted)">Loading invite onboarding…</div>');
+      this.renderShell('<div style="padding:40px;text-align:center;color:var(--h-text-muted)">Loading invite onboarding…</div>');
       OnboardingFlowView.open(target.role || 'lo', { userId: target.id });
       return;
     }
@@ -432,7 +432,7 @@ const OriginationsView = {
       kpis.map(k => `
         <div class="stat-item">
           <div class="stat-label">${k.label}</div>
-          <div class="stat-value" style="font-size:26px${k.accent ? ';color:var(--color-danger)' : ''}">${k.value}</div>
+          <div class="stat-value" style="font-size:26px${k.accent ? ';color:var(--h-error)' : ''}">${k.value}</div>
           <div class="stat-desc">${k.sub}</div>
         </div>`).join('')
     }</div>`;
@@ -529,19 +529,19 @@ const OriginationsView = {
       return `
         <tr class="orig-table-row ${isAttn ? 'row-needs-attention' : ''}" onclick="OriginationsView.openLoan('${l.id}')">
           <td onclick="event.stopPropagation()">
-            <input type="checkbox" ${checked ? 'checked' : ''} style="accent-color:var(--color-primary)"
+            <input type="checkbox" ${checked ? 'checked' : ''} style="accent-color:var(--h-action)"
                    onchange="OriginationsView._toggleSelect('${l.id}')" />
           </td>
           <td>
-            <div style="font-size:12px;font-weight:700;color:var(--color-primary)">${l.id}</div>
-            <div style="font-size:13px;color:var(--color-text)">${l.borrowerName}</div>
+            <div style="font-size:12px;font-weight:700;color:var(--h-action)">${l.id}</div>
+            <div style="font-size:13px;color:var(--h-text-primary)">${l.borrowerName}</div>
           </td>
           <td class="td-address"><div class="addr-line1">${addrLine1}</div><div class="addr-line2">${addrLine2}</div></td>
           <td class="td-amount">${Display.currency(l.amount)}</td>
           <td class="td-status">${rowMilestone}<div class="td-status-label">${stageLabel}</div></td>
           <td class="td-next-action">${DataPlatformView._nextActionTag(l)}<div class="td-next-action-text">${DataPlatformView._nextActionText(l)}</div></td>
           <td>${renderOwnersCell(l)}</td>
-          <td style="font-size:11px;color:var(--color-text-muted);white-space:nowrap">${timeAgo}</td>
+          <td style="font-size:11px;color:var(--h-text-muted);white-space:nowrap">${timeAgo}</td>
         </tr>`;
     }).join('');
 
@@ -549,7 +549,7 @@ const OriginationsView = {
       ${filterBarHtml}
       ${someChecked ? `
       <div class="app-bulk-bar">
-        <span style="font-size:12px;font-weight:600;color:var(--color-text)">${this._selected.size} selected</span>
+        <span style="font-size:12px;font-weight:600;color:var(--h-text-primary)">${this._selected.size} selected</span>
         <button class="btn btn-secondary btn-sm" onclick="event.stopPropagation()">Export</button>
         <button class="btn btn-secondary btn-sm" onclick="event.stopPropagation()">Batch</button>
         <button class="btn btn-ghost btn-sm" onclick="OriginationsView._clearSelection()">Clear</button>
@@ -558,7 +558,7 @@ const OriginationsView = {
         <table>
           <thead><tr>
             <th style="width:32px" onclick="event.stopPropagation()">
-              <input type="checkbox" ${allChecked ? 'checked' : ''} style="accent-color:var(--color-primary)"
+              <input type="checkbox" ${allChecked ? 'checked' : ''} style="accent-color:var(--h-action)"
                      onchange="OriginationsView._toggleSelectAll()" />
             </th>
             <th class="sortable-th" onclick="OriginationsView._setSort('id')">Loan / Borrower ${sortIcon('id')}</th>
@@ -569,7 +569,7 @@ const OriginationsView = {
             <th class="sortable-th" onclick="OriginationsView._setSort('borrowerName')">Owners ${sortIcon('borrowerName')}</th>
             <th class="sortable-th" onclick="OriginationsView._setSort('updatedAt')">Updated ${sortIcon('updatedAt')}</th>
           </tr></thead>
-          <tbody>${rows || '<tr><td colspan="8" style="text-align:center;color:var(--color-text-muted);padding:32px">No originations found</td></tr>'}</tbody>
+          <tbody>${rows || '<tr><td colspan="8" style="text-align:center;color:var(--h-text-muted);padding:32px">No originations found</td></tr>'}</tbody>
         </table>
       </div>
       ${totalPages > 1 ? `
@@ -920,7 +920,7 @@ const OriginationsView = {
         return `
           <div class="ud-content-section">
             <div class="ud-stage-section-header" onclick="OriginationsView.toggleTaskStage('${stage.id}')">
-              <div class="ud-section-title" style="color:var(--color-text-muted);margin:0">${stage.label} <span class="ud-section-count">0/${total} &middot; Pending</span></div>
+              <div class="ud-section-title" style="color:var(--h-text-muted);margin:0">${stage.label} <span class="ud-section-count">0/${total} &middot; Pending</span></div>
               <span class="ud-stage-section-toggle">&#9654;</span>
             </div>
           </div>`;
@@ -1024,7 +1024,7 @@ const OriginationsView = {
     const zone = document.getElementById(zoneId);
     if (zone) {
       const orig = zone.innerHTML;
-      zone.innerHTML = `<div class="ud-dropzone-icon" style="color:var(--color-success)">&#10003;</div><div class="ud-dropzone-text">${files.length} file${files.length > 1 ? 's' : ''} received</div><div class="ud-dropzone-hint">${names}</div>`;
+      zone.innerHTML = `<div class="ud-dropzone-icon" style="color:var(--h-success)">&#10003;</div><div class="ud-dropzone-text">${files.length} file${files.length > 1 ? 's' : ''} received</div><div class="ud-dropzone-hint">${names}</div>`;
       setTimeout(() => { zone.innerHTML = orig; }, 3000);
     }
   },
@@ -1103,7 +1103,7 @@ const OriginationsView = {
     if (!loan.closingDate) {
       warningsHtml += `<div class="ud-sidebar-item"><span class="ud-sidebar-dot amber"></span><div class="ud-sidebar-item-text"><div>Closing date not set</div><div class="ud-sidebar-item-sub">Set closing date to proceed</div></div></div>`;
     }
-    if (!warningsHtml) warningsHtml = '<div class="ud-sidebar-item" style="color:var(--color-text-muted);font-size:12px;padding:12px 16px">No warnings</div>';
+    if (!warningsHtml) warningsHtml = '<div class="ud-sidebar-item" style="color:var(--h-text-muted);font-size:12px;padding:12px 16px">No warnings</div>';
 
     return `
       <div class="ud-sidebar-panel">
@@ -1115,7 +1115,7 @@ const OriginationsView = {
         <div class="ud-sidebar-kv"><span class="ud-sidebar-kv-label">Submitted</span><span class="ud-sidebar-kv-value">${loan.submittedAt ? Display.date(loan.submittedAt) : '—'}</span></div>
         <div class="ud-sidebar-kv"><span class="ud-sidebar-kv-label">Rate Lock</span><span class="ud-sidebar-kv-value tbd">TBD</span></div>
         <div class="ud-sidebar-kv"><span class="ud-sidebar-kv-label">Est. Close</span><span class="ud-sidebar-kv-value ${loan.closingDate ? '' : 'warn'}">${loan.closingDate ? Display.date(loan.closingDate) : 'TBD'}</span></div>
-        <div class="ud-sidebar-kv"><span class="ud-sidebar-kv-label">Days in Stage</span><span class="ud-sidebar-kv-value" ${days > 14 ? 'style="color:var(--color-danger)"' : ''}>${days}d</span></div>
+        <div class="ud-sidebar-kv"><span class="ud-sidebar-kv-label">Days in Stage</span><span class="ud-sidebar-kv-value" ${days > 14 ? 'style="color:var(--h-error)"' : ''}>${days}d</span></div>
       </div>
       <div class="ud-sidebar-panel">
         <div class="ud-sidebar-panel-title">Parties</div>

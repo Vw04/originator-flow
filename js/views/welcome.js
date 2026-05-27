@@ -204,7 +204,7 @@ const WelcomeView = {
       return `
         <div class="card welcome-card">
           <div class="welcome-card-title-sm">${ownerLabel}</div>
-          <div class="welcome-card-body" style="color:var(--color-text-secondary)">
+          <div class="welcome-card-body" style="color:var(--h-text-secondary)">
             No programs are enabled yet${branch?.name ? ` for ${branch.name}` : ''}.
             Your administrator can enable program-market combinations to unlock origination.
           </div>

@@ -223,7 +223,7 @@ const ProspectDashboardView = {
             </div>
 
             <div class="prospect-comparison-arrow">
-              <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="var(--color-primary)" stroke-width="2"><path d="M5 12h14M13 6l6 6-6 6"/></svg>
+              <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="var(--h-action)" stroke-width="2"><path d="M5 12h14M13 6l6 6-6 6"/></svg>
             </div>
 
             <div class="prospect-comparison-col prospect-comparison-after">
@@ -358,7 +358,7 @@ const ProspectDashboardView = {
         <div class="prospect-chart-label">HOMEOWNER EQUITY CREATED</div>
         <svg viewBox="0 0 300 160" class="prospect-chart-svg">
           <polygon points="${eqArea}" fill="var(--color-primary-container)" opacity="0.5"/>
-          <polyline points="${eqPoints}" fill="none" stroke="var(--color-primary)" stroke-width="2"/>
+          <polyline points="${eqPoints}" fill="none" stroke="var(--h-action)" stroke-width="2"/>
           <text x="290" y="${140 - (proj[proj.length - 1].equity / eqMax) * 120 - 6}" text-anchor="end" class="prospect-chart-text">${eqFinalLabel}</text>
         </svg>
         <div class="prospect-chart-xaxis-labels">
@@ -400,12 +400,12 @@ const ProspectDashboardView = {
       <div class="prospect-chart-card">
         <div class="prospect-chart-label">FUND VALUE & RETURNS</div>
         <svg viewBox="0 0 300 160" class="prospect-chart-svg">
-          <polyline points="${fvPoints}" fill="none" stroke="var(--color-text-secondary)" stroke-width="2"/>
-          <polyline points="${crPoints}" fill="none" stroke="var(--color-primary)" stroke-width="2"/>
+          <polyline points="${fvPoints}" fill="none" stroke="var(--h-text-secondary)" stroke-width="2"/>
+          <polyline points="${crPoints}" fill="none" stroke="var(--h-action)" stroke-width="2"/>
         </svg>
         <div class="prospect-chart-legend">
-          <span><span class="prospect-legend-line" style="background:var(--color-text-secondary)"></span> Fund Value</span>
-          <span><span class="prospect-legend-line" style="background:var(--color-primary)"></span> Returned Capital</span>
+          <span><span class="prospect-legend-line" style="background:var(--h-text-secondary)"></span> Fund Value</span>
+          <span><span class="prospect-legend-line" style="background:var(--h-action)"></span> Returned Capital</span>
         </div>
         <div class="prospect-chart-xaxis-labels">
           <span>${proj[0].year}</span><span>${proj[Math.floor(proj.length / 2)].year}</span><span>${proj[proj.length - 1].year}</span>
@@ -425,7 +425,7 @@ const ProspectDashboardView = {
       <div class="prospect-chart-card">
         <div class="prospect-chart-label">CUMULATIVE ROI</div>
         <svg viewBox="0 0 300 160" class="prospect-chart-svg">
-          <polyline points="${roiPoints}" fill="none" stroke="var(--color-primary)" stroke-width="2"/>
+          <polyline points="${roiPoints}" fill="none" stroke="var(--h-action)" stroke-width="2"/>
           <text x="290" y="${140 - (proj[proj.length - 1].roi / roiMax) * 120 - 6}" text-anchor="end" class="prospect-chart-text">${roiFinal}</text>
         </svg>
         <div class="prospect-chart-xaxis-labels">

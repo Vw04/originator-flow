@@ -77,14 +77,14 @@ const OCWizardView = {
           <div class="section-tab ${i === w.step ? 'active' : ''} ${i < w.step ? 'completed' : ''}"
                onclick="OCWizardView.goto(${i})"
                style="${i > w.step ? 'opacity:.55;cursor:not-allowed' : ''}">
-            <span style="font-size:11px;font-weight:700;color:var(--color-text-muted);margin-right:6px">${i + 1}</span>${s.label}
+            <span style="font-size:11px;font-weight:700;color:var(--h-text-muted);margin-right:6px">${i + 1}</span>${s.label}
           </div>`).join('')}
       </div>
 
       <div class="page-body" style="max-width:1080px">
         ${stepBody}
 
-        <div style="display:flex;justify-content:space-between;align-items:center;padding:18px 0 0;border-top:1px solid var(--color-border);margin-top:24px">
+        <div style="display:flex;justify-content:space-between;align-items:center;padding:18px 0 0;border-top:1px solid var(--h-border);margin-top:24px">
           <button class="btn btn-secondary" onclick="OCWizardView.back()" ${w.step === 0 ? 'disabled' : ''}>← Back</button>
           ${w.step < this.STEPS.length - 1
             ? `<button class="btn btn-primary" onclick="OCWizardView.next()" ${this._canAdvance() ? '' : 'disabled'}>Continue →</button>`
@@ -101,7 +101,7 @@ const OCWizardView = {
     return `
       <div class="card">
         <div class="card-title" style="margin-bottom:6px">Lookup NMLS Company ID</div>
-        <div style="font-size:12px;color:var(--color-text-muted);margin-bottom:16px">
+        <div style="font-size:12px;color:var(--h-text-muted);margin-bottom:16px">
           Enter the OC's NMLS Company ID. The platform pulls company info, addresses, and branches from the NMLS sync feed (pre-populated for the demo).
         </div>
         <div style="display:flex;gap:8px;align-items:flex-start">
@@ -109,18 +109,18 @@ const OCWizardView = {
                  oninput="OCWizardView._setNmlsId(this.value)" style="max-width:280px">
           <button class="btn btn-secondary" onclick="OCWizardView.doLookup()">Look up</button>
         </div>
-        <div style="margin-top:12px;font-size:11px;color:var(--color-text-muted)">
-          Try: ${seeds.map(s => `<code style="background:var(--color-surface);padding:2px 6px;border-radius:3px;cursor:pointer;margin-right:6px" onclick="OCWizardView._setNmlsId('${s.nmlsId}');OCWizardView.doLookup()">${s.nmlsId}</code> (${s.name})`).join('')}
+        <div style="margin-top:12px;font-size:11px;color:var(--h-text-muted)">
+          Try: ${seeds.map(s => `<code style="background:var(--h-pearl);padding:2px 6px;border-radius:3px;cursor:pointer;margin-right:6px" onclick="OCWizardView._setNmlsId('${s.nmlsId}');OCWizardView.doLookup()">${s.nmlsId}</code> (${s.name})`).join('')}
         </div>
       </div>
 
       ${result ? `
-        <div class="card" style="margin-top:16px;border-left:3px solid var(--color-success)">
+        <div class="card" style="margin-top:16px;border-left:3px solid var(--h-success)">
           <div style="display:flex;align-items:center;gap:10px;margin-bottom:14px">
-            <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="var(--color-success)" stroke-width="2.2"><path d="M5 12l5 5L20 7"/></svg>
+            <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="var(--h-success)" stroke-width="2.2"><path d="M5 12l5 5L20 7"/></svg>
             <div>
               <div style="font-weight:600;font-size:15px">${result.name}</div>
-              <div style="font-size:11px;color:var(--color-text-muted)">NMLS ID ${w.nmlsId} · State of Incorporation: ${result.stateOfIncorporation} · Last synced: just now</div>
+              <div style="font-size:11px;color:var(--h-text-muted)">NMLS ID ${w.nmlsId} · State of Incorporation: ${result.stateOfIncorporation} · Last synced: just now</div>
             </div>
           </div>
           <div class="info-grid">
@@ -145,7 +145,7 @@ const OCWizardView = {
     return `
       <div class="card">
         <div class="card-title" style="margin-bottom:6px">Confirm OC Fields</div>
-        <div style="font-size:12px;color:var(--color-text-muted);margin-bottom:16px">Pre-filled from NMLS. Edit any field that needs correction.</div>
+        <div style="font-size:12px;color:var(--h-text-muted);margin-bottom:16px">Pre-filled from NMLS. Edit any field that needs correction.</div>
         <div class="form-grid">
           ${fld('name',                  'Company Name')}
           ${fld('nmlsId',                'NMLS ID')}
@@ -179,13 +179,13 @@ const OCWizardView = {
       const isFully = lpmsForProgram.length > 0 && lpmsForProgram.every(l => w.enabledLpmIds.has(l.id));
       const marketsLabel = (p.allowedMarketIds || []).map(id => State.getMarket(id)?.code).filter(Boolean).join(', ');
       return `
-        <label style="display:flex;align-items:center;gap:14px;padding:14px 18px;border-bottom:1px solid var(--color-border-light);cursor:pointer">
+        <label style="display:flex;align-items:center;gap:14px;padding:14px 18px;border-bottom:1px solid var(--h-border-subtle);cursor:pointer">
           <input type="checkbox" ${isFully ? 'checked' : ''}
                  onchange="OCWizardView._toggleProgram('${p.id}', this.checked)"
                  style="width:16px;height:16px;cursor:pointer;flex-shrink:0">
           <div style="flex:1;min-width:0">
-            <div style="font-size:14px;font-weight:600;color:var(--color-text)">${p.name}</div>
-            <div style="font-size:11px;color:var(--color-text-muted);margin-top:2px">Markets: ${marketsLabel || '—'}</div>
+            <div style="font-size:14px;font-weight:600;color:var(--h-text-primary)">${p.name}</div>
+            <div style="font-size:11px;color:var(--h-text-muted);margin-top:2px">Markets: ${marketsLabel || '—'}</div>
           </div>
           ${isFully ? '<span class="badge badge-active" style="flex-shrink:0">Enabled</span>' : ''}
         </label>`;
@@ -193,14 +193,14 @@ const OCWizardView = {
 
     return `
       <div class="card" style="padding:0;overflow:hidden">
-        <div style="padding:16px 18px;border-bottom:1px solid var(--color-border)">
+        <div style="padding:16px 18px;border-bottom:1px solid var(--h-border)">
           <div class="card-title" style="margin-bottom:4px">Programs Enabled</div>
-          <div style="font-size:12px;color:var(--color-text-muted)">
+          <div style="font-size:12px;color:var(--h-text-muted)">
             Pick the loan programs the platform enables for this OC. Each program covers the markets shown next to it. Branches inherit at launch. Loan Officers must hold an active NMLS license in the program's market to originate.
           </div>
         </div>
         ${rows}
-        <div style="padding:14px 18px;background:var(--color-surface);font-size:12px;color:var(--color-text)">
+        <div style="padding:14px 18px;background:var(--h-pearl);font-size:12px;color:var(--h-text-primary)">
           <strong>${enabledProgramIds.size}</strong> program${enabledProgramIds.size === 1 ? '' : 's'} enabled across <strong>${enabledMarketIds.size}</strong> market${enabledMarketIds.size === 1 ? '' : 's'}
         </div>
       </div>`;
@@ -218,15 +218,15 @@ const OCWizardView = {
   _renderBranches() {
     const w = this._w;
     if (!w.branches.length) {
-      return `<div class="card"><div style="text-align:center;color:var(--color-text-muted);padding:30px;font-size:13px">No branches found from NMLS lookup.</div></div>`;
+      return `<div class="card"><div style="text-align:center;color:var(--h-text-muted);padding:30px;font-size:13px">No branches found from NMLS lookup.</div></div>`;
     }
     return `
       <div class="card">
         <div class="card-title" style="margin-bottom:6px">Branches from NMLS</div>
-        <div style="font-size:12px;color:var(--color-text-muted);margin-bottom:16px">
+        <div style="font-size:12px;color:var(--h-text-muted);margin-bottom:16px">
           ${w.branches.length} branch${w.branches.length === 1 ? '' : 'es'} pulled from NMLS sync feed. Toggle the ones you want active at launch. Branches are flat (spec §9 #14) — no nested sub-branches. NMLS is source of truth, so no manual add.
         </div>
-        <div style="border:1px solid var(--color-border);border-radius:var(--radius-lg);overflow:hidden">
+        <div style="border:1px solid var(--h-border);border-radius:var(--radius-lg);overflow:hidden">
           <table>
             <thead><tr><th>Active</th><th>Type</th><th>Branch</th><th>NMLS#</th><th>State</th><th>Start Date</th></tr></thead>
             <tbody>
@@ -235,15 +235,15 @@ const OCWizardView = {
                   <td><input type="checkbox" ${b.active ? 'checked' : ''} onchange="OCWizardView._toggleBranch(${i}, this.checked)" style="width:16px;height:16px;cursor:pointer"></td>
                   <td><span class="tag">${b.branchType}</span></td>
                   <td><div class="cell-primary">${b.name}</div><div class="cell-secondary">${b.address1}, ${b.city}</div></td>
-                  <td style="font-size:11px;color:var(--color-text-muted)">${b.nmlsId}</td>
+                  <td style="font-size:11px;color:var(--h-text-muted)">${b.nmlsId}</td>
                   <td>${b.state}</td>
-                  <td style="color:var(--color-text-muted);font-size:11px">${Display.date(b.startDate)}</td>
+                  <td style="color:var(--h-text-muted);font-size:11px">${Display.date(b.startDate)}</td>
                 </tr>`).join('')}
             </tbody>
           </table>
         </div>
-        <div style="margin-top:10px;font-size:11px;color:var(--color-text-muted)">
-          <span class="status-dot" style="display:inline-block;width:6px;height:6px;border-radius:50%;background:var(--color-success);margin-right:4px"></span>
+        <div style="margin-top:10px;font-size:11px;color:var(--h-text-muted)">
+          <span class="status-dot" style="display:inline-block;width:6px;height:6px;border-radius:50%;background:var(--h-success);margin-right:4px"></span>
           Last NMLS sync: just now
         </div>
       </div>`;
@@ -261,36 +261,36 @@ const OCWizardView = {
     const licensePreview = isLO && a.agentNmlsId ? UsersView._nmlsLicensePreview(a.agentNmlsId) : null;
     return `
       <div class="card" style="max-width:720px">
-        <div class="card-title" style="margin-bottom:6px">Invite First User <span style="color:var(--color-text-muted);font-weight:400;font-size:12px">(optional)</span></div>
-        <div style="font-size:12px;color:var(--color-text-muted);margin-bottom:16px">
+        <div class="card-title" style="margin-bottom:6px">Invite First User <span style="color:var(--h-text-muted);font-weight:400;font-size:12px">(optional)</span></div>
+        <div style="font-size:12px;color:var(--h-text-muted);margin-bottom:16px">
           Spec §3.1: every OC needs at least one Program Admin — invite one now or add it later under <strong>Users</strong>. Branch Manager and Program Admin are stackable flags on top of the Branch User Type.
         </div>
 
         <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:10px;margin-bottom:14px">
-          <label style="display:flex;align-items:flex-start;gap:8px;padding:10px 12px;border:2px solid ${skip ? 'var(--color-border)' : (isLO ? 'var(--color-primary)' : 'var(--color-border)')};border-radius:8px;cursor:pointer;background:${!skip && isLO ? 'rgba(14,42,71,0.04)' : 'var(--color-card)'}">
+          <label style="display:flex;align-items:flex-start;gap:8px;padding:10px 12px;border:2px solid ${skip ? 'var(--h-border)' : (isLO ? 'var(--h-action)' : 'var(--h-border)')};border-radius:8px;cursor:pointer;background:${!skip && isLO ? 'rgba(14,42,71,0.04)' : 'var(--h-surface-1)'}">
             <input type="radio" name="oc-wiz-utype" value="lo" ${!skip && isLO ? 'checked' : ''} onchange="OCWizardView._setAdminUserType('lo')">
             <div>
               <div style="font-size:13px;font-weight:600">Loan Officer</div>
-              <div style="font-size:11px;color:var(--color-text-muted)">Originates apps. NMLS required.</div>
+              <div style="font-size:11px;color:var(--h-text-muted)">Originates apps. NMLS required.</div>
             </div>
           </label>
-          <label style="display:flex;align-items:flex-start;gap:8px;padding:10px 12px;border:2px solid ${skip ? 'var(--color-border)' : (!isLO ? 'var(--color-primary)' : 'var(--color-border)')};border-radius:8px;cursor:pointer;background:${!skip && !isLO ? 'rgba(14,42,71,0.04)' : 'var(--color-card)'}">
+          <label style="display:flex;align-items:flex-start;gap:8px;padding:10px 12px;border:2px solid ${skip ? 'var(--h-border)' : (!isLO ? 'var(--h-action)' : 'var(--h-border)')};border-radius:8px;cursor:pointer;background:${!skip && !isLO ? 'rgba(14,42,71,0.04)' : 'var(--h-surface-1)'}">
             <input type="radio" name="oc-wiz-utype" value="standard" ${!skip && !isLO ? 'checked' : ''} onchange="OCWizardView._setAdminUserType('standard')">
             <div>
               <div style="font-size:13px;font-weight:600">Standard User</div>
-              <div style="font-size:11px;color:var(--color-text-muted)">Loan Processor, support, etc.</div>
+              <div style="font-size:11px;color:var(--h-text-muted)">Loan Processor, support, etc.</div>
             </div>
           </label>
-          <label style="display:flex;align-items:flex-start;gap:8px;padding:10px 12px;border:2px solid ${skip ? 'var(--color-primary)' : 'var(--color-border)'};border-radius:8px;cursor:pointer;background:${skip ? 'rgba(14,42,71,0.04)' : 'var(--color-card)'}">
+          <label style="display:flex;align-items:flex-start;gap:8px;padding:10px 12px;border:2px solid ${skip ? 'var(--h-action)' : 'var(--h-border)'};border-radius:8px;cursor:pointer;background:${skip ? 'rgba(14,42,71,0.04)' : 'var(--h-surface-1)'}">
             <input type="radio" name="oc-wiz-utype" value="skip" ${skip ? 'checked' : ''} onchange="OCWizardView._setAdminUserType('skip')">
             <div>
               <div style="font-size:13px;font-weight:600">Skip user invite</div>
-              <div style="font-size:11px;color:var(--color-text-muted)">Add the first user later.</div>
+              <div style="font-size:11px;color:var(--h-text-muted)">Add the first user later.</div>
             </div>
           </label>
         </div>
 
-        ${skip ? `<div style="font-size:12px;color:var(--color-text-muted);padding:14px;border:1px dashed var(--color-border);border-radius:6px">No first user will be invited. The OC will be created without any Program Admin — you can invite one later from the Users tab.</div>` : `
+        ${skip ? `<div style="font-size:12px;color:var(--h-text-muted);padding:14px;border:1px dashed var(--h-border);border-radius:6px">No first user will be invited. The OC will be created without any Program Admin — you can invite one later from the Users tab.</div>` : `
           <div class="form-grid">
             <div class="form-group"><label>First Name</label><input type="text" class="input" value="${a.firstName}" oninput="OCWizardView._setAdminField('firstName', this.value)"></div>
             <div class="form-group"><label>Last Name</label><input type="text" class="input" value="${a.lastName}" oninput="OCWizardView._setAdminField('lastName', this.value)"></div>
@@ -305,18 +305,18 @@ const OCWizardView = {
           </div>
 
           <div style="margin-top:14px;display:flex;flex-wrap:wrap;gap:8px">
-            <label style="display:flex;align-items:center;gap:6px;padding:8px 12px;border:1px solid var(--color-border);border-radius:6px;font-size:13px;cursor:pointer;background:${a.isProgramAdmin ? 'rgba(14,42,71,0.04)' : 'var(--color-card)'}">
+            <label style="display:flex;align-items:center;gap:6px;padding:8px 12px;border:1px solid var(--h-border);border-radius:6px;font-size:13px;cursor:pointer;background:${a.isProgramAdmin ? 'rgba(14,42,71,0.04)' : 'var(--h-surface-1)'}">
               <input type="checkbox" ${a.isProgramAdmin ? 'checked' : ''} onchange="OCWizardView._setAdminField('isProgramAdmin', this.checked)">
               <strong>Program Admin</strong>
-              <span style="color:var(--color-text-muted);font-weight:400">— manage OC config & invite users</span>
+              <span style="color:var(--h-text-muted);font-weight:400">— manage OC config & invite users</span>
             </label>
-            <label style="display:flex;align-items:center;gap:6px;padding:8px 12px;border:1px solid var(--color-border);border-radius:6px;font-size:13px;cursor:pointer;background:${a.isBranchManager ? 'rgba(14,42,71,0.04)' : 'var(--color-card)'}">
+            <label style="display:flex;align-items:center;gap:6px;padding:8px 12px;border:1px solid var(--h-border);border-radius:6px;font-size:13px;cursor:pointer;background:${a.isBranchManager ? 'rgba(14,42,71,0.04)' : 'var(--h-surface-1)'}">
               <input type="checkbox" ${a.isBranchManager ? 'checked' : ''} onchange="OCWizardView._setAdminField('isBranchManager', this.checked)">
               <strong>Branch Manager</strong>
-              <span style="color:var(--color-text-muted);font-weight:400">— min View on all branch loans</span>
+              <span style="color:var(--h-text-muted);font-weight:400">— min View on all branch loans</span>
             </label>
           </div>
-          <div style="margin-top:8px;font-size:11px;color:var(--color-text-muted)">Branch Manager flag applies to the user's first branch assignment (the OC's first active branch).</div>
+          <div style="margin-top:8px;font-size:11px;color:var(--h-text-muted)">Branch Manager flag applies to the user's first branch assignment (the OC's first active branch).</div>
         `}
       </div>`;
   },
@@ -357,10 +357,10 @@ const OCWizardView = {
           <div class="card-title" style="margin-bottom:10px">Programs Enabled</div>
           <div style="font-size:13px;line-height:1.7">
             <div><strong>${programNames.length}</strong> program${programNames.length === 1 ? '' : 's'} across <strong>${marketCodes.length}</strong> market${marketCodes.length === 1 ? '' : 's'}</div>
-            <div style="color:var(--color-text-muted);margin-top:6px">
+            <div style="color:var(--h-text-muted);margin-top:6px">
               ${programNames.length ? programNames.map(n => `<span class="tag">${n}</span>`).join(' ') : 'No programs enabled'}
             </div>
-            <div style="color:var(--color-text-muted);margin-top:6px">
+            <div style="color:var(--h-text-muted);margin-top:6px">
               Markets: ${marketCodes.length ? marketCodes.join(', ') : 'None'}
             </div>
           </div>
@@ -371,7 +371,7 @@ const OCWizardView = {
           <div style="font-size:13px">
             <div><strong>${activeBranches.length}</strong> active${w.branches.length - activeBranches.length > 0 ? ` (${w.branches.length - activeBranches.length} inactive)` : ''}</div>
             <div style="margin-top:8px;display:flex;flex-direction:column;gap:4px">
-              ${activeBranches.map(b => `<div style="font-size:12px"><strong>${b.name}</strong> <span style="color:var(--color-text-muted)">· ${b.city}, ${b.state} · NMLS ${b.nmlsId}</span></div>`).join('')}
+              ${activeBranches.map(b => `<div style="font-size:12px"><strong>${b.name}</strong> <span style="color:var(--h-text-muted)">· ${b.city}, ${b.state} · NMLS ${b.nmlsId}</span></div>`).join('')}
             </div>
           </div>
         </div>
@@ -379,16 +379,16 @@ const OCWizardView = {
         <div class="card">
           <div class="card-title" style="margin-bottom:10px">First User</div>
           ${w.admin.skipInvite ? `
-            <div style="font-size:13px;color:var(--color-text-muted)">No first user — invite later from the Users tab.</div>
-            <div style="font-size:11px;color:var(--color-warning);margin-top:6px">⚠ Spec §3.1 requires a Program Admin per OC. Invite one before going live.</div>
+            <div style="font-size:13px;color:var(--h-text-muted)">No first user — invite later from the Users tab.</div>
+            <div style="font-size:11px;color:var(--h-warning);margin-top:6px">⚠ Spec §3.1 requires a Program Admin per OC. Invite one before going live.</div>
           ` : `
             <div style="font-size:13px">
-              ${w.admin.firstName} ${w.admin.lastName} <span style="color:var(--color-text-muted)">· ${w.admin.email || 'no email yet'}</span>
+              ${w.admin.firstName} ${w.admin.lastName} <span style="color:var(--h-text-muted)">· ${w.admin.email || 'no email yet'}</span>
             </div>
-            <div style="font-size:12px;color:var(--color-text-muted);margin-top:4px">
+            <div style="font-size:12px;color:var(--h-text-muted);margin-top:4px">
               ${w.admin.userType === 'lo' ? 'Loan Officer' : 'Standard User'}${w.admin.isProgramAdmin ? ' · Program Admin' : ''}${w.admin.isBranchManager ? ' · Branch Manager' : ''}
             </div>
-            <div style="font-size:11px;color:var(--color-text-muted);margin-top:6px">An invite email will be sent on submit (simulated).</div>
+            <div style="font-size:11px;color:var(--h-text-muted);margin-top:6px">An invite email will be sent on submit (simulated).</div>
           `}
         </div>
       </div>`;

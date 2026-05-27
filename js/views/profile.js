@@ -96,7 +96,7 @@ const ProfileView = {
 
     const statusPill = u.onboardingStatus === 'active'
       ? `<span class="entity-status-pill">Active</span>`
-      : `<span class="entity-status-pill" style="color:var(--color-warning)">${Display.onboardingStatusLabel(u.onboardingStatus)}</span>`;
+      : `<span class="entity-status-pill" style="color:var(--h-warning)">${Display.onboardingStatusLabel(u.onboardingStatus)}</span>`;
 
     /* Tab strip + body. Details tab keeps the Figma layout (user info,
        LO details, licenses, affiliation, org). Permissions tab houses
@@ -118,9 +118,13 @@ const ProfileView = {
       ? this._renderPermissionsTab(u, { co, entity, isInvestor, isHomium, isOC })
       : this._renderProfileDetails(u, { co, entity, isInvestor, isHomium, isOC, editing });
 
-    /* Sticky footer for edit mode */
+    /* Sticky footer for edit mode — Pattern D save bar (2026-05-27 canon) */
     const footer = editing ? `
       <div class="inst-footer-bar">
+        <span class="dirty-indicator">
+          <span class="dot"></span>
+          <span class="dirty-label">No changes</span>
+        </span>
         <button class="btn btn-secondary btn-sm" onclick="ProfileView.cancelEdit('${u.id}')">Cancel</button>
         <button class="btn btn-primary btn-sm" onclick="ProfileView.saveEdit('${u.id}')">Save changes</button>
       </div>` : '';
@@ -144,16 +148,21 @@ const ProfileView = {
         </div>
       </div>
       ${tabsHtml}
-      <div class="page-body">${content}</div>
+      <div id="profile-edit-form" class="page-body"${editing ? ' oninput="ProfileView.markDirty()"' : ''}>${content}</div>
       ${footer}`;
   },
 
+  /* 2026-05-27 canon Pattern D — dirty/save/cancel via FormState. */
+  markDirty() { FormState.markFormDirty('profile-edit-form'); },
+
   enterEditMode(userId) {
     Router.navigate('/users/' + userId + '/edit');
+    setTimeout(() => FormState.captureFormSnapshot('profile-edit-form'), 0);
   },
 
   cancelEdit(userId) {
-    Router.navigate('/users/' + userId);
+    FormState.cancelEditForm('profile-edit-form',
+      () => Router.navigateForce('/users/' + userId));
   },
 
   saveEdit(userId) {
@@ -168,8 +177,9 @@ const ProfileView = {
       timezone:  get('edit-tz') || null,
     };
     Object.keys(patch).forEach(k => { if (patch[k] === undefined) delete patch[k]; });
-    if (State.updateUser) State.updateUser(userId, patch);
-    Router.navigate('/users/' + userId);
+    FormState.saveEditForm('profile-edit-form',
+      () => { if (State.updateUser) State.updateUser(userId, patch); },
+      () => Router.navigateForce('/users/' + userId));
   },
 
   /* ---- Details tab body ---- */
@@ -303,7 +313,7 @@ const ProfileView = {
     return `
       <div class="inst-card">
         <div class="inst-card-title">Permissions</div>
-        <div style="font-size:12.5px;color:var(--color-text-muted);line-height:1.6;max-width:760px">
+        <div style="font-size:12.5px;color:var(--h-text-muted);line-height:1.6;max-width:760px">
           This user inherits the ${inheritsFrom} policy assigned to their role.
           Per-user overrides are not configured.
         </div>
@@ -322,18 +332,18 @@ const ProfileView = {
       const isPrimary = a.branchId === u.branchId;
       const pill = isPrimary
         ? `<span class="entity-status-pill">Yes</span>`
-        : `<span style="font-size:12.5px;color:var(--color-text-muted)">No</span>`;
+        : `<span style="font-size:12.5px;color:var(--h-text-muted)">No</span>`;
       return `
         <tr>
           <td>${co ? co.name : '—'}</td>
           <td>${branch ? branch.name : a.branchId}</td>
           <td>${pill}</td>
-          <td><a href="javascript:BranchesView.openOnTab('${a.branchId}','permissions')" style="color:var(--color-primary);text-decoration:none">Go to branch permissions →</a></td>
+          <td><a href="javascript:BranchesView.openOnTab('${a.branchId}','permissions')" style="color:var(--h-action);text-decoration:none">Go to branch permissions →</a></td>
         </tr>`;
     }).join('');
     return `
       <div class="inst-card">
-        <div style="font-size:13px;color:var(--color-text);margin-bottom:14px">
+        <div style="font-size:13px;color:var(--h-text-primary);margin-bottom:14px">
           User can be assigned to multiple branches. Permissions are managed at the branch level.
         </div>
         <table class="entity-table" style="width:100%">
@@ -343,10 +353,10 @@ const ProfileView = {
             <th style="width:120px">Primary</th>
             <th style="width:200px"></th>
           </tr></thead>
-          <tbody>${rows || `<tr><td colspan="4" style="text-align:center;color:var(--color-text-muted);padding:18px">No branch assignments yet.</td></tr>`}</tbody>
+          <tbody>${rows || `<tr><td colspan="4" style="text-align:center;color:var(--h-text-muted);padding:18px">No branch assignments yet.</td></tr>`}</tbody>
         </table>
         <div style="margin-top:14px">
-          <a href="javascript:void(0)" style="color:var(--color-primary);text-decoration:none;font-size:13px" onclick="alert('Assign-to-branch is coming soon')">+ Assign to branch</a>
+          <a href="javascript:void(0)" style="color:var(--h-action);text-decoration:none;font-size:13px" onclick="alert('Assign-to-branch is coming soon')">+ Assign to branch</a>
         </div>
       </div>`;
   },
@@ -360,7 +370,7 @@ const ProfileView = {
           <div class="inst-card-title">
             <span>State licenses &amp; registrations</span>
           </div>
-          <div style="color:var(--color-text-muted);font-size:13px">No licenses on file.</div>
+          <div style="color:var(--h-text-muted);font-size:13px">No licenses on file.</div>
         </div>`;
     }
     const today = new Date();
@@ -387,11 +397,11 @@ const ProfileView = {
 
       return `
         <tr class="lic-row" onclick="ProfileView._toggleLicense('${l.id}')">
-          <td><span style="color:var(--color-text-muted);margin-right:6px">${arrow}</span><a style="color:var(--color-primary);font-weight:600">${stateCode === stateName ? stateCode : stateName}</a></td>
+          <td><span style="color:var(--h-text-muted);margin-right:6px">${arrow}</span><a style="color:var(--h-action);font-weight:600">${stateCode === stateName ? stateCode : stateName}</a></td>
           <td>${licenseName}</td>
           <td class="mono">${licenseNumber}</td>
-          <td><span class="status-pill" style="color:${l.active ? 'var(--color-success)' : 'var(--color-text-muted)'}"><span class="status-dot"></span>${statusLabel}</span></td>
-          <td><span class="status-pill" style="color:${l.active ? 'var(--color-success)' : 'var(--color-text-muted)'}"><span class="status-dot"></span>${l.active ? 'Yes' : 'No'}</span></td>
+          <td><span class="status-pill" style="color:${l.active ? 'var(--h-success)' : 'var(--h-text-muted)'}"><span class="status-dot"></span>${statusLabel}</span></td>
+          <td><span class="status-pill" style="color:${l.active ? 'var(--h-success)' : 'var(--h-text-muted)'}"><span class="status-dot"></span>${l.active ? 'Yes' : 'No'}</span></td>
         </tr>
         ${expanded ? `
         <tr class="lic-row-expanded">
@@ -401,10 +411,10 @@ const ProfileView = {
               <div><span class="entity-meta-label" style="display:block;margin-bottom:4px">Status date</span>${statusDate}</div>
               <div><span class="entity-meta-label" style="display:block;margin-bottom:4px">Renewed through</span>${renewalYear}</div>
             </div>
-            <div style="margin-top:14px;padding-top:14px;border-top:1px solid var(--color-border-light)">
+            <div style="margin-top:14px;padding-top:14px;border-top:1px solid var(--h-border-subtle)">
               <span class="entity-meta-label" style="display:block;margin-bottom:6px">Currently authorized to represent</span>
               <div><strong>Company:</strong> ${authCompany}</div>
-              <div style="font-size:12px;color:var(--color-text-muted);margin-top:2px">NMLS ID: ${authNmls} &nbsp;·&nbsp; Start date: ${startDate}</div>
+              <div style="font-size:12px;color:var(--h-text-muted);margin-top:2px">NMLS ID: ${authNmls} &nbsp;·&nbsp; Start date: ${startDate}</div>
             </div>
           </td>
         </tr>` : ''}`;
@@ -622,7 +632,7 @@ const ProfileView = {
                   onclick="ProfileView._toggleTutorials()"></button>
           <div>
             <div style="font-weight:600">Show guided tutorials</div>
-            <div style="font-size:12px;color:var(--color-text-secondary);margin-top:2px">
+            <div style="font-size:12px;color:var(--h-text-secondary);margin-top:2px">
               When on, we'll walk you through new features as we ship them.
             </div>
           </div>
@@ -674,7 +684,7 @@ const ProfileView = {
 
     const chip = ({ ok, pending, label, sub, muted }) => {
       const bg = muted ? '#F3F4F6' : ok ? '#DCFCE7' : pending ? '#FEF3C7' : '#F3F4F6';
-      const fg = muted ? 'var(--color-text-muted)' : ok ? '#166534' : pending ? '#8A5A00' : 'var(--color-text-muted)';
+      const fg = muted ? 'var(--h-text-muted)' : ok ? '#166534' : pending ? '#8A5A00' : 'var(--h-text-muted)';
       const icon = muted ? '–' : ok ? '✓' : pending ? '⏳' : '—';
       return `
         <div style="display:inline-flex;flex-direction:column;gap:2px;padding:8px 12px;border-radius:8px;background:${bg};color:${fg};min-width:180px">
@@ -713,7 +723,7 @@ const ProfileView = {
       : 'display:flex;flex-wrap:wrap;gap:8px;align-items:stretch;margin-bottom:18px';
 
     const sectionTitle = fullPage
-      ? '<div class="section-title" style="font-size:12px;font-weight:700;text-transform:uppercase;letter-spacing:.06em;color:var(--color-text-muted);margin-bottom:10px">Credentials</div>'
+      ? '<div class="section-title" style="font-size:12px;font-weight:700;text-transform:uppercase;letter-spacing:.06em;color:var(--h-text-muted);margin-bottom:10px">Credentials</div>'
       : '<div class="section-title">Credentials</div>';
 
     return `
@@ -752,13 +762,13 @@ const ProfileView = {
       return p && m ? `${p.name} — ${m.code} (license missing)` : null;
     }).filter(Boolean);
     const cls = fullPage ? 'card' : '';
-    const wrap = fullPage ? `style="padding:14px 16px;margin-bottom:16px;font-size:13px"` : `style="padding:10px 12px;margin-bottom:16px;background:var(--color-surface);border-radius:6px;font-size:12px"`;
+    const wrap = fullPage ? `style="padding:14px 16px;margin-bottom:16px;font-size:13px"` : `style="padding:10px 12px;margin-bottom:16px;background:var(--h-pearl);border-radius:6px;font-size:12px"`;
     return `
       <div class="${cls}" ${wrap}>
-        <div style="font-size:11px;font-weight:600;color:var(--color-text-muted);text-transform:uppercase;letter-spacing:.05em;margin-bottom:6px">Effective Access (§1.4 gate)</div>
-        <div style="margin-bottom:4px"><strong>Eligible to ${isLO ? 'originate' : 'access'} in:</strong> ${eligible.length ? eligible.join(' · ') : '<span style="color:var(--color-text-muted)">none</span>'}${!isLO ? ' <span style="color:var(--color-text-muted);font-weight:400">(license dim n/a — Standard User)</span>' : ''}</div>
-        ${blocked.length ? `<div style="color:var(--color-warning)"><strong>Blocked:</strong> ${blocked.join(' · ')}</div>` : ''}
-        ${blockedOcOrBranch.size ? `<div style="color:var(--color-text-muted);font-size:11px;margin-top:2px">${blockedOcOrBranch.size} LPM(s) blocked at OC or branch level — see assignment cards below.</div>` : ''}
+        <div style="font-size:11px;font-weight:600;color:var(--h-text-muted);text-transform:uppercase;letter-spacing:.05em;margin-bottom:6px">Effective Access (§1.4 gate)</div>
+        <div style="margin-bottom:4px"><strong>Eligible to ${isLO ? 'originate' : 'access'} in:</strong> ${eligible.length ? eligible.join(' · ') : '<span style="color:var(--h-text-muted)">none</span>'}${!isLO ? ' <span style="color:var(--h-text-muted);font-weight:400">(license dim n/a — Standard User)</span>' : ''}</div>
+        ${blocked.length ? `<div style="color:var(--h-warning)"><strong>Blocked:</strong> ${blocked.join(' · ')}</div>` : ''}
+        ${blockedOcOrBranch.size ? `<div style="color:var(--h-text-muted);font-size:11px;margin-top:2px">${blockedOcOrBranch.size} LPM(s) blocked at OC or branch level — see assignment cards below.</div>` : ''}
       </div>`;
   },
 
@@ -795,41 +805,41 @@ const ProfileView = {
           ? Object.entries(t.subflags || {}).filter(([k, v]) => v).map(([k]) => k.replace('can', '')).join(' · ') || '—'
           : '—';
         const floorNote = a.userType === 'lo' && t.scope === 'personal'
-          ? '<span style="color:var(--color-text-muted);font-size:10px">LO-on-own (locked Full)</span>'
+          ? '<span style="color:var(--h-text-muted);font-size:10px">LO-on-own (locked Full)</span>'
           : a.flags?.branchManager && t.scope === 'all_los'
-          ? '<span style="color:var(--color-text-muted);font-size:10px">BM floor (≥ View)</span>'
+          ? '<span style="color:var(--h-text-muted);font-size:10px">BM floor (≥ View)</span>'
           : '';
         return `
           <tr>
             <td style="padding:6px 8px;font-size:12px">${scopeLabel}</td>
             <td style="padding:6px 8px;font-size:12px;font-weight:500">${levelLabel}</td>
-            <td style="padding:6px 8px;font-size:11px;color:var(--color-text-muted)">${subflagsLabel}</td>
+            <td style="padding:6px 8px;font-size:11px;color:var(--h-text-muted)">${subflagsLabel}</td>
             <td style="padding:6px 8px">${floorNote}</td>
           </tr>`;
-      }).join('') || '<tr><td colspan="4" style="padding:8px;color:var(--color-text-muted);font-size:11px;text-align:center">No tuples configured.</td></tr>';
+      }).join('') || '<tr><td colspan="4" style="padding:8px;color:var(--h-text-muted);font-size:11px;text-align:center">No tuples configured.</td></tr>';
 
       const togglesRow = a.userType === 'lo' ? `
-        <div style="display:flex;gap:14px;margin-top:10px;font-size:11px;color:var(--color-text-muted)">
+        <div style="display:flex;gap:14px;margin-top:10px;font-size:11px;color:var(--h-text-muted)">
           <label style="display:flex;align-items:center;gap:4px"><input type="checkbox" ${a.allowNewOriginations !== false ? 'checked' : ''} disabled> Allow new originations</label>
           <label style="display:flex;align-items:center;gap:4px"><input type="checkbox" ${a.allowAccessToAllBranchActivity ? 'checked' : ''} disabled> All-branch activity</label>
         </div>` : '';
 
       return `
-        <div style="border:1px solid var(--color-border);border-radius:8px;padding:12px;margin-bottom:10px;background:var(--color-card)">
+        <div style="border:1px solid var(--h-border);border-radius:8px;padding:12px;margin-bottom:10px;background:var(--h-surface-1)">
           <div style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:6px;margin-bottom:8px">
             <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap">
               <strong style="font-size:13px">${branch.name}</strong>
               ${utBadge}${bmBadge}
             </div>
-            ${branch.lastNmlsSync ? `<span style="font-size:10px;color:var(--color-text-muted)"><span class="status-dot" style="display:inline-block;width:5px;height:5px;border-radius:50%;background:var(--color-success);margin-right:3px"></span>NMLS sync ${Display.relativeTime(branch.lastNmlsSync)}</span>` : ''}
+            ${branch.lastNmlsSync ? `<span style="font-size:10px;color:var(--h-text-muted)"><span class="status-dot" style="display:inline-block;width:5px;height:5px;border-radius:50%;background:var(--h-success);margin-right:3px"></span>NMLS sync ${Display.relativeTime(branch.lastNmlsSync)}</span>` : ''}
           </div>
-          <div style="font-size:11px;color:var(--color-text-muted);margin-bottom:8px">
-            Eligible: ${eligibleLPMs.length ? eligibleLPMs.join(', ') : '<span style="color:var(--color-warning)">—</span>'}
-            ${(eff.blockedBy.oc?.length || eff.blockedBy.branch?.length) ? `· <span style="color:var(--color-warning)">${(eff.blockedBy.oc?.length || 0) + (eff.blockedBy.branch?.length || 0)} blocked at OC/branch</span>` : ''}
-            ${eff.blockedBy.license?.length ? `· <span style="color:var(--color-warning)">${eff.blockedBy.license.length} blocked by license</span>` : ''}
+          <div style="font-size:11px;color:var(--h-text-muted);margin-bottom:8px">
+            Eligible: ${eligibleLPMs.length ? eligibleLPMs.join(', ') : '<span style="color:var(--h-warning)">—</span>'}
+            ${(eff.blockedBy.oc?.length || eff.blockedBy.branch?.length) ? `· <span style="color:var(--h-warning)">${(eff.blockedBy.oc?.length || 0) + (eff.blockedBy.branch?.length || 0)} blocked at OC/branch</span>` : ''}
+            ${eff.blockedBy.license?.length ? `· <span style="color:var(--h-warning)">${eff.blockedBy.license.length} blocked by license</span>` : ''}
           </div>
-          <table style="width:100%;border-collapse:collapse;background:var(--color-surface);border-radius:6px;overflow:hidden">
-            <thead><tr style="font-size:10px;color:var(--color-text-muted);text-transform:uppercase;letter-spacing:.04em">
+          <table style="width:100%;border-collapse:collapse;background:var(--h-pearl);border-radius:6px;overflow:hidden">
+            <thead><tr style="font-size:10px;color:var(--h-text-muted);text-transform:uppercase;letter-spacing:.04em">
               <th style="padding:6px 8px;text-align:left">LO Assignment</th>
               <th style="padding:6px 8px;text-align:left">Permission Level</th>
               <th style="padding:6px 8px;text-align:left">Subflags</th>
@@ -838,13 +848,13 @@ const ProfileView = {
             <tbody>${tupleRows}</tbody>
           </table>
           ${togglesRow}
-          ${futureGrant ? `<div style="font-size:10px;color:var(--color-text-muted);margin-top:6px">+ Auto-inherits new LOs added to this branch (spec §3.7 future grant)</div>` : ''}
+          ${futureGrant ? `<div style="font-size:10px;color:var(--h-text-muted);margin-top:6px">+ Auto-inherits new LOs added to this branch (spec §3.7 future grant)</div>` : ''}
         </div>`;
     }).join('');
 
     return `
       <div class="${cls}" ${wrap}>
-        <div class="${fullPage ? 'card-title' : 'section-title'}" style="margin-bottom:10px">Branch Assignments <span style="color:var(--color-text-muted);font-weight:400;font-size:12px">${assignments.length} branch${assignments.length === 1 ? '' : 'es'}</span></div>
+        <div class="${fullPage ? 'card-title' : 'section-title'}" style="margin-bottom:10px">Branch Assignments <span style="color:var(--h-text-muted);font-weight:400;font-size:12px">${assignments.length} branch${assignments.length === 1 ? '' : 'es'}</span></div>
         ${cards}
       </div>`;
   },
@@ -868,20 +878,20 @@ const ProfileView = {
       return `
         <tr>
           <td style="padding:6px 8px;font-weight:500">${m?.code || '—'}</td>
-          <td style="padding:6px 8px;font-size:11px;color:var(--color-text-muted)">${l.regulator || '—'}</td>
+          <td style="padding:6px 8px;font-size:11px;color:var(--h-text-muted)">${l.regulator || '—'}</td>
           <td style="padding:6px 8px"><span class="status-pill ${pillClass}"><span class="status-dot"></span>${pillLabel}</span></td>
           <td style="padding:6px 8px;font-size:11px">${Display.date(l.renewalDate)}</td>
-          <td style="padding:6px 8px;font-size:10px;color:var(--color-text-muted)">${l.lastSync ? Display.relativeTime(l.lastSync) : '—'}</td>
+          <td style="padding:6px 8px;font-size:10px;color:var(--h-text-muted)">${l.lastSync ? Display.relativeTime(l.lastSync) : '—'}</td>
         </tr>`;
     }).join('');
     const cls = fullPage ? 'card' : '';
     const wrap = fullPage ? `style="padding:14px 16px;margin-bottom:16px"` : '';
     return `
       <div class="${cls}" ${wrap}>
-        <div class="${fullPage ? 'card-title' : 'section-title'}" style="margin-bottom:6px">Licenses <span style="color:var(--color-text-muted);font-weight:400;font-size:11px">NMLS-sourced · daily sync</span></div>
-        <div style="font-size:11px;color:var(--color-text-muted);margin-bottom:8px">${licenses.length} state${licenses.length === 1 ? '' : 's'} licensed</div>
+        <div class="${fullPage ? 'card-title' : 'section-title'}" style="margin-bottom:6px">Licenses <span style="color:var(--h-text-muted);font-weight:400;font-size:11px">NMLS-sourced · daily sync</span></div>
+        <div style="font-size:11px;color:var(--h-text-muted);margin-bottom:8px">${licenses.length} state${licenses.length === 1 ? '' : 's'} licensed</div>
         <table style="width:100%;border-collapse:collapse">
-          <thead><tr style="font-size:10px;color:var(--color-text-muted);text-transform:uppercase;letter-spacing:.04em">
+          <thead><tr style="font-size:10px;color:var(--h-text-muted);text-transform:uppercase;letter-spacing:.04em">
             <th style="padding:6px 8px;text-align:left">Market</th>
             <th style="padding:6px 8px;text-align:left">Regulator</th>
             <th style="padding:6px 8px;text-align:left">Status</th>

@@ -138,7 +138,7 @@ const MobileHomeView = {
                 </div>
                 <div class="m-list-item-sub">${co ? co.name : 'N/A'} &middot; ${Display.roleName(u.role)}</div>
                 <div class="m-list-item-footer">
-                  <span style="font-size:11px;color:var(--color-text-muted)">${u.email}</span>
+                  <span style="font-size:11px;color:var(--h-text-muted)">${u.email}</span>
                   <button class="m-alert-action" onclick="State.advanceOnboarding('${u.id}');App.renderMobileShell(MobileHomeView.render())">Advance</button>
                 </div>
               </div>`;
@@ -473,7 +473,7 @@ const MobileHomeView = {
           <span class="status-badge status-${stageLabel === 'Completed' ? 'success' : stageLabel === 'Draft' ? 'neutral' : 'info'}" style="font-size:10px;padding:2px 7px">${stageLabel}</span>
           <span class="m-list-item-amount">$${(l.amount / 1000).toFixed(0)}k</span>
         </div>
-        ${nextAction ? `<div style="font-size:11px;color:var(--color-text-muted);margin-top:2px">Next: ${nextAction}</div>` : ''}
+        ${nextAction ? `<div style="font-size:11px;color:var(--h-text-muted);margin-top:2px">Next: ${nextAction}</div>` : ''}
       </div>`;
   },
 };

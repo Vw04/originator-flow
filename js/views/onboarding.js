@@ -116,14 +116,14 @@ const OnboardingView = {
                 <div class="filter-menu-label">Branch</div>
                 ${branches.map(b => `<div class="filter-menu-item" onclick="OnboardingView.addFilter('branch','${b.id}')">${b.name}</div>`).join('')}
               </div>
-              ${hasFilters ? `<div class="filter-menu-section" style="border-top:1px solid var(--color-border);padding-top:8px"><div class="filter-menu-item" onclick="OnboardingView.clearOnboardingFilters()" style="color:var(--color-danger)">Clear All Filters</div></div>` : ''}
+              ${hasFilters ? `<div class="filter-menu-section" style="border-top:1px solid var(--h-border);padding-top:8px"><div class="filter-menu-item" onclick="OnboardingView.clearOnboardingFilters()" style="color:var(--h-error)">Clear All Filters</div></div>` : ''}
             </div>
           </div>
         </div>
 
         <!-- Row 2: Sort controls + active filter chips -->
         <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap">
-          <span style="font-size:11px;font-weight:600;text-transform:uppercase;letter-spacing:0.07em;color:var(--color-text-muted)">Sort:</span>
+          <span style="font-size:11px;font-weight:600;text-transform:uppercase;letter-spacing:0.07em;color:var(--h-text-muted)">Sort:</span>
           ${[
             { label: 'A → Z',           field: 'name',   dir: 'asc'  },
             { label: 'Z → A',           field: 'name',   dir: 'desc' },
@@ -255,7 +255,7 @@ const OnboardingView = {
             ${this._applyFilters(failed).length ? `
               <div class="table-container" style="margin-bottom:16px">
                 <div class="table-toolbar">
-                  <div class="table-toolbar-title" style="color:var(--color-danger)">Needs Attention (${this._applyFilters(failed).length})</div>
+                  <div class="table-toolbar-title" style="color:var(--h-error)">Needs Attention (${this._applyFilters(failed).length})</div>
                 </div>
                 <table>
                   <thead><tr><th>User</th><th>Role</th><th>Branch</th><th>Status</th></tr></thead>
@@ -304,13 +304,13 @@ const OnboardingView = {
         note = `<div class="timeline-note">Email sent to <strong>${u.email}</strong></div>`;
       }
       if (s.key === 'email_verified' && i < currentIdx) {
-        note = `<div class="timeline-note" style="background:var(--color-success-bg);border-left-color:var(--color-success);color:var(--color-success)">User returned via magic link</div>`;
+        note = `<div class="timeline-note" style="background:var(--h-success-bg);border-left-color:var(--h-success);color:var(--h-success)">User returned via magic link</div>`;
       }
       if (s.key === 'verification_pending' && state === 'active') {
         note = `<div class="timeline-note">User redirected to <strong>SecuritizeID</strong> for KYC. Awaiting confirmation.<br><span style="font-size:11px;margin-top:4px;display:block;opacity:0.8">Pending approval from SecuritizeID · System Admin notified</span></div>`;
       }
       if (s.key === 'verification_pending' && state === 'complete') {
-        note = `<div class="timeline-note" style="background:var(--color-success-bg);border-left-color:var(--color-success);color:var(--color-success)">KYC verified via SecuritizeID</div>`;
+        note = `<div class="timeline-note" style="background:var(--h-success-bg);border-left-color:var(--h-success);color:var(--h-success)">KYC verified via SecuritizeID</div>`;
       }
 
       return `
@@ -330,20 +330,20 @@ const OnboardingView = {
 
     return `
       <div class="card" style="padding:0;overflow:hidden;position:sticky;top:72px">
-        <div style="padding:16px 20px;border-bottom:1px solid var(--color-border);background:var(--color-surface);display:flex;justify-content:space-between;align-items:flex-start">
+        <div style="padding:16px 20px;border-bottom:1px solid var(--h-border);background:var(--h-pearl);display:flex;justify-content:space-between;align-items:flex-start">
           <div>
             <div style="font-weight:700;font-size:14px">${Display.fullName(u)}</div>
-            <div style="font-size:12px;color:var(--color-text-secondary)">${u.email}</div>
+            <div style="font-size:12px;color:var(--h-text-secondary)">${u.email}</div>
           </div>
           <button class="btn btn-ghost btn-xs" onclick="OnboardingView.selectUser(null)">✕</button>
         </div>
 
-        <div style="padding:16px 20px;border-bottom:1px solid var(--color-border)">
+        <div style="padding:16px 20px;border-bottom:1px solid var(--h-border)">
           <div style="display:flex;gap:8px;flex-wrap:wrap">
             <span class="role-chip ${Display.roleClass(u.role)}">${Display.roleName(u.role)}</span>
             <span class="status-pill ${Display.onboardingStatusClass(u.onboardingStatus)}"><span class="status-dot"></span>${Display.onboardingStatusLabel(u.onboardingStatus)}</span>
           </div>
-          <div style="margin-top:8px;font-size:12px;color:var(--color-text-secondary)">${co ? co.name : ''} ${br ? '· ' + br.name : ''}</div>
+          <div style="margin-top:8px;font-size:12px;color:var(--h-text-secondary)">${co ? co.name : ''} ${br ? '· ' + br.name : ''}</div>
         </div>
 
         <div style="padding:20px">
@@ -352,7 +352,7 @@ const OnboardingView = {
         </div>
 
         ${canEdit && (nextStep || isFailed || isSuspended) ? `
-          <div style="padding:14px 20px;border-top:1px solid var(--color-border);display:flex;gap:8px;flex-wrap:wrap">
+          <div style="padding:14px 20px;border-top:1px solid var(--h-border);display:flex;gap:8px;flex-wrap:wrap">
             ${nextStep ? `<button class="btn btn-primary btn-sm" onclick="OnboardingView.advance('${u.id}')">Advance to: ${nextStep.label}</button>` : ''}
             ${!isSuspended && u.onboardingStatus !== 'active' ? `<button class="btn btn-danger-ghost btn-sm" onclick="OnboardingView.suspendUser('${u.id}')">Suspend</button>` : ''}
             ${isSuspended ? `<button class="btn btn-secondary btn-sm" onclick="OnboardingView.reactivateUser('${u.id}')">Reactivate</button>` : ''}
@@ -387,7 +387,7 @@ const OnboardingView = {
 
       <div class="page-body" style="max-width:640px">
         <div class="wizard-card">
-          <div class="wizard-icon" style="background:#DCFCE7;color:var(--color-success)"><svg width="28" height="28" viewBox="0 0 28 28" fill="none" stroke="currentColor" stroke-width="2"><circle cx="14" cy="14" r="12"/><path d="M8 14l4 4 8-8"/></svg></div>
+          <div class="wizard-icon" style="background:#DCFCE7;color:var(--h-success)"><svg width="28" height="28" viewBox="0 0 28 28" fill="none" stroke="currentColor" stroke-width="2"><circle cx="14" cy="14" r="12"/><path d="M8 14l4 4 8-8"/></svg></div>
           <div class="wizard-title">Identity Verified</div>
           <div class="wizard-desc">
             Your SecuritizeID KYC verification is complete. You have been granted Accredited Investor status on the Homium platform.
@@ -418,7 +418,7 @@ const OnboardingView = {
               <div class="timeline-dot complete"></div>
               <div class="timeline-label">SecuritizeID KYC</div>
               <div class="timeline-meta">Identity and accreditation verified</div>
-              <div class="timeline-note" style="background:var(--color-success-bg);border-left-color:var(--color-success);color:var(--color-success)">Returned via magic link from SecuritizeID</div>
+              <div class="timeline-note" style="background:var(--h-success-bg);border-left-color:var(--h-success);color:var(--h-success)">Returned via magic link from SecuritizeID</div>
             </div>
             <div class="timeline-item">
               <div class="timeline-dot complete"></div>

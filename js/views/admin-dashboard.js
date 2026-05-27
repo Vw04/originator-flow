@@ -41,7 +41,7 @@ const AdminDashboardView = {
     const kpiHtml = kpis.map((k, i) => `
       ${i > 0 ? '<div class="stat-divider"></div>' : ''}
       <div class="stat-item">
-        <div class="stat-value" style="${k.accent ? 'color:var(--color-danger)' : ''}">${k.value}</div>
+        <div class="stat-value" style="${k.accent ? 'color:var(--h-error)' : ''}">${k.value}</div>
         <div class="stat-label">${k.label}</div>
       </div>`).join('');
 
@@ -82,16 +82,16 @@ const AdminDashboardView = {
       return `
         <tr>
           <td style="font-weight:600">${co.name}</td>
-          <td style="color:var(--color-text-muted);font-size:12px">${co.state || '—'}</td>
-          <td style="color:var(--color-success);font-weight:600">${coActive}</td>
-          <td style="color:var(--color-text-secondary)">${coPending}</td>
+          <td style="color:var(--h-text-muted);font-size:12px">${co.state || '—'}</td>
+          <td style="color:var(--h-success);font-weight:600">${coActive}</td>
+          <td style="color:var(--h-text-secondary)">${coPending}</td>
           <td>${coUsers.length}</td>
           <td>
             <div style="display:flex;align-items:center;gap:8px">
-              <div style="flex:1;background:var(--color-surface);border-radius:3px;height:6px;overflow:hidden">
-                <div style="width:${coPct}%;height:100%;background:var(--color-primary);border-radius:3px"></div>
+              <div style="flex:1;background:var(--h-pearl);border-radius:3px;height:6px;overflow:hidden">
+                <div style="width:${coPct}%;height:100%;background:var(--h-action);border-radius:3px"></div>
               </div>
-              <span style="font-size:11px;color:var(--color-text-muted);width:28px;text-align:right">${coPct}%</span>
+              <span style="font-size:11px;color:var(--h-text-muted);width:28px;text-align:right">${coPct}%</span>
             </div>
           </td>
         </tr>`;
@@ -109,11 +109,11 @@ const AdminDashboardView = {
         <div class="activity-feed-item">
           <div class="activity-feed-avatar">${initials}</div>
           <div class="activity-feed-body">
-            <strong>${name}</strong> ${verb.toLowerCase()} <span style="color:var(--color-primary)">${a.subject}</span>
+            <strong>${name}</strong> ${verb.toLowerCase()} <span style="color:var(--h-action)">${a.subject}</span>
           </div>
           <div class="activity-feed-time">${a.time}</div>
         </div>`;
-    }).join('') || '<div style="padding:12px 0;color:var(--color-text-muted);font-size:13px">No recent activity.</div>';
+    }).join('') || '<div style="padding:12px 0;color:var(--h-text-muted);font-size:13px">No recent activity.</div>';
 
     /* Audit log */
     const auditLog = [
@@ -127,8 +127,8 @@ const AdminDashboardView = {
       <tr>
         <td style="font-weight:500">${e.actor}</td>
         <td>${e.action}</td>
-        <td style="color:var(--color-text-secondary)">${e.entity}</td>
-        <td style="color:var(--color-text-muted);white-space:nowrap">${e.when}</td>
+        <td style="color:var(--h-text-secondary)">${e.entity}</td>
+        <td style="color:var(--h-text-muted);white-space:nowrap">${e.when}</td>
       </tr>`).join('');
 
     /* Quick links — no emojis */
@@ -161,9 +161,9 @@ const AdminDashboardView = {
           <div class="admin-dash-main">
             <div class="card" style="margin-bottom:20px">
               <div class="card-title" style="margin-bottom:16px">User Onboarding Funnel</div>
-              <div style="display:grid;grid-template-columns:1fr 80px;gap:2px;margin-bottom:4px;padding:0 0 6px;border-bottom:1px solid var(--color-border-light)">
-                <div style="font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:0.05em;color:var(--color-text-muted)">Stage</div>
-                <div style="font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:0.05em;color:var(--color-text-muted);text-align:right">Count</div>
+              <div style="display:grid;grid-template-columns:1fr 80px;gap:2px;margin-bottom:4px;padding:0 0 6px;border-bottom:1px solid var(--h-border-subtle)">
+                <div style="font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:0.05em;color:var(--h-text-muted)">Stage</div>
+                <div style="font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:0.05em;color:var(--h-text-muted);text-align:right">Count</div>
               </div>
               ${funnelHtml}
             </div>

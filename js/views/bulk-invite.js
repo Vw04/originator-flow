@@ -206,7 +206,7 @@ const BulkInviteView = {
             <option value="lo">Loan Officer</option>
             <option value="standard">Standard</option>
           </select>
-          <label style="display:inline-flex;align-items:center;gap:6px;font-size:12px;color:var(--color-text-secondary, var(--color-text-muted))">
+          <label style="display:inline-flex;align-items:center;gap:6px;font-size:12px;color:var(--h-text-secondary, var(--h-text-muted))">
             <input type="checkbox" onchange="BulkInviteView._bulkSetBM(this.checked)">
             Branch Manager (for selected)
           </label>
@@ -259,14 +259,14 @@ const BulkInviteView = {
         </td>
         <td class="cell-primary">${row.email}${badFlag}</td>
         <td>
-          <select class="select-input" style="${branchMissing ? 'border-color:var(--color-danger,#DC2626)' : ''}"
+          <select class="select-input" style="${branchMissing ? 'border-color:var(--h-error, #C4382A)' : ''}"
                   onchange="BulkInviteView._setRow(${row.id}, 'branchId', this.value)">
             <option value="">— Select branch —</option>
             ${branchOptions}
           </select>
         </td>
         <td>
-          <select class="select-input" style="${roleMissing ? 'border-color:var(--color-danger,#DC2626)' : ''}"
+          <select class="select-input" style="${roleMissing ? 'border-color:var(--h-error, #C4382A)' : ''}"
                   onchange="BulkInviteView._setRow(${row.id}, 'role', this.value)">
             <option value="" ${roleMissing ? 'selected' : ''}>— Select role —</option>
             <option value="lo" ${isLO ? 'selected' : ''}>Loan Officer</option>

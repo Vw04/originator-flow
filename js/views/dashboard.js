@@ -30,7 +30,7 @@ const DashboardView = {
     if (!btn) return;
     btn.textContent = '✓ Sent';
     btn.disabled = true;
-    btn.style.color = 'var(--color-primary)';
+    btn.style.color = 'var(--h-action)';
     setTimeout(() => { btn.textContent = 'Nudge'; btn.disabled = false; btn.style.color = ''; }, 3000);
   },
 
@@ -62,13 +62,13 @@ const DashboardView = {
       const pct   = total > 0 ? Math.round((count / total) * 100) : 0;
       const barH  = Math.max(Math.round((count / maxCount) * CHART_H), 3);
       return `<div style="display:flex;flex-direction:column;align-items:center;flex:1;gap:2px">
-        <div style="font-size:11px;font-weight:500;color:var(--color-text);text-align:center;line-height:1.3">${count}<br><span style="font-size:10px;font-weight:400;color:var(--color-text-muted)">${pct}%</span></div>
+        <div style="font-size:11px;font-weight:500;color:var(--h-text-primary);text-align:center;line-height:1.3">${count}<br><span style="font-size:10px;font-weight:400;color:var(--h-text-muted)">${pct}%</span></div>
         <div style="width:100%;border-radius:4px 4px 0 0;background:${s.color};height:${barH}px"></div>
       </div>`;
     }).join('');
 
     const funnelXLabels = STAGES.map(s =>
-      `<div style="flex:1;font-size:11px;color:var(--color-text-muted);text-align:center;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${s.label}</div>`
+      `<div style="flex:1;font-size:11px;color:var(--h-text-muted);text-align:center;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${s.label}</div>`
     ).join('');
 
     /* ── Stage Duration: bar chart with y-axis gridlines ── */
@@ -89,13 +89,13 @@ const DashboardView = {
     const durBarsHtml = DURATIONS.map(d => {
       const barH = Math.max(Math.round((d.days / MAX_DAYS) * CHART_H), 3);
       return `<div style="flex:1;display:flex;flex-direction:column;align-items:center;gap:2px">
-        <div style="font-size:11px;font-weight:500;color:var(--color-text)">${d.days}d</div>
+        <div style="font-size:11px;font-weight:500;color:var(--h-text-primary)">${d.days}d</div>
         <div style="width:72%;border-radius:4px 4px 0 0;background:#94C5A8;height:${barH}px"></div>
       </div>`;
     }).join('');
 
     const durXLabels = DURATIONS.map(d =>
-      `<div style="flex:1;font-size:10px;color:var(--color-text-muted);text-align:center;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${d.label}</div>`
+      `<div style="flex:1;font-size:10px;color:var(--h-text-muted);text-align:center;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${d.label}</div>`
     ).join('');
 
     /* ── Company Progress (compact) ── */
@@ -128,7 +128,7 @@ const DashboardView = {
                 <button class="analytics-action-btn analytics-action-btn-primary" onclick="event.stopPropagation();DashboardView.advanceUserFromAnalytics('${u.id}')">Advance ›</button>
               </div>
             </div>`).join('') : `
-            <div style="padding:6px 4px;font-size:11px;color:var(--color-text-muted)">✓ All users active.</div>`}
+            <div style="padding:6px 4px;font-size:11px;color:var(--h-text-muted)">✓ All users active.</div>`}
         </div>` : '';
 
       return `
@@ -165,7 +165,7 @@ const DashboardView = {
             <div class="analytics-col-title">Avg. Stage Duration</div>
             <div style="display:flex;gap:8px;align-items:flex-start">
               <div style="display:flex;flex-direction:column;justify-content:space-between;height:${CHART_H}px;text-align:right;flex-shrink:0;padding-bottom:1px">
-                ${GRID_VALS.map(v => `<div style="font-size:10px;color:var(--color-text-muted);line-height:1">${v}d</div>`).join('')}
+                ${GRID_VALS.map(v => `<div style="font-size:10px;color:var(--h-text-muted);line-height:1">${v}d</div>`).join('')}
               </div>
               <div style="flex:1;display:flex;flex-direction:column;gap:8px">
                 <div style="position:relative;height:${CHART_H}px">
@@ -181,7 +181,7 @@ const DashboardView = {
           <div class="analytics-col-divider"></div>
           <div class="analytics-col">
             <div class="analytics-col-title">Company Progress</div>
-            ${companies.length ? companyHtml : '<div style="font-size:11px;color:var(--color-text-muted)">No companies.</div>'}
+            ${companies.length ? companyHtml : '<div style="font-size:11px;color:var(--h-text-muted)">No companies.</div>'}
           </div>
         </div>
       </div>`;
@@ -303,7 +303,7 @@ const DashboardView = {
       const actor = State.getUser(a.userId);
       return `
         <div class="activity-item">
-          <div class="activity-avatar" style="background:${actor ? avatarColor(actor.role) : 'var(--color-primary)'}">${actor ? Display.initials(actor) : 'SY'}</div>
+          <div class="activity-avatar" style="background:${actor ? avatarColor(actor.role) : 'var(--h-action)'}">${actor ? Display.initials(actor) : 'SY'}</div>
           <div class="activity-content">
             <strong>${actor ? Display.fullName(actor) : 'System'}</strong> ${a.action} <strong>${a.subject}</strong>
           </div>
@@ -372,7 +372,7 @@ const DashboardView = {
             <div class="stat-divider"></div>
             <div class="stat-item">
               <div class="stat-label">Requiring Attention</div>
-              <div class="stat-value" style="${reqAttention.length > 0 ? 'color:var(--color-danger)' : ''}">${reqAttention.length}</div>
+              <div class="stat-value" style="${reqAttention.length > 0 ? 'color:var(--h-error)' : ''}">${reqAttention.length}</div>
               <div class="stat-desc">failed KYC or suspended</div>
             </div>
             <div class="stat-divider"></div>
@@ -452,7 +452,7 @@ const DashboardView = {
                 <div class="card-subtitle">Admin events</div>
               </div>
             </div>
-            <div class="activity-feed">${activityHtml || '<div style="padding:16px;color:var(--color-text-muted);font-size:13px">No recent admin activity.</div>'}</div>
+            <div class="activity-feed">${activityHtml || '<div style="padding:16px;color:var(--h-text-muted);font-size:13px">No recent admin activity.</div>'}</div>
           </div>
         </div>
 

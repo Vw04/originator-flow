@@ -501,6 +501,24 @@
     <code>AppModal</code> primitive adopted, Tabler Icons set as going-forward standard, spacing scale tokens added.
     See <a href="design-canon-vs-brandkit.html">design-canon-vs-brandkit.html</a> for the full reconciliation.
   </p>
+  <p class="doc-lede" style="margin-top:10px;padding:14px 16px;background:#FEF3E2;border-left:3px solid var(--warning);border-radius:0 6px 6px 0;color:var(--ink-deep)">
+    <strong>Updated 2026-05-27 (v2 canon):</strong> New source of truth is
+    <code>assets/specs/homium-design-canon-v2 2/CLAUDE.md</code>. Applied:
+    full <code>--h-*</code> token system (with brand ladders teal-900/700/500/200/50 and green-900..50),
+    backward-compat <code>--color-*</code> aliases, PascalCase class shim
+    (<code>js/class-aliases.js</code>), Pattern-D save bars on Branches / Profile /
+    Origination-Companies / Branch-Create / OC-Create, shared dirty-form modal
+    (<code>AppModal.confirmDiscard</code>) with hashchange / browser-back guard,
+    table-row hover (sand + 3px navy left), avatar palette (teal-50 bg / teal-500 text),
+    <code>.card-clickable</code> green-500 hover border, status pill backgrounds.
+    <br>
+    <strong style="color:var(--danger)">Known canon contradiction — primary CTA stays navy.</strong>
+    The v2 <code>CLAUDE.md</code> Brand Color System text describes green-500 (#14935F) as
+    "Primary CTA / Action Accent." Its companion <code>DECISIONS-LOG.md</code> says
+    "Primary CTA color: #00334A navy — already aligned." The decisions log wins;
+    our primary buttons stay navy. Green-500 lives in tokens for the
+    <code>.card-clickable</code> hover indicator only.
+  </p>
   <nav class="doc-toc">
     <a href="#agreement">Working Agreement</a>
     <a href="#colors">Colors</a>
@@ -510,6 +528,7 @@
     <a href="#modal">Modal primitive</a>
     <a href="#icons">Icons</a>
     <a href="#action-bars">Action bars</a>
+    <a href="#naming">Class naming</a>
     <a href="#tables">Tables</a>
     <a href="#kept">What we kept</a>
     <a href="#rollout">Rollout</a>
@@ -962,6 +981,74 @@ AppModal.close();</pre>
       The first <code style="font-family:var(--mono);font-size:11.5px">input</code> event in the form bubbles up to a delegated handler that adds <code style="font-family:var(--mono);font-size:11.5px">is-dirty</code>, flipping the dot + label to brick-red ("Unsaved changes"). Save and Cancel both clear the flag.
     </p>
   </div>
+
+  <h3 style="margin:28px 0 12px;font-size:13px;letter-spacing:0.08em;text-transform:uppercase;color:var(--ink-2);font-weight:600">Save/Cancel — Four patterns (2026-05-27 canon)</h3>
+  <p style="font-size:13px;color:var(--ink-2);line-height:1.55;margin-bottom:14px">
+    Per v2 canon, four save/cancel patterns exist. Each maps to a distinct user mental model. Do not conflate them.
+    Pattern D is implemented in this codebase; A/B/C are documented for when their views are built.
+  </p>
+  <div style="display:grid;grid-template-columns:1fr 1fr;gap:14px;margin-bottom:14px">
+    <div style="padding:14px 18px;background:var(--card);border:1px solid var(--border);border-radius:8px">
+      <h4 style="margin:0 0 6px;font-size:13px;font-weight:600;color:var(--ink-deep)">A · Wizard / origination flow</h4>
+      <p style="margin:0;font-size:13px;color:var(--ink-2);line-height:1.55">Bottom sticky bar: <code>← See All Applications</code> · AutoSave indicator · <code>Save &amp; Exit</code> · <code>Previous</code> · <code>Continue →</code>. <strong>No Cancel.</strong> AutoSave removes the discard choice. Dirty-form modal does NOT fire. <em>Not yet implemented — used by wizard views when AutoSave is wired.</em></p>
+    </div>
+    <div style="padding:14px 18px;background:var(--card);border:1px solid var(--border);border-radius:8px">
+      <h4 style="margin:0 0 6px;font-size:13px;font-weight:600;color:var(--ink-deep)">B · Inline entity edit (header card)</h4>
+      <p style="margin:0;font-size:13px;color:var(--ink-2);line-height:1.55">Save / Discard live INSIDE the detail header card. "Discard" is hidden until dirty; appears as <code>Btn--ghost</code>. "Save changes" disabled until dirty. Explicit Discard click = no modal (intent is clear). <em>Not yet implemented in this codebase.</em></p>
+    </div>
+    <div style="padding:14px 18px;background:var(--card);border:1px solid var(--border);border-radius:8px">
+      <h4 style="margin:0 0 6px;font-size:13px;font-weight:600;color:var(--ink-deep)">C · Tab-level commit</h4>
+      <p style="margin:0;font-size:13px;color:var(--ink-2);line-height:1.55">Single "Save changes" button, bottom-right. <strong>No Cancel.</strong> Switching tabs / clicking rail / browser-back while dirty fires the dirty-form modal. <em>Permissions tab is the prototypical case; not yet implemented.</em></p>
+    </div>
+    <div style="padding:14px 18px;background:var(--card);border:1px solid var(--border);border-radius:8px;border-color:var(--success)">
+      <h4 style="margin:0 0 6px;font-size:13px;font-weight:600;color:var(--success)">D · Full-page edit form ✓ Implemented</h4>
+      <p style="margin:0;font-size:13px;color:var(--ink-2);line-height:1.55">Cancel + Save changes in bottom bar. Cancel = explicit intent → no modal. Unintentional nav-away (rail, tab, BackToMain, browser back) fires the dirty-form modal via <code>AppModal.confirmDiscard</code>. Wired through <code>js/form-state.js</code> on: <code>branches.js</code>, <code>profile.js</code>, <code>origination-companies.js</code>, <code>branch-create.js</code>, <code>oc-create.js</code>.</p>
+    </div>
+  </div>
+
+  <div style="padding:14px 18px;background:var(--surf);border:1px solid var(--border-l);border-radius:8px">
+    <h4 style="margin:0 0 8px;font-size:13px;font-weight:600;color:var(--ink-deep)">Dirty-form modal — trigger matrix</h4>
+    <table style="width:100%;border-collapse:collapse;font-size:12.5px">
+      <thead>
+        <tr style="text-align:left;border-bottom:1px solid var(--border)">
+          <th style="padding:6px 0;font-weight:600">Trigger</th>
+          <th style="padding:6px 0;font-weight:600;width:60px">B</th>
+          <th style="padding:6px 0;font-weight:600;width:60px">C</th>
+          <th style="padding:6px 0;font-weight:600;width:60px">D</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr><td style="padding:5px 0">Left-rail click while dirty</td><td>✅</td><td>✅</td><td>✅</td></tr>
+        <tr><td style="padding:5px 0">Different tab click while dirty</td><td>✅</td><td>✅</td><td>✅</td></tr>
+        <tr><td style="padding:5px 0">BackToMain click while dirty</td><td>✅</td><td>n/a</td><td>✅</td></tr>
+        <tr><td style="padding:5px 0">Browser back while dirty</td><td>✅</td><td>✅</td><td>✅</td></tr>
+        <tr><td style="padding:5px 0">Page reload / tab close</td><td colspan="3">✅ <code style="font-size:11px">beforeunload</code> (all patterns)</td></tr>
+        <tr><td style="padding:5px 0">Explicit Discard click (B)</td><td>❌ intentional</td><td>n/a</td><td>n/a</td></tr>
+        <tr><td style="padding:5px 0">Explicit Cancel click (D)</td><td>n/a</td><td>n/a</td><td>❌ intentional</td></tr>
+        <tr><td style="padding:5px 0">Save button</td><td>❌</td><td>❌</td><td>❌</td></tr>
+      </tbody>
+    </table>
+    <p style="margin:10px 0 0;font-size:12px;color:var(--ink-mute)">Implementation: <code>js/form-state.js</code> exposes <code>captureFormSnapshot / revertFormSnapshot / clearFormSnapshot / markFormDirty / hasAnyDirtyForm / cancelEditForm / saveEditForm</code>. <code>js/router.js</code> intercepts <code>hashchange</code> and <code>navigate()</code>; explicit Cancel/Save use <code>Router.navigateForce()</code> to bypass.</p>
+  </div>
+</section>
+
+<!-- ================================================== PASCALCASE ALIASES -->
+<section id="naming">
+  <p class="sec-eyebrow">05b · Naming</p>
+  <h2 class="sec-title">Class naming — PascalCase aliases</h2>
+  <p class="sec-lede">
+    The v2 canon names components in PascalCase BEM (<code>.Btn.Btn--primary</code>, <code>.Card</code>, <code>.Modal</code>, <code>.NavRail</code>, <code>.DetailHeaderCard</code>, <code>.SaveBar</code>, <code>.BackToMain</code>). The codebase implements them in kebab-case. <code>js/class-aliases.js</code> runtime shim adds the kebab equivalent whenever it sees a PascalCase class name, so both names work. New code SHOULD use the PascalCase names; legacy kebab continues working.
+  </p>
+  <div style="padding:14px 18px;background:var(--card);border:1px solid var(--border);border-radius:8px;font-size:12.5px;color:var(--ink-2);line-height:1.7">
+    <code style="font-family:var(--mono);font-size:11.5px">.Btn / .Btn--primary / .Btn--secondary / .Btn--outlined / .Btn--ghost / .Btn--destructive / .Btn--sm</code><br>
+    <code style="font-family:var(--mono);font-size:11.5px">.Card / .Card__title / .Card__header / .Card__subtitle / .Card--clickable</code><br>
+    <code style="font-family:var(--mono);font-size:11.5px">.Modal / .Modal__panel / .Modal__title / .Modal__body / .Modal__actions / .Modal__close</code><br>
+    <code style="font-family:var(--mono);font-size:11.5px">.NavRail / .NavRail__logo / .NavRail__items / .NavRail__item / .NavRail__profile</code><br>
+    <code style="font-family:var(--mono);font-size:11.5px">.PageHeader / .PageHeader__title / .PageHeader__subtitle / .PageHeader__actions</code><br>
+    <code style="font-family:var(--mono);font-size:11.5px">.SectionTitle / .SectionTitle--page</code><br>
+    <code style="font-family:var(--mono);font-size:11.5px">.DetailHeaderCard / .DetailHeaderCard__title / .DetailHeaderCard__subtitle / .DetailHeaderCard__meta</code><br>
+    <code style="font-family:var(--mono);font-size:11.5px">.BackToMain / .BackToMain--sticky / .SaveBar / .StatusPill / .FormGrid</code>
+  </div>
 </section>
 
 <!-- ================================================== TABLES -->
@@ -1102,12 +1189,14 @@ AppModal.close();</pre>
   <p class="sec-lede">Decisions deferred for follow-up — captured here so they don't fall out of scope.</p>
 
   <div style="display:grid;grid-template-columns:1fr;gap:14px">
-    <div style="padding:16px 20px;background:var(--card);border:1px solid var(--border);border-radius:8px">
-      <h4 style="margin:0 0 6px;font-size:14px;font-weight:600;color:var(--ink-deep)">1 · Cancel button removal + dirty-form modal</h4>
+    <div style="padding:16px 20px;background:var(--card);border:1px solid var(--success);border-radius:8px">
+      <h4 style="margin:0 0 6px;font-size:14px;font-weight:600;color:var(--success)">1 · Cancel button + dirty-form modal — ✓ RESOLVED 2026-05-27</h4>
       <p style="margin:0;font-size:13px;color:var(--ink-2);line-height:1.55">
-        <strong style="color:var(--danger)">BLOCKER on FE mockup delivery.</strong>
-        Save-only action bar (no Cancel button) and the "Discard changes?" modal are not implemented until aligned with Soren. Items to resolve:
-        is save-only the right model for Branches detail? What triggers the dirty-form modal (left-rail click, browser back, BackToMain)? What's the exact "Discard"/"Keep editing" copy?
+        Resolved by the v2 canon's four-pattern save/cancel model (see "Save/Cancel — Four patterns" above).
+        Pattern D (Cancel + Save bottom bar with dirty-form modal on unintentional nav-away)
+        is now wired on Branches, Profile, Origination-Companies, Branch-Create, and OC-Create
+        via <code>js/form-state.js</code> + <code>AppModal.confirmDiscard</code>.
+        Patterns A/B/C are documented for their respective view types when those views are built.
       </p>
     </div>
     <div style="padding:16px 20px;background:var(--card);border:1px solid var(--border);border-radius:8px">

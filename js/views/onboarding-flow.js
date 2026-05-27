@@ -122,7 +122,7 @@ const OnboardingFlowView = {
         <div class="wiz-topbar-logo">
           <img src="assets/branding/HomiumLogo_0721_Wordmark (Blue).png" alt="Homium" style="height:24px"
                onerror="this.style.display='none';this.nextElementSibling.style.display='inline'" />
-          <span style="display:none;font-size:18px;font-weight:700;color:var(--color-primary);font-family:var(--font-heading)">Homium</span>
+          <span style="display:none;font-size:18px;font-weight:700;color:var(--h-action);font-family:var(--font-heading)">Homium</span>
         </div>
         <div class="wiz-topbar-right">
           <span class="wiz-persona-pill">Welcome, ${personaName}</span>
@@ -152,7 +152,7 @@ const OnboardingFlowView = {
           const onclick = isVisited ? `onclick="OnboardingFlowView._gotoStep(${i})"` : '';
           const style = !isVisited ? 'opacity:.55;cursor:not-allowed' : 'cursor:pointer';
           return `<div class="section-tab ${cls}" ${onclick} style="${style}" title="${isVisited ? 'Click to review' : 'Locked until you reach this step'}">
-            <span style="font-size:11px;font-weight:700;color:var(--color-text-muted);margin-right:6px">${i + 1}</span>${this.STEP_LABELS[s] || s}
+            <span style="font-size:11px;font-weight:700;color:var(--h-text-muted);margin-right:6px">${i + 1}</span>${this.STEP_LABELS[s] || s}
           </div>`;
         }).join('')}
       </div>`;
@@ -204,7 +204,7 @@ const OnboardingFlowView = {
     // we verify it in the next step.
     const branchName = this._branchId ? (State.getBranch(this._branchId)?.name || '—') : (u.branchId ? State.getBranch(u.branchId)?.name : null);
     const inviteSummary = (isLO || branchName)
-      ? `<div style="font-size:12px;color:var(--color-text-secondary);margin-bottom:14px;padding:10px 12px;background:var(--color-surface);border:1px solid var(--color-border);border-radius:6px">
+      ? `<div style="font-size:12px;color:var(--h-text-secondary);margin-bottom:14px;padding:10px 12px;background:var(--h-pearl);border:1px solid var(--h-border);border-radius:6px">
            <strong>Invited as:</strong> ${isLO ? 'Loan Officer' : 'Standard User'}${branchName ? ` · <strong>${branchName}</strong>` : ''}
          </div>`
       : '';
@@ -212,7 +212,7 @@ const OnboardingFlowView = {
     return `
       <div class="card wiz-card">
         <div class="card-title" style="margin-bottom:6px">Set up your profile</div>
-        <div style="font-size:13px;color:var(--color-text-muted);margin-bottom:14px">
+        <div style="font-size:13px;color:var(--h-text-muted);margin-bottom:14px">
           Confirm or fill in your details. Anything pre-filled was provided by your program admin and is editable.
         </div>
 
@@ -229,7 +229,7 @@ const OnboardingFlowView = {
           </div>
           <div>
             <div class="ob-field-label">Email</div>
-            <input class="input" value="${u.email || this._email}" disabled style="width:100%;box-sizing:border-box;background:var(--color-surface)" />
+            <input class="input" value="${u.email || this._email}" disabled style="width:100%;box-sizing:border-box;background:var(--h-pearl)" />
           </div>
           <div>
             <div class="ob-field-label">Phone *</div>
@@ -280,7 +280,7 @@ const OnboardingFlowView = {
     if (status === 'verified') {
       statusPill = `<span class="status-pill" style="background:#DCFCE7;color:#166534"><span class="status-dot" style="background:#16A34A"></span>Verified</span>`;
       icon = `<svg width="40" height="40" viewBox="0 0 40 40" fill="none" stroke="#16A34A" stroke-width="2.4"><circle cx="20" cy="20" r="16"/><path d="M13 20l5 5 9-10"/></svg>`;
-      body = `<div style="font-size:12px;color:var(--color-text-secondary);line-height:1.5">
+      body = `<div style="font-size:12px;color:var(--h-text-secondary);line-height:1.5">
                 NMLS ID <strong>${link.nmlsId}</strong> linked.
                 <br>${(link.licensedStates || []).length} state license${(link.licensedStates || []).length === 1 ? '' : 's'} (${(link.licensedStates || []).join(', ') || '—'})
                 <br>${(link.authorizedBranchNmlsIds || []).length} authorized branch${(link.authorizedBranchNmlsIds || []).length === 1 ? '' : 'es'}.
@@ -292,7 +292,7 @@ const OnboardingFlowView = {
                 <circle cx="20" cy="20" r="16" stroke-opacity="0.3"/>
                 <path d="M20 8 v12 l8 5" stroke-linecap="round"/>
               </svg>`;
-      body = `<div style="font-size:12px;color:var(--color-text-secondary);line-height:1.5">
+      body = `<div style="font-size:12px;color:var(--h-text-secondary);line-height:1.5">
                 Cross-checking NMLS ID <strong>${link.nmlsId || this._pendingNmlsId || '—'}</strong> against the federal registry.
                 Includes ${branch ? `authorization at <strong>${branch.name}</strong> and licensing for ${branch.programs?.join(', ') || 'branch programs'}` : 'branch authorization and product licensing'}.
                 Runs in our daily batch — typically 24h.
@@ -317,8 +317,8 @@ const OnboardingFlowView = {
     if (status === 'verified') {
       statusPill = `<span class="status-pill" style="background:#DCFCE7;color:#166534"><span class="status-dot" style="background:#16A34A"></span>Verified</span>`;
       icon = `<svg width="40" height="40" viewBox="0 0 40 40" fill="none" stroke="#16A34A" stroke-width="2.4"><circle cx="20" cy="20" r="16"/><path d="M13 20l5 5 9-10"/></svg>`;
-      body = `<div style="font-size:12px;color:var(--color-text-secondary);line-height:1.5">
-                Identity confirmed. Securitize reference <code style="background:var(--color-surface);padding:1px 6px;border-radius:3px;font-size:11px">${kyc.referenceId || '—'}</code>.
+      body = `<div style="font-size:12px;color:var(--h-text-secondary);line-height:1.5">
+                Identity confirmed. Securitize reference <code style="background:var(--h-pearl);padding:1px 6px;border-radius:3px;font-size:11px">${kyc.referenceId || '—'}</code>.
               </div>`;
       action = '';
     } else if (status === 'pending') {
@@ -327,16 +327,16 @@ const OnboardingFlowView = {
                 <circle cx="20" cy="20" r="16" stroke-opacity="0.3"/>
                 <path d="M20 8 v12 l8 5" stroke-linecap="round"/>
               </svg>`;
-      body = `<div style="font-size:12px;color:var(--color-text-secondary);line-height:1.5">
+      body = `<div style="font-size:12px;color:var(--h-text-secondary);line-height:1.5">
                 Securitize is reviewing your submission. Verification typically completes within 24 hours; we'll email you when it's done.
               </div>`;
       action = '';
     } else {
-      statusPill = `<span class="status-pill" style="background:var(--color-surface);color:var(--color-text-muted)"><span class="status-dot" style="background:#9CA3AF"></span>Not started</span>`;
+      statusPill = `<span class="status-pill" style="background:var(--h-pearl);color:var(--h-text-muted)"><span class="status-dot" style="background:#9CA3AF"></span>Not started</span>`;
       icon = `<svg width="40" height="40" viewBox="0 0 40 40" fill="none" stroke="#1D4ED8" stroke-width="2.2">
                 <circle cx="20" cy="14" r="6"/><path d="M8 34c0-6 6-10 12-10s12 4 12 10"/><path d="M30 5l3 3-9 9"/>
               </svg>`;
-      body = `<div style="font-size:12px;color:var(--color-text-secondary);line-height:1.5">
+      body = `<div style="font-size:12px;color:var(--h-text-secondary);line-height:1.5">
                 We use Securitize for ID capture, address verification, and sanctions screening. Click below to begin — you'll be guided through ID upload and a quick selfie.
               </div>`;
       action = `<button class="btn btn-primary cert-card-action" onclick="OnboardingFlowView._openSecuritize()">Begin Securitize KYC ${CHEVRON_RIGHT}</button>`;
@@ -395,13 +395,13 @@ const OnboardingFlowView = {
           <div class="securitize-step-subtitle">Identity &amp; Accreditation Verification</div>
           <div class="securitize-step-body">
             We'll guide you through a quick verification flow:
-            <ol style="text-align:left;margin:12px auto 0;max-width:340px;padding-left:18px;font-size:13px;color:var(--color-text-secondary);line-height:1.7">
+            <ol style="text-align:left;margin:12px auto 0;max-width:340px;padding-left:18px;font-size:13px;color:var(--h-text-secondary);line-height:1.7">
               <li>Choose an ID document type</li>
               <li>Upload your government ID (front &amp; back)</li>
               <li>Take a selfie for biometric matching</li>
               <li>Review and submit</li>
             </ol>
-            <div style="font-size:11px;color:var(--color-text-muted);margin-top:14px">Your data is processed by Securitize, not stored on Homium.</div>
+            <div style="font-size:11px;color:var(--h-text-muted);margin-top:14px">Your data is processed by Securitize, not stored on Homium.</div>
           </div>
         </div>`;
     } else if (step === 2) {
@@ -419,7 +419,7 @@ const OnboardingFlowView = {
                 <input type="radio" name="securitize-doc" ${i === 0 ? 'checked' : ''} />
                 <div>
                   <div style="font-weight:600;font-size:13px">${d.label}</div>
-                  <div style="font-size:11px;color:var(--color-text-muted);margin-top:2px">${d.desc}</div>
+                  <div style="font-size:11px;color:var(--h-text-muted);margin-top:2px">${d.desc}</div>
                 </div>
               </label>`).join('')}
           </div>
@@ -433,15 +433,15 @@ const OnboardingFlowView = {
             <div class="securitize-upload-tile">
               <svg width="36" height="36" viewBox="0 0 24 24" fill="none" stroke="#16A34A" stroke-width="2"><circle cx="12" cy="12" r="10"/><path d="M8 12l3 3 5-6"/></svg>
               <div style="font-size:12px;font-weight:600;margin-top:8px">Front of ID</div>
-              <div style="font-size:10px;color:var(--color-text-muted);margin-top:2px">drivers-license-front.jpg · 1.2 MB</div>
+              <div style="font-size:10px;color:var(--h-text-muted);margin-top:2px">drivers-license-front.jpg · 1.2 MB</div>
             </div>
             <div class="securitize-upload-tile">
               <svg width="36" height="36" viewBox="0 0 24 24" fill="none" stroke="#16A34A" stroke-width="2"><circle cx="12" cy="12" r="10"/><path d="M8 12l3 3 5-6"/></svg>
               <div style="font-size:12px;font-weight:600;margin-top:8px">Back of ID</div>
-              <div style="font-size:10px;color:var(--color-text-muted);margin-top:2px">drivers-license-back.jpg · 0.9 MB</div>
+              <div style="font-size:10px;color:var(--h-text-muted);margin-top:2px">drivers-license-back.jpg · 0.9 MB</div>
             </div>
           </div>
-          <div style="font-size:11px;color:var(--color-text-muted);margin-top:12px;text-align:center">Both files captured. Ready to continue.</div>
+          <div style="font-size:11px;color:var(--h-text-muted);margin-top:12px;text-align:center">Both files captured. Ready to continue.</div>
         </div>`;
     } else if (step === 4) {
       body = `
@@ -454,7 +454,7 @@ const OnboardingFlowView = {
               <path d="M4 21c0-4.4 3.6-8 8-8s8 3.6 8 8"/>
             </svg>
             <div style="font-size:13px;font-weight:600;margin-top:12px;color:#16A34A">Liveness check passed ✓</div>
-            <div style="font-size:11px;color:var(--color-text-muted);margin-top:4px">Match score: 99.2%</div>
+            <div style="font-size:11px;color:var(--h-text-muted);margin-top:4px">Match score: 99.2%</div>
           </div>
         </div>`;
     } else if (step === 5) {
@@ -468,7 +468,7 @@ const OnboardingFlowView = {
             <div class="securitize-review-row"><span>Back of ID</span><strong>✓ Captured</strong></div>
             <div class="securitize-review-row"><span>Liveness check</span><strong>✓ Passed (99.2%)</strong></div>
           </div>
-          <div style="font-size:11px;color:var(--color-text-muted);margin-top:12px;line-height:1.5">
+          <div style="font-size:11px;color:var(--h-text-muted);margin-top:12px;line-height:1.5">
             By submitting, you authorize Securitize to perform identity verification, address verification, and sanctions screening. Verification typically completes within 24 hours.
           </div>
         </div>`;
@@ -484,7 +484,7 @@ const OnboardingFlowView = {
               <div class="securitize-brand-mark">SI</div>
               <div>
                 <div style="font-size:13px;font-weight:700;color:#1D4ED8">SecuritizeID</div>
-                <div style="font-size:10px;color:var(--color-text-muted)">Powered by Securitize</div>
+                <div style="font-size:10px;color:var(--h-text-muted)">Powered by Securitize</div>
               </div>
             </div>
             <button class="securitize-close" onclick="OnboardingFlowView._closeSecuritize()" title="Close">×</button>
@@ -495,7 +495,7 @@ const OnboardingFlowView = {
           <div class="securitize-body">${body}</div>
           <div class="securitize-footer">
             <button class="btn btn-ghost btn-sm" onclick="OnboardingFlowView._closeSecuritize()">Cancel</button>
-            <div style="font-size:11px;color:var(--color-text-muted)">Step ${step} of ${totalSteps}</div>
+            <div style="font-size:11px;color:var(--h-text-muted)">Step ${step} of ${totalSteps}</div>
             ${isLast
               ? `<button class="btn btn-primary" onclick="OnboardingFlowView._securitizeSubmit()" style="background:#1D4ED8">Submit for verification ${CHEVRON_RIGHT}</button>`
               : `<button class="btn btn-primary" onclick="OnboardingFlowView._securitizeNext()" style="background:#1D4ED8">Continue ${CHEVRON_RIGHT}</button>`}
@@ -518,11 +518,11 @@ const OnboardingFlowView = {
     };
     return `
       <div class="card wiz-card" style="text-align:center;max-width:560px;margin:60px auto">
-        <div class="ob-icon" style="background:#DCFCE7;color:var(--color-success);margin:0 auto 20px">
+        <div class="ob-icon" style="background:#DCFCE7;color:var(--h-success);margin:0 auto 20px">
           <svg width="28" height="28" viewBox="0 0 28 28" fill="none" stroke="currentColor" stroke-width="2.2"><circle cx="14" cy="14" r="12"/><path d="M8 14l4 4 8-8"/></svg>
         </div>
         <div class="card-title" style="font-size:22px;margin-bottom:8px">You're all set</div>
-        <div style="font-size:14px;color:var(--color-text-muted);margin-bottom:24px;line-height:1.55">${roleWelcome[role] || 'Welcome to the Homium platform.'}</div>
+        <div style="font-size:14px;color:var(--h-text-muted);margin-bottom:24px;line-height:1.55">${roleWelcome[role] || 'Welcome to the Homium platform.'}</div>
         <button class="btn btn-primary" style="min-width:200px" onclick="OnboardingFlowView._finish()">Enter Platform ${CHEVRON_RIGHT}</button>
       </div>`;
   },

@@ -94,9 +94,9 @@ const CompaniesView = {
           </td>
           <td><div class="program-chip-row">${programChips}</div></td>
           <td><span class="badge ${c.status === 'active' ? 'badge-active' : 'badge-pending'}">${c.status === 'active' ? 'Active' : 'Pending Setup'}</span></td>
-          <td style="font-size:11px;color:var(--color-text-muted)">
-            ${c.lastNmlsSync ? `<span class="status-dot" style="display:inline-block;width:6px;height:6px;border-radius:50%;background:var(--color-success);margin-right:4px"></span>${Display.relativeTime(c.lastNmlsSync)}` : '—'}
-            ${expSoon ? `<div style="color:var(--color-warning);font-weight:600;margin-top:2px">${expSoon} lic ≤30d</div>` : ''}
+          <td style="font-size:11px;color:var(--h-text-muted)">
+            ${c.lastNmlsSync ? `<span class="status-dot" style="display:inline-block;width:6px;height:6px;border-radius:50%;background:var(--h-success);margin-right:4px"></span>${Display.relativeTime(c.lastNmlsSync)}` : '—'}
+            ${expSoon ? `<div style="color:var(--h-warning);font-weight:600;margin-top:2px">${expSoon} lic ≤30d</div>` : ''}
           </td>
           <td>
             <button class="btn btn-ghost btn-xs" onclick="event.stopPropagation();${click}">View</button>
@@ -139,7 +139,7 @@ const CompaniesView = {
                   <div class="filter-menu-item${f.status==='active'?' active':''}" onclick="CompaniesView.setFilter('status','active')">Active</div>
                   <div class="filter-menu-item${f.status==='pending'?' active':''}" onclick="CompaniesView.setFilter('status','pending')">Pending</div>
                 </div>
-                ${Object.values(f).some(v=>v) ? `<div class="filter-menu-section" style="border-top:1px solid var(--color-border);padding-top:8px"><div class="filter-menu-item" onclick="CompaniesView.clearFilters()" style="color:var(--color-danger)">Clear All Filters</div></div>` : ''}
+                ${Object.values(f).some(v=>v) ? `<div class="filter-menu-section" style="border-top:1px solid var(--h-border);padding-top:8px"><div class="filter-menu-item" onclick="CompaniesView.clearFilters()" style="color:var(--h-error)">Clear All Filters</div></div>` : ''}
               </div>
             </div>
           </div>
@@ -249,7 +249,7 @@ const CompaniesView = {
           </div>
 
           <div style="margin-bottom:4px" class="section-title">Branches</div>
-          <div style="border:1px solid var(--color-border);border-radius:var(--radius-lg);overflow:hidden;margin-bottom:20px">
+          <div style="border:1px solid var(--h-border);border-radius:var(--radius-lg);overflow:hidden;margin-bottom:20px">
             <table>
               <thead><tr><th>Branch</th><th>State</th><th>Users</th><th>Status</th></tr></thead>
               <tbody>${branchRows}</tbody>
@@ -257,10 +257,10 @@ const CompaniesView = {
           </div>
 
           <div style="margin-bottom:4px" class="section-title">Team Members (${users.length})</div>
-          <div style="border:1px solid var(--color-border);border-radius:var(--radius-lg);overflow:hidden">
+          <div style="border:1px solid var(--h-border);border-radius:var(--radius-lg);overflow:hidden">
             <table>
               <thead><tr><th>Name</th><th>Role</th><th>Status</th></tr></thead>
-              <tbody>${userRows}${users.length > 5 ? `<tr><td colspan="3" style="padding:10px 16px;text-align:center;font-size:12px;color:var(--color-text-secondary)">+ ${users.length - 5} more</td></tr>` : ''}</tbody>
+              <tbody>${userRows}${users.length > 5 ? `<tr><td colspan="3" style="padding:10px 16px;text-align:center;font-size:12px;color:var(--h-text-secondary)">+ ${users.length - 5} more</td></tr>` : ''}</tbody>
             </table>
           </div>
         </div>
@@ -411,7 +411,7 @@ const CompaniesView = {
             </div>
 
             <hr class="divider" style="margin:16px 0" />
-            <div style="font-size:12px;font-weight:700;text-transform:uppercase;letter-spacing:0.07em;color:var(--color-text-muted);margin-bottom:12px">Add Branch</div>
+            <div style="font-size:12px;font-weight:700;text-transform:uppercase;letter-spacing:0.07em;color:var(--h-text-muted);margin-bottom:12px">Add Branch</div>
             <div class="form-grid" id="add-branch-form" style="margin-bottom:8px">
               <div class="form-group">
                 <label>Branch Name</label>
@@ -429,7 +429,7 @@ const CompaniesView = {
             <button class="btn btn-ghost btn-sm" onclick="CompaniesView.addBranchInline('${companyId}')">+ Add Branch</button>
 
             <hr class="divider" style="margin:16px 0" />
-            <div style="font-size:12px;font-weight:700;text-transform:uppercase;letter-spacing:0.07em;color:var(--color-text-muted);margin-bottom:8px">Invite User to this Company</div>
+            <div style="font-size:12px;font-weight:700;text-transform:uppercase;letter-spacing:0.07em;color:var(--h-text-muted);margin-bottom:8px">Invite User to this Company</div>
             <button class="btn btn-ghost btn-sm" onclick="CompaniesView.closeModal();BulkInviteView.start({ companyId: '${companyId}', returnPath: '/origination-companies/${companyId}' })">+ Invite User</button>
           </div>
 

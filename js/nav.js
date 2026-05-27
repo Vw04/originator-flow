@@ -177,7 +177,7 @@ const Nav = (() => {
 
   function _renderNotifications(role) {
     const notifs = _notifForRole(role);
-    if (!notifs.length) return '<div style="padding:24px;text-align:center;color:var(--color-text-muted);font-size:13px">No notifications</div>';
+    if (!notifs.length) return '<div style="padding:24px;text-align:center;color:var(--h-text-muted);font-size:13px">No notifications</div>';
 
     const DOT = { action: 'notif-dot-action', sent: 'notif-dot-sent', complete: 'notif-dot-complete', info: 'notif-dot-info' };
     const LABEL = { action: 'Action Required', sent: 'Sent', complete: 'Completed', info: 'Update' };
@@ -279,7 +279,7 @@ const Nav = (() => {
               <div class="notif-panel" id="notif-panel">
                 <div class="notif-panel-header">
                   <span>Notifications</span>
-                  <span style="font-size:11px;color:var(--color-text-muted)">${_notifCount(role)} unread</span>
+                  <span style="font-size:11px;color:var(--h-text-muted)">${_notifCount(role)} unread</span>
                 </div>
                 ${_renderNotifications(role)}
               </div>
@@ -294,8 +294,8 @@ const Nav = (() => {
               <div class="profile-dropdown-header">
                 <div class="sidenav-avatar" style="background:${avatarColor(role)};width:36px;height:36px;font-size:13px">${initials}</div>
                 <div>
-                  <div style="font-weight:600;font-size:13px;color:var(--color-text)">${userName}</div>
-                  <div style="font-size:11px;color:var(--color-text-muted);margin-top:1px">${orgLine}</div>
+                  <div style="font-weight:600;font-size:13px;color:var(--h-text-primary)">${userName}</div>
+                  <div style="font-size:11px;color:var(--h-text-muted);margin-top:1px">${orgLine}</div>
                 </div>
               </div>
               <div class="profile-dropdown-divider"></div>

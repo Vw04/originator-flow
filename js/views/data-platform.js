@@ -214,7 +214,7 @@ const DataPlatformView = {
       { label: 'Submitted This Month', value: thisMonth.length,                                      sub: thisMonth.length ? Display.currency(thisMonth.reduce((s,l)=>s+l.amount,0)) : '$0 value' },
       { label: 'Completed',            value: completed.length,                                      sub: completed.length ? Display.currency(completed.reduce((s,l)=>s+l.amount,0)) + ' closed' : '$0 closed' },
       { label: 'Avg Days to Close',    value: '45',                                                  sub: 'Industry avg: 49 days' },
-      { label: 'On-Track Rate',        value: onTrackPct + '%',                                      sub: stalledLoans.length > 0 ? `${stalledLoans.length} loan${stalledLoans.length!==1?'s':''} stalled` : 'All loans on track', accent: onTrackPct < 80, accentColor: 'var(--color-danger)' },
+      { label: 'On-Track Rate',        value: onTrackPct + '%',                                      sub: stalledLoans.length > 0 ? `${stalledLoans.length} loan${stalledLoans.length!==1?'s':''} stalled` : 'All loans on track', accent: onTrackPct < 80, accentColor: 'var(--h-error)' },
     ];
     const kpiHtml = `<div class="stat-row">${
       kpis.map(k => `
@@ -265,21 +265,21 @@ const DataPlatformView = {
                   return `
                   <tr style="cursor:pointer" onclick="DataPlatformView.openApplication('${l.id}')">
                     <td>
-                      <div style="font-size:12px;font-weight:700;color:var(--color-primary)">${l.id}</div>
-                      <div style="font-size:13px;color:var(--color-text)">${l.borrowerName}</div>
+                      <div style="font-size:12px;font-weight:700;color:var(--h-action)">${l.id}</div>
+                      <div style="font-size:13px;color:var(--h-text-primary)">${l.borrowerName}</div>
                     </td>
                     <td class="td-address"><div class="addr-line1">${addrParts[0].trim()}</div><div class="addr-line2">${addrParts.slice(1).join(',').trim()}</div></td>
                     <td class="td-amount">${Display.currency(l.amount)}</td>
                     <td class="td-status">${milestoneHtml}<div class="td-status-label">${stageLabel}</div></td>
                     <td class="td-next-action">${this._nextActionTag(l)}<div class="td-next-action-text">${this._nextActionText(l)}</div></td>
                     <td>${renderOwnersCell(l)}</td>
-                    <td style="font-size:11px;color:var(--color-text-muted);white-space:nowrap">${timeAgo}</td>
+                    <td style="font-size:11px;color:var(--h-text-muted);white-space:nowrap">${timeAgo}</td>
                   </tr>`;}).join('')}
               </tbody>
             </table>
           </div>` : `
           <div class="dash-attn-ok">
-            <span style="color:var(--color-success);font-weight:700;font-size:14px">&#10003;</span>
+            <span style="color:var(--h-success);font-weight:700;font-size:14px">&#10003;</span>
             All loans are on track — no loans stalled over 14 days.
           </div>`}
       </div>`;
@@ -307,22 +307,22 @@ const DataPlatformView = {
       const pStalled = pActive.filter(l => this._daysInStage(l) > 14).length;
       const pDone    = filteredLoans.filter(l => l.status === 'completed').length;
       progMetricsHtml = `
-        <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:12px;margin-bottom:16px;padding:12px 16px;background:var(--color-surface);border-radius:8px">
+        <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:12px;margin-bottom:16px;padding:12px 16px;background:var(--h-pearl);border-radius:8px">
           <div>
-            <div style="font-size:20px;font-weight:700;color:var(--color-text)">${pActive.length}</div>
-            <div style="font-size:11px;color:var(--color-text-muted);margin-top:2px">Active Loans</div>
+            <div style="font-size:20px;font-weight:700;color:var(--h-text-primary)">${pActive.length}</div>
+            <div style="font-size:11px;color:var(--h-text-muted);margin-top:2px">Active Loans</div>
           </div>
           <div>
-            <div style="font-size:20px;font-weight:700;color:var(--color-text)">${Display.currency(pVal)}</div>
-            <div style="font-size:11px;color:var(--color-text-muted);margin-top:2px">Pipeline Value</div>
+            <div style="font-size:20px;font-weight:700;color:var(--h-text-primary)">${Display.currency(pVal)}</div>
+            <div style="font-size:11px;color:var(--h-text-muted);margin-top:2px">Pipeline Value</div>
           </div>
           <div>
-            <div style="font-size:20px;font-weight:700;color:var(--color-text)">${avgLTV}</div>
-            <div style="font-size:11px;color:var(--color-text-muted);margin-top:2px">Avg LTV</div>
+            <div style="font-size:20px;font-weight:700;color:var(--h-text-primary)">${avgLTV}</div>
+            <div style="font-size:11px;color:var(--h-text-muted);margin-top:2px">Avg LTV</div>
           </div>
           <div>
-            <div style="font-size:20px;font-weight:700;color:${pStalled > 0 ? 'var(--color-danger)' : 'var(--color-success)'}">${pStalled > 0 ? pStalled + ' stalled' : pDone + ' done'}</div>
-            <div style="font-size:11px;color:var(--color-text-muted);margin-top:2px">${pStalled > 0 ? 'Need attention' : 'Completed'}</div>
+            <div style="font-size:20px;font-weight:700;color:${pStalled > 0 ? 'var(--h-error)' : 'var(--h-success)'}">${pStalled > 0 ? pStalled + ' stalled' : pDone + ' done'}</div>
+            <div style="font-size:11px;color:var(--h-text-muted);margin-top:2px">${pStalled > 0 ? 'Need attention' : 'Completed'}</div>
           </div>
         </div>`;
     }
@@ -377,12 +377,12 @@ const DataPlatformView = {
           return `
             <tr class="dash-branch-row">
               <td style="padding-left:36px">
-                <span style="font-size:12px;color:var(--color-text-secondary)">${b.name}</span>
+                <span style="font-size:12px;color:var(--h-text-secondary)">${b.name}</span>
               </td>
               <td style="font-size:12px;text-align:center">${bActive.length || '—'}</td>
               <td style="font-size:12px">${bVal ? Display.currency(bVal) : '—'}</td>
               <td style="font-size:12px;text-align:center">
-                <span style="color:${bActive.length > 0 && bOnTrack === bActive.length ? 'var(--color-success)' : bActive.length > 0 ? 'var(--color-warning)' : 'var(--color-text-muted)'}">
+                <span style="color:${bActive.length > 0 && bOnTrack === bActive.length ? 'var(--h-success)' : bActive.length > 0 ? 'var(--h-warning)' : 'var(--h-text-muted)'}">
                   ${bActive.length > 0 ? bOnTrack + '/' + bActive.length : '—'}
                 </span>
               </td>
@@ -397,15 +397,15 @@ const DataPlatformView = {
               <div style="display:flex;align-items:center;gap:8px">
                 <span class="dash-co-caret">${isCollapsed ? '&#9654;' : '&#9660;'}</span>
                 <div>
-                  <div style="font-size:13px;font-weight:700;color:var(--color-text)">${co.name}</div>
-                  <div style="font-size:11px;color:var(--color-text-muted);margin-top:1px">${co.state || ''} &middot; ${coBranches.length} branch${coBranches.length!==1?'es':''}</div>
+                  <div style="font-size:13px;font-weight:700;color:var(--h-text-primary)">${co.name}</div>
+                  <div style="font-size:11px;color:var(--h-text-muted);margin-top:1px">${co.state || ''} &middot; ${coBranches.length} branch${coBranches.length!==1?'es':''}</div>
                 </div>
               </div>
             </td>
             <td style="font-size:13px;font-weight:700;text-align:center">${coActive.length || '—'}</td>
             <td style="font-size:13px;font-weight:700">${coVal ? Display.currency(coVal) : '—'}</td>
             <td style="text-align:center">
-              <span style="font-size:12px;color:${coActive.length > 0 && coOnTrack === coActive.length ? 'var(--color-success)' : coActive.length > 0 ? 'var(--color-warning)' : 'var(--color-text-muted)'}">
+              <span style="font-size:12px;color:${coActive.length > 0 && coOnTrack === coActive.length ? 'var(--h-success)' : coActive.length > 0 ? 'var(--h-warning)' : 'var(--h-text-muted)'}">
                 ${coActive.length > 0 ? coOnTrack + '/' + coActive.length : '—'}
               </span>
             </td>
@@ -419,7 +419,7 @@ const DataPlatformView = {
         <div class="card" style="margin-bottom:20px">
           <div style="display:flex;align-items:center;gap:8px;margin-bottom:16px">
             <div class="card-title" style="margin-bottom:0">Company &amp; Branch Performance</div>
-            <span style="font-size:11px;color:var(--color-text-muted)">Click company to collapse branches</span>
+            <span style="font-size:11px;color:var(--h-text-muted)">Click company to collapse branches</span>
           </div>
           <div class="table-container">
             <table>
@@ -601,7 +601,7 @@ const DataPlatformView = {
               <div class="prospect-comp-gap">Gap: $${(bp.beforeHomium.monthlyPITI - bp.withHomium.monthlyPITI).toLocaleString()}/mo</div>
             </div>
             <div class="prospect-comparison-arrow">
-              <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="var(--color-primary)" stroke-width="2"><path d="M5 12h14M13 6l6 6-6 6"/></svg>
+              <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="var(--h-action)" stroke-width="2"><path d="M5 12h14M13 6l6 6-6 6"/></svg>
             </div>
             <div class="prospect-comparison-col prospect-comparison-after">
               <div class="prospect-comp-label">WITH HOMIUM</div>
@@ -698,7 +698,7 @@ const DataPlatformView = {
         <div class="prospect-chart-label">HOMEOWNER EQUITY CREATED</div>
         <svg viewBox="0 0 300 160" class="prospect-chart-svg">
           <polygon points="${eqArea}" fill="var(--color-primary-container)" opacity="0.5"/>
-          <polyline points="${eqPoints}" fill="none" stroke="var(--color-primary)" stroke-width="2"/>
+          <polyline points="${eqPoints}" fill="none" stroke="var(--h-action)" stroke-width="2"/>
           <text x="290" y="${140 - (proj[proj.length - 1].equity / eqMax) * 120 - 6}" text-anchor="end" class="prospect-chart-text">${eqFinalLabel}</text>
         </svg>
         <div class="prospect-chart-xaxis-labels">
@@ -738,12 +738,12 @@ const DataPlatformView = {
       <div class="prospect-chart-card">
         <div class="prospect-chart-label">FUND VALUE & RETURNS</div>
         <svg viewBox="0 0 300 160" class="prospect-chart-svg">
-          <polyline points="${fvPoints}" fill="none" stroke="var(--color-text-secondary)" stroke-width="2"/>
-          <polyline points="${crPoints}" fill="none" stroke="var(--color-primary)" stroke-width="2"/>
+          <polyline points="${fvPoints}" fill="none" stroke="var(--h-text-secondary)" stroke-width="2"/>
+          <polyline points="${crPoints}" fill="none" stroke="var(--h-action)" stroke-width="2"/>
         </svg>
         <div class="prospect-chart-legend">
-          <span><span class="prospect-legend-line" style="background:var(--color-text-secondary)"></span> Fund Value</span>
-          <span><span class="prospect-legend-line" style="background:var(--color-primary)"></span> Returned Capital</span>
+          <span><span class="prospect-legend-line" style="background:var(--h-text-secondary)"></span> Fund Value</span>
+          <span><span class="prospect-legend-line" style="background:var(--h-action)"></span> Returned Capital</span>
         </div>
         <div class="prospect-chart-xaxis-labels">
           <span>${proj[0].year}</span><span>${proj[Math.floor(proj.length / 2)].year}</span><span>${proj[proj.length - 1].year}</span>
@@ -762,7 +762,7 @@ const DataPlatformView = {
       <div class="prospect-chart-card">
         <div class="prospect-chart-label">CUMULATIVE ROI</div>
         <svg viewBox="0 0 300 160" class="prospect-chart-svg">
-          <polyline points="${roiPoints}" fill="none" stroke="var(--color-primary)" stroke-width="2"/>
+          <polyline points="${roiPoints}" fill="none" stroke="var(--h-action)" stroke-width="2"/>
           <text x="290" y="${140 - (proj[proj.length - 1].roi / roiMax) * 120 - 6}" text-anchor="end" class="prospect-chart-text">${roiFinal}</text>
         </svg>
         <div class="prospect-chart-xaxis-labels">
@@ -824,7 +824,7 @@ const DataPlatformView = {
       { label: 'Distributions',      value: '$' + (p.distributions / 1e3).toFixed(1) + 'K' },
     ];
     const kpiHtml = `<div class="stat-row" style="margin-bottom:24px">${kpis.map(k =>
-      `<div class="stat-item"><div class="stat-label">${k.label}</div><div class="stat-value" style="font-size:24px${k.accent ? ';color:var(--color-primary)' : ''}">${k.value}</div></div>`
+      `<div class="stat-item"><div class="stat-label">${k.label}</div><div class="stat-value" style="font-size:24px${k.accent ? ';color:var(--h-action)' : ''}">${k.value}</div></div>`
     ).join('')}</div>`;
 
     /* ── Token / Secondary Market ── */
@@ -834,11 +834,11 @@ const DataPlatformView = {
           <h3 style="font-size:14px;font-weight:700;margin:0">Token & Secondary Market</h3>
         </div>
         <div style="display:grid;grid-template-columns:repeat(5,1fr);gap:16px">
-          <div><div class="stat-label">Token Price</div><div style="font-size:20px;font-weight:700">$${p.tokenPrice.toFixed(2)}</div><div style="font-size:11px;color:${p.tokenPriceChange >= 0 ? 'var(--color-success)' : 'var(--color-danger)'}">${p.tokenPriceChange >= 0 ? '+' : ''}${(p.tokenPriceChange * 100).toFixed(1)}% MTD</div></div>
-          <div><div class="stat-label">Tokens Owned</div><div style="font-size:20px;font-weight:700">${p.tokensOwned.toLocaleString()}</div><div style="font-size:11px;color:var(--color-text-muted)">Token value: $${(p.tokensOwned * p.tokenPrice / 1e6).toFixed(3)}M</div></div>
-          <div><div class="stat-label">Secondary Bid</div><div style="font-size:20px;font-weight:700">$${p.secondaryMarketBid.toFixed(2)}</div><div style="font-size:11px;color:var(--color-text-muted)">Per token</div></div>
-          <div><div class="stat-label">Secondary Ask</div><div style="font-size:20px;font-weight:700">$${p.secondaryMarketAsk.toFixed(2)}</div><div style="font-size:11px;color:var(--color-text-muted)">Per token</div></div>
-          <div><div class="stat-label">Bid/Ask Spread</div><div style="font-size:20px;font-weight:700">$${(p.secondaryMarketAsk - p.secondaryMarketBid).toFixed(2)}</div><div style="font-size:11px;color:var(--color-text-muted)">${((p.secondaryMarketAsk - p.secondaryMarketBid) / p.secondaryMarketAsk * 100).toFixed(1)}%</div></div>
+          <div><div class="stat-label">Token Price</div><div style="font-size:20px;font-weight:700">$${p.tokenPrice.toFixed(2)}</div><div style="font-size:11px;color:${p.tokenPriceChange >= 0 ? 'var(--h-success)' : 'var(--h-error)'}">${p.tokenPriceChange >= 0 ? '+' : ''}${(p.tokenPriceChange * 100).toFixed(1)}% MTD</div></div>
+          <div><div class="stat-label">Tokens Owned</div><div style="font-size:20px;font-weight:700">${p.tokensOwned.toLocaleString()}</div><div style="font-size:11px;color:var(--h-text-muted)">Token value: $${(p.tokensOwned * p.tokenPrice / 1e6).toFixed(3)}M</div></div>
+          <div><div class="stat-label">Secondary Bid</div><div style="font-size:20px;font-weight:700">$${p.secondaryMarketBid.toFixed(2)}</div><div style="font-size:11px;color:var(--h-text-muted)">Per token</div></div>
+          <div><div class="stat-label">Secondary Ask</div><div style="font-size:20px;font-weight:700">$${p.secondaryMarketAsk.toFixed(2)}</div><div style="font-size:11px;color:var(--h-text-muted)">Per token</div></div>
+          <div><div class="stat-label">Bid/Ask Spread</div><div style="font-size:20px;font-weight:700">$${(p.secondaryMarketAsk - p.secondaryMarketBid).toFixed(2)}</div><div style="font-size:11px;color:var(--h-text-muted)">${((p.secondaryMarketAsk - p.secondaryMarketBid) / p.secondaryMarketAsk * 100).toFixed(1)}%</div></div>
         </div>
       </div>`;
 
@@ -859,10 +859,10 @@ const DataPlatformView = {
         <h3 style="font-size:14px;font-weight:700;margin:0 0 16px">NAV Performance</h3>
         <svg viewBox="0 0 300 150" style="width:100%;height:180px">
           <polygon points="${navArea}" fill="var(--color-primary-container)" opacity="0.4"/>
-          <polyline points="${navPoints}" fill="none" stroke="var(--color-primary)" stroke-width="2"/>
-          <text x="290" y="${130 - ((hist[hist.length-1].nav - navMin) / navRange) * 110 - 6}" text-anchor="end" style="font-size:10px;fill:var(--color-primary);font-weight:700">$${(hist[hist.length-1].nav / 1e6).toFixed(3)}M</text>
-          <text x="10" y="145" style="font-size:8px;fill:var(--color-text-muted)">${hist[0].month}</text>
-          <text x="290" y="145" text-anchor="end" style="font-size:8px;fill:var(--color-text-muted)">${hist[hist.length-1].month}</text>
+          <polyline points="${navPoints}" fill="none" stroke="var(--h-action)" stroke-width="2"/>
+          <text x="290" y="${130 - ((hist[hist.length-1].nav - navMin) / navRange) * 110 - 6}" text-anchor="end" style="font-size:10px;fill:var(--h-action);font-weight:700">$${(hist[hist.length-1].nav / 1e6).toFixed(3)}M</text>
+          <text x="10" y="145" style="font-size:8px;fill:var(--h-text-muted)">${hist[0].month}</text>
+          <text x="290" y="145" text-anchor="end" style="font-size:8px;fill:var(--h-text-muted)">${hist[hist.length-1].month}</text>
         </svg>
       </div>`;
 
@@ -870,7 +870,7 @@ const DataPlatformView = {
     const posRows = p.positions.map(pos => {
       const gain = pos.currentValue - pos.deployed;
       const gainPct = ((gain / pos.deployed) * 100).toFixed(1);
-      const gainCls = gain >= 0 ? 'color:var(--color-success)' : 'color:var(--color-danger)';
+      const gainCls = gain >= 0 ? 'color:var(--h-success)' : 'color:var(--h-error)';
       return `<tr>
         <td style="font-weight:600">${pos.program}</td>
         <td style="text-align:right">${pos.units.toLocaleString()}</td>
@@ -945,9 +945,9 @@ const DataPlatformView = {
     const renderDocRow = (d) => `
       <tr>
         <td style="font-weight:600">${d.name}</td>
-        <td><span class="badge" style="font-size:10px;background:var(--color-surface-alt);color:var(--color-text-secondary)">${typeLabels[d.type] || d.type}</span></td>
+        <td><span class="badge" style="font-size:10px;background:var(--h-pearl);color:var(--h-text-secondary)">${typeLabels[d.type] || d.type}</span></td>
         <td><span class="badge ${statusCls[d.status] || ''}" style="font-size:10px">${statusLabels[d.status] || d.status}</span></td>
-        <td style="font-size:12px;color:var(--color-text-muted)">${new Date(d.date).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}</td>
+        <td style="font-size:12px;color:var(--h-text-muted)">${new Date(d.date).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}</td>
         <td style="text-align:right">
           ${d.status === 'action_required'
             ? '<button class="btn btn-primary btn-sm" onclick="event.stopPropagation()">Review & Sign</button>'
@@ -956,10 +956,10 @@ const DataPlatformView = {
       </tr>`;
 
     const actionSection = actionDocs.length ? `
-      <div class="card" style="margin-bottom:20px;border-color:var(--color-warning);border-left:4px solid var(--color-warning)">
+      <div class="card" style="margin-bottom:20px;border-color:var(--h-warning);border-left:4px solid var(--h-warning)">
         <div style="display:flex;align-items:center;gap:8px;margin-bottom:12px">
           <span style="font-size:16px">&#9888;</span>
-          <h3 style="font-size:14px;font-weight:700;margin:0;color:var(--color-warning)">Action Required (${actionDocs.length})</h3>
+          <h3 style="font-size:14px;font-weight:700;margin:0;color:var(--h-warning)">Action Required (${actionDocs.length})</h3>
         </div>
         <div class="table-container" style="border:none;box-shadow:none">
           <table>
@@ -1050,7 +1050,7 @@ const DataPlatformView = {
     const impactSection = `
       <div class="card" style="margin-bottom:20px">
         <div class="card-title">Impact Summary</div>
-        <p style="font-size:14px;line-height:1.7;color:var(--color-text-secondary);margin:0">${data.impactSummary}</p>
+        <p style="font-size:14px;line-height:1.7;color:var(--h-text-secondary);margin:0">${data.impactSummary}</p>
       </div>`;
 
     return metricsSection + storiesSection + impactSection;
@@ -1429,19 +1429,19 @@ const DataPlatformView = {
         <tr class="${attn ? 'row-needs-attention' : ''}" data-cm="${i === 0 ? 'app-row' : ''}" style="cursor:pointer"
             onclick="DataPlatformView.openApplication('${l.id}')">
           <td onclick="event.stopPropagation()">
-            <input type="checkbox" ${checked ? 'checked' : ''} style="accent-color:var(--color-primary)"
+            <input type="checkbox" ${checked ? 'checked' : ''} style="accent-color:var(--h-action)"
                    onchange="DataPlatformView._toggleSelect('${l.id}')" />
           </td>
           <td>
-            <div style="font-size:12px;font-weight:700;color:var(--color-primary)">${l.id}</div>
-            <div style="font-size:13px;color:var(--color-text)">${l.borrowerName}</div>
+            <div style="font-size:12px;font-weight:700;color:var(--h-action)">${l.id}</div>
+            <div style="font-size:13px;color:var(--h-text-primary)">${l.borrowerName}</div>
           </td>
           <td class="td-address"><div class="addr-line1">${addrLine1}</div><div class="addr-line2">${addrLine2}</div></td>
           <td class="td-amount">${Display.currency(l.amount)}</td>
           <td class="td-status">${milestoneHtml}<div class="td-status-label">${stageLabel}</div></td>
           <td class="td-next-action">${this._nextActionTag(l)}<div class="td-next-action-text">${this._nextActionText(l)}</div></td>
           <td>${renderOwnersCell(l)}</td>
-          <td style="font-size:11px;color:var(--color-text-muted);white-space:nowrap">${timeAgo}</td>
+          <td style="font-size:11px;color:var(--h-text-muted);white-space:nowrap">${timeAgo}</td>
         </tr>`;
     }).join('');
 
@@ -1466,7 +1466,7 @@ const DataPlatformView = {
       kpis.map(k => `
         <div class="stat-item">
           <div class="stat-label">${k.label}</div>
-          <div class="stat-value" style="font-size:26px${k.accent ? ';color:var(--color-danger)' : ''}">${k.value}</div>
+          <div class="stat-value" style="font-size:26px${k.accent ? ';color:var(--h-error)' : ''}">${k.value}</div>
           <div class="stat-desc">${k.sub}</div>
         </div>`).join('')
     }</div>`;
@@ -1503,15 +1503,15 @@ const DataPlatformView = {
         </div>
       </div>
       ${role === 'lo' && createGateReason ? `
-      <div class="alert alert-warning" style="margin:0 0 12px;padding:10px 14px;background:#fff7e6;border-left:3px solid var(--color-warning);border-radius:6px;font-size:12px">
+      <div class="alert alert-warning" style="margin:0 0 12px;padding:10px 14px;background:#fff7e6;border-left:3px solid var(--h-warning);border-radius:6px;font-size:12px">
         <strong>New applications are blocked:</strong> ${this._gateReasonLabel(createGateReason, createGateBranchId)}
-        <span style="color:var(--color-text-muted);margin-left:6px">Spec §1.4 — ask your Program Admin to fix.</span>
+        <span style="color:var(--h-text-muted);margin-left:6px">Spec §1.4 — ask your Program Admin to fix.</span>
       </div>` : ''}
       ${kpiHtml}
       ${filterBarHtml}
       ${someChecked ? `
       <div class="app-bulk-bar">
-        <span style="font-size:12px;font-weight:600;color:var(--color-text)">${this._appSelected.size} selected</span>
+        <span style="font-size:12px;font-weight:600;color:var(--h-text-primary)">${this._appSelected.size} selected</span>
         <button class="btn btn-secondary btn-sm" onclick="event.stopPropagation()">Export</button>
         <button class="btn btn-secondary btn-sm" onclick="event.stopPropagation()">Batch</button>
         <button class="btn btn-ghost btn-sm" onclick="DataPlatformView._clearSelection()">Clear</button>
@@ -1520,7 +1520,7 @@ const DataPlatformView = {
         <table>
           <thead><tr>
             <th style="width:32px" onclick="event.stopPropagation()">
-              <input type="checkbox" ${allChecked ? 'checked' : ''} style="accent-color:var(--color-primary)"
+              <input type="checkbox" ${allChecked ? 'checked' : ''} style="accent-color:var(--h-action)"
                      onchange="DataPlatformView._toggleSelectAll()" />
             </th>
             <th class="sortable-th" onclick="DataPlatformView._setSort('id')">Loan / Borrower ${this._sortIcon('id')}</th>
@@ -1531,7 +1531,7 @@ const DataPlatformView = {
             <th class="sortable-th" onclick="DataPlatformView._setSort('borrower')">Owners ${this._sortIcon('borrower')}</th>
             <th class="sortable-th" onclick="DataPlatformView._setSort('updated')">Updated ${this._sortIcon('updated')}</th>
           </tr></thead>
-          <tbody>${rows || '<tr><td colspan="8" style="text-align:center;color:var(--color-text-muted);padding:32px">No applications found</td></tr>'}</tbody>
+          <tbody>${rows || '<tr><td colspan="8" style="text-align:center;color:var(--h-text-muted);padding:32px">No applications found</td></tr>'}</tbody>
         </table>
       </div>
       ${totalPages > 1 ? `
@@ -1655,15 +1655,15 @@ const DataPlatformView = {
       <div class="app-comms-item" style="padding:6px 0">
         <span class="notif-dot ${severityDot[w.severity] || 'notif-dot-info'}" style="margin-top:3px;flex-shrink:0"></span>
         <div style="flex:1;min-width:0">
-          <div style="font-size:12px;color:var(--color-text)">${w.icon} ${w.msg}</div>
-          <a style="font-size:11px;color:var(--color-primary);cursor:pointer;text-decoration:none"
+          <div style="font-size:12px;color:var(--h-text-primary)">${w.icon} ${w.msg}</div>
+          <a style="font-size:11px;color:var(--h-action);cursor:pointer;text-decoration:none"
              onclick="DataPlatformView.selectStep(${w.stepIdx})">${w.action} →</a>
         </div>
       </div>`).join('');
 
     return `
-      <div class="app-comms-panel" style="margin-bottom:16px;border-color:var(--color-warning);background:rgba(217,119,6,0.04)">
-        <div class="app-comms-section-title" style="color:var(--color-warning)">Needs Attention</div>
+      <div class="app-comms-panel" style="margin-bottom:16px;border-color:var(--h-warning);background:rgba(217,119,6,0.04)">
+        <div class="app-comms-section-title" style="color:var(--h-warning)">Needs Attention</div>
         ${items}
       </div>`;
   },
@@ -1678,8 +1678,8 @@ const DataPlatformView = {
     return docs.map(d => `
       <div class="app-condition-row" style="justify-content:space-between">
         <div style="flex:1;min-width:0">
-          <div style="font-size:13px;color:var(--color-text)">${d.name}</div>
-          <div style="font-size:11px;color:var(--color-text-muted);margin-top:2px">${d.date || 'Not yet received'}</div>
+          <div style="font-size:13px;color:var(--h-text-primary)">${d.name}</div>
+          <div style="font-size:11px;color:var(--h-text-muted);margin-top:2px">${d.date || 'Not yet received'}</div>
         </div>
         <div style="display:flex;align-items:center;gap:8px">
           <span class="tag" style="font-size:10px">${d.party}</span>
@@ -1693,18 +1693,18 @@ const DataPlatformView = {
     return conditions.map(c => `
       <div class="condition-row-enhanced" onclick="this.querySelector('.condition-expand').classList.toggle('open')">
         <div class="condition-row-main">
-          <input type="checkbox" ${c.done ? 'checked' : ''} onclick="return false" style="accent-color:var(--color-primary);flex-shrink:0" />
-          <span style="flex:1;font-size:13px;color:${c.done ? 'var(--color-text)' : 'var(--color-text-secondary)'}">${c.label}</span>
+          <input type="checkbox" ${c.done ? 'checked' : ''} onclick="return false" style="accent-color:var(--h-action);flex-shrink:0" />
+          <span style="flex:1;font-size:13px;color:${c.done ? 'var(--h-text-primary)' : 'var(--h-text-secondary)'}">${c.label}</span>
           <span class="tag" style="font-size:10px">${c.party}</span>
           <span class="badge ${statusClass[c.status] || 'badge-pending'}" style="font-size:10px">${c.status}</span>
-          <span style="font-size:11px;color:var(--color-text-muted);cursor:pointer">▾</span>
+          <span style="font-size:11px;color:var(--h-text-muted);cursor:pointer">▾</span>
         </div>
         <div class="condition-expand">
           ${c.doc ? `<div style="display:flex;align-items:center;gap:6px;margin-bottom:6px">
-            <span style="font-size:11px;color:var(--color-text-secondary)">📄 ${c.doc}</span>
+            <span style="font-size:11px;color:var(--h-text-secondary)">📄 ${c.doc}</span>
             <span class="badge badge-active" style="font-size:9px">Reviewed ✓</span>
           </div>` : ''}
-          ${c.notes ? `<div style="font-size:11px;color:var(--color-text-muted)">${c.notes}</div>` : ''}
+          ${c.notes ? `<div style="font-size:11px;color:var(--h-text-muted)">${c.notes}</div>` : ''}
         </div>
       </div>`).join('');
   },
@@ -1721,7 +1721,7 @@ const DataPlatformView = {
       const statusClass = isApproved ? 'badge-active' : 'badge-pending';
       const statusLabel = isApproved ? (d.status === 'received' ? 'Received' : 'Approved') : 'Pending Upload';
       const action = isPending
-        ? `<span class="upload-action-zone" onclick="event.stopPropagation()">📎 Click to upload or drag and drop PDF <span style="color:var(--color-text-muted)">(max. 5MB)</span></span>`
+        ? `<span class="upload-action-zone" onclick="event.stopPropagation()">📎 Click to upload or drag and drop PDF <span style="color:var(--h-text-muted)">(max. 5MB)</span></span>`
         : `<a class="upload-action-link">View and Review</a>`;
       return `<tr>
         <td>${d.name}</td>
@@ -1771,35 +1771,35 @@ const DataPlatformView = {
       <div class="form-grid" style="margin-bottom:20px">
         <div class="form-group">
           <label>Loan Officer</label>
-          <input class="input" value="${Display.fullName(lo)}" readonly style="background:var(--color-surface)" />
+          <input class="input" value="${Display.fullName(lo)}" readonly style="background:var(--h-pearl)" />
         </div>
         <div class="form-group">
           <label>NMLS #</label>
-          <input class="input" value="${lo.nmlsId || '—'}" readonly style="background:var(--color-surface)" />
+          <input class="input" value="${lo.nmlsId || '—'}" readonly style="background:var(--h-pearl)" />
         </div>
         <div class="form-group">
           <label>Email</label>
-          <input class="input" value="${lo.email || '—'}" readonly style="background:var(--color-surface)" />
+          <input class="input" value="${lo.email || '—'}" readonly style="background:var(--h-pearl)" />
         </div>
         <div class="form-group">
           <label>Phone</label>
-          <input class="input" value="${lo.phone || '—'}" readonly style="background:var(--color-surface)" />
+          <input class="input" value="${lo.phone || '—'}" readonly style="background:var(--h-pearl)" />
         </div>
         <div class="form-group">
           <label>Company</label>
-          <input class="input" value="${company?.name || '—'}" readonly style="background:var(--color-surface)" />
+          <input class="input" value="${company?.name || '—'}" readonly style="background:var(--h-pearl)" />
         </div>
         <div class="form-group">
           <label>Branch</label>
-          <input class="input" value="${branch?.name || '—'}" readonly style="background:var(--color-surface)" />
+          <input class="input" value="${branch?.name || '—'}" readonly style="background:var(--h-pearl)" />
         </div>
         <div class="form-group">
           <label>Title</label>
-          <input class="input" value="${lo.title || '—'}" readonly style="background:var(--color-surface)" />
+          <input class="input" value="${lo.title || '—'}" readonly style="background:var(--h-pearl)" />
         </div>
         <div class="form-group">
           <label>Branch NMLS #</label>
-          <input class="input" value="${branch?.nmlsId || '—'}" readonly style="background:var(--color-surface)" />
+          <input class="input" value="${branch?.nmlsId || '—'}" readonly style="background:var(--h-pearl)" />
         </div>
       </div>`;
   },
@@ -1818,39 +1818,39 @@ const DataPlatformView = {
       <div class="form-grid" style="margin-bottom:20px">
         <div class="form-group">
           <label>Full Name</label>
-          <input class="input" value="${loan.borrowerName}" readonly style="background:var(--color-surface)" />
+          <input class="input" value="${loan.borrowerName}" readonly style="background:var(--h-pearl)" />
         </div>
         <div class="form-group">
           <label>SSN</label>
-          <input class="input" value="${b.ssn}" readonly style="background:var(--color-surface)" />
+          <input class="input" value="${b.ssn}" readonly style="background:var(--h-pearl)" />
         </div>
         <div class="form-group">
           <label>Date of Birth</label>
-          <input class="input" value="${b.dob}" readonly style="background:var(--color-surface)" />
+          <input class="input" value="${b.dob}" readonly style="background:var(--h-pearl)" />
         </div>
         <div class="form-group">
           <label>Phone</label>
-          <input class="input" value="${b.phone}" readonly style="background:var(--color-surface)" />
+          <input class="input" value="${b.phone}" readonly style="background:var(--h-pearl)" />
         </div>
         <div class="form-group">
           <label>Email</label>
-          <input class="input" value="${b.email}" readonly style="background:var(--color-surface)" />
+          <input class="input" value="${b.email}" readonly style="background:var(--h-pearl)" />
         </div>
         <div class="form-group">
           <label>Current Address</label>
-          <input class="input" value="${addrParts[0]?.trim() || loan.address}" readonly style="background:var(--color-surface)" />
+          <input class="input" value="${addrParts[0]?.trim() || loan.address}" readonly style="background:var(--h-pearl)" />
         </div>
         <div class="form-group">
           <label>Employer</label>
-          <input class="input" value="${b.employer}" readonly style="background:var(--color-surface)" />
+          <input class="input" value="${b.employer}" readonly style="background:var(--h-pearl)" />
         </div>
         <div class="form-group">
           <label>Years Employed</label>
-          <input class="input" value="${b.employerYears}" readonly style="background:var(--color-surface)" />
+          <input class="input" value="${b.employerYears}" readonly style="background:var(--h-pearl)" />
         </div>
         ${b.coBorrower ? `<div class="form-group form-full">
           <label>Co-Borrower</label>
-          <input class="input" value="${b.coBorrower}" readonly style="background:var(--color-surface)" />
+          <input class="input" value="${b.coBorrower}" readonly style="background:var(--h-pearl)" />
         </div>` : ''}
       </div>`;
   },
@@ -1870,31 +1870,31 @@ const DataPlatformView = {
       <div class="form-grid-4" style="margin-bottom:20px">
         <div class="form-group form-half">
           <label>Street Address</label>
-          <input class="input" value="${street}" readonly style="background:var(--color-surface)" />
+          <input class="input" value="${street}" readonly style="background:var(--h-pearl)" />
         </div>
         <div class="form-group">
           <label>City</label>
-          <input class="input" value="${city}" readonly style="background:var(--color-surface)" />
+          <input class="input" value="${city}" readonly style="background:var(--h-pearl)" />
         </div>
         <div class="form-group">
           <label>State / ZIP</label>
-          <input class="input" value="${state} ${zip}" readonly style="background:var(--color-surface)" />
+          <input class="input" value="${state} ${zip}" readonly style="background:var(--h-pearl)" />
         </div>
         <div class="form-group">
           <label>Property Type</label>
-          <input class="input" value="Single Family Residence" readonly style="background:var(--color-surface)" />
+          <input class="input" value="Single Family Residence" readonly style="background:var(--h-pearl)" />
         </div>
         <div class="form-group">
           <label>Occupancy</label>
-          <input class="input" value="Primary Residence" readonly style="background:var(--color-surface)" />
+          <input class="input" value="Primary Residence" readonly style="background:var(--h-pearl)" />
         </div>
         <div class="form-group">
           <label>Est. Property Value</label>
-          <input class="input" value="${Display.currency(purchasePrice)}" readonly style="background:var(--color-surface)" />
+          <input class="input" value="${Display.currency(purchasePrice)}" readonly style="background:var(--h-pearl)" />
         </div>
         <div class="form-group">
           <label>Loan Purpose</label>
-          <input class="input" value="Purchase" readonly style="background:var(--color-surface)" />
+          <input class="input" value="Purchase" readonly style="background:var(--h-pearl)" />
         </div>
       </div>`;
   },
@@ -2212,7 +2212,7 @@ const DataPlatformView = {
         return `
           <div class="ud-content-section">
             <div class="ud-stage-section-header" onclick="DataPlatformView.toggleAppStage('${stage.id}')">
-              <div class="ud-section-title" style="color:var(--color-text-muted);margin:0">${stage.label} <span class="ud-section-count">0/${total} &middot; Pending</span></div>
+              <div class="ud-section-title" style="color:var(--h-text-muted);margin:0">${stage.label} <span class="ud-section-count">0/${total} &middot; Pending</span></div>
               <span class="ud-stage-section-toggle">&#9654;</span>
             </div>
           </div>`;
@@ -2395,7 +2395,7 @@ const DataPlatformView = {
     if (!loan.closingDate && loan.status !== 'completed') {
       warningsHtml += `<div class="ud-sidebar-item"><span class="ud-sidebar-dot amber"></span><div class="ud-sidebar-item-text"><div>Closing date not set</div><div class="ud-sidebar-item-sub">Set closing date to proceed</div></div></div>`;
     }
-    if (!warningsHtml) warningsHtml = '<div class="ud-sidebar-item" style="color:var(--color-text-muted);font-size:12px;padding:12px 16px">No warnings</div>';
+    if (!warningsHtml) warningsHtml = '<div class="ud-sidebar-item" style="color:var(--h-text-muted);font-size:12px;padding:12px 16px">No warnings</div>';
 
     return `
       <div class="ud-sidebar-panel">
@@ -2407,7 +2407,7 @@ const DataPlatformView = {
         <div class="ud-sidebar-kv"><span class="ud-sidebar-kv-label">Submitted</span><span class="ud-sidebar-kv-value">${loan.submittedAt ? Display.date(loan.submittedAt) : '—'}</span></div>
         <div class="ud-sidebar-kv"><span class="ud-sidebar-kv-label">Rate Lock</span><span class="ud-sidebar-kv-value ${rateLockExpiring ? 'warn' : ''}">${rateLockDate}</span></div>
         <div class="ud-sidebar-kv"><span class="ud-sidebar-kv-label">Est. Close</span><span class="ud-sidebar-kv-value">${estCloseDate}</span></div>
-        <div class="ud-sidebar-kv"><span class="ud-sidebar-kv-label">Days in Stage</span><span class="ud-sidebar-kv-value" ${days > 14 ? 'style="color:var(--color-danger)"' : ''}>${days}d</span></div>
+        <div class="ud-sidebar-kv"><span class="ud-sidebar-kv-label">Days in Stage</span><span class="ud-sidebar-kv-value" ${days > 14 ? 'style="color:var(--h-error)"' : ''}>${days}d</span></div>
       </div>
       <div class="ud-sidebar-panel">
         <div class="ud-sidebar-panel-title">Parties</div>
@@ -2451,7 +2451,7 @@ const DataPlatformView = {
     const zone = document.getElementById('app-dropzone');
     if (zone) {
       const orig = zone.innerHTML;
-      zone.innerHTML = `<div class="ud-dropzone-icon" style="color:var(--color-success)">&#10003;</div><div class="ud-dropzone-text">${files.length} file${files.length > 1 ? 's' : ''} received</div><div class="ud-dropzone-hint">${names}</div>`;
+      zone.innerHTML = `<div class="ud-dropzone-icon" style="color:var(--h-success)">&#10003;</div><div class="ud-dropzone-text">${files.length} file${files.length > 1 ? 's' : ''} received</div><div class="ud-dropzone-hint">${names}</div>`;
       setTimeout(() => { zone.innerHTML = orig; }, 3000);
     }
   },
@@ -2481,7 +2481,7 @@ const DataPlatformView = {
       return `
         <div class="app-step-section">
           <div class="app-step-section-title">Initial Application Review</div>
-          <div style="font-size:13px;color:var(--color-text-secondary);margin-bottom:16px">Application submitted. Review loan terms, fees, property details, and outstanding conditions.</div>
+          <div style="font-size:13px;color:var(--h-text-secondary);margin-bottom:16px">Application submitted. Review loan terms, fees, property details, and outstanding conditions.</div>
 
           ${this._renderPropertyInfo(loan)}
 
@@ -2546,25 +2546,25 @@ const DataPlatformView = {
       return `
         <div class="app-step-section">
           <div class="app-step-section-title">Appraisal</div>
-          <div style="font-size:13px;color:var(--color-text-secondary);margin-bottom:16px">Order and review the property appraisal. Upload the completed report to proceed.</div>
+          <div style="font-size:13px;color:var(--h-text-secondary);margin-bottom:16px">Order and review the property appraisal. Upload the completed report to proceed.</div>
 
           <div class="app-step-subsection-title">Property Details</div>
           <div class="form-grid-4" style="margin-bottom:20px">
             <div class="form-group">
               <label>Property Type</label>
-              <input class="input" value="Single Family Residence" readonly style="background:var(--color-surface)" />
+              <input class="input" value="Single Family Residence" readonly style="background:var(--h-pearl)" />
             </div>
             <div class="form-group">
               <label>Year Built</label>
-              <input class="input" value="2004" readonly style="background:var(--color-surface)" />
+              <input class="input" value="2004" readonly style="background:var(--h-pearl)" />
             </div>
             <div class="form-group">
               <label>Square Footage</label>
-              <input class="input" value="2,150 sq ft" readonly style="background:var(--color-surface)" />
+              <input class="input" value="2,150 sq ft" readonly style="background:var(--h-pearl)" />
             </div>
             <div class="form-group">
               <label>Bed / Bath</label>
-              <input class="input" value="4 bed / 2.5 bath" readonly style="background:var(--color-surface)" />
+              <input class="input" value="4 bed / 2.5 bath" readonly style="background:var(--h-pearl)" />
             </div>
           </div>
 
@@ -2656,11 +2656,11 @@ const DataPlatformView = {
       return `
         <div class="app-step-section">
           <div class="app-step-section-title">Application Documents</div>
-          <div style="font-size:13px;color:var(--color-text-secondary);margin-bottom:16px">Upload and manage all required loan documents. Send to borrower for signature when complete.</div>
+          <div style="font-size:13px;color:var(--h-text-secondary);margin-bottom:16px">Upload and manage all required loan documents. Send to borrower for signature when complete.</div>
 
           <div class="doc-package-summary">
             <div class="doc-package-stat"><strong>${approvedCount}</strong> approved</div>
-            <div class="doc-package-stat" style="color:var(--color-warning)"><strong>${pendingCount}</strong> pending</div>
+            <div class="doc-package-stat" style="color:var(--h-warning)"><strong>${pendingCount}</strong> pending</div>
             <div class="doc-package-stat">${docs.filter(d => d.sentToBorrower).length} sent to borrower</div>
             <div class="doc-package-bar"><div class="doc-package-bar-fill" style="width:${Math.round(approvedCount/docs.length*100)}%"></div></div>
           </div>
@@ -2681,11 +2681,11 @@ const DataPlatformView = {
       const dti = loanId === 'DCDC000003' ? 38 : Math.round(28 + (loan.ltv || 70) / 5);
       const fico = loan.ltv ? Math.round(680 + loan.ltv / 2) : '—';
       const riskRating = dti > 40 ? 'Medium' : 'Low';
-      const riskColor = dti > 40 ? 'var(--color-warning)' : 'var(--color-success)';
+      const riskColor = dti > 40 ? 'var(--h-warning)' : 'var(--h-success)';
       return `
         <div class="app-step-section">
           <div class="app-step-section-title">Final Review</div>
-          <div style="font-size:13px;color:var(--color-text-secondary);margin-bottom:16px">Verify title, review final conditions, and prepare for closing.</div>
+          <div style="font-size:13px;color:var(--h-text-secondary);margin-bottom:16px">Verify title, review final conditions, and prepare for closing.</div>
 
           <div class="app-step-subsection-title">Underwriting Summary</div>
           <div class="step-summary-strip cols-4" style="margin-bottom:20px">
@@ -2774,7 +2774,7 @@ const DataPlatformView = {
         const isDone = s.status === 'completed';
         return `<li class="step-completion-item">
           <span class="step-completion-icon ${isDone ? 'done' : 'pending'}">${isDone ? '✓' : i + 1}</span>
-          <span class="step-completion-label" style="color:${isDone ? 'var(--color-text)' : 'var(--color-text-muted)'}">${s.short}</span>
+          <span class="step-completion-label" style="color:${isDone ? 'var(--h-text-primary)' : 'var(--h-text-muted)'}">${s.short}</span>
           <span class="step-completion-date">${isDone ? stepDates[i] + ', 2026' : 'Pending'}</span>
         </li>`;
       }).join('');
@@ -2782,15 +2782,15 @@ const DataPlatformView = {
       return `
         <div class="app-step-section">
           <div class="app-step-section-title">Confirm and Submit</div>
-          <div style="font-size:13px;color:var(--color-text-secondary);margin-bottom:16px">Review all steps, confirm loan terms, and submit for final processing.</div>
+          <div style="font-size:13px;color:var(--h-text-secondary);margin-bottom:16px">Review all steps, confirm loan terms, and submit for final processing.</div>
 
-          <div style="padding:16px;background:var(--color-surface);border-radius:var(--radius-lg);margin-bottom:20px;border:1px solid var(--color-border)">
+          <div style="padding:16px;background:var(--h-pearl);border-radius:var(--radius-lg);margin-bottom:20px;border:1px solid var(--h-border)">
             <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:12px">
-              <div style="font-size:14px;font-weight:700;color:var(--color-text)">Application Progress</div>
-              <div style="font-size:13px;font-weight:600;color:${allDone ? 'var(--color-success)' : 'var(--color-text-secondary)'}">${completedSteps} of ${STEPS.length} steps completed</div>
+              <div style="font-size:14px;font-weight:700;color:var(--h-text-primary)">Application Progress</div>
+              <div style="font-size:13px;font-weight:600;color:${allDone ? 'var(--h-success)' : 'var(--h-text-secondary)'}">${completedSteps} of ${STEPS.length} steps completed</div>
             </div>
-            <div style="background:var(--color-border);border-radius:4px;height:8px;overflow:hidden;margin-bottom:16px">
-              <div style="background:var(--color-primary);height:100%;width:${Math.round(completedSteps/STEPS.length*100)}%;border-radius:4px"></div>
+            <div style="background:var(--h-border);border-radius:4px;height:8px;overflow:hidden;margin-bottom:16px">
+              <div style="background:var(--h-action);height:100%;width:${Math.round(completedSteps/STEPS.length*100)}%;border-radius:4px"></div>
             </div>
             <ul class="step-completion-list">${stepItems}</ul>
           </div>
@@ -2840,7 +2840,7 @@ const DataPlatformView = {
                   <tr><td>Closing Location</td><td>First American Title — DC Office</td></tr>
                   <tr><td>Title Company</td><td>First American Title</td></tr>
                   <tr><td>Escrow Officer</td><td>Sandra Reeves</td></tr>
-                  <tr><td>Wire Instructions</td><td><a style="color:var(--color-primary);font-size:12px;cursor:pointer">View wire details →</a></td></tr>
+                  <tr><td>Wire Instructions</td><td><a style="color:var(--h-action);font-size:12px;cursor:pointer">View wire details →</a></td></tr>
                 </tbody>
               </table>
             </div>
@@ -2920,7 +2920,7 @@ const DataPlatformView = {
       return `
         <div class="app-step-section">
           <div class="app-step-section-title">Prequalification</div>
-          <div style="font-size:13px;color:var(--color-text-secondary);margin-bottom:16px">Verify originator, borrower eligibility, and financial qualification before proceeding.</div>
+          <div style="font-size:13px;color:var(--h-text-secondary);margin-bottom:16px">Verify originator, borrower eligibility, and financial qualification before proceeding.</div>
 
           <div class="step-summary-strip cols-4">
             <div>
@@ -2944,7 +2944,7 @@ const DataPlatformView = {
           ${this._renderOriginatorInfo(loan)}
           ${this._renderBorrowerInfo(loan)}
 
-          <div class="app-step-subsection-title">Prequalification Conditions <span style="font-size:11px;font-weight:400;color:var(--color-text-muted)">${conditions.filter(c=>c.done).length}/${conditions.length}</span></div>
+          <div class="app-step-subsection-title">Prequalification Conditions <span style="font-size:11px;font-weight:400;color:var(--h-text-muted)">${conditions.filter(c=>c.done).length}/${conditions.length}</span></div>
           <div style="margin-bottom:16px">${this._renderStepConditions(conditions)}</div>
 
           ${this._renderProcessTracker('Prequalification Process', tasks)}
@@ -2975,7 +2975,7 @@ const DataPlatformView = {
       return `
         <div class="app-step-section">
           <div class="app-step-section-title">Document Approval Review</div>
-          <div style="font-size:13px;color:var(--color-text-secondary);margin-bottom:16px">Review and approve all submitted documents before ordering the appraisal.</div>
+          <div style="font-size:13px;color:var(--h-text-secondary);margin-bottom:16px">Review and approve all submitted documents before ordering the appraisal.</div>
 
           <div class="doc-package-summary">
             <div class="doc-package-stat"><strong>${approvedCount}</strong> of <strong>${docs.length}</strong> approved</div>
@@ -2985,7 +2985,7 @@ const DataPlatformView = {
           <div class="app-step-subsection-title">Documents for This Phase</div>
           <div style="margin-bottom:20px">${this._renderUploadDocTable(docs)}</div>
 
-          <div class="app-step-subsection-title">Approval Conditions <span style="font-size:11px;font-weight:400;color:var(--color-text-muted)">${conditions.filter(c=>c.done).length}/${conditions.length}</span></div>
+          <div class="app-step-subsection-title">Approval Conditions <span style="font-size:11px;font-weight:400;color:var(--h-text-muted)">${conditions.filter(c=>c.done).length}/${conditions.length}</span></div>
           <div style="margin-bottom:16px">${this._renderStepConditions(conditions)}</div>
           <button class="btn btn-primary btn-sm" ${isComplete ? 'disabled style="opacity:0.5"' : ''}>Approve Documents</button>
         </div>`;
@@ -3016,7 +3016,7 @@ const DataPlatformView = {
       return `
         <div class="app-step-section">
           <div class="app-step-section-title">Disclosures & Compliance</div>
-          <div style="font-size:13px;color:var(--color-text-secondary);margin-bottom:16px">Prepare and send required disclosures. Verify TRID, HMDA, and fair lending compliance.</div>
+          <div style="font-size:13px;color:var(--h-text-secondary);margin-bottom:16px">Prepare and send required disclosures. Verify TRID, HMDA, and fair lending compliance.</div>
 
           <div class="app-step-subsection-title">Disclosure Timeline</div>
           <div class="disclosure-timeline" style="margin-bottom:24px">${timelineHtml}</div>
@@ -3033,23 +3033,23 @@ const DataPlatformView = {
           <div class="form-grid-4" style="margin-bottom:20px">
             <div class="form-group">
               <label>Ethnicity</label>
-              <input class="input" value="Not Hispanic or Latino" readonly style="background:var(--color-surface);font-size:12px" />
+              <input class="input" value="Not Hispanic or Latino" readonly style="background:var(--h-pearl);font-size:12px" />
             </div>
             <div class="form-group">
               <label>Race</label>
-              <input class="input" value="White" readonly style="background:var(--color-surface);font-size:12px" />
+              <input class="input" value="White" readonly style="background:var(--h-pearl);font-size:12px" />
             </div>
             <div class="form-group">
               <label>Sex</label>
-              <input class="input" value="Male" readonly style="background:var(--color-surface);font-size:12px" />
+              <input class="input" value="Male" readonly style="background:var(--h-pearl);font-size:12px" />
             </div>
             <div class="form-group">
               <label>Income Bracket</label>
-              <input class="input" value="$75,000–$99,999" readonly style="background:var(--color-surface);font-size:12px" />
+              <input class="input" value="$75,000–$99,999" readonly style="background:var(--h-pearl);font-size:12px" />
             </div>
           </div>
 
-          <div class="app-step-subsection-title">Compliance Checklist <span style="font-size:11px;font-weight:400;color:var(--color-text-muted)">${conditions.filter(c=>c.done).length}/${conditions.length}</span></div>
+          <div class="app-step-subsection-title">Compliance Checklist <span style="font-size:11px;font-weight:400;color:var(--h-text-muted)">${conditions.filter(c=>c.done).length}/${conditions.length}</span></div>
           <div style="margin-bottom:16px">${this._renderStepConditions(conditions)}</div>
           <div style="display:flex;gap:10px">
             <button class="btn btn-primary btn-sm">Send to DocuTech</button>
@@ -3063,8 +3063,8 @@ const DataPlatformView = {
     return `
       <div class="app-step-section" style="text-align:center;padding:48px 20px">
         <div style="font-size:36px;margin-bottom:14px">${isCompleted ? '✓' : '⏳'}</div>
-        <div style="font-size:16px;font-weight:700;color:var(--color-text);margin-bottom:8px">${step?.short || ''}</div>
-        <div style="font-size:13px;color:var(--color-text-muted)">${isCompleted ? 'This step has been completed.' : 'This step is pending completion of earlier steps.'}</div>
+        <div style="font-size:16px;font-weight:700;color:var(--h-text-primary);margin-bottom:8px">${step?.short || ''}</div>
+        <div style="font-size:13px;color:var(--h-text-muted)">${isCompleted ? 'This step has been completed.' : 'This step is pending completion of earlier steps.'}</div>
       </div>`;
   },
 
@@ -3095,7 +3095,7 @@ const DataPlatformView = {
         <div class="stat-divider"></div>
         <div class="stat-item">
           <div class="stat-label">Eligible for Batching</div>
-          <div class="stat-value" style="font-size:26px;color:${eligible.length > 0 ? 'var(--color-primary)' : 'inherit'}">${eligible.length}</div>
+          <div class="stat-value" style="font-size:26px;color:${eligible.length > 0 ? 'var(--h-action)' : 'inherit'}">${eligible.length}</div>
           <div class="stat-desc">completed, unbatched</div>
         </div>
         <div class="stat-divider"></div>
@@ -3106,26 +3106,26 @@ const DataPlatformView = {
         <div class="stat-divider"></div>
         <div class="stat-item">
           <div class="stat-label">Issued</div>
-          <div class="stat-value" style="font-size:26px;color:var(--color-success)">${issued}</div>
+          <div class="stat-value" style="font-size:26px;color:var(--h-success)">${issued}</div>
         </div>
       </div>`;
 
     // Eligible pool (collapsible)
     const eligibleRows = eligible.map(l => `
       <tr>
-        <td><input type="checkbox" style="accent-color:var(--color-primary)" /></td>
-        <td style="font-size:12px;font-weight:700;color:var(--color-primary)">${l.id}</td>
+        <td><input type="checkbox" style="accent-color:var(--h-action)" /></td>
+        <td style="font-size:12px;font-weight:700;color:var(--h-action)">${l.id}</td>
         <td>${l.borrowerName}</td>
         <td>${Display.currency(l.amount)}</td>
         <td>${l.submittedAt ? Display.date(l.submittedAt) : '—'}</td>
       </tr>`).join('');
 
     const eligibleSection = eligible.length ? `
-      <div class="card" style="margin-bottom:20px;border:1px solid var(--color-primary);border-radius:var(--radius-lg)">
+      <div class="card" style="margin-bottom:20px;border:1px solid var(--h-action);border-radius:var(--radius-lg)">
         <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:12px">
           <div>
-            <div class="card-title" style="color:var(--color-primary)">Eligible Loans Pool</div>
-            <div style="font-size:12px;color:var(--color-text-muted);margin-top:2px">${eligible.length} loan${eligible.length!==1?'s':''} available for batching</div>
+            <div class="card-title" style="color:var(--h-action)">Eligible Loans Pool</div>
+            <div style="font-size:12px;color:var(--h-text-muted);margin-top:2px">${eligible.length} loan${eligible.length!==1?'s':''} available for batching</div>
           </div>
           ${canCreate ? `<button class="btn btn-primary btn-sm">Create Batch from Selected</button>` : ''}
         </div>
@@ -3135,7 +3135,7 @@ const DataPlatformView = {
               <th style="width:32px"></th>
               <th>Loan ID</th><th>Borrower</th><th>Amount</th><th>Completed</th>
             </tr></thead>
-            <tbody>${eligibleRows || '<tr><td colspan="5" style="text-align:center;padding:16px;color:var(--color-text-muted)">No eligible loans</td></tr>'}</tbody>
+            <tbody>${eligibleRows || '<tr><td colspan="5" style="text-align:center;padding:16px;color:var(--h-text-muted)">No eligible loans</td></tr>'}</tbody>
           </table>
         </div>
       </div>` : '';
@@ -3146,8 +3146,8 @@ const DataPlatformView = {
       const isExp = this._batchExpanded === b.id;
 
       const innerLoans = b.loans.map(l => l ? `
-        <tr style="background:var(--color-surface)">
-          <td colspan="2" style="padding-left:32px;font-size:12px;color:var(--color-primary);font-weight:600">${l.id}</td>
+        <tr style="background:var(--h-pearl)">
+          <td colspan="2" style="padding-left:32px;font-size:12px;color:var(--h-action);font-weight:600">${l.id}</td>
           <td style="font-size:12px">${l.borrowerName}</td>
           <td style="font-size:12px">${Display.currency(l.amount)}</td>
           <td colspan="3"></td>
@@ -3155,7 +3155,7 @@ const DataPlatformView = {
 
       return `
         <tr>
-          <td style="font-size:12px;font-weight:700;color:var(--color-primary)">${b.id}</td>
+          <td style="font-size:12px;font-weight:700;color:var(--h-action)">${b.id}</td>
           <td>${b.loans.length}</td>
           <td>${Display.currency(bVal)}</td>
           <td>${bHom}</td>
@@ -3184,7 +3184,7 @@ const DataPlatformView = {
       ${statsHtml}
       ${eligibleSection}
       <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:12px">
-        <div style="font-size:15px;font-weight:600;color:var(--color-text)">All Batches</div>
+        <div style="font-size:15px;font-weight:600;color:var(--h-text-primary)">All Batches</div>
       </div>
       <div class="table-container">
         <table>
@@ -3224,12 +3224,12 @@ const DataPlatformView = {
         </div>
         <div class="lop-token-card lop-token-card-light">
           <div class="lop-token-card-ticker">Total Homium Minted</div>
-          <div class="lop-token-card-price" style="color:var(--color-primary)">${totalTokens.toFixed(1)}</div>
+          <div class="lop-token-card-price" style="color:var(--h-action)">${totalTokens.toFixed(1)}</div>
           <div class="lop-token-card-label">HOM tokens activated to date</div>
         </div>
         <div class="lop-token-card lop-token-card-light">
           <div class="lop-token-card-ticker">Total USD Activated</div>
-          <div class="lop-token-card-price" style="color:var(--color-primary)">${Display.currency(totalUSD)}</div>
+          <div class="lop-token-card-price" style="color:var(--h-action)">${Display.currency(totalUSD)}</div>
           <div class="lop-token-card-label">Cumulative activated value</div>
         </div>
       </div>`;
@@ -3259,12 +3259,12 @@ const DataPlatformView = {
 
     const rows = activations.map(a => `
       <tr>
-        <td style="font-size:12px;font-weight:700;color:var(--color-primary)">${a.id}</td>
-        <td style="font-size:12px;color:var(--color-text-muted)">${a.batch}</td>
+        <td style="font-size:12px;font-weight:700;color:var(--h-action)">${a.id}</td>
+        <td style="font-size:12px;color:var(--h-text-muted)">${a.batch}</td>
         <td><strong>${a.tokens.toFixed(1)}</strong> HOM</td>
         <td>${Display.currency(a.usd)}</td>
         <td>${Display.date(a.date)}</td>
-        <td style="font-size:12px;color:var(--color-text-secondary)">${a.activatedBy}</td>
+        <td style="font-size:12px;color:var(--h-text-secondary)">${a.activatedBy}</td>
         <td><span class="badge badge-active">${a.status}</span></td>
         <td><button class="btn btn-ghost btn-xs">View</button></td>
       </tr>`).join('');
@@ -3316,8 +3316,8 @@ const DataPlatformView = {
       const c = CITY_COORDS[city];
       const r = Math.min(6 + data.count * 3, 16);
       return `
-        <circle cx="${c.x}" cy="${c.y}" r="${r}" fill="var(--color-primary)" opacity="0.75" />
-        <circle cx="${c.x}" cy="${c.y}" r="${r + 4}" fill="var(--color-primary)" opacity="0.15" />
+        <circle cx="${c.x}" cy="${c.y}" r="${r}" fill="var(--h-action)" opacity="0.75" />
+        <circle cx="${c.x}" cy="${c.y}" r="${r + 4}" fill="var(--h-action)" opacity="0.15" />
         <title>${city}: ${data.count} loan${data.count > 1 ? 's' : ''} · ${Display.currency(data.total)}</title>`;
     }).join('');
 
@@ -3334,8 +3334,8 @@ const DataPlatformView = {
         </svg>
         <div style="display:flex;gap:16px;flex-wrap:wrap;padding:4px 4px 0">
           ${Object.entries(cityData).map(([city, d]) => `
-            <div style="display:flex;align-items:center;gap:6px;font-size:11px;color:var(--color-text-secondary)">
-              <span style="width:8px;height:8px;border-radius:50%;background:var(--color-primary);display:inline-block;opacity:0.75"></span>
+            <div style="display:flex;align-items:center;gap:6px;font-size:11px;color:var(--h-text-secondary)">
+              <span style="width:8px;height:8px;border-radius:50%;background:var(--h-action);display:inline-block;opacity:0.75"></span>
               ${city} (${d.count})
             </div>`).join('')}
         </div>

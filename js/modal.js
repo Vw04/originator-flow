@@ -19,9 +19,10 @@
    ============================================================ */
 
 const AppModal = (() => {
-  let _trigger    = null;       // element that opened the modal — restore focus here on close
-  let _onDismiss  = null;       // optional dismiss callback
-  let _keyHandler = null;       // bound keydown handler
+  let _trigger        = null;   // element that opened the modal — restore focus here on close
+  let _onDismiss      = null;   // optional dismiss callback
+  let _keyHandler     = null;   // bound keydown handler
+  let _pendingDiscard = null;   // 2026-05-27 canon Pattern B/D: discard-confirmation pending fn
 
   function _ensureHost() {
     let host = document.getElementById('app-modal-host');
@@ -41,11 +42,25 @@ const AppModal = (() => {
 
   function _renderActions(actions, danger) {
     if (!actions || !actions.length) return '';
-    return actions.map(([lbl, fn], i) => {
+    return actions.map(([lbl, fn, style], i) => {
       const isLast = i === actions.length - 1 && actions.length > 1;
-      const cls = isLast
-        ? (danger ? 'btn btn-danger' : 'btn btn-primary')
-        : 'btn btn-secondary';
+      // Explicit per-action style override (3rd element). Used by confirmDiscard
+      // to render "Discard changes" as ghost-destructive on the left while the
+      // primary "Keep editing" sits on the right.
+      let cls;
+      if (style === 'ghost-destructive') {
+        cls = 'btn btn-ghost modal-action-destructive';
+      } else if (style === 'primary') {
+        cls = 'btn btn-primary';
+      } else if (style === 'danger') {
+        cls = 'btn btn-danger';
+      } else if (style === 'secondary') {
+        cls = 'btn btn-secondary';
+      } else {
+        cls = isLast
+          ? (danger ? 'btn btn-danger' : 'btn btn-primary')
+          : 'btn btn-secondary';
+      }
       return `<button class="${cls}" onclick="${fn}">${_esc(lbl)}</button>`;
     }).join('');
   }
@@ -137,6 +152,32 @@ const AppModal = (() => {
     isOpen() {
       const host = document.getElementById('app-modal-host');
       return !!(host && host.children.length);
+    },
+
+    /* Dirty-form / discard-changes confirmation modal (canon Pattern B/C/D).
+       Fires when the user attempts an unintentional nav-away while a form is
+       dirty. Primary "Keep editing" sits right (autofocus); ghost-destructive
+       "Discard changes" sits left. Both backdrop click and Esc are treated as
+       "Keep editing" (default close behavior). */
+    confirmDiscard({ onDiscard } = {}) {
+      _pendingDiscard = typeof onDiscard === 'function' ? onDiscard : null;
+      this.open({
+        title: 'Discard changes?',
+        body:  '<p style="font-size:14px;color:var(--h-text-secondary);margin:0">Your unsaved changes will be lost.</p>',
+        actions: [
+          ['Discard changes', 'AppModal._confirmDiscard()', 'ghost-destructive'],
+          ['Keep editing',    'AppModal.close()',           'primary'],
+        ],
+      });
+    },
+
+    _confirmDiscard() {
+      const fn = _pendingDiscard;
+      _pendingDiscard = null;
+      this.close();
+      if (fn) {
+        try { fn(); } catch (_) {}
+      }
     },
   };
 })();

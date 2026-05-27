@@ -68,7 +68,7 @@ const MobileProspectView = {
             <div class="mp-how-value mp-how-red">$${bp.beforeHomium.monthlyPITI.toLocaleString()}/mo</div>
           </div>
           <div class="mp-how-arrow">
-            <svg width="20" height="20" viewBox="0 0 20 20" fill="none" stroke="var(--color-primary)" stroke-width="2"><path d="M4 10h12M12 6l4 4-4 4"/></svg>
+            <svg width="20" height="20" viewBox="0 0 20 20" fill="none" stroke="var(--h-action)" stroke-width="2"><path d="M4 10h12M12 6l4 4-4 4"/></svg>
           </div>
           <div class="mp-how-col">
             <div class="mp-how-label">With Homium</div>
@@ -76,7 +76,7 @@ const MobileProspectView = {
           </div>
         </div>
         <div class="mp-how-savings">
-          <svg width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="var(--color-primary)" stroke-width="1.6"><path d="M8 1v14M4.5 4l3.5-3 3.5 3"/></svg>
+          <svg width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="var(--h-action)" stroke-width="1.6"><path d="M8 1v14M4.5 4l3.5-3 3.5 3"/></svg>
           Saves $${bp.withHomium.monthlySavings.toLocaleString()}/month per family
         </div>
         <div class="mp-how-headline">${bp.headline}</div>
@@ -316,7 +316,7 @@ const MobileProspectView = {
         <div class="mp-chart-end-val">${eqLabel}</div>
         <svg viewBox="0 0 300 140" class="mp-chart-svg">
           <polygon points="${eqArea}" fill="var(--color-primary-container)" opacity="0.4"/>
-          <polyline points="${eqPoints}" fill="none" stroke="var(--color-primary)" stroke-width="2.5"/>
+          <polyline points="${eqPoints}" fill="none" stroke="var(--h-action)" stroke-width="2.5"/>
         </svg>
         <div class="mp-chart-axis">
           <span>${proj[0].year}</span><span>${proj[proj.length - 1].year}</span>
@@ -327,7 +327,7 @@ const MobileProspectView = {
         <div class="mp-chart-label">CUMULATIVE ROI</div>
         <div class="mp-chart-end-val">${roiLabel}</div>
         <svg viewBox="0 0 300 140" class="mp-chart-svg">
-          <polyline points="${roiPoints}" fill="none" stroke="var(--color-primary)" stroke-width="2.5"/>
+          <polyline points="${roiPoints}" fill="none" stroke="var(--h-action)" stroke-width="2.5"/>
         </svg>
         <div class="mp-chart-axis">
           <span>${proj[0].year}</span><span>${proj[proj.length - 1].year}</span>

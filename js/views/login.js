@@ -39,7 +39,7 @@ const LoginView = {
             <div class="login-logo">
               <img src="assets/branding/HomiumLogo_0721_Wordmark (Blue).png" alt="Homium" style="height:32px"
                    onerror="this.style.display='none';this.nextElementSibling.style.display='block'" />
-              <span style="display:none;font-size:24px;font-weight:700;color:var(--color-primary);font-family:var(--font-heading)">Homium</span>
+              <span style="display:none;font-size:24px;font-weight:700;color:var(--h-action);font-family:var(--font-heading)">Homium</span>
             </div>
             ${this._state.stage === 'signin' ? this._renderSignInCard(persona) : this._render2FACard(persona)}
             <div class="login-footer-note">Interactive prototype — Q2 2026 · No real authentication</div>

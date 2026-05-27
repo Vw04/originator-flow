@@ -34,7 +34,7 @@ const BranchCreateView = {
         <div class="page-body">
           <div class="inst-card">
             <div class="inst-card-title">Choose a parent company</div>
-            <div style="margin-bottom:14px;color:var(--color-text-muted);font-size:13px">Branches are created under an existing Origination Company.</div>
+            <div style="margin-bottom:14px;color:var(--h-text-muted);font-size:13px">Branches are created under an existing Origination Company.</div>
             ${companies.length ? `
               <div class="program-checklist">
                 ${companies.map(c => `
@@ -42,7 +42,7 @@ const BranchCreateView = {
                     <div class="pc-name">${c.name}</div>
                     <span class="pc-code">${c.nmlsId}</span>
                   </label>`).join('')}
-              </div>` : '<div style="color:var(--color-text-muted);font-size:13px">No companies yet. Create one first.</div>'}
+              </div>` : '<div style="color:var(--h-text-muted);font-size:13px">No companies yet. Create one first.</div>'}
           </div>
         </div>`;
     }
@@ -85,7 +85,7 @@ const BranchCreateView = {
           <div class="pc-name">${p.name}</div>
           <span class="pc-code">${code}</span>
         </label>`;
-    }).join('') : `<div style="padding:14px;color:var(--color-text-muted);font-size:13px">No programs enabled at <strong>${co.name}</strong>. Enable some on the company's Details tab first.</div>`;
+    }).join('') : `<div style="padding:14px;color:var(--h-text-muted);font-size:13px">No programs enabled at <strong>${co.name}</strong>. Enable some on the company's Details tab first.</div>`;
 
     const chips = ALL_STATES.map(code => {
       const m = marketsByCode.get(code);
@@ -155,6 +155,8 @@ const BranchCreateView = {
   _set(key, value) {
     if (!this._form) return;
     this._form[key] = value;
+    // 2026-05-27 canon Pattern D: mark dirty on any user-driven field change.
+    FormState.markFormDirty('branch-create-form');
   },
 
   _toggleProgram(programId, on) {
@@ -173,13 +175,16 @@ const BranchCreateView = {
     App.renderView(Router.getCurrentPath());
   },
 
+  /* 2026-05-27 canon Pattern D — Cancel: explicit intent, no modal. */
   _cancel() {
     const back = this._companyId;
     this._form = null;
     this._enabledLpmIds = new Set();
-    Router.navigate(back ? '/origination-companies/' + back : '/origination-companies');
+    FormState.cancelEditForm('branch-create-form',
+      () => Router.navigateForce(back ? '/origination-companies/' + back : '/origination-companies'));
   },
 
+  /* 2026-05-27 canon Pattern D — Save: commit then force-navigate. */
   _save() {
     const f = this._form || {};
     if (!f.name || !f.nmlsId) {
@@ -204,6 +209,8 @@ const BranchCreateView = {
     }
     this._form = null;
     this._enabledLpmIds = new Set();
-    Router.navigate('/branches/' + branch.id);
+    FormState.saveEditForm('branch-create-form',
+      () => {},
+      () => Router.navigateForce('/branches/' + branch.id));
   },
 };

@@ -107,7 +107,7 @@ const BranchesView = {
           <td>${mgr ? Display.fullName(mgr) : '<span class="text-muted">N/A</span>'}</td>
           <td>${users.length}</td>
           <td>${programChips}</td>
-          <td style="font-size:11px;color:var(--color-text-muted)">${b.lastNmlsSync ? Display.relativeTime(b.lastNmlsSync) : '—'}</td>
+          <td style="font-size:11px;color:var(--h-text-muted)">${b.lastNmlsSync ? Display.relativeTime(b.lastNmlsSync) : '—'}</td>
           <td><span class="status-pill ${b.status === 'active' ? 'badge-active' : 'badge-pending'}"><span class="status-dot"></span>${b.status === 'active' ? 'Active' : 'Setup incomplete'}</span></td>
         </tr>`;
     }).join('');
@@ -154,7 +154,7 @@ const BranchesView = {
                   <div class="filter-menu-item${f.status==='active'?' active':''}" onclick="BranchesView.setFilter('status','active')">Active</div>
                   <div class="filter-menu-item${f.status==='pending'?' active':''}" onclick="BranchesView.setFilter('status','pending')">Pending</div>
                 </div>
-                ${hasFilters ? `<div class="filter-menu-section" style="border-top:1px solid var(--color-border);padding-top:8px"><div class="filter-menu-item" onclick="BranchesView.clearFilters()" style="color:var(--color-danger)">Clear All Filters</div></div>` : ''}
+                ${hasFilters ? `<div class="filter-menu-section" style="border-top:1px solid var(--h-border);padding-top:8px"><div class="filter-menu-item" onclick="BranchesView.clearFilters()" style="color:var(--h-error)">Clear All Filters</div></div>` : ''}
               </div>
             </div>
             ${scope && canEdit ? `<button class="btn btn-primary btn-sm" onclick="BranchesView.openAddPage('${scope?.companyId || ''}')" style="margin-left:auto">+ Add Branch</button>` : ''}
@@ -233,7 +233,7 @@ const BranchesView = {
     })();
     const programsList = branchPrograms.length
       ? `<div style="display:flex;flex-wrap:wrap;gap:6px">${branchPrograms.map(p => `<span class="tag" style="padding:5px 10px">${p.name}</span>`).join('')}</div>`
-      : `<div style="color:var(--color-text-muted);font-size:12px">Not enabled — OC has no programs available in ${b.state}.</div>`;
+      : `<div style="color:var(--h-text-muted);font-size:12px">Not enabled — OC has no programs available in ${b.state}.</div>`;
 
     const userRows = users.map(u => {
       const a = State.getBranchAssignments(u.id).find(x => x.branchId === b.id);
@@ -242,15 +242,15 @@ const BranchesView = {
         : '<span class="tag">Standard</span>';
       const bmBadge = a?.flags?.branchManager ? '<span class="tag" style="background:#fff7e6;color:#a35c00;margin-left:4px">BM</span>' : '';
       return `
-        <div style="display:flex;align-items:center;gap:8px;padding:6px 0;border-bottom:1px solid var(--color-border);cursor:pointer" onclick="ProfileView.open('${u.id}')">
+        <div style="display:flex;align-items:center;gap:8px;padding:6px 0;border-bottom:1px solid var(--h-border);cursor:pointer" onclick="ProfileView.open('${u.id}')">
           <div class="avatar avatar-sm" style="background:${avatarColor(u.role)};flex-shrink:0">${Display.initials(u)}</div>
           <div style="flex:1;min-width:0">
-            <div style="font-size:13px;font-weight:500;color:var(--color-text)">${Display.fullName(u)}</div>
-            <div style="font-size:11px;color:var(--color-text-muted)">${userTypeBadge}${bmBadge}</div>
+            <div style="font-size:13px;font-weight:500;color:var(--h-text-primary)">${Display.fullName(u)}</div>
+            <div style="font-size:11px;color:var(--h-text-muted)">${userTypeBadge}${bmBadge}</div>
           </div>
           <span class="status-pill ${Display.onboardingStatusClass(u.onboardingStatus)}" style="font-size:10px"><span class="status-dot"></span>${Display.onboardingStatusLabel(u.onboardingStatus)}</span>
         </div>`;
-    }).join('') || '<p style="font-size:13px;color:var(--color-text-muted)">No users in this branch.</p>';
+    }).join('') || '<p style="font-size:13px;color:var(--h-text-muted)">No users in this branch.</p>';
 
     document.getElementById('branch-panel-container').innerHTML = `
       <div class="side-panel-overlay" onclick="if(event.target===this)BranchesView.closePanel()">
@@ -276,7 +276,7 @@ const BranchesView = {
             </div>
 
             <div class="panel-section">
-              <div class="panel-section-label">Programs Available <span style="color:var(--color-text-muted);font-weight:400">(inherited from OC, narrowed to ${b.state})</span></div>
+              <div class="panel-section-label">Programs Available <span style="color:var(--h-text-muted);font-weight:400">(inherited from OC, narrowed to ${b.state})</span></div>
               ${programsList}
             </div>
 
@@ -385,7 +385,7 @@ const BranchesView = {
 
     const statusPill = b.status === 'active'
       ? `<span class="entity-status-pill">Active</span>`
-      : `<span class="entity-status-pill" style="color:var(--color-warning)">Setup incomplete</span>`;
+      : `<span class="entity-status-pill" style="color:var(--h-warning)">Setup incomplete</span>`;
 
     return `
       ${backLink}
@@ -405,7 +405,7 @@ const BranchesView = {
         </div>
       </div>
       ${editing ? '' : `<div class="section-tabs">${tabsHtmlWithCounts}</div>`}
-      <div class="page-body"${editing ? ' oninput="BranchesView.markDirty()"' : ''}>${content}</div>
+      <div id="branch-edit-form" class="page-body"${editing ? ' oninput="BranchesView.markDirty()"' : ''}>${content}</div>
       ${editing ? `
         <div class="inst-footer-bar">
           <span class="dirty-indicator">
@@ -418,19 +418,23 @@ const BranchesView = {
       <div id="branch-modal-container"></div>`;
   },
 
-  markDirty() {
-    if (document.body.classList.contains('is-dirty')) return;
-    document.body.classList.add('is-dirty');
-    const lbl = document.querySelector('.inst-footer-bar .dirty-label');
-    if (lbl) lbl.textContent = 'Unsaved changes';
+  /* 2026-05-27 canon Pattern D — dirty state delegated to FormState.
+     The form's snapshot is captured on edit-mode entry (see enterEditMode)
+     and cleared on Save / Cancel. body.is-dirty is mirrored by FormState. */
+  markDirty() { FormState.markFormDirty('branch-edit-form'); },
+
+  enterEditMode(branchId) {
+    Router.navigate('/branches/' + branchId + '/edit');
+    // Capture snapshot after the next render — inputs need to exist first.
+    setTimeout(() => FormState.captureFormSnapshot('branch-edit-form'), 0);
   },
 
-  _clearDirty() {
-    document.body.classList.remove('is-dirty');
+  cancelEdit(branchId) {
+    /* Pattern D Cancel: explicit intent → no dirty-form modal, just navigate. */
+    FormState.cancelEditForm('branch-edit-form',
+      () => Router.navigateForce('/branches/' + branchId));
   },
 
-  enterEditMode(branchId) { this._clearDirty(); Router.navigate('/branches/' + branchId + '/edit'); },
-  cancelEdit(branchId)    { this._clearDirty(); Router.navigate('/branches/' + branchId); },
   saveEdit(branchId) {
     const get = (id) => document.getElementById(id)?.value.trim();
     const patch = {
@@ -445,9 +449,10 @@ const BranchesView = {
       contactPhone: get('br-phone'),
     };
     Object.keys(patch).forEach(k => { if (patch[k] === undefined || patch[k] === '') delete patch[k]; });
-    if (State.updateBranch) State.updateBranch(branchId, patch);
-    this._clearDirty();
-    Router.navigate('/branches/' + branchId);
+    /* Pattern D Save: commit then force-navigate; FormState bypasses the dirty guard. */
+    FormState.saveEditForm('branch-edit-form',
+      () => { if (State.updateBranch) State.updateBranch(branchId, patch); },
+      () => Router.navigateForce('/branches/' + branchId));
   },
 
   switchBranchTab(tab) {
@@ -521,7 +526,7 @@ const BranchesView = {
   _renderBranchUsers(b, canEdit) {
     const users = State.getUsersByBranch(b.id);
     if (!users.length) {
-      return `<div class="card"><div style="text-align:center;color:var(--color-text-muted);padding:32px;font-size:13px">No users assigned to this branch.${canEdit ? ' <button class="btn btn-ghost btn-xs" onclick="BulkInviteView.start({ companyId: \'' + b.companyId + '\', returnPath: \'' + Router.getCurrentPath() + '\' })">+ Invite User</button>' : ''}</div></div>`;
+      return `<div class="card"><div style="text-align:center;color:var(--h-text-muted);padding:32px;font-size:13px">No users assigned to this branch.${canEdit ? ' <button class="btn btn-ghost btn-xs" onclick="BulkInviteView.start({ companyId: \'' + b.companyId + '\', returnPath: \'' + Router.getCurrentPath() + '\' })">+ Invite User</button>' : ''}</div></div>`;
     }
     const rows = users.map(u => {
       const a = State.getBranchAssignments(u.id).find(x => x.branchId === b.id);
@@ -548,10 +553,10 @@ const BranchesView = {
     }).join('');
     return `
       <div class="card" style="padding:0;overflow:hidden">
-        <div style="padding:14px 18px;border-bottom:1px solid var(--color-border);display:flex;justify-content:space-between;align-items:center">
+        <div style="padding:14px 18px;border-bottom:1px solid var(--h-border);display:flex;justify-content:space-between;align-items:center">
           <div>
             <div class="card-title" style="margin-bottom:2px">Users (${users.length})</div>
-            <div style="font-size:12px;color:var(--color-text-muted)">Members assigned to this branch. Click a row to view their profile.</div>
+            <div style="font-size:12px;color:var(--h-text-muted)">Members assigned to this branch. Click a row to view their profile.</div>
           </div>
           ${canEdit ? `<button class="btn btn-primary btn-sm" onclick="BulkInviteView.start({ companyId: '${b.companyId}', returnPath: '${Router.getCurrentPath()}' })">+ Invite User</button>` : ''}
         </div>
@@ -570,7 +575,7 @@ const BranchesView = {
      ============================================================ */
   _renderBranchPermissions(b, canEdit) {
     return `
-      <div style="font-size:12px;color:var(--color-text-muted);margin-bottom:12px;padding:10px 12px;background:var(--color-surface);border:1px solid var(--color-border);border-radius:6px">
+      <div style="font-size:12px;color:var(--h-text-muted);margin-bottom:12px;padding:10px 12px;background:var(--h-pearl);border:1px solid var(--h-border);border-radius:6px">
         <strong>Access levels:</strong>
         <span class="admin-pm-level-pill level-full" style="margin-left:6px">Full</span> all flags forced on ·
         <span class="admin-pm-level-pill level-edit">Can edit</span> set create/submit/withdraw individually ·
@@ -641,13 +646,13 @@ const BranchesView = {
         <div class="admin-pm-section-head">
           <div>
             <div class="card-title" style="margin-bottom:2px">Branch-level permissions</div>
-            <div style="font-size:12px;color:var(--color-text-muted)">Default rights each branch member has on applications at this branch.</div>
+            <div style="font-size:12px;color:var(--h-text-muted)">Default rights each branch member has on applications at this branch.</div>
           </div>
           ${canEdit && candidatesForAdd.length ? `
             <div style="position:relative">
               <button class="btn btn-ghost btn-sm" onclick="BranchesView._toggleAddBranchPerm(event)">+ Add user</button>
               <div class="admin-pm-popover" id="admin-pm-add-branch" style="display:none">
-                ${candidatesForAdd.map(u => `<div class="admin-pm-popover-item" onclick="BranchesView._addBranchPerm('${b.id}', '${u.id}')">${Display.fullName(u)} <span style="color:var(--color-text-muted);font-size:11px;margin-left:6px">${Display.roleName(u.role)}</span></div>`).join('')}
+                ${candidatesForAdd.map(u => `<div class="admin-pm-popover-item" onclick="BranchesView._addBranchPerm('${b.id}', '${u.id}')">${Display.fullName(u)} <span style="color:var(--h-text-muted);font-size:11px;margin-left:6px">${Display.roleName(u.role)}</span></div>`).join('')}
               </div>
             </div>` : ''}
         </div>
@@ -661,7 +666,7 @@ const BranchesView = {
               <th style="width:80px"></th>
             </tr></thead>
             <tbody>${rowsHtml}</tbody>
-          </table>` : `<div style="text-align:center;color:var(--color-text-muted);padding:24px;font-size:13px">No users assigned to this branch yet.</div>`}
+          </table>` : `<div style="text-align:center;color:var(--h-text-muted);padding:24px;font-size:13px">No users assigned to this branch yet.</div>`}
       </div>`;
   },
 
@@ -674,16 +679,16 @@ const BranchesView = {
     });
     if (!los.length) {
       return `<div class="card admin-pm-section-card" style="margin-top:14px">
-        <div class="admin-pm-section-head"><div><div class="card-title" style="margin-bottom:2px">Loan officer permissions</div><div style="font-size:12px;color:var(--color-text-muted)">No loan officers assigned to this branch yet.</div></div></div>
+        <div class="admin-pm-section-head"><div><div class="card-title" style="margin-bottom:2px">Loan officer permissions</div><div style="font-size:12px;color:var(--h-text-muted)">No loan officers assigned to this branch yet.</div></div></div>
       </div>`;
     }
     const blocks = los.map(lo => this._renderLoAccordion(b, lo, canEdit)).join('');
     return `
       <div class="card admin-pm-section-card" style="margin-top:14px;padding:0;overflow:hidden">
-        <div class="admin-pm-section-head" style="padding:14px 18px;border-bottom:1px solid var(--color-border)">
+        <div class="admin-pm-section-head" style="padding:14px 18px;border-bottom:1px solid var(--h-border)">
           <div>
             <div class="card-title" style="margin-bottom:2px">Loan officer permissions</div>
-            <div style="font-size:12px;color:var(--color-text-muted)">Per-LO overrides. Controls what other branch members can do on each LO's applications.</div>
+            <div style="font-size:12px;color:var(--h-text-muted)">Per-LO overrides. Controls what other branch members can do on each LO's applications.</div>
           </div>
         </div>
         ${blocks}
@@ -725,14 +730,14 @@ const BranchesView = {
           <div style="display:flex;align-items:center;gap:10px">
             <div class="avatar avatar-sm" style="background:${avatarColor(lo.role)}">${Display.initials(lo)}</div>
             <div>
-              <div style="font-size:13px;font-weight:600;color:var(--color-text)">${Display.fullName(lo)}</div>
-              <div style="font-size:11px;color:var(--color-text-muted)">LO · NMLS <span class="mono">${lo.agentNmlsId || lo.nmlsId || '—'}</span> · ${configuredCount} peer${configuredCount === 1 ? '' : 's'} configured</div>
+              <div style="font-size:13px;font-weight:600;color:var(--h-text-primary)">${Display.fullName(lo)}</div>
+              <div style="font-size:11px;color:var(--h-text-muted)">LO · NMLS <span class="mono">${lo.agentNmlsId || lo.nmlsId || '—'}</span> · ${configuredCount} peer${configuredCount === 1 ? '' : 's'} configured</div>
             </div>
           </div>
           <span class="admin-pm-acc-caret">▾</span>
         </div>
         <div class="admin-pm-acc-body" id="${accId}">
-          <div style="padding:8px 16px;font-size:11px;color:var(--color-text-muted)">Controls what other branch members can do on ${Display.fullName(lo)}'s applications.</div>
+          <div style="padding:8px 16px;font-size:11px;color:var(--h-text-muted)">Controls what other branch members can do on ${Display.fullName(lo)}'s applications.</div>
           ${entries.length ? `
             <table class="admin-pm-matrix">
               <thead><tr>
@@ -743,12 +748,12 @@ const BranchesView = {
                 <th style="width:80px"></th>
               </tr></thead>
               <tbody>${rowsHtml}</tbody>
-            </table>` : `<div style="text-align:center;color:var(--color-text-muted);padding:18px;font-size:12px">No per-user overrides yet.</div>`}
+            </table>` : `<div style="text-align:center;color:var(--h-text-muted);padding:18px;font-size:12px">No per-user overrides yet.</div>`}
           ${canEdit && candidates.length ? `
-            <div style="padding:10px 16px;border-top:1px solid var(--color-border-light);position:relative">
+            <div style="padding:10px 16px;border-top:1px solid var(--h-border-subtle);position:relative">
               <button class="btn btn-ghost btn-sm" onclick="BranchesView._toggleAddLoPerm(event, '${accId}')">+ Add user</button>
               <div class="admin-pm-popover" id="${accId}-add" style="display:none;left:16px;top:42px">
-                ${candidates.map(u => `<div class="admin-pm-popover-item" onclick="BranchesView._addLoPerm('${b.id}', '${lo.id}', '${u.id}')">${Display.fullName(u)} <span style="color:var(--color-text-muted);font-size:11px;margin-left:6px">${Display.roleName(u.role)}</span></div>`).join('')}
+                ${candidates.map(u => `<div class="admin-pm-popover-item" onclick="BranchesView._addLoPerm('${b.id}', '${lo.id}', '${u.id}')">${Display.fullName(u)} <span style="color:var(--h-text-muted);font-size:11px;margin-left:6px">${Display.roleName(u.role)}</span></div>`).join('')}
               </div>
             </div>` : ''}
         </div>
@@ -828,7 +833,7 @@ const BranchesView = {
     const ocMarketIds = [...new Set(ocLpms.map(l => l.marketId))];
     const branchMarketIds = new Set(State.getBranchEnabledMarkets(b.id));
     if (!ocMarketIds.length) {
-      return `<div class="card"><div style="text-align:center;color:var(--color-text-muted);padding:32px;font-size:13px">No markets enabled at <strong>${co ? co.name : 'the company'}</strong> yet. Configure under the company's <a class="breadcrumb-link" onclick="Router.navigate('/origination-companies/${b.companyId}')">Market Enablements</a> tab first.</div></div>`;
+      return `<div class="card"><div style="text-align:center;color:var(--h-text-muted);padding:32px;font-size:13px">No markets enabled at <strong>${co ? co.name : 'the company'}</strong> yet. Configure under the company's <a class="breadcrumb-link" onclick="Router.navigate('/origination-companies/${b.companyId}')">Market Enablements</a> tab first.</div></div>`;
     }
     const chips = ocMarketIds.map(id => {
       const m = State.getMarket(id);
@@ -843,7 +848,7 @@ const BranchesView = {
         <div class="admin-pm-section-head">
           <div>
             <div class="card-title" style="margin-bottom:2px">Market Enablements</div>
-            <div style="font-size:12px;color:var(--color-text-muted)">States this branch operates in. Bounded by ${co ? co.name : 'the company'}'s enabled markets. Disabling a market here also removes any of its programs from the Eligible Programs list.</div>
+            <div style="font-size:12px;color:var(--h-text-muted)">States this branch operates in. Bounded by ${co ? co.name : 'the company'}'s enabled markets. Disabling a market here also removes any of its programs from the Eligible Programs list.</div>
           </div>
         </div>
         <div class="admin-pm-chip-grid" style="padding:10px 14px">${chips}</div>
@@ -863,7 +868,7 @@ const BranchesView = {
     const co = State.getCompany(b.companyId);
     const ocLpms = State.getOcEnablement(b.companyId);
     if (!ocLpms.length) {
-      return `<div class="card"><div style="text-align:center;color:var(--color-text-muted);padding:32px;font-size:13px">No programs enabled at <strong>${co ? co.name : 'the company'}</strong> yet. Configure under the company's <a class="breadcrumb-link" onclick="Router.navigate('/origination-companies/${b.companyId}')">Eligible Programs</a> tab first.</div></div>`;
+      return `<div class="card"><div style="text-align:center;color:var(--h-text-muted);padding:32px;font-size:13px">No programs enabled at <strong>${co ? co.name : 'the company'}</strong> yet. Configure under the company's <a class="breadcrumb-link" onclick="Router.navigate('/origination-companies/${b.companyId}')">Eligible Programs</a> tab first.</div></div>`;
     }
     const enabledMarkets = new Set(State.getBranchEnabledMarkets(b.id));
     const branchSet = new Set(State.getBranchEnabledPrograms(b.id));
@@ -878,21 +883,21 @@ const BranchesView = {
         const reachable = enabledMarkets.has(lpm.marketId);
         const on = branchSet.has(lpm.id) && reachable;
         const dis = !canEdit || !reachable;
-        const note = !reachable ? `<span style="font-size:10px;color:var(--color-warning);margin-left:8px">market not enabled at branch</span>` : '';
+        const note = !reachable ? `<span style="font-size:10px;color:var(--h-warning);margin-left:8px">market not enabled at branch</span>` : '';
         return `
           <label class="admin-pm-prog-row" style="opacity:${dis && !canEdit ? 1 : (reachable ? 1 : .5)}">
             <input type="checkbox" ${on ? 'checked' : ''} ${dis ? 'disabled' : ''}
                    onchange="BranchesView._toggleBranchProgram('${b.id}', '${lpm.id}', this.checked)">
             <span style="flex:1">${m ? m.code + ' · ' + m.name : lpm.marketId}${note}</span>
-            <span class="mono" style="font-size:10px;color:var(--color-text-muted)">${p.code}-${m ? m.code : ''}</span>
+            <span class="mono" style="font-size:10px;color:var(--h-text-muted)">${p.code}-${m ? m.code : ''}</span>
           </label>`;
       }).join('');
       return `
         <div class="admin-pm-prog-card">
           <div class="admin-pm-prog-card-head">
             <div>
-              <div style="font-size:14px;font-weight:600;color:var(--color-text)">${p.name}</div>
-              <div style="font-size:11px;color:var(--color-text-muted);margin-top:2px">Available markets at OC: ${ocLpmsForProg.map(l => State.getMarket(l.marketId)?.code).filter(Boolean).join(', ')}</div>
+              <div style="font-size:14px;font-weight:600;color:var(--h-text-primary)">${p.name}</div>
+              <div style="font-size:11px;color:var(--h-text-muted);margin-top:2px">Available markets at OC: ${ocLpmsForProg.map(l => State.getMarket(l.marketId)?.code).filter(Boolean).join(', ')}</div>
             </div>
           </div>
           <div>${marketRows}</div>
@@ -904,10 +909,10 @@ const BranchesView = {
         <div class="admin-pm-section-head">
           <div>
             <div class="card-title" style="margin-bottom:2px">Eligible Programs</div>
-            <div style="font-size:12px;color:var(--color-text-muted)">Programs available at this branch. Only programs enabled at ${co ? co.name : 'the company'} are listed; only markets enabled at this branch are selectable.</div>
+            <div style="font-size:12px;color:var(--h-text-muted)">Programs available at this branch. Only programs enabled at ${co ? co.name : 'the company'} are listed; only markets enabled at this branch are selectable.</div>
           </div>
         </div>
-        <div style="padding:4px 0">${rows || '<div style="text-align:center;color:var(--color-text-muted);padding:24px;font-size:13px">No programs match the branch\'s enabled markets.</div>'}</div>
+        <div style="padding:4px 0">${rows || '<div style="text-align:center;color:var(--h-text-muted);padding:24px;font-size:13px">No programs match the branch\'s enabled markets.</div>'}</div>
       </div>`;
   },
 
@@ -1020,13 +1025,13 @@ const BranchesView = {
         <div class="avatar avatar-sm" style="background:${avatarColor(u.role)}">${Display.initials(u)}</div>
         <div style="flex:1">
           <div style="font-size:13px;font-weight:500">${Display.fullName(u)}</div>
-          <div style="font-size:11px;color:var(--color-text-muted)">${Display.roleName(u.role)}</div>
+          <div style="font-size:11px;color:var(--h-text-muted)">${Display.roleName(u.role)}</div>
         </div>
-        <label class="checkbox-group" style="gap:4px;font-size:11px;color:var(--color-text-muted)">
+        <label class="checkbox-group" style="gap:4px;font-size:11px;color:var(--h-text-muted)">
           <input type="radio" name="edit-br-lo" value="${u.id}" ${b.managingLO === u.id ? 'checked' : ''} />
           Managing LO
         </label>
-      </div>`).join('') || '<p style="font-size:12px;color:var(--color-text-muted)">No users in this company.</p>';
+      </div>`).join('') || '<p style="font-size:12px;color:var(--h-text-muted)">No users in this company.</p>';
 
     document.getElementById('branch-modal-container').innerHTML = `
       <div class="modal-overlay" onclick="if(event.target===this)BranchesView.closeModal()">
@@ -1070,12 +1075,12 @@ const BranchesView = {
               <div class="form-group form-full">
                 <label>Branch Users</label>
                 <input class="input input-sm" id="edit-br-lo-search" placeholder="Search users…" oninput="BranchesView._filterBranchUsers(this.value)" style="margin-bottom:8px" />
-                <div id="edit-br-lo-list" style="max-height:160px;overflow-y:auto;border:1px solid var(--color-border);border-radius:var(--radius);padding:4px">
+                <div id="edit-br-lo-list" style="max-height:160px;overflow-y:auto;border:1px solid var(--h-border);border-radius:var(--radius);padding:4px">
                   ${loRows}
                   <div style="padding:5px 0;font-size:12px">
                     <label class="checkbox-group">
                       <input type="radio" name="edit-br-lo" value="" ${!b.managingLO ? 'checked' : ''} />
-                      <span style="color:var(--color-text-muted)">None (N/A)</span>
+                      <span style="color:var(--h-text-muted)">None (N/A)</span>
                     </label>
                   </div>
                 </div>
