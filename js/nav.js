@@ -247,6 +247,7 @@ const Nav = (() => {
                  tabindex="0"
                  onclick="Nav.toggleAdminDropdown(event)"
                  onkeydown="if(event.key==='Enter')Nav.toggleAdminDropdown(event)"
+                 aria-haspopup="menu" aria-expanded="false"
                  style="position:relative">
               ${ICONS['/system-config']}
               <span>Admin</span>
@@ -273,7 +274,8 @@ const Nav = (() => {
         <div class="sidenav-footer">
           ${role === 'investor_prospect' ? '' : `
             <div class="sidenav-icon-btn" id="topnav-notif" onclick="Nav.toggleNotifications(event)"
-                 aria-label="Notifications" title="Notifications">
+                 aria-label="Notifications" title="Notifications"
+                 aria-haspopup="menu" aria-expanded="false">
               ${ICONS.bell}
               <span class="notif-badge" id="notif-badge">${_notifCount(role)}</span>
               <div class="notif-panel" id="notif-panel">
@@ -286,7 +288,8 @@ const Nav = (() => {
             </div>`}
 
           <div class="sidenav-profile" id="topnav-profile" onclick="Nav.toggleProfileMenu(event)"
-               aria-label="Account menu" title="${userName} — ${orgLine}">
+               aria-label="Account menu" title="${userName} — ${orgLine}"
+               aria-haspopup="menu" aria-expanded="false">
             <div class="sidenav-avatar" style="background:${avatarColor(role)}">${initials}</div>
             <div class="sidenav-avatar-name">${firstName}</div>
             <div class="sidenav-avatar-role">${orgLine}</div>
@@ -318,6 +321,37 @@ const Nav = (() => {
   let _paletteResults = [];
   let _shortcutsBound = false;
 
+  /* SideRail flyouts: trigger id -> panel id (for aria-expanded sync + Escape) */
+  const _FLYOUTS = [
+    ['topnav-notif',   'notif-panel'],
+    ['topnav-profile', 'profile-dropdown'],
+    ['admin-nav-wrap', 'admin-nav-menu'],
+  ];
+
+  /* Mirror each trigger's aria-expanded onto its panel's open state. */
+  function _syncFlyoutAria() {
+    for (const [trigId, panelId] of _FLYOUTS) {
+      const trig = document.getElementById(trigId);
+      const open = document.getElementById(panelId)?.classList.contains('open');
+      if (trig) trig.setAttribute('aria-expanded', open ? 'true' : 'false');
+    }
+  }
+
+  /* Close any open flyout; return focus to its trigger (for Escape). */
+  function _closeAllFlyouts() {
+    let closedTrigger = null;
+    for (const [trigId, panelId] of _FLYOUTS) {
+      const panel = document.getElementById(panelId);
+      if (panel?.classList.contains('open')) {
+        panel.classList.remove('open');
+        closedTrigger = document.getElementById(trigId);
+      }
+    }
+    _syncFlyoutAria();
+    closedTrigger?.focus?.();
+    return !!closedTrigger;
+  }
+
   function _bindGlobalShortcuts() {
     if (_shortcutsBound) return;
     _shortcutsBound = true;
@@ -326,6 +360,7 @@ const Nav = (() => {
         e.preventDefault();
         openSearchPalette();
       }
+      if (e.key === 'Escape' && _closeAllFlyouts()) e.preventDefault();
     });
   }
 
@@ -478,9 +513,11 @@ const Nav = (() => {
       // Close peer flyouts
       document.getElementById('notif-panel')?.classList.remove('open');
       document.getElementById('profile-dropdown')?.classList.remove('open');
+      _syncFlyoutAria();
       const close = (ev) => {
         if (!document.getElementById('admin-nav-wrap')?.contains(ev.target)) {
           document.getElementById('admin-nav-menu')?.classList.remove('open');
+          _syncFlyoutAria();
           document.removeEventListener('click', close);
         }
       };
@@ -494,9 +531,11 @@ const Nav = (() => {
       // Close peer flyouts
       document.getElementById('profile-dropdown')?.classList.remove('open');
       document.getElementById('admin-nav-menu')?.classList.remove('open');
+      _syncFlyoutAria();
       const close = (ev) => {
         if (!document.getElementById('topnav-notif')?.contains(ev.target)) {
           document.getElementById('notif-panel')?.classList.remove('open');
+          _syncFlyoutAria();
           document.removeEventListener('click', close);
         }
       };
@@ -517,9 +556,11 @@ const Nav = (() => {
       // Close peer flyouts
       document.getElementById('notif-panel')?.classList.remove('open');
       document.getElementById('admin-nav-menu')?.classList.remove('open');
+      _syncFlyoutAria();
       const close = (ev) => {
         if (!document.getElementById('topnav-profile')?.contains(ev.target)) {
           document.getElementById('profile-dropdown')?.classList.remove('open');
+          _syncFlyoutAria();
           document.removeEventListener('click', close);
         }
       };

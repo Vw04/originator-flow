@@ -2,86 +2,46 @@
    HOMIUM ORIGINATOR FLOW — Design System (Dashboard Refresh)
    ============================================================ */
 
-@import url('https://fonts.googleapis.com/css2?family=IvyPresto+Display:ital,wght@0,300;0,400;0,700;1,300&family=Inter:wght@300;400;500;600&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Source+Serif+4:opsz,wght@8..60,400;8..60,600&family=Inter:wght@300;400;500;600&display=swap');
 @import url('https://cdn.jsdelivr.net/npm/@tabler/icons-webfont@latest/dist/tabler-icons.min.css');   /* 2026-05-26 canon: going-forward icon standard */
+@import "../homium-design-canon/tokens.css";   /* canonical --h-* design tokens (single source of truth) */
 
 /* ---- Variables — Figma "Internal Homium 2.0" warm institutional canon
    (Phase 3 of design canon reconciliation — see assets/specs/design-canon.html)
    --------------------------------------------------------------------- */
 :root {
-  /* === Homium Brand v2 (2026-05-27 canon — homium-design-canon-v2 2/) ===
-     CTA color stays navy per DECISIONS-LOG ("Primary CTA color: #00334A — already aligned").
-     CLAUDE.md's green-500 CTA language is leftover from the 2026-05-19 handoff and is
-     internally contradicted by the DECISIONS-LOG; navy is the authoritative decision. */
+  /* ============================================================
+     Canonical --h-* design tokens are imported from
+     homium-design-canon/tokens.css (palette, action, text, surfaces,
+     borders, spacing, radius, inputs, avatars, shadows, data-viz).
+     DO NOT redefine an --h-* token the canon owns — it would drift.
+     Only app-local aliases the canon doesn't define live below. */
 
-  /* Teal brand ladder */
-  --h-teal-900: #00334A;   --h-teal-700: #0A4D6B;   --h-teal-500: #1A6E8E;
-  --h-teal-200: #A3C5D4;   --h-teal-50:  #E0EDF3;
+  /* App-only --h-* aliases (canon has no equivalent; keep references working) */
+  --h-green-200:    #A8D7BE;
+  --h-green-50:     var(--h-success-bg);
+  --h-text-inverse: var(--h-text-on-action);
 
-  /* Green action-accent ladder (reserved — card-clickable hover; NOT primary CTA) */
-  --h-green-900: #0D6B40;  --h-green-700: #117A4A;  --h-green-500: #14935F;
-  --h-green-200: #A8D7BE;  --h-green-50:  #E4F3EB;
-
-  /* Neutrals */
-  --h-midnight:  #061D29;
-  --h-slate:     #2D3E4A;
-  --h-gray-500:  #6B7A85;
-  --h-gray-300:  #9BA6AE;
-  --h-gray-200:  #C4C9CC;
-  --h-stone:     #E0DDD6;
-  --h-warm-gray: #EDEBE6;
-  --h-bg:        #F9F8F4;
-  --h-sand:      #F2F0EA;
-  --h-pearl:     #F8F7F4;
-  --h-zebra:     #FAFAF8;
-  --h-white:     #FFFFFF;
-
-  /* Semantic action + surface aliases */
-  --h-action:         #00334A;   /* navy — locked */
-  --h-action-hover:   #0A4D6B;
-  --h-action-pressed: #001F2E;
-  --h-surface-1:      #FFFFFF;
-  --h-surface-hover:  #F2F0EA;
-  --h-border:         #E0DDD6;
-  --h-border-subtle:  #EDEBE6;
-
-  /* Text semantics */
-  --h-text-primary:   #2D3E4A;
-  --h-text-secondary: #6B7A85;
-  --h-text-muted:     #9BA6AE;
-  --h-text-disabled:  #C4C9CC;
-  --h-text-heading:   #00334A;
-  --h-text-inverse:   #FFFFFF;
-
-  /* Semantic status */
-  --h-success:    #1A8754;   --h-success-bg: #E4F3EB;
-  --h-warning:    #B8860B;   --h-warning-bg: #FEF3E2;
-  --h-error:      #C4382A;   --h-error-bg:   #FDE8E6;
-  --h-info:       #1A6E8E;   --h-info-bg:    #E0EDF3;
-
-  /* Canon-aligned aliases for artboard-local tokens (--h-line, --h-ink, etc.).
-     Artboard scopes (.ab-*) re-define these with cool-gray hex; outside of
-     artboards (e.g., .rbac-root user-management page) these globals supply
-     canon-correct values so borders and colors render correctly. */
-  --h-line:        #E0DDD6;   /* canon stone (same as --h-border) */
-  --h-line-2:      #EDEBE6;   /* canon warm-gray subtle divider */
-  --h-ink:         #2D3E4A;   /* canon slate (same as --h-text-primary) */
-  --h-ink-2:       #6B7A85;   /* canon gray-500 (same as --h-text-secondary) */
-  --h-ink-3:       #9BA6AE;   /* canon gray-300 (same as --h-text-muted) */
-  --h-green:       #00334A;   /* canon teal-900 (same as --h-action) */
-  --h-green-light: #0A4D6B;   /* canon --h-action-hover */
-  --h-red:         #C4382A;   /* canon --h-error */
-  --h-paper:       #F9F8F4;   /* canon --h-bg */
-  --h-paper-warm:  #F2F0EA;   /* canon sand */
-  --h-mint:        #E0EDF3;   /* canon teal-50 */
-  --h-pearl:       #F8F7F4;   /* canon pearl (alt surface) */
+  /* Artboard-local aliases (.ab-* scopes re-define these with cool-gray hex;
+     these globals supply canon values outside artboards). */
+  --h-line:        var(--h-border);
+  --h-line-2:      var(--h-border-subtle);
+  --h-ink:         var(--h-text-primary);
+  --h-ink-2:       var(--h-text-secondary);
+  --h-ink-3:       var(--h-text-muted);
+  --h-green:       var(--h-action);
+  --h-green-light: var(--h-action-hover);
+  --h-red:         var(--h-error);
+  --h-paper:       var(--h-bg);
+  --h-paper-warm:  var(--h-sand);
+  --h-mint:        var(--h-teal-50);
 
   /* Font token globals — .rb-* / .cmd-* selectors reference these and were
      undefined outside artboard scope, so font-family declarations silently
      fell back to Inter (body inherit). Globalize so they resolve to canon
      chains everywhere. */
-  --font-serif: 'IvyPresto Display', Georgia, 'Times New Roman', serif;
-  --font-sans:  'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+  --font-serif: var(--h-font-heading);
+  --font-sans:  var(--h-font-body);
 
   /* Layout sizing */
   --h-content-max-width: 1500px;
@@ -96,16 +56,16 @@
   --color-accent-dark:    #1F3F5F;
   --color-accent-light:   #5A8AB5;
 
-  /* Tonal containers (legacy — no v2 equivalent) */
-  --color-primary-container:      #C5DEF5;
-  --color-on-primary-container:   #001D33;
-  --color-secondary-container:    #D7E5F1;
-  --color-on-secondary-container: #061629;
+  /* Tonal containers → canon navy-tint containers */
+  --color-primary-container:      var(--h-action-bg-strong);
+  --color-on-primary-container:   var(--h-action);
+  --color-secondary-container:    var(--h-action-bg);
+  --color-on-secondary-container: var(--h-midnight);
 
   --color-bg:           var(--h-bg);
   --color-surface:      var(--h-pearl);
   --color-card:         var(--h-surface-1);
-  --color-surface-high: #efece4;     /* warm raised surface (legacy — no v2 equivalent) */
+  --color-surface-high: var(--h-surface-hover);   /* warm raised surface */
 
   --color-border:       var(--h-border);
   --color-border-light: var(--h-border-subtle);
@@ -129,25 +89,14 @@
   --sand:   var(--h-sand);
 
   /* Figma canon sizing — inputs, cards, action bars */
-  --input-height: 36px;           /* legacy default — kept for backward compat */
-  --input-height-compact: 32px;   /* 2026-05-26 canon: compact inputs */
-  --input-height-form:    40px;   /* 2026-05-26 canon: wizard/form inputs */
-  --input-radius: 6px;
-  --card-pad:     24px;           /* 2026-05-26 canon: was 25px */
+  --input-height:         var(--h-input-height);          /* 32px compact (canon; was 36px) */
+  --input-height-compact: var(--h-input-height);          /* 32px */
+  --input-height-form:    var(--h-input-height-wizard);   /* 40px wizard */
+  --input-radius:         var(--h-radius-md);
+  --card-pad:             var(--h-space-24);
   --action-bar-h: 60px;
 
-  /* Spacing scale (kit canon) */
-  --h-space-2:  2px;
-  --h-space-4:  4px;
-  --h-space-8:  8px;
-  --h-space-12: 12px;
-  --h-space-16: 16px;
-  --h-space-20: 20px;
-  --h-space-24: 24px;
-  --h-space-32: 32px;
-  --h-space-40: 40px;
-  --h-space-48: 48px;
-  --h-space-64: 64px;
+  /* Spacing scale (--h-space-*) comes from canon tokens.css */
 
   /* MD3 shape scale */
   --radius-sm:   4px;    /* extra-small = 4dp */
@@ -167,9 +116,9 @@
   --topnav-height: 0px;       /* legacy token — kept at 0 so existing sticky offsets still work */
   --sidenav-width: 92px;
 
-  --font:                 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
-  --font-heading:         'IvyPresto Display', Georgia, 'Times New Roman', serif;
-  --font-heading-weight:  300;        /* 2026-05-26 canon: never bold the heading serif */
+  --font:                 var(--h-font-body);
+  --font-heading:         var(--h-font-heading);   /* Source Serif 4 */
+  --font-heading-weight:  400;        /* canon: Source Serif 4, weight 400 only — never bold */
   --font-mono:            'SF Mono', 'Fira Code', monospace;
 }
 
@@ -286,20 +235,13 @@ img { max-width: 100%; display: block; }
   user-select: none;
   transition: background 0.12s, color 0.12s;
 }
-.sidenav-tile:hover { background: rgba(0,51,74,0.05); color: var(--h-action); }
+.sidenav-tile:hover { background: rgba(0,51,74,0.08); color: var(--h-action); }
 .sidenav-tile.active {
-  background: var(--color-primary-container, #C5DEF5);
+  background: var(--h-action-bg-strong);
   color: var(--h-action);
   font-weight: 600;
 }
-.sidenav-tile.active::before {
-  content: '';
-  position: absolute;
-  left: -8px; top: 8px; bottom: 8px;
-  width: 3px;
-  border-radius: 0 2px 2px 0;
-  background: var(--h-action);
-}
+/* canon: filled pill is the single active signal — no left indicator bar */
 .sidenav-tile svg {
   width: 22px; height: 22px;
   stroke: currentColor; fill: none; stroke-width: 1.7;
@@ -349,8 +291,8 @@ img { max-width: 100%; display: block; }
   width: 36px; height: 36px;
   border-radius: 50%;
   display: inline-flex; align-items: center; justify-content: center;
-  background: var(--h-teal-50);        /* 2026-05-27 canon: one style for all avatars */
-  color: var(--h-teal-500);
+  background: var(--h-avatar-bg);      /* canon: one style for all avatars (light + dark) */
+  color: var(--h-avatar-text);
   font-size: 12px; font-weight: 600;
   font-family: var(--font);
   text-transform: uppercase;
@@ -392,6 +334,22 @@ img { max-width: 100%; display: block; }
   display: none;
 }
 .profile-dropdown.open { display: block; }
+
+/* canon: flyouts fade + 6px slide-in, ~120ms ease-out (animate opacity/transform only) */
+.sidenav .notif-panel.open,
+.profile-dropdown.open,
+.sidenav .admin-flyout.open {
+  animation: flyout-in 120ms cubic-bezier(0.22, 1, 0.36, 1);
+}
+@keyframes flyout-in {
+  from { opacity: 0; transform: translateX(-6px); }
+  to   { opacity: 1; transform: translateX(0); }
+}
+@media (prefers-reduced-motion: reduce) {
+  .sidenav .notif-panel.open,
+  .profile-dropdown.open,
+  .sidenav .admin-flyout.open { animation: none; }
+}
 .profile-dropdown-header {
   display: flex;
   align-items: center;
@@ -412,19 +370,7 @@ img { max-width: 100%; display: block; }
   margin: 4px 0;
 }
 
-/* Flyout arrow (shared between notif-panel and profile-dropdown when in sidenav) */
-.sidenav .notif-panel::before,
-.sidenav .profile-dropdown::before {
-  content: '';
-  position: absolute;
-  left: -7px; bottom: 18px;
-  width: 12px; height: 12px;
-  background: #fff;
-  border-left: 1px solid var(--h-border);
-  border-bottom: 1px solid var(--h-border);
-  transform: rotate(45deg);
-  z-index: -1;
-}
+/* canon: no arrow/pointer connectors — the highlighted trigger signals ownership */
 
 /* Administration flyout — anchors to the top of the Admin tile, opens right.
    Institutional treatment: serif title, mono eyebrow, hairline divider,
@@ -445,17 +391,7 @@ img { max-width: 100%; display: block; }
   text-align: left;
 }
 .sidenav .admin-flyout.open { display: block; }
-.sidenav .admin-flyout::before {
-  content: '';
-  position: absolute;
-  left: -7px; bottom: 22px;
-  width: 12px; height: 12px;
-  background: #fff;
-  border-left: 1px solid var(--h-border);
-  border-bottom: 1px solid var(--h-border);
-  transform: rotate(45deg);
-  z-index: -1;
-}
+/* canon: no arrow/pointer connector */
 .admin-flyout-head {
   padding: 16px 18px 14px;
   border-bottom: 1px solid var(--h-border);
@@ -590,7 +526,7 @@ img { max-width: 100%; display: block; }
 }
 .cmd-palette-result:hover,
 .cmd-palette-result.focused {
-  background: var(--color-primary-container, #C5DEF5);
+  background: var(--color-primary-container);
   border-left-color: var(--h-action);
 }
 .cmd-palette-result-primary {
@@ -636,8 +572,7 @@ img { max-width: 100%; display: block; }
   font-family: var(--font-heading);
   font-size: 28px;
   line-height: 33.6px;
-  font-weight: 300;
-  color: var(--h-action);
+  font-weight: 400;  color: var(--h-action);
   letter-spacing: -0.005em;
 }
 /* Tiny serif eyebrow above some institutional headers (e.g. "Administration / Investors") */
@@ -1023,8 +958,7 @@ img { max-width: 100%; display: block; }
 .stat-value {
   font-family: var(--font-heading);
   font-size: 36px;
-  font-weight: 300;
-  color: var(--h-text-heading);
+  font-weight: 400;  color: var(--h-text-heading);
   line-height: 1;
   font-feature-settings: 'tnum' 1, 'lnum' 1, 'zero' 0;
 }
@@ -1365,12 +1299,12 @@ tbody td {
   font-weight: 500;
   letter-spacing: 0.01em;
   white-space: nowrap;
-  border: 1px solid var(--h-border);
-  background: #fff;
+  border: 1px solid var(--h-stone);
+  background: transparent;
   color: var(--h-text-secondary);
 }
 
-.role-badge { display: inline-flex; align-items: center; padding: 4px 12px; border-radius: var(--radius-full); font-size: 12px; font-weight: 500; border: 1px solid var(--h-border); background: #fff; color: var(--h-text-secondary); }
+.role-badge { display: inline-flex; align-items: center; padding: 4px 12px; border-radius: var(--radius-full); font-size: 12px; font-weight: 500; border: 1px solid var(--h-stone); background: transparent; color: var(--h-text-secondary); }
 
 .role-sys-admin   {}
 .role-prog-admin  {}
@@ -1710,8 +1644,7 @@ textarea:hover:not(:disabled) {
 .modal-title {
   font-family: var(--font-heading);
   font-size: 20px;
-  font-weight: 300;
-  color: var(--h-text-primary);
+  font-weight: 400;  color: var(--h-text-primary);
   letter-spacing: -0.01em;
 }
 
@@ -1802,7 +1735,7 @@ textarea:hover:not(:disabled) {
 }
 .panel-field:last-child { border-bottom: none; }
 .panel-field-label { color: var(--h-text-muted); flex-shrink: 0; min-width: 110px; }
-.side-panel-title { font-family: var(--font-heading); font-size: 20px; font-weight: 300; color: var(--h-text-primary); }
+.side-panel-title { font-family: var(--font-heading); font-size: 20px; font-weight: 400; color: var(--h-text-primary); }
 .side-panel-subtitle { font-size: 12px; color: var(--h-text-muted); margin-top: 2px; }
 
 .side-panel-footer {
@@ -2066,8 +1999,7 @@ textarea:hover:not(:disabled) {
 .wizard-title {
   font-family: var(--font-heading);
   font-size: 18px;
-  font-weight: 300;
-  color: var(--h-text-primary);
+  font-weight: 400;  color: var(--h-text-primary);
   margin-bottom: 6px;
 }
 
@@ -2132,8 +2064,7 @@ textarea:hover:not(:disabled) {
 .role-select-title {
   font-family: var(--font-heading);
   font-size: 36px;
-  font-weight: 300;
-  color: var(--h-text-primary);
+  font-weight: 400;  color: var(--h-text-primary);
   margin-bottom: 6px;
   letter-spacing: -0.02em;
   text-align: center;
@@ -2245,8 +2176,8 @@ textarea:hover:not(:disabled) {
   width: 28px;
   height: 28px;
   border-radius: var(--radius-full);
-  background: var(--h-teal-50);         /* 2026-05-27 canon */
-  color: var(--h-teal-500);
+  background: var(--h-avatar-bg);       /* canon: one avatar style (light + dark) */
+  color: var(--h-avatar-text);
   font-size: 10px;
   font-weight: 600;
   text-transform: uppercase;
@@ -2492,7 +2423,7 @@ textarea:hover:not(:disabled) {
 
 .empty-state { display: flex; flex-direction: column; align-items: center; justify-content: center; padding: 64px 20px; text-align: center; }
 .empty-state-icon { width: 36px; height: 36px; margin: 0 auto 12px; opacity: 0.2; }
-.empty-state h3 { font-family: var(--font-heading); font-size: 18px; font-weight: 300; color: var(--h-text-primary); margin-bottom: 6px; }
+.empty-state h3 { font-family: var(--font-heading); font-size: 18px; font-weight: 400; color: var(--h-text-primary); margin-bottom: 6px; }
 .empty-state p { font-size: 13px; color: var(--h-text-secondary); max-width: 300px; margin-bottom: 20px; }
 
 /* 2026-05-27 canon: avatars use teal-50 bg + teal-500 text. One style for all;
@@ -2501,8 +2432,8 @@ textarea:hover:not(:disabled) {
   width: 32px;
   height: 32px;
   border-radius: var(--radius-full);
-  background: var(--h-teal-50);
-  color: var(--h-teal-500);
+  background: var(--h-avatar-bg);
+  color: var(--h-avatar-text);
   font-size: 11px;
   font-weight: 600;
   text-transform: uppercase;
@@ -2812,8 +2743,7 @@ textarea:hover:not(:disabled) {
 .onboarding-stat-value {
   font-family: var(--font-heading);
   font-size: 28px;
-  font-weight: 300;
-  color: var(--h-text-primary);
+  font-weight: 400;  color: var(--h-text-primary);
   line-height: 1;
 }
 .onboarding-stat-active {
@@ -2874,7 +2804,7 @@ textarea:hover:not(:disabled) {
 /* ---- Stub / Placeholder ---- */
 .stub-placeholder { display: flex; flex-direction: column; align-items: center; justify-content: center; padding: 80px 24px; text-align: center; }
 .stub-placeholder-icon { font-size: 32px; margin-bottom: 12px; opacity: 0.25; }
-.stub-placeholder h3 { font-family: var(--font-heading); font-size: 18px; font-weight: 300; color: var(--h-text-primary); margin-bottom: 6px; }
+.stub-placeholder h3 { font-family: var(--font-heading); font-size: 18px; font-weight: 400; color: var(--h-text-primary); margin-bottom: 6px; }
 .stub-placeholder p { font-size: 13px; color: var(--h-text-muted); max-width: 340px; }
 
 /* ============================================================
@@ -3094,7 +3024,7 @@ textarea:hover:not(:disabled) {
   border-radius: var(--radius-lg);
   padding: 40px;
   width: 100%; max-width: 460px;
-  box-shadow: var(--shadow-card);
+  box-shadow: none;            /* canon: cards are flat; shadows reserved for overlays */
 }
 .ob-icon {
   width: 56px; height: 56px; border-radius: 50%;
@@ -3713,8 +3643,8 @@ textarea:hover:not(:disabled) {
   min-width: 2px;
   transition: width 0.3s ease;
 }
-.pool-bar-fill-blue { background: #4A7B9D; }
-.pool-bar-fill-gold { background: #D4B896; }
+.pool-bar-fill-blue { background: var(--h-action); }   /* canon multi-series: navy first */
+.pool-bar-fill-gold { background: var(--h-data-1); }   /* then teal (gold not in light palette) */
 .pool-chart-xaxis {
   display: flex;
   justify-content: space-between;
@@ -5046,10 +4976,9 @@ textarea:hover:not(:disabled) {
 }
 .m-page-header-left { display: flex; align-items: center; gap: 10px; }
 .m-page-title {
-  font-family: var(--font-heading, 'IvyPresto Display', serif);
+  font-family: var(--font-heading, 'Source Serif 4', serif);
   font-size: 20px;
-  font-weight: 300;
-  color: var(--h-text-primary);
+  font-weight: 400;  color: var(--h-text-primary);
   letter-spacing: -0.02em;
 }
 .m-page-subtitle {
@@ -5066,7 +4995,7 @@ textarea:hover:not(:disabled) {
   text-transform: uppercase;
   letter-spacing: 0.06em;
   border-radius: 4px;
-  background: var(--color-primary-container, #C5DEF5);
+  background: var(--color-primary-container);
   color: var(--color-primary-dark, #061629);
 }
 
@@ -5350,7 +5279,7 @@ textarea:hover:not(:disabled) {
   width: 8px;
   height: 8px;
   border-radius: 50%;
-  background: var(--color-primary-container, #C5DEF5);
+  background: var(--color-primary-container);
   border: 2px solid var(--color-primary, #00334A);
   flex-shrink: 0;
   margin-top: 5px;
@@ -7052,10 +6981,9 @@ textarea:hover:not(:disabled) {
   text-align: center;
 }
 .mp-hero-title {
-  font-family: var(--font-heading, 'IvyPresto Display', serif);
+  font-family: var(--font-heading, 'Source Serif 4', serif);
   font-size: 22px;
-  font-weight: 300;
-  color: #fff;
+  font-weight: 400;  color: #fff;
   letter-spacing: -0.02em;
   margin-bottom: 6px;
 }
@@ -7126,7 +7054,7 @@ textarea:hover:not(:disabled) {
 /* ── Impact callout ── */
 .mp-callout {
   margin: 14px 14px 0;
-  background: var(--color-primary-container, #C5DEF5);
+  background: var(--color-primary-container);
   border-radius: var(--mobile-card-radius);
   padding: 20px 16px;
   text-align: center;
@@ -7243,7 +7171,7 @@ textarea:hover:not(:disabled) {
   letter-spacing: 0.05em;
   padding: 2px 8px;
   border-radius: 4px;
-  background: var(--color-primary-container, #C5DEF5);
+  background: var(--color-primary-container);
   color: var(--h-action);
   margin-bottom: 8px;
 }
@@ -7368,7 +7296,7 @@ textarea:hover:not(:disabled) {
   color: var(--h-text-muted); text-transform: uppercase;
 }
 .artboard-page-name {
-  font-family: 'IvyPresto Display', 'Ubuntu', serif;
+  font-family: var(--font-heading);
   font-size: 18px; font-weight: 400; color: var(--h-text-primary);
   letter-spacing: -0.01em;
 }
@@ -7638,8 +7566,7 @@ textarea:hover:not(:disabled) {
 }
 .wiz-page-title {
   font-size: 30px;
-  font-weight: 300;
-  color: var(--h-text-primary);
+  font-weight: 400;  color: var(--h-text-primary);
   font-family: var(--font-heading);
   letter-spacing: -0.02em;
   line-height: 1.15;
@@ -7970,8 +7897,7 @@ textarea:hover:not(:disabled) {
 }
 .welcome-title {
   font-family: var(--font-heading);
-  font-weight: 300;
-  font-size: 38px;
+  font-weight: 400;  font-size: 38px;
   line-height: 1.1;
   letter-spacing: -0.01em;
   color: var(--color-on-primary-container);
@@ -8657,9 +8583,8 @@ textarea:hover:not(:disabled) {
 
 /* Serif address — institutional-style headline */
 .ud-detail .ud-context-address {
-  font-family: var(--font-serif, 'IvyPresto Display', Georgia, serif);
-  font-weight: 300;
-  letter-spacing: -0.02em;
+  font-family: var(--font-serif, 'Source Serif 4', Georgia, serif);
+  font-weight: 400;  letter-spacing: -0.02em;
   font-size: 32px;
   line-height: 1.1;
   color: var(--h-ink, #1A1A18);
@@ -8750,7 +8675,7 @@ textarea:hover:not(:disabled) {
   background: #FFFFFF;
 }
 .ud-detail .ud-section-title {
-  font-family: var(--font-serif, 'IvyPresto Display', Georgia, serif);
+  font-family: var(--font-serif, 'Source Serif 4', Georgia, serif);
   font-weight: 400;
   letter-spacing: -0.01em;
   font-size: 18px;
@@ -8934,7 +8859,7 @@ textarea:hover:not(:disabled) {
    PLATFORM RBAC — Platform Operations Users module
    Mirrors the Institutional artboard aesthetic (warm paper,
    serif italics for accents, navy primary, mint highlights, gold).
-   Uses --h-* tokens from institutional.css plus Inter / IvyPresto.
+   Uses --h-* tokens from institutional.css plus Inter / Source Serif 4.
    All classes prefixed `rb-` to avoid collisions.
    ============================================================ */
 
@@ -8962,12 +8887,11 @@ textarea:hover:not(:disabled) {
 .rb-title {
   font-family: var(--font-serif);
   font-size: 34px;
-  font-weight: 300;
-  line-height: 1.05;
+  font-weight: 400;  line-height: 1.05;
   letter-spacing: -0.02em;
   color: var(--h-ink);
 }
-.rb-title em { font-style: italic; color: var(--h-green); font-weight: 300; }
+.rb-title em { font-style: italic; color: var(--h-green); font-weight: 400; }
 .rb-subtitle { font-size: 12px; color: var(--h-ink-3); margin-top: 4px; }
 .rb-header-actions { display: inline-flex; align-items: center; gap: 8px; flex-shrink: 0; }
 
@@ -9245,8 +9169,7 @@ textarea:hover:not(:disabled) {
 .rb-detail-name {
   font-family: var(--font-serif);
   font-size: 28px;
-  font-weight: 300;
-  line-height: 1.1;
+  font-weight: 400;  line-height: 1.1;
   letter-spacing: -0.02em;
   color: var(--h-ink);
 }
@@ -9273,7 +9196,7 @@ textarea:hover:not(:disabled) {
 .rb-typesel-member { background: rgba(3,105,161,0.10); color: var(--h-info);  border-color: rgba(3,105,161,0.30); }
 .rb-typesel-view   { background: var(--h-paper-warm);  color: var(--h-ink-2); border-color: var(--h-line); }
 
-/* Section headers within detail card — canon: IvyPresto 300 20px section title */
+/* Section headers within detail card — canon: Source Serif 4 / 400 / 20px section title */
 .rb-section-hd {
   padding: var(--h-space-20) var(--h-space-24) var(--h-space-16);
   border-bottom: 1px solid var(--h-border);
@@ -9282,8 +9205,7 @@ textarea:hover:not(:disabled) {
 .rb-section-hd-title {
   font-family: var(--font-heading);
   font-size: 20px;
-  font-weight: 300;
-  color: var(--h-text-heading);
+  font-weight: 400;  color: var(--h-text-heading);
 }
 .rb-section-hd-sub { font-size: 12.5px; color: var(--h-text-secondary); margin-top: 6px; line-height: 1.55; }
 
@@ -9546,7 +9468,7 @@ textarea:hover:not(:disabled) {
   padding: 22px 26px 0;
   display: flex; align-items: flex-start; justify-content: space-between; gap: 16px;
 }
-.rb-modal-title { font-family: var(--font-serif); font-size: 22px; font-weight: 300; color: var(--h-ink); letter-spacing: -0.01em; line-height: 1.15; }
+.rb-modal-title { font-family: var(--font-serif); font-size: 22px; font-weight: 400; color: var(--h-ink); letter-spacing: -0.01em; line-height: 1.15; }
 .rb-modal-subtitle { font-size: 12px; color: var(--h-ink-2); margin-top: 4px; }
 .rb-modal-close { padding: 4px 8px; border: none; background: none; color: var(--h-ink-3); font-size: 18px; cursor: pointer; border-radius: 6px; }
 .rb-modal-close:hover { background: var(--h-paper-warm); color: var(--h-ink); }

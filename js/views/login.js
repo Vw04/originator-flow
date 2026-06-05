@@ -194,7 +194,7 @@ const LoginView = {
           <rect width="600" height="900" fill="url(#overlay-grad)"/>
 
           <!-- Brand watermark -->
-          <text x="40" y="850" fill="#00334A" font-family="IvyPresto Display, Georgia, serif" font-size="22" font-weight="400" opacity="0.22">Homium</text>
+          <text x="40" y="850" fill="#00334A" font-family="Source Serif 4, Georgia, serif" font-size="22" font-weight="400" opacity="0.22">Homium</text>
           <text x="40" y="872" fill="#00334A" font-family="Ubuntu, sans-serif" font-size="11" opacity="0.4">Originator Platform</text>
         </svg>
       </div>`;

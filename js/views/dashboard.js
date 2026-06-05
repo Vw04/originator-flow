@@ -90,7 +90,7 @@ const DashboardView = {
       const barH = Math.max(Math.round((d.days / MAX_DAYS) * CHART_H), 3);
       return `<div style="flex:1;display:flex;flex-direction:column;align-items:center;gap:2px">
         <div style="font-size:11px;font-weight:500;color:var(--h-text-primary)">${d.days}d</div>
-        <div style="width:72%;border-radius:4px 4px 0 0;background:#94C5A8;height:${barH}px"></div>
+        <div style="width:72%;border-radius:4px 4px 0 0;background:var(--h-data-1);height:${barH}px"></div>
       </div>`;
     }).join('');
 
@@ -303,7 +303,7 @@ const DashboardView = {
       const actor = State.getUser(a.userId);
       return `
         <div class="activity-item">
-          <div class="activity-avatar" style="background:${actor ? avatarColor(actor.role) : 'var(--h-teal-50)'}">${actor ? Display.initials(actor) : 'SY'}</div>
+          <div class="activity-avatar" style="background:${actor ? avatarColor(actor.role) : 'var(--h-avatar-bg)'}">${actor ? Display.initials(actor) : 'SY'}</div>
           <div class="activity-content">
             <strong>${actor ? Display.fullName(actor) : 'System'}</strong> ${a.action} <strong>${a.subject}</strong>
           </div>

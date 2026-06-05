@@ -17,7 +17,7 @@
   font-family: var(--font-serif); font-size: 22px;
   display: grid; place-items: center; align-self: center;
 }
-.brf-mast-name { font-family: var(--font-serif); font-size: 30px; font-weight: 300; letter-spacing: -0.02em; }
+.brf-mast-name { font-family: var(--font-serif); font-size: 30px; font-weight: 400; letter-spacing: -0.02em; }
 .brf-mast-edition {
   font-family: var(--font-serif); font-style: italic;
   font-size: 13px; color: #6B6557; margin-left: 6px;
@@ -31,13 +31,13 @@
 
 /* Lead headline */
 .brf-lead {
-  font-family: var(--font-serif); font-size: 52px; font-weight: 300;
+  font-family: var(--font-serif); font-size: 52px; font-weight: 400;
   line-height: 1.05; letter-spacing: -0.03em; margin-bottom: 18px;
   text-wrap: pretty;
 }
 .brf-lead em { font-style: italic; color: #00334A; }
 .brf-deck {
-  font-family: var(--font-serif); font-size: 18px; font-weight: 300; font-style: italic;
+  font-family: var(--font-serif); font-size: 18px; font-weight: 400; font-style: italic;
   color: #4D4A42; line-height: 1.45; max-width: 660px; margin-bottom: 38px;
   border-left: 2px solid #C2A14A; padding-left: 18px;
 }
@@ -58,7 +58,7 @@
   letter-spacing: 0.14em; font-weight: 600; margin-bottom: 8px;
 }
 .brf-num-val {
-  font-family: var(--font-serif); font-size: 32px; font-weight: 300;
+  font-family: var(--font-serif); font-size: 32px; font-weight: 400;
   letter-spacing: -0.02em; line-height: 1;
 }
 .brf-num-val.danger { color: #B0382C; }
@@ -87,7 +87,7 @@
 }
 .brf-loan:first-of-type { border-top: none; }
 .brf-loan-rank {
-  font-family: var(--font-serif); font-size: 44px; font-weight: 300;
+  font-family: var(--font-serif); font-size: 44px; font-weight: 400;
   color: #C2A14A; line-height: 1; letter-spacing: -0.02em;
 }
 .brf-loan-ribbon {
@@ -99,7 +99,7 @@
 .brf-loan-ribbon.amber { background: #FBF1D6; color: #8A6414; }
 .brf-loan-ribbon.green { background: #DDEBE2; color: #00334A; }
 .brf-loan-headline {
-  font-family: var(--font-serif); font-size: 24px; font-weight: 300;
+  font-family: var(--font-serif); font-size: 24px; font-weight: 400;
   line-height: 1.2; letter-spacing: -0.015em; margin-bottom: 8px;
   cursor: pointer;
 }
@@ -161,7 +161,7 @@
   background: #C2A14A; color: #1A1A18;
   display: grid; place-items: center; font-family: var(--font-serif); font-size: 16px;
 }
-.brf-ai-quote-body { font-family: var(--font-serif); font-size: 18px; font-weight: 300; line-height: 1.5; font-style: italic; }
+.brf-ai-quote-body { font-family: var(--font-serif); font-size: 18px; font-weight: 400; line-height: 1.5; font-style: italic; }
 .brf-ai-quote-body b { color: #C2A14A; font-style: normal; font-weight: 500; }
 .brf-ai-attr { font-size: 11px; color: #8B8473; margin-top: 8px; font-family: var(--font-mono); }
 .brf-ai-actions { display: flex; gap: 10px; margin-top: 14px; }

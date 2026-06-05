@@ -499,11 +499,10 @@ const UsersView = {
   },
 };
 
-/* 2026-05-27 canon: one style for ALL avatars (teal-50 bg, teal-500 text).
-   Role-based avatar colors are a deferred backlog ticket — see
-   assets/specs/homium-design-canon-v2 2/CLAUDE.md "Deferred Items".
+/* canon: one style for ALL avatars (--h-avatar-bg / --h-avatar-text).
+   See homium-design-canon/DESIGN_CANON.md "Avatars — one style for everyone".
    This helper is kept as a stable callsite API (8+ views call it) but its
    return value is now the canon token, regardless of role. */
 function avatarColor(/* role */) {
-  return 'var(--h-teal-50)';
+  return 'var(--h-avatar-bg)';
 }

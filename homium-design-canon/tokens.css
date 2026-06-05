@@ -1,0 +1,251 @@
+/* ============================================================================
+   HOMIUM DESIGN TOKENS — canonical source of truth
+   ----------------------------------------------------------------------------
+   This is THE token system. Import it once, reference tokens everywhere.
+   Never hardcode a color, radius, or spacing value that a token already covers.
+
+   USAGE (originator-flow / any Homium app):
+     @import "homium-design-canon/tokens.css";   // or copy this :root block
+                                                  // into your styles.css head
+   Then in CSS:  color: var(--h-text-primary);  padding: var(--h-space-16);
+
+   Light is default. Dark activates via <html data-theme="dark"> (OS auto-detect
+   is fine). Heights/spacing/radius are theme-independent; only colors remap.
+
+   If you need a value no token covers, that's a design decision — see
+   CLAUDE.md (surface the trade-off, get sign-off, add the token here, log it).
+   ============================================================================ */
+
+:root,
+[data-theme="light"] {
+  /* ===== PRIMITIVE PALETTE (raw colors, rarely referenced directly) ===== */
+  --h-teal-900: #00334A;
+  --h-teal-700: #0A4D6B;
+  --h-teal-500: #1A6E8E;
+  --h-teal-200: #A3C5D4;
+  --h-teal-50:  #E0EDF3;
+  --h-green-900: #0D6B40;
+  --h-green-700: #117A4A;
+  --h-green-500: #14935F;
+  --h-midnight:   #061D29;
+  --h-slate:      #2D3E4A;
+  --h-gray-500:   #6B7A85;
+  --h-gray-300:   #9BA6AE;
+  --h-gray-200:   #C4C9CC;
+  --h-stone:      #E0DDD6;
+  --h-warm-gray:  #EDEBE6;
+  --h-sand:       #F2F0EA;
+  --h-pearl:      #F8F7F4;
+  --h-white:      #FFFFFF;
+  --h-success:    #1A8754;
+  --h-warning:    #B8860B;
+  --h-error:      #C4382A;
+
+  /* ===== RADIUS / TYPOGRAPHY / LAYOUT ===== */
+  --h-radius-sm: 4px;
+  --h-radius-md: 6px;
+  --h-radius-lg: 8px;
+  --h-radius-xl: 12px;
+  --h-radius-full: 999px;
+  --h-font-heading: 'Source Serif 4', Georgia, 'Times New Roman', serif;
+  --h-font-body: Inter, 'DM Sans', system-ui, sans-serif;
+  /* No mono font — Inter handles numbers + technical IDs via tabular-nums + plain zero */
+  --h-input-height: 32px;          /* compact inputs (tables, forms) */
+  --h-input-height-wizard: 40px;   /* roomier inputs for multi-step wizard flows */
+  --h-chip-height: 28px;
+  --h-content-max-width: 1500px;
+  --h-form-max-width: 960px;
+  --h-content-padding: 24px;
+  --h-sidenav-width: 92px;         /* fixed left SideRail */
+  --h-top-nav-height: 0px;         /* top nav retired; rail is the only nav */
+
+  /* ===== SPACING SCALE — every padding / margin / gap. No arbitrary px. ===== */
+  --h-space-2: 2px;
+  --h-space-4: 4px;
+  --h-space-8: 8px;
+  --h-space-12: 12px;
+  --h-space-16: 16px;
+  --h-space-20: 20px;
+  --h-space-24: 24px;
+  --h-space-32: 32px;
+  --h-space-40: 40px;
+  --h-space-48: 48px;
+  --h-space-64: 64px;
+
+  /* ===== 1. ACTION (navy in light) — the single brand action color ===== */
+  --h-action:         #00334A;
+  --h-action-hover:   #0A4D6B;
+  --h-action-pressed: #061D29;
+  --h-action-bg:        #E0EDF3;   /* navy-tint container — active nav fill, hover lozenges */
+  --h-action-bg-strong: #C5DCE6;   /* stronger navy tint — active nav-tile pill */
+  --h-action-glow:      rgba(0, 51, 74, 0.18);
+
+  /* ===== 2. SUCCESS (status only) ===== */
+  --h-success-bg:     #E4F3EB;
+  --h-success-strong: #117A47;
+
+  /* ===== 3. SEMANTIC ===== */
+  --h-warning-bg: #FEF3E2;
+  --h-error-bg:   #FDE8E6;
+  --h-info:       #1A6E8E;
+  --h-info-bg:    #E0EDF3;
+
+  /* ===== 4. DATA VIZ PALETTE (charts only) =====
+     Single-variable bars: --h-data-1 base + opacity stepping (0.40/0.55/0.70/0.85/1).
+     Multi-series order: --h-action (navy) -> --h-teal-500 -> --h-teal-200.
+     Red/green appear ONLY in diverging charts. */
+  --h-data-1:        var(--h-teal-500);   /* brand teal — sequential ramp base */
+  --h-data-2:        #7BA5B8;
+  --h-data-3:        #9BC0CF;
+  --h-data-4:        #BCD7E1;
+  --h-data-track:    #E0DDD6;
+  --h-data-gridline: #EDEBE6;
+  --h-data-axis:     #9BA6AE;
+  --h-data-hover:    var(--h-action);
+
+  /* ===== TEXT ===== */
+  --h-text-primary:   #2D3E4A;
+  --h-text-secondary: #6B7A85;
+  --h-text-muted:     #9BA6AE;
+  --h-text-disabled:  #C4C9CC;
+  --h-text-heading:   #00334A;
+  --h-text-on-action: #FFFFFF;
+
+  /* ===== SURFACES ===== */
+  --h-bg:            #F9F8F4;
+  --h-surface-1:     #FFFFFF;
+  --h-surface-2:     #F8F7F4;
+  --h-surface-hover: #F2F0EA;
+  --h-zebra:         #FAFAF8;
+
+  /* ===== BORDERS ===== */
+  --h-border:        #E0DDD6;
+  --h-border-subtle: #EDEBE6;
+  --h-border-strong: #C4C9CC;
+
+  /* ===== NAV (white SideRail in light mode) ===== */
+  --h-nav-bg:          #FFFFFF;
+  --h-nav-border:      #E0DDD6;
+  --h-nav-text:        #525E68;
+  --h-nav-text-active: #00334A;
+  --h-nav-logo:        #00334A;
+  --h-nav-indicator:   var(--h-action);
+  --h-nav-hover-bg:    #F2F0EA;
+  --h-nav-avatar-bg:   #E0EDF3;
+
+  /* ===== ALERT KPI ===== */
+  --h-alert-accent: var(--h-error);
+  --h-alert-text:   var(--h-error);
+
+  /* ===== AVATAR — one style for ALL avatars (no per-user colors) ===== */
+  --h-avatar-bg:   #E0EDF3;
+  --h-avatar-text: #1A6E8E;
+
+  /* ===== SHADOWS — reserved for overlays (modals / dropdowns / tooltips). Cards are flat. ===== */
+  --h-shadow-sm:      0 2px 8px rgba(0, 51, 74, 0.08);
+  --h-shadow-md:      0 4px 16px rgba(0, 51, 74, 0.12);
+  --h-shadow-tooltip: 0 4px 12px rgba(0, 51, 74, 0.10);
+  --h-chart-tooltip-bg: #FFFFFF;
+
+  /* ===== DEPRECATED ALIASES — do not use in new code ===== */
+  --h-green-cta:         var(--h-action);
+  --h-green-cta-hover:   var(--h-action-hover);
+  --h-green-cta-pressed: var(--h-action-pressed);
+  --h-chart-bar:         var(--h-data-1);
+  --h-chart-gridline:    var(--h-data-gridline);
+  --h-chart-axis:        var(--h-data-axis);
+}
+
+/* ============================================================================
+   DARK MODE — activate with <html data-theme="dark">. Action shifts navy->gold.
+   ============================================================================ */
+[data-theme="dark"] {
+  --h-teal-900: #1A1A1D;
+  --h-teal-700: #4F8C9E;
+  --h-teal-500: #6FA8BA;
+  --h-teal-200: #B8B0A6;
+  --h-teal-50:  rgba(212, 160, 23, 0.15);
+  --h-green-900: #5FCA92;
+  --h-green-700: #4FBE85;
+  --h-green-500: #4FBE85;
+  --h-midnight:   #08080A;
+  --h-slate:      #F0EDE8;
+  --h-gray-500:   #B8B0A6;
+  --h-gray-300:   #8A8580;
+  --h-gray-200:   #555050;
+  --h-stone:      #34343A;
+  --h-warm-gray:  #26262A;
+  --h-sand:       #0F0F11;
+  --h-pearl:      #232327;
+  --h-success:    #4FBE85;
+  --h-warning:    #DBA64A;
+  --h-error:      #F08577;
+
+  --h-action:         #D4A017;
+  --h-action-hover:   #E0B130;
+  --h-action-pressed: #B8870A;
+  --h-action-bg:        rgba(212, 160, 23, 0.15);
+  --h-action-bg-strong: rgba(212, 160, 23, 0.25);
+  --h-action-glow:      rgba(212, 160, 23, 0.30);
+
+  --h-success-bg:     rgba(79, 190, 133, 0.15);
+  --h-success-strong: #5FCA92;
+
+  --h-warning-bg: rgba(219, 166, 74, 0.15);
+  --h-error-bg:   rgba(240, 133, 119, 0.15);
+  --h-info:       #5AAFCC;
+  --h-info-bg:    rgba(90, 175, 204, 0.15);
+
+  --h-data-1:        var(--h-teal-500);
+  --h-data-2:        #6FA8BA;
+  --h-data-3:        #4F8C9E;
+  --h-data-4:        #3A6F80;
+  --h-data-track:    #2D2D32;
+  --h-data-gridline: #26262A;
+  --h-data-axis:     #8A8580;
+  --h-data-hover:    var(--h-action);
+
+  --h-text-primary:   #F0EDE8;
+  --h-text-secondary: #B8B0A6;
+  --h-text-muted:     #8A8580;
+  --h-text-disabled:  #555050;
+  --h-text-heading:   #FFFFFF;
+  --h-text-on-action: #0F0F11;
+
+  --h-bg:            #0F0F11;
+  --h-surface-1:     #1A1A1D;
+  --h-surface-2:     #232327;
+  --h-surface-hover: #2D2D32;
+  --h-zebra:         #1F1F22;
+
+  --h-border:        #34343A;
+  --h-border-subtle: #26262A;
+  --h-border-strong: #4A4A50;
+
+  --h-nav-bg:          #08080A;
+  --h-nav-border:      #26262A;
+  --h-nav-text:        #8A8580;
+  --h-nav-text-active: #FFFFFF;
+  --h-nav-logo:        #D4A017;
+  --h-nav-indicator:   var(--h-action);
+  --h-nav-hover-bg:    rgba(255, 255, 255, 0.06);
+  --h-nav-avatar-bg:   rgba(255, 255, 255, 0.10);
+
+  --h-alert-accent: var(--h-error);
+  --h-alert-text:   var(--h-error);
+
+  --h-avatar-bg:   rgba(255, 255, 255, 0.08);
+  --h-avatar-text: #B8B0A6;
+
+  --h-shadow-sm:        0 2px 8px rgba(0, 0, 0, 0.25);
+  --h-shadow-md:        0 4px 16px rgba(0, 0, 0, 0.40);
+  --h-shadow-tooltip:   0 4px 12px rgba(0, 0, 0, 0.30);
+  --h-chart-tooltip-bg: #232327;
+
+  --h-green-cta:         var(--h-action);
+  --h-green-cta-hover:   var(--h-action-hover);
+  --h-green-cta-pressed: var(--h-action-pressed);
+  --h-chart-bar:         var(--h-data-1);
+  --h-chart-gridline:    var(--h-data-gridline);
+  --h-chart-axis:        var(--h-data-axis);
+}

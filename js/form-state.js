@@ -1,7 +1,7 @@
 /* ============================================================
    HOMIUM ORIGINATOR FLOW — Form Snapshot + Dirty State (Pattern D)
 
-   Per 2026-05-27 canon (homium-design-canon-v2 2/CLAUDE.md):
+   Per canon (homium-design-canon/DESIGN_CANON.md):
      - captureFormSnapshot(rootId) — on entering edit mode
      - revertFormSnapshot(rootId)  — Discard (Pattern B); restores inputs
      - clearFormSnapshot(rootId)   — Save success / unmount
